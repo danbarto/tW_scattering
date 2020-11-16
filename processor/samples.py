@@ -66,10 +66,12 @@ groups_2lOS = {
 # Selection for trilep - no W+jets and single lepton tt/t
 groups_3l = {
     'tW_scattering': ['/tW_scattering[-_]'],
-    'TTX':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
-    'ttbar':         ['/TTJets_DiLept', '/ST_tW[-_]'],
+    'TTZ':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/tZq[-_]' ], # everything with a reasonable large x-sec and Z->ll
     'TTW':           ['/TTWJets'],
-    'diboson':       ['/[W,Z][W,Z]To', '/[W,Z][W,Z][W,Z][-_]'],
+    'TTX':           ['/ST_tWnunu[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/ttHToNonbb[-_]'], # everything else
+    'ttbar':         ['/TTJets_DiLept', '/ST_tW[-_]'],
+    'WZ':            ['/WZTo', '/W[W,Z]Z[-_]'], # WZ or WWZ or WZZ
+    'diboson':       ['/WWTo', '/ZZTo', '/WWW[-_]', '/ZZZ[-_]'], # all other diboson: WW, ZZ, WWW, ZZZ
     'DY':            ['/DYJetsToLL']
 }
 
