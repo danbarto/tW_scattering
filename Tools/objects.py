@@ -22,6 +22,7 @@ with open('../data/objects.yaml') as f:
     obj_def = load(f, Loader=Loader)
 
 class Collections:
+
     def __init__(self, df, obj, wp, verbose=0):
         self.obj = obj
         self.wp = wp
@@ -174,7 +175,7 @@ class Collections:
     def get(self):
         return self.cand[self.selection]
         #return selection
-        
+
     def getSigmaIEtaIEta(self):
         return ((abs(self.cand.etaSC)<=1.479) & (self.cand.sieie<0.011)) | ((abs(self.cand.etaSC)>1.479) & (self.cand.sieie<0.030))
         
