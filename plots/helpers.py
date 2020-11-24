@@ -57,7 +57,7 @@ def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
 
 colors = {
     'tW_scattering': '#FF595E',
-    #'tW_scattering': '#000000',
+    #'tW_scattering': '#000000', # this would be black
     'TTW': '#8AC926',
     'TTX': '#FFCA3A',
     'TTZ': '#FFCA3A',
@@ -67,6 +67,10 @@ colors = {
     'wjets': '#6A4C93',
     'diboson': '#525B76',
     'DY': '#6A4C93',
+    'mC750_l1': '#FF595E',
+    'LL': '#1982C4',
+    'ZNuNu': '#FFCA3A',
+    'QCD': '#8AC926',
 }
 '''
 other colors (sets from coolers.com):
@@ -86,6 +90,10 @@ my_labels = {
     'wjets': 'W+jets',
     'DY': 'Drell-Yan',
     'diboson': 'VV/VVV',
+    'mC750_l1': 'WH (750,1)',
+    'LL': 'Lost Lepton',
+    'ZNuNu': r'$Z \rightarrow inv$',
+    'QCD': 'QCD',
     'pseudodata': 'Pseudo-data',
     'uncertainty': 'Uncertainty',
 }

@@ -11,6 +11,8 @@ caches:
   strong_tW_small: strong_tW_small
   triLep: triLep
   triLep_small: triLep_small
+  WH: WH
+  WH_small: WH_small
 lumi: 137
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
