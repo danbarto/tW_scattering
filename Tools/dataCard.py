@@ -258,11 +258,11 @@ class dataCard:
         limit = { q:limits[i] for i,q in enumerate(quantiles) }
         return limit
 
-    def calcLimit(self, fname=None, options=""):
+    def calcLimit(self, fname=None, options="", verbose=False):
         import uuid, os
         ustr          = str(uuid.uuid4())
         uniqueDirname = os.path.join(self.releaseLocation, ustr)
-        print("Creating %s"%uniqueDirname)
+        if verbose: print("Creating %s"%uniqueDirname)
         os.makedirs(uniqueDirname)
 
         if fname is not None:  # Assume card is already written when fname is not none
@@ -276,7 +276,7 @@ class dataCard:
         
         
         combineCommand = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine --saveWorkspace -M AsymptoticLimits %s %s"%(options,filename)
-        print(combineCommand)
+        if verbose: print("Executing command:", combineCommand)
         os.system(combineCommand)
 
         tempResFile = uniqueDirname+"/higgsCombineTest.AsymptoticLimits.mH120.root"
@@ -285,6 +285,7 @@ class dataCard:
         
         try:
             res= self.readResFile(tempResFile)
+            res['card'] = fname
         except:
             res=None
             print("[cardFileWrite] Did not succeed reeding result.")

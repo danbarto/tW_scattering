@@ -7,12 +7,17 @@ class Cutflow:
         If weight=None a branch called 'weight' in the dataframe is assumed
         '''
         self.df = df
+        if weight is not None:
+            self.weight = weight
+        else:
+            self.weight = df['weight']
         self.cfg = cfg
         self.output = output
         self.processes = processes
         self.selection = None
         self.addRow('entry', selection)
-        self.weight = df['weight'] if weight == None else weight
+        
+        
         
     def addRow(self, name, selection, cumulative=True):
         '''
