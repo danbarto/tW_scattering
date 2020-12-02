@@ -65,8 +65,12 @@ bins = {\
 
     'W_pt':     {'axis': 'pt',      'overflow':'over',  'bins': hist.Bin('pt', r'$p_{T} (W-tag)$', 8, 200, 600)},
     'W_eta':    {'axis': 'eta',     'overflow':'over',  'bins': hist.Bin('eta', r'$\eta (W-tag)$', 15, -5.5, 5.5)},
+    'W_mass':     {'axis': 'mass',      'overflow':'over',  'bins': hist.Bin('pt', r'$M(W-tag)$', 20, 0, 200)},
+    'W_msoftdrop':    {'axis': 'mass',     'overflow':'over',  'bins': hist.Bin('eta', r'$M_{SD}(W-tag)$', 20, 0, 200)},
     'H_pt':     {'axis': 'pt',      'overflow':'over',  'bins': hist.Bin('pt', r'$p_{T} (H-tag)$', 8, 200, 600)},
     'H_eta':    {'axis': 'eta',     'overflow':'over',  'bins': hist.Bin('eta', r'$\eta (H-tag)$', 15, -5.5, 5.5)},
+    'H_mass':     {'axis': 'mass',      'overflow':'over',  'bins': hist.Bin('pt', r'$M(H-tag)$', 20, 0, 200)},
+    'H_msoftdrop':    {'axis': 'mass',     'overflow':'over',  'bins': hist.Bin('eta', r'$M_{SD}(H-tag)$', 20, 0, 200)},
 
     'dphiDiFatJet': {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'$\Delta \phi (AK8)$', 30, 0, 3)},
     'dphiDiJet':    {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'$\Delta \phi (AK4)$', 30, 0, 3)},
@@ -145,7 +149,9 @@ for name in bins:
 
     if separateSignal:
         hist.plot1d(histogram[notsignal],overlay="dataset", ax=ax, stack=True, overflow=bins[name]['overflow'], clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=processes)
-        hist.plot1d(histogram[signal], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], line_opts={'linewidth':3}, clear=False)
+        #hist.plot1d(histogram[signal], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], line_opts={'linewidth':3}, clear=False)
+        hist.plot1d(histogram['750_1_scan'], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], line_opts={'linewidth':3}, clear=False)
+        hist.plot1d(histogram['1000_1_scan'], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], line_opts={'linewidth':3}, clear=False)
 
     if usePseudoData:
         # build ratio
@@ -186,8 +192,9 @@ for name in bins:
     fig.clear()
     ax.clear()
 
-    plt.close()
+    plt.close('all')
 
+    #break
 
 print ()
 print ("Plots are here: http://uaf-10.t2.ucsd.edu/~%s/"%os.path.expandvars('$USER')+str(plotDir.split('public_html')[-1]) )

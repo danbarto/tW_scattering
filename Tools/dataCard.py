@@ -249,17 +249,13 @@ class dataCard:
         return resFile
 
     def readResFile(self, fname):
-        import ROOT
-        f = ROOT.TFile.Open(fname)
-        t = f.Get("limit")
-        l = t.GetLeaf("limit")
-        qE = t.GetLeaf("quantileExpected")
-        limit = {}
-        preFac = 1.
-        for i in range(t.GetEntries()):
-                t.GetEntry(i)
-                limit["{0:.3f}".format(round(qE.GetValue(),3))] = preFac*l.GetValue()
-        f.Close()
+        import uproot
+        f = uproot.open(fname)
+        t = f["limit"]
+        limits = t.array("limit")
+        quantiles = t.array("quantileExpected")
+        
+        limit = { q:limits[i] for i,q in enumerate(quantiles) }
         return limit
 
     def calcLimit(self, fname=None, options=""):
@@ -279,12 +275,14 @@ class dataCard:
         assert os.path.exists(filename), "File not found: %s"%filename
         
         
-        combineCommand = "cd "+uniqueDirname+";combine --saveWorkspace -M AsymptoticLimits %s %s"%(options,filename)
+        combineCommand = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine --saveWorkspace -M AsymptoticLimits %s %s"%(options,filename)
         print(combineCommand)
         os.system(combineCommand)
 
         tempResFile = uniqueDirname+"/higgsCombineTest.AsymptoticLimits.mH120.root"
 
+        #print (tempResFile)
+        
         try:
             res= self.readResFile(tempResFile)
         except:
@@ -293,7 +291,7 @@ class dataCard:
         if res:
             shutil.copyfile(tempResFile, resultFilename)
         
-        shutil.rmtree(uniqueDirname)
+        #shutil.rmtree(uniqueDirname)
         return res
 
     def readNLLFile(self, fname):
