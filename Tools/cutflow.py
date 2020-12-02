@@ -12,7 +12,7 @@ class Cutflow:
         self.processes = processes
         self.selection = None
         self.addRow('entry', selection)
-        self.weight = df['weight'] if weight=None else self.weight=weight
+        self.weight = df['weight'] if weight == None else weight
         
     def addRow(self, name, selection, cumulative=True):
         '''
@@ -20,7 +20,7 @@ class Cutflow:
         '''
         if self.selection is None and selection is not None:
             self.selection = selection
-        elif selection is not None and cumulative=False:
+        elif selection is not None and cumulative == False:
             selection = self.selection & selection
         elif selection is not None:
             self.selection &= selection
