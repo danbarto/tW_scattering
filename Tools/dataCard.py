@@ -1,6 +1,15 @@
 import shutil
 import os
 
+quantile_dict = {
+    '0.025': '-2sig',
+    '0.16': '-1sig',
+    '0.5': 'expected',
+    '0.84': '+1sig',
+    '0.975': '+2sig',
+    '-1.0': 'observed'
+}
+
 class dataCard:
     def __init__(self):
         self.reset()
@@ -254,8 +263,9 @@ class dataCard:
         t = f["limit"]
         limits = t.array("limit")
         quantiles = t.array("quantileExpected")
-        
-        limit = { q:limits[i] for i,q in enumerate(quantiles) }
+        quantiles = quantiles.astype(str)
+        limit = { quantile_dict[q]:limits[i] for i,q in enumerate(quantiles) }
+        print (limit)
         return limit
 
     def calcLimit(self, fname=None, options="", verbose=False):
@@ -288,7 +298,7 @@ class dataCard:
             res['card'] = fname
         except:
             res=None
-            print("[cardFileWrite] Did not succeed reeding result.")
+            print("[cardFileWrite] Did not succeed reading result.")
         if res:
             shutil.copyfile(tempResFile, resultFilename)
         
