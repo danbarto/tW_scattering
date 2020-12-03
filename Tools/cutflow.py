@@ -2,7 +2,7 @@
 
 class Cutflow:
     
-    def __init__(self, output, df, lumi, processes, selection=None, weight=None ):
+    def __init__(self, output, df, cfg, processes, selection=None, weight=None ):
         '''
         If weight=None a branch called 'weight' in the dataframe is assumed
         '''
@@ -11,7 +11,8 @@ class Cutflow:
             self.weight = weight
         else:
             self.weight = df['weight']
-        self.lumi = lumi
+        self.lumi = cfg['lumi']
+        self.cfg = cfg
         self.output = output
         self.processes = processes
         self.selection = None
