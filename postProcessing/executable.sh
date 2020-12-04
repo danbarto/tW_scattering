@@ -16,6 +16,8 @@ ISDATA=$9
 YEAR=${10}
 ERA=${11}
 ISFASTSIM=${12}
+SKIM=${13}
+GITHUBUSER=${14}
 
 OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
 
@@ -86,7 +88,7 @@ NEVENTS=-1
 echo $VERSION
 
 # checkout the package
-git clone --branch $VERSION --depth 1  https://github.com/danbarto/nanoAOD-tools.git PhysicsTools/NanoAODTools
+git clone --branch $VERSION --depth 1  https://github.com/$GITHUBUSER/nanoAOD-tools.git PhysicsTools/NanoAODTools
 
 scram b
 
@@ -100,7 +102,7 @@ echo $OUTFILE
 
 echo "Running python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM"
 
-python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM
+python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM $SKIM
 
 mv tree.root ${OUTPUTNAME}_${IFILE}.root
 

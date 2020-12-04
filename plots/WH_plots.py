@@ -31,6 +31,7 @@ cfg = loadConfig()
 
 # load the results
 cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['WH']), serialized=True)
+#cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['WH_small']), serialized=True)
 cache.load()
 
 histograms = cache.get('histograms')
@@ -85,6 +86,9 @@ bins = {\
     #'bb_deltaR':    {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'$\Delta R (bb)$', 10, 0, 5)},
     'min_dphiJetMet4': {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'$\Delta \phi (j, p_{T}^{miss})$', 30, 0, 3)},
     'min_dphiFatJetMet4': {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'$\Delta \phi (AK8, p_{T}^{miss})$', 30, 0, 3)},
+
+    'min_deltaRAK4AK8': {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'min $\Delta R (AK8, AK4)$', 30, 0, 3)},
+    'min_deltaRAK4AK8_SR': {'axis': 'delta',          'overflow':'over',  'bins': hist.Bin('delta', r'min $\Delta R (AK8, AK4)$', 30, 0, 3)},
         
     'lead_AK8_pt':  {'axis': 'pt',    'overflow':'over',  'bins': hist.Bin('pt', r'$p{T} (lead. AK8) \ (GeV)$', 20, 0, 1000)},
     }

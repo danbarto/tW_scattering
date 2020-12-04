@@ -13,6 +13,7 @@ import yaml
 from yaml import Loader, Dumper
 
 import os
+from github import Github
 
 def getYearFromDAS(DASname):
     isData = True if DASname.count('Run20') else False
@@ -40,37 +41,35 @@ print ("Loaded version %s from config."%cfg['meta']['version'])
 import argparse
 
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--version', action='store', default=None, help="Define a new version number")
-argParser.add_argument('--newVersion', action='store_true', default=None, help="Create a version and tag automatically?")
-argParser.add_argument('--updateConfig', action='store_true', default=None, help="Dump the updated config?")
+argParser.add_argument('--tag', action='store', default=None, help="Tag on github for baby production")
+argParser.add_argument('--user', action='store', help="Your github user name")
+argParser.add_argument('--skim', action='store', default="leptons", choices=["leptons","MET", "dijet"], help="Which skim to use")
 argParser.add_argument('--dryRun', action='store_true', default=None, help="Don't submit?")
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 args = argParser.parse_args()
 
-version = str(cfg['meta']['version'])
+tag = str(args.tag)
 
-# if no version is defined, increase last version number by one
-if args.newVersion:
-    tag_str = str(cfg['meta']['version'])
-    version = '.'.join(tag_str.split('.')[:-1]+[str(int(tag_str.split('.')[-1])+1)])
-    cfg['meta']['version'] = version
-elif args.version:
-    version = args.version
-    cfg['meta']['version'] = version
-    # should check that the format is the same
+### Read github credentials
+with open('github_credentials.txt', 'r') as f:
+    lines = f.readlines()
+    cred = lines[0].replace('\n','')
 
-tag = version.replace('.','p')
+print ("Found github credentials: %s"%cred)
 
-## create a new tag of nanoAOD-tools on the fly
-if args.newVersion or args.version:
-    print ("Commiting and creating new tag: %s"%tag)
-    import subprocess
-    subprocess.call("cd $CMSSW_BASE/src/PhysicsTools/NanoAODTools/; git commit -am 'latest'; git tag %s; git push ownFork --tags; cd"%tag, shell=True)
-    if args.updateConfig:
-        dumpConfig(cfg)
-    
-    # Dumpong the config
+### We test that the tag is actually there
+repo_name = '%s/NanoAOD-tools'%args.user
+
+g = Github(cred)
+repo = g.get_repo(repo_name)
+tags = [ x.name for x in repo.get_tags() ]
+if not tag in tags:
+    print ("The specified tag %s was not found in the repository: %s"%(tag, repo_name))
+    print ("Exiting. Nothing was submitted.")
+    exit()
+else:
+    print ("Yay, located tag %s in repository %s. Will start creating tasks now."%(tag, repo_name) )
 
 # example
 sample = DirectorySample(dataset='TTWJetsToLNu_Autumn18v4', location='/hadoop/cms/store/user/dspitzba/nanoAOD/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8__RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/')
@@ -125,7 +124,7 @@ for s in sample_list:
             #'/hadoop/cms/store/user/dspitzba/nanoAOD/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8__RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/',
         # open_dataset = True, flush = True,
         executable = "executable.sh",
-        arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0 ]] ),
+        arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0, args.skim, args.user ]] ),
         #tarfile = "merge_scripts.tar.gz",
         files_per_output = 3,
         output_dir = os.path.join(outDir, samples[s]['name']),
