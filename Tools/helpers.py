@@ -58,7 +58,7 @@ def addRowToCutFlow( output, df, cfg, name, selection, processes=['TTW', 'TTX', 
             output[process][name] += ( sum(df['weight'][ (df['dataset']==process) ].flatten() )*cfg['lumi'] )
             output[process][name+'_w2'] += ( sum((df['weight'][ (df['dataset']==process) ]**2).flatten() )*cfg['lumi']**2 )
             
-def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None):
+def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
     Takes the output of a coffea processor (i.e. a python dictionary) and returns a formated cut-flow table of processes.
     Lines and processes have to follow the naming of the coffea processor output.
@@ -71,11 +71,15 @@ def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=[
         # for efficiencies. doesn't deal with uncertainties yet
         eff[proc] = {lines[i]: round(output[proc][lines[i]]/output[proc][lines[i-1]], significantFigures) if (i>0 and output[proc][lines[i-1]]>0) else 1. for i,x in enumerate(lines)}
     
+    if total:
+        res['total'] = {line: "%s"%round( sum([ output[proc][line] for proc in total ] ), significantFigures-len(str(int(sum([ output[proc][line] for proc in total ] ))))) for line in lines }
+    
     # if a signal is specified, calculate S/B
     if signal is not None:
         backgrounds = copy.deepcopy(processes)
         backgrounds.remove(signal)
         res['S/B'] = {line: round( output[signal][line]/sum([ output[proc][line] for proc in backgrounds ]) if sum([ output[proc][line] for proc in backgrounds ])>0 else 1, significantFigures) for line in lines }
+            
     if not absolute:
         res=eff
     df = pd.DataFrame(res)
