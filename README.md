@@ -21,7 +21,7 @@ cd CMSSW_10_2_9/src
 cmsenv
 git cms-init
 
-git clone --branch tW_scattering https://github.com/danbarto/nanoAOD-tools.git NanoAODTools
+git clone --branch tW_scattering https://github.com/danbarto/nanoAOD-tools.git PhysicsTools/NanoAODTools
 
 cd $CMSSW_BASE/src
 
