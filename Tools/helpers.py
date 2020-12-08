@@ -32,6 +32,12 @@ def dumpConfig(cfg):
         dump(cfg, f, Dumper=Dumper, default_flow_style=False)
     return True
 
+def get_scheduler_address():
+    with open(os.path.expandvars('$TWHOME/scheduler_address.txt'), 'r') as f:
+        lines = f.readlines()
+        scheduler_address = lines[0].replace('\n','')
+    return scheduler_address
+
 def getName( DAS ):
     split = DAS.split('/')
     if split[-1].count('AOD'):
