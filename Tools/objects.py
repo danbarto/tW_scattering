@@ -2,6 +2,7 @@
 Standardized object selection, based on SS(++) analysis
 Trigger-safe requirements for electrons missing!
 '''
+import os
 
 import uproot
 import awkward
@@ -18,7 +19,7 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-with open('../data/objects.yaml') as f: # need to fix this with absolute paths for DASK
+with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f: # need to fix this with absolute paths for DASK
     obj_def = load(f, Loader=Loader)
 
 class Collections:
