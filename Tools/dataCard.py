@@ -333,7 +333,7 @@ class dataCard:
           filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
           self.writeToFile(filename)
 
-        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --freezeParameters r %s %s"%(options,filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --freezeParameters r %s %s"%(options,filename)
         os.system(combineCommand)
         nll = self.readNLLFile(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root")
         nll["bestfit"] = nll["nll"]
@@ -356,7 +356,7 @@ class dataCard:
           filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
           self.writeToFile(filename)
 
-        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit --algo grid --rMin %s --rMax %s --points %s --alignEdges 1 --saveNLL --forceRecreateNLL %s %s"%(rmin, rmax, npoints, options,filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit --algo grid --rMin %s --rMax %s --points %s --alignEdges 1 --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --saveNLL --forceRecreateNLL %s %s"%(rmin, rmax, npoints, options,filename)
         os.system(combineCommand)
         
         with uproot.open(uniqueDirname+"/higgsCombineTest.MultiDimFit.mH120.root") as f:
