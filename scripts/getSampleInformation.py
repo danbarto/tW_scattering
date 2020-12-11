@@ -53,23 +53,30 @@ def getMeta(file, local=True):
         if local:
             res = c.genEventCount, c.genEventSumw, c.genEventSumw2
         else:
-            res = c.genEventCount_, c.genEventSumw_, c.genEventSumw2_
+            try:
+                res = c.genEventCount_, c.genEventSumw_, c.genEventSumw2_
+            except:
+                res = c.genEventCount, c.genEventSumw, c.genEventSumw2
         del c
         return res
     except:
         return 0,0,0
 
 def getMetaUproot(file, local=True):
-    f = uproot.open(file)
-    r = f['Runs']
     try:
-        if local:
-            res = r.array('genEventCount')[0], r.array('genEventSumw')[0], r.array('genEventSumw2')[0]
-        else:
-            res = r.array('genEventCount_')[0], r.array('genEventSumw_')[0], r.array('genEventSumw2_')[0]
-        return res
+        f = uproot.open(file)
+        r = f['Runs']
     except:
         return 0,0,0
+
+    if local:
+        res = r.array('genEventCount')[0], r.array('genEventSumw')[0], r.array('genEventSumw2')[0]
+    else:
+        try:
+            res = r.array('genEventCount_')[0], r.array('genEventSumw_')[0], r.array('genEventSumw2_')[0]
+        except:
+            res = r.array('genEventCount')[0], r.array('genEventSumw')[0], r.array('genEventSumw2')[0]
+    return res
     
 
 def dasWrapper(DASname, query='file'):
@@ -116,7 +123,7 @@ def getDict(sample):
         print (allFiles)
         sample_dict['files'] = allFiles
 
-        if not isData:
+        if not isData and not name.count('TChiWH'):
             nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector='root://cmsxrootd.fnal.gov/')
         else:
             nEvents, sumw, sumw2 = 0,0,0

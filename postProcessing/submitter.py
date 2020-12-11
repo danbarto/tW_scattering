@@ -79,7 +79,7 @@ sample = DirectorySample(dataset='TTWJetsToLNu_Autumn18v4', location='/hadoop/cm
 #for sample in samples.keys():   
 
 #outDir = os.path.join(version, tag)
-outDir = os.path.join(cfg['meta']['localSkim'], tag)
+outDir = os.path.join(os.path.expandvars(cfg['meta']['localSkim']), tag)
 
 print ("Output will be here: %s"%outDir)
 
@@ -115,7 +115,8 @@ for s in sample_list:
     if isData:
         print ("The era is: %s"%era)
 
-    lumiWeightString = 1000*samples[s]['xsec']/samples[s]['sumWeight'] if not isData else 1
+    #lumiWeightString = 1000*samples[s]['xsec']/samples[s]['sumWeight'] if not isData else 1
+    lumiWeightString = 1 if (isData or samples[s]['name'].count('TChiWH')) else 1000*samples[s]['xsec']/samples[s]['sumWeight']
 
     #tag = str(cfg['meta']['version']).replace('.','p')
     
@@ -126,7 +127,7 @@ for s in sample_list:
         executable = "executable.sh",
         arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0, args.skim, args.user ]] ),
         #tarfile = "merge_scripts.tar.gz",
-        files_per_output = 3,
+        files_per_output = 1 if (isData or samples[s]['name'].count('TChiWH') or samples[s]['name'].count('ZJets') or samples[s]['name'].count('DYJets')) else 3, # should also not use 3 files when using dilepton skim alltogether
         output_dir = os.path.join(outDir, samples[s]['name']),
         output_name = "nanoSkim.root",
         output_is_tree = True,
