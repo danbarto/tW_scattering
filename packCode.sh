@@ -8,4 +8,4 @@ tar -czf tW_scattering.tar.gz tW_scattering
 rm -rf tW_scattering
 rm master.zip
 
-mv tW_scattering.tar.gz Tools/
+mv tW_scattering.tar.gz Tools/analysis.tar.gz
