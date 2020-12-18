@@ -8,30 +8,15 @@ Prerequisite: if you haven't, add this line to your `~/.profile`:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 ```
 
-Currently lives within CMSSW_10_2_9. Set up in a fresh directory, recipe as follows:
-```
-cmsrel CMSSW_10_2_9
-cd CMSSW_10_2_9/src
-cmsenv
-git cms-init
+### Setting up the environment
 
-git clone --branch tW_scattering https://github.com/danbarto/nanoAOD-tools.git PhysicsTools/NanoAODTools
-
-cd $CMSSW_BASE/src
-
-git clone --recursive https://github.com/danbarto/tW_scattering.git
-
-scram b -j 8
-cmsenv
-
-```
-
-Then you can set up the tools to run coffea.
+From within your home directory on the uaf, follow the below instructions to set up the tools to run coffea.
 We do this in a virtual environment, using the miniconda environment management package.
 You might get some error messages about packages that couldn't get uninstalled that you (usually) can ignore.
-```
-cd tW_scattering
 
+```
+mkdir daskucsd
+cd daskucsd
 curl -O -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b 
 
@@ -75,6 +60,36 @@ I had to update my python version, so you might have to run
 conda install python=3.8.6
 ```
 
+### Setting up CMS software and analysis code
+
+Deactivate the conda environment with 
+```
+conda deactivate
+```
+and then follow the below instructions.
+Some of the code lives within CMSSW_10_2_9. Ideally set it up in a fresh directory, recipe as follows:
+```
+cmsrel CMSSW_10_2_9
+cd CMSSW_10_2_9/src
+cmsenv
+git cms-init
+
+git clone --branch tW_scattering https://github.com/danbarto/nanoAOD-tools.git PhysicsTools/NanoAODTools
+
+cd $CMSSW_BASE/src
+
+git clone --recursive https://github.com/danbarto/tW_scattering.git
+
+scram b -j 8
+cmsenv
+
+cd tW_scattering
+```
+You should be set up now. The following steps have to be repeated everytime you log in to uaf (from within tW_scattering)
+```
+source activate_conda.sh
+```
+
 To start a jupyter server just do
 ```
 ( conda activate daskanalysisenv && jupyter notebook --no-browser )
@@ -84,11 +99,6 @@ In order to use jupyter you need to establish another ssh connection from your c
 ssh -N -f -L localhost:8893:localhost:8893 johndoe@uaf-10.t2.ucsd.edu
 ```
 Where 8893 represents the port (check the output of the jupyter server, uaf-10 should be replaced with the uaf you're working on, and johndoe by your user name, of course
-
-You should be set up now. The following steps have to be repeated everytime you log in to uaf (from within tW_scattering)
-```
-source activate_conda.sh
-```
 
 ## Using DASK
 
