@@ -8,14 +8,7 @@ from dask_jobqueue.htcondor import HTCondorJob, HTCondorCluster, quote_environme
 
 BASEDIR = os.path.dirname(os.path.realpath(__file__))
 
-def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=[
-            "sdsc-49.t2.ucsd.edu",
-            "sdsc-50.t2.ucsd.edu",
-            "sdsc-68.t2.ucsd.edu",
-            "cabinet-7-7-36.t2.ucsd.edu",
-            "cabinet-8-8-1.t2.ucsd.edu",
-            "cabinet-4-4-18.t2.ucsd.edu",
-    ], memory=4000, disk=20000, whitelisted_machines=[]):
+def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=[], memory=4000, disk=20000, whitelisted_machines=[]):
 
     template = """
 universe                = vanilla
