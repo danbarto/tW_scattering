@@ -56,8 +56,8 @@ def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
 
     ax.legend(title='',ncol=2,handles=handles, labels=new_labels, frameon=False)
 
-    fig.text(0.15, 0.995, '$\\bf{CMS}$', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.30, 1., '$\\it{Simulation}$', fontsize=14, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    fig.text(0.0, 0.995, '$\\bf{CMS}$', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    fig.text(0.15, 1., '$\\it{Simulation}$', fontsize=14, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
     fig.text(0.8, 1., '13 TeV', fontsize=14, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
     fig.savefig(os.path.join(outdir, "{}.pdf".format(name)))

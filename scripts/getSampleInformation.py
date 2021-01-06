@@ -100,18 +100,18 @@ def getSampleNorm(files, local=True, redirector='root://xrootd.t2.ucsd.edu:2040/
 def getDict(sample):
         sample_dict = {}
 
-        print ("Will get info now.")
+        #print ("Will get info now.")
 
         # First, get the name
         name = getName(sample[0])
-        print (name)
+        print ("Started with: %s"%name)
 
         year, era, isData, isFastSim = getYearFromDAS(sample[0])
 
         # local/private sample?
         local = (sample[0].count('hadoop') + sample[0].count('home'))
-        print ("Is local?", local)
-        print (sample[0])
+        #print ("Is local?", local)
+        #print (sample[0])
 
         if local:
             sample_dict['path'] = sample[0]
@@ -120,16 +120,18 @@ def getDict(sample):
             sample_dict['path'] = None
             allFiles = dasWrapper(sample[0], query='file')
         # 
-        print (allFiles)
-        sample_dict['files'] = allFiles
+        #print (allFiles)
+        sample_dict['files'] = len(allFiles)
 
         if not isData and not name.count('TChiWH'):
             nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector='root://cmsxrootd.fnal.gov/')
         else:
             nEvents, sumw, sumw2 = 0,0,0
 
-        print (nEvents, sumw, sumw2)
+        #print (nEvents, sumw, sumw2)
         sample_dict.update({'sumWeight': float(sumw), 'nEvents': int(nEvents), 'xsec': float(sample[1]), 'name':name})
+
+        print ("Done with: %s"%name)
         
         return sample_dict
 
@@ -157,13 +159,25 @@ def main():
 
     workers = 12
     # then, run over the missing ones
+    print ("Will have to work in %s samples."%len(sampleList_missing))
+
+    counter = 0
+    sample_tmp = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for sample, result in zip(sampleList_missing, executor.map(getDict, sampleList_missing)):
             samples.update({str(sample[0]): result})
+            #sample_tmp += [{str(sample[0]): result}]
+            #counter += 1
+            #print (sample[0])
+            #print (result)
+            #print ("Done with %s samples."%counter)
 
+    print ("Done with the heavy lifting. Dumping results to yaml file now.")
 
     with open(data_path+'samples.yaml', 'w') as f:
         yaml.dump(samples, f, Dumper=Dumper)
+
+    print ("Done.")
 
     return samples
 
