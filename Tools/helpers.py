@@ -197,6 +197,11 @@ def mt(pt1, phi1, pt2, phi2):
     '''
     return np.sqrt( 2*pt1*pt2 * (1 - np.cos(phi1-phi2)) )
 
+def pad_and_flatten(val): 
+    try:
+        return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
+    except AttributeError:
+        return val.flatten()
 
 #from coffea.hist.hist_tools import SparseAxis, DenseAxis
 from uproot_methods.classes.TH1 import Methods as TH1Methods
