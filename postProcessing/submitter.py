@@ -1,8 +1,6 @@
 
 import time
 
-import uproot4
-import awkward1
 import numpy as np
 
 from metis.Sample import DirectorySample, DBSSample
@@ -32,32 +30,6 @@ def getYearFromDAS(DASname):
     else:
         ### our private samples right now are all Autumn18 but have no identifier.
         return 2018, 'X', False, False
-
-def getSplitFactor(sample, target=1e6):
-
-    if sample.get_nevents() == 0:
-        average_events = 10e3
-        fin = sample.get_files()[0].name
-    else:
-        average_events = sample.get_nevents()/len(sample.get_files())
-        fin = redirector_ucsd + sample.get_files()[0].name
-
-    tree = uproot4.open(fin)["Events"]
-    met = tree.arrays(["MET_pt"])
-    nMuon = awkward1.count( ( (tree.arrays(['Muon_pt'])['Muon_pt']>10) & (np.abs(tree.arrays(['Muon_eta'])['Muon_eta'])<2.4) ), axis=1)
-    nElectron = awkward1.count( ( (tree.arrays(['Electron_pt'])['Electron_pt']>10) & (np.abs(tree.arrays(['Electron_eta'])['Electron_eta'])<2.4) ), axis=1)
-    lepton_filter = (nMuon+nElectron)>1
-    jet_filter = ( awkward1.count( ( (tree.arrays(['Jet_pt'])['Jet_pt']>25) & (np.abs(tree.arrays(['Jet_eta'])['Jet_eta'])<2.4) ), axis=1) > 1 )
-    nEvents_all  = len(met)
-    nEvents_pass = len(met[lepton_filter & jet_filter])
-
-    filter_eff = nEvents_pass/nEvents_all
-    print ("Average number of events in file:", average_events)
-    print ("Filter efficiency:", filter_eff)
-
-    return max(1, int(round(target/(average_events*filter_eff),0)))
-
-    
 
 data_path = os.path.expandvars('$TWHOME/data/')
 with open(data_path+'samples.yaml') as f:
@@ -135,7 +107,7 @@ for s in sample_list:
     if isData:
         print ("The era is: %s"%era)
     # merge three files into one for all MC samples except ones where we expect a high efficiency of the skim
-    mergeFactor = getSplitFactor(sample)
+    mergeFactor = samples[s]['split']
     print ("- using merge factor: %s"%mergeFactor)
 
     #lumiWeightString = 1000*samples[s]['xsec']/samples[s]['sumWeight'] if not isData else 1
