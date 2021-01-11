@@ -15,8 +15,6 @@ import concurrent.futures
 
 import os
 import uproot
-import uproot4
-import awkward1
 import numpy as np
 import glob
 
@@ -33,14 +31,17 @@ def getSplitFactor(sample, target=1e6):
         fin = sample.get_files()[0].name
     else:
         average_events = sample.get_nevents()/len(sample.get_files())
-        fin = redirector_ucsd + sample.get_files()[0].name
+        fin = redirector_fnal + sample.get_files()[0].name
 
-    tree = uproot4.open(fin)["Events"]
-    met = tree.arrays(["MET_pt"])
-    nMuon = awkward1.count( ( (tree.arrays(['Muon_pt'])['Muon_pt']>10) & (np.abs(tree.arrays(['Muon_eta'])['Muon_eta'])<2.4) ), axis=1)
-    nElectron = awkward1.count( ( (tree.arrays(['Electron_pt'])['Electron_pt']>10) & (np.abs(tree.arrays(['Electron_eta'])['Electron_eta'])<2.4) ), axis=1)
+    tree = uproot.open(fin)["Events"]
+    met = tree.array(["MET_pt"])
+    muon_pt = tree.array(['Muon_pt'])
+    nMuon = muon_pt[( (muon_pt>10) & (np.abs(tree.array(['Muon_eta']))<2.4) )].counts
+    electron_pt = tree.array(['Electron_pt'])
+    nElectron = electron_pt[( (electron_pt>10) & (np.abs(tree.array(['Electron_eta']))<2.4) )].counts
     lepton_filter = (nMuon+nElectron)>1
-    jet_filter = ( awkward1.count( ( (tree.arrays(['Jet_pt'])['Jet_pt']>25) & (np.abs(tree.arrays(['Jet_eta'])['Jet_eta'])<2.4) ), axis=1) > 1 )
+    jet_pt = tree.array(['Jet_pt'])
+    jet_filter = ( jet_pt[ ( (jet_pt>25) & (np.abs(tree.array(['Jet_eta']))<2.4) ) ].counts > 1 )
     nEvents_all  = len(met)
     nEvents_pass = len(met[lepton_filter & jet_filter])
 
@@ -135,7 +136,7 @@ def getDict(sample):
         sample_dict['files'] = len(allFiles)
 
         if not isData:
-            nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
+            nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector=redirector_fnal)
         else:
             nEvents, sumw, sumw2 = metis_sample.get_nevents(),0,0
 

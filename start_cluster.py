@@ -35,7 +35,7 @@ def getFilesNotFound( client ):
 
     return allFiles
 
-cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "4GB", memory = "3GB",)
+cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "4GB", memory = "5GB",)
 
 print ("Scaling cluster at address %s now."%cluster.scheduler_address)
 

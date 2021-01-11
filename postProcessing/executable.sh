@@ -3,6 +3,9 @@
 # This is nanoAOD based sample making condor executable for CondorTask of ProjectMetis. Passed in arguments are:
 # arguments = [outdir, outname_noext, inputs_commasep, index, cmssw_ver, scramarch, self.arguments]
 
+# Set XRootD debug level and designate a log file
+export XRD_LOGLEVEL=Debug export XRD_LOGFILE=xrd.log
+
 OUTPUTDIR=$1
 OUTPUTNAME=$2
 INPUTFILENAMES=$3
@@ -103,8 +106,14 @@ echo $OUTFILE
 echo "Running python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM"
 
 python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM $SKIM
+RET=$?
 
 mv tree.root ${OUTPUTNAME}_${IFILE}.root
+
+# Dump contents of log file into stdout
+echo -e "\n--- begin xrootd log ---\n"
+cat "$XRD_LOGFILE"
+echo -e "\n--- end xrootd log —\n"
 
 # Rigorous sweeproot which checks ALL branches for ALL events.
 # If GetEntry() returns -1, then there was an I/O problem, so we will delete it
@@ -139,10 +148,19 @@ EOL
 
 echo -e "\n--- end running ---\n" #                             <----- section division
 
-# Copy back the output file
+# Copy back the output file. output should only start at /store/
+
+echo "Local output dir"
+echo ${OUTPUTDIR}
+
+export REP="/store"
+OUTPUTDIR="${OUTPUTDIR/\/hadoop\/cms\/store/$REP}"
+
+echo "Final output path for xrootd:"
+echo ${OUTPUTDIR}
 
 COPY_SRC="file://`pwd`/${OUTPUTNAME}_${IFILE}.root"
-COPY_DEST="gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+COPY_DEST=" davs://redirector.t2.ucsd.edu:1094/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 
