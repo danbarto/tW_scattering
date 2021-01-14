@@ -4,13 +4,8 @@ Trigger-safe requirements for electrons missing!
 '''
 import os
 
-import uproot
-import awkward
 import numpy as np
-from uproot_methods import TLorentzVectorArray
-
-from coffea.processor import LazyDataFrame
-from coffea.analysis_objects import JaggedCandidateArray
+import awkward1 as ak
 
 from yaml import load, dump
 try:
@@ -18,13 +13,44 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
+def delta_phi(first, second):
+    return (first.phi - second.phi + np.pi) % (2 * np.pi) - np.pi
+
+def delta_phi_alt(first, second):
+    # my version, seems to be faster (and unsigned)
+    return np.arccos(np.cos(first.phi - second.phi))
+
+def delta_r2(first, second):
+    return (first.eta - second.eta) ** 2 + delta_phi_alt(first, second) ** 2
+    
+def delta_r(first, second):
+    return np.sqrt(delta_r2(first, second))
+
+def match(first, second, deltaRCut=0.4):
+    drCut2 = deltaRCut**2
+    combs = ak.cartesian([first, second], nested=True)
+    return ak.any((delta_r2(combs['0'], combs['1'])<drCut2), axis=2)
+
+def match2(first, second, deltaRCut=0.4):
+    drCut2 = deltaRCut**2
+    combs = ak.cartesian([first, second], nested=True)
+    return ak.any((combs['0'].delta_r2(combs['1'])<drCut2), axis=2)
+
+def choose(first, n=2):
+    combs = ak.combinations(first, n)
+    return combs
+
+def cross(first, second):
+    combs = ak.cartesian([first, second])
+    return combs
+
 
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
 class Collections:
 
-    def __init__(self, df, obj, wp, verbose=0):
+    def __init__(self, ev, obj, wp, verbose=0):
         self.obj = obj
         self.wp = wp
         if self.wp == None:
@@ -36,73 +62,19 @@ class Collections:
         #self.year = df['year'][0] ## to be implemented in next verison of babies
         self.year = 2018
         
-                # jets for cross-object quantities
-        jets = JaggedCandidateArray.candidatesfromcounts(
-            df['nJet'],
-            pt=df['Jet_pt'].content,
-            eta=df['Jet_eta'].content,
-            phi=df['Jet_phi'].content,
-            mass=df['Jet_mass'].content,
-            btagDeepFlavB=df['Jet_btagDeepFlavB'].content,
-            btagDeepB=df['Jet_btagDeepB'].content,
-        )
         
         if self.obj == "Muon":
-            self.cand = JaggedCandidateArray.candidatesfromcounts(
-                df['nMuon'],
-                pt               = df['Muon_pt'].content,
-                eta              = df['Muon_eta'].content,
-                phi              = df['Muon_phi'].content,
-                mass             = df['Muon_mass'].content,
-                charge           = df['Muon_charge'].content,
-                pdgId            = df['Muon_pdgId'].content,
-                mediumId         = df['Muon_mediumId'].content,
-                looseId          = df['Muon_looseId'].content,
-                dxy              = df['Muon_dxy'].content,
-                dz               = df['Muon_dz'].content,
-                sip3d            = df['Muon_sip3d'].content,
-                miniPFRelIso_all = df['Muon_miniPFRelIso_all'].content,
-                ptErrRel         = (df['Muon_ptErr']/df['Muon_pt']).content,
-                absMiniIso       = (df['Muon_miniPFRelIso_all']*df['Muon_pt']).content,
-                mvaTTH           = df['Muon_mvaTTH'].content,
-                #genPartIdx       = df['Muon_genPartIdx'].content,
-                jetRelIso        = df['Muon_jetRelIso'].content,
-                jetPtRelv2       = df['Muon_jetPtRelv2'].content,
-                jetIdx           = df['Muon_jetIdx'].content,
-                deepJet          = jets[df['Muon_jetIdx']].btagDeepFlavB.content,
-            )
+            # collections are already there, so we just need to calculate missing ones
+            self.cand = ev.Muon
+            self.cand.ptErrRel      = ev.Muon.ptErr/ev.Muon.pt
+            self.cand.absMiniIso    = ev.Muon.miniPFRelIso_all*ev.Muon.pt
+            self.cand.deepJet       = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB
             
         elif self.obj == "Electron":
-            self.cand = JaggedCandidateArray.candidatesfromcounts(
-                df['nElectron'],
-                pt               = df['Electron_pt'].content,
-                #conePt           = df[]
-                eta              = df['Electron_eta'].content,
-                phi              = df['Electron_phi'].content,
-                mass             = df['Electron_mass'].content,
-                charge           = df['Electron_charge'].content,
-                pdgId            = df['Electron_pdgId'].content,
-                dxy              = df['Electron_dxy'].content,
-                dz               = df['Electron_dz'].content,
-                sip3d            = df['Electron_sip3d'].content,
-                miniPFRelIso_all = df['Electron_miniPFRelIso_all'].content,
-                absMiniIso       = (df['Electron_miniPFRelIso_all']*df['Electron_pt']).content,
-                mvaFall17V2noIso = df['Electron_mvaFall17V2noIso'].content,
-                mvaTTH           = df['Electron_mvaTTH'].content,
-                #genPartIdx       = df['Electron_genPartIdx'].content,
-                etaSC            = (df['Electron_eta'] + df['Electron_deltaEtaSC']).content, # verify this
-                jetRelIso        = df['Electron_jetRelIso'].content,
-                jetPtRelv2       = df['Electron_jetPtRelv2'].content,
-                convVeto         = df['Electron_convVeto'].content,
-                lostHits         = df['Electron_lostHits'].content,
-                tightCharge      = df['Electron_tightCharge'].content,
-                sieie            = df['Electron_sieie'].content,
-                hoe              = df['Electron_hoe'].content,
-                eInvMinusPInv    = df['Electron_eInvMinusPInv'].content,
-                mvaFall17V2noIso_WPL = df['Electron_mvaFall17V2noIso_WPL'].content,
-                jetIdx           = df['Electron_jetIdx'].content,
-                deepJet          = jets[df['Electron_jetIdx']].btagDeepFlavB.content,
-            )
+            self.cand = ev.Electron
+            self.cand.absMiniIso    = ev.Electron.miniPFRelIso_all*ev.Electron.pt
+            self.cand.etaSC         = ev.Electron.eta + ev.Electron.deltaEtaSC # verify this
+            self.cand.deepJet       = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB
             
         self.getSelection()
         
