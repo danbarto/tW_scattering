@@ -107,7 +107,7 @@ for s in sample_list:
     if isData:
         print ("The era is: %s"%era)
     # merge three files into one for all MC samples except ones where we expect a high efficiency of the skim
-    mergeFactor = samples[s]['split']
+    mergeFactor = min(4, samples[s]['split']) if not samples[s]['name'].count('tW_scattering') else samples[s]['split'] # not running over more than 4 files because we prefetch...
     print ("- using merge factor: %s"%mergeFactor)
 
     #lumiWeightString = 1000*samples[s]['xsec']/samples[s]['sumWeight'] if not isData else 1

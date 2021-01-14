@@ -1,8 +1,3 @@
-# Header for gen production configs
-
-import os
-
-
 # Auto generated configuration file
 # using:
 # Revision: 1.19

@@ -19,7 +19,7 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f: # need to fix this with absolute paths for DASK
+with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
 class Collections:
@@ -65,7 +65,7 @@ class Collections:
                 ptErrRel         = (df['Muon_ptErr']/df['Muon_pt']).content,
                 absMiniIso       = (df['Muon_miniPFRelIso_all']*df['Muon_pt']).content,
                 mvaTTH           = df['Muon_mvaTTH'].content,
-                genPartIdx       = df['Muon_genPartIdx'].content,
+                #genPartIdx       = df['Muon_genPartIdx'].content,
                 jetRelIso        = df['Muon_jetRelIso'].content,
                 jetPtRelv2       = df['Muon_jetPtRelv2'].content,
                 jetIdx           = df['Muon_jetIdx'].content,
@@ -89,7 +89,7 @@ class Collections:
                 absMiniIso       = (df['Electron_miniPFRelIso_all']*df['Electron_pt']).content,
                 mvaFall17V2noIso = df['Electron_mvaFall17V2noIso'].content,
                 mvaTTH           = df['Electron_mvaTTH'].content,
-                genPartIdx       = df['Electron_genPartIdx'].content,
+                #genPartIdx       = df['Electron_genPartIdx'].content,
                 etaSC            = (df['Electron_eta'] + df['Electron_deltaEtaSC']).content, # verify this
                 jetRelIso        = df['Electron_jetRelIso'].content,
                 jetPtRelv2       = df['Electron_jetPtRelv2'].content,

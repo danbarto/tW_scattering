@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-tar cvz psets/2018/*.py -f package.tar.gz
+tar cvz psets/ -f package.tar.gz
 
 
 # output structure (`tar tvf package.tar.gz`) will be 
