@@ -33,15 +33,17 @@ def getSplitFactor(sample, target=1e6):
         average_events = sample.get_nevents()/len(sample.get_files())
         fin = redirector_fnal + sample.get_files()[0].name
 
+    print (fin)
     tree = uproot.open(fin)["Events"]
-    met = tree.array(["MET_pt"])
-    muon_pt = tree.array(['Muon_pt'])
-    nMuon = muon_pt[( (muon_pt>10) & (np.abs(tree.array(['Muon_eta']))<2.4) )].counts
-    electron_pt = tree.array(['Electron_pt'])
-    nElectron = electron_pt[( (electron_pt>10) & (np.abs(tree.array(['Electron_eta']))<2.4) )].counts
+    print (len(tree))
+    met = tree.array("MET_pt")
+    muon_pt = tree.array('Muon_pt')
+    nMuon = muon_pt[( (muon_pt>10) & (np.abs(tree.array('Muon_eta'))<2.4) )].counts
+    electron_pt = tree.array('Electron_pt')
+    nElectron = electron_pt[( (electron_pt>10) & (np.abs(tree.array('Electron_eta'))<2.4) )].counts
     lepton_filter = (nMuon+nElectron)>1
-    jet_pt = tree.array(['Jet_pt'])
-    jet_filter = ( jet_pt[ ( (jet_pt>25) & (np.abs(tree.array(['Jet_eta']))<2.4) ) ].counts > 1 )
+    jet_pt = tree.array('Jet_pt')
+    jet_filter = ( jet_pt[ ( (jet_pt>25) & (np.abs(tree.array('Jet_eta'))<2.4) ) ].counts > 1 )
     nEvents_all  = len(met)
     nEvents_pass = len(met[lepton_filter & jet_filter])
 

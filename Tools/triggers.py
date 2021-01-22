@@ -1,4 +1,5 @@
 import numpy as np
+import awkward1 as ak
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 
 def mask_or(ev, collection, masks):
@@ -13,7 +14,7 @@ def mask_or(ev, collection, masks):
     :rtype: array
     """
     # Start with array of False
-    decision = np.ones(len(ev))==0
+    decision = ( ak.ones_like(ev.MET.pt)==0 )
 
     coll = getattr(ev, collection)
 
@@ -36,8 +37,8 @@ def mask_and(ev, collection, masks):
     :return: OR of all masks for each event
     :rtype: array
     """
-    # Start with array of False
-    decision = np.ones(len(ev))==1
+    # Start with array of True
+    decision = ( ak.ones_like(ev.MET.pt)==1 )
 
     coll = getattr(ev, collection)
 

@@ -1,23 +1,19 @@
 import awkward1 as ak
+import numpy as np
 
 class Cutflow:
     
-    def __init__(self, output, ev, cfg, processes, selection=None, weight=None ):
+    def __init__(self, output, ev, weight, selection=None ):
         '''
-        If weight=None a branch called 'weight' in the dataframe is assumed
+        output: the accumulator object
+        ev: NanoEvent
+        weight: coffea analysis_tools Weights object
         '''
         self.ev = ev
-        if weight is not None:
-            self.weight = weight
-        else:
-            self.weight = ev.weight
-        self.lumi = cfg['lumi']
-        self.cfg = cfg
+        self.weight = weight.weight()
         self.output = output
-        self.processes = processes
         self.selection = None
-        self.addRow('entry', selection)
-        
+        self.addRow('entry', (ak.ones_like(self.weight)==1) )
         
         
     def addRow(self, name, selection, cumulative=True):
@@ -29,16 +25,16 @@ class Cutflow:
         elif selection is not None and cumulative == False:
             selection = self.selection & selection
         elif selection is not None:
-            self.selection &= selection
+            self.selection = self.selection & selection
             selection = self.selection
+        
             
         
-        for process in self.processes:
-            if selection is not None:
-                self.output[process][name] += ( sum(self.weight[ selection ] )*self.lumi )
-                self.output[process][name+'_w2'] += ( sum(self.weight[ selection ]**2)*self.lumi**2 )
-            else:
-                self.output[process][name] += ( sum(self.weight)*self.lumi )
-                self.output[process][name+'_w2'] += ( sum(self.weight**2)*self.lumi**2 )
+        if selection is not None:
+            self.output[self.ev.metadata['dataset']][name] += sum(self.weight[ selection ] )
+            self.output[self.ev.metadata['dataset']][name+'_w2'] += sum(self.weight[ selection ]**2) 
+        else:
+            self.output[self.ev.metadata['dataset']][name] += sum(self.weight)
+            self.output[self.ev.metadata['dataset']][name+'_w2'] += sum(self.weight**2)
   
         

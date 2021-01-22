@@ -52,6 +52,7 @@ def submit():
                     "requirements_line": 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true) && {extra_requirements})'.format(extra_requirements=extra_requirements),
                     },
                 tag = tag,
+                min_completion_fraction = 0.95,
                 )
 
         task.process()
