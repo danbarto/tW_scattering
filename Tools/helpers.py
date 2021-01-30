@@ -1,8 +1,10 @@
 '''
 Just a collection of useful functions
+Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
+import awkward1 as ak
 
 #import yaml
 from yaml import load, dump
@@ -52,18 +54,18 @@ def finalizePlotDir( path ):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
     
-def addRowToCutFlow( output, df, cfg, name, selection, processes=['TTW', 'TTX', 'diboson', 'ttbar', 'tW_scattering'] ):
+
+def doAwkwardLookup(h, ar):
     '''
-    add one row with name and selection for each process to the cutflow accumulator
+    takes a ya_hist histogram (which has a lookup function) and an awkward array.
     '''
-    for process in processes:
-        if selection is not None:
-            output[process][name] += ( sum(df['weight'][ (df['dataset']==process) & selection ].flatten() )*cfg['lumi'] )
-            output[process][name+'_w2'] += ( sum((df['weight'][ (df['dataset']==process) & selection ]**2).flatten() )*cfg['lumi']**2 )
-        else:
-            output[process][name] += ( sum(df['weight'][ (df['dataset']==process) ].flatten() )*cfg['lumi'] )
-            output[process][name+'_w2'] += ( sum((df['weight'][ (df['dataset']==process) ]**2).flatten() )*cfg['lumi']**2 )
-            
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(
+                ak.flatten(ar)
+            ) 
+        ), ak.num(ar) )
+
 def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
     Takes the output of a coffea processor (i.e. a python dictionary) and returns a formated cut-flow table of processes.

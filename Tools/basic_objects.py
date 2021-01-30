@@ -19,26 +19,29 @@ def getIsoTracks(ev, WP='veto'):
 def getFatJets(ev):
     return ev.FatJet[(ev.FatJet.pt>200) & (abs(ev.FatJet.eta)<2.4)]
 
+def getHadronFlavour(jet, hadronFlavour=5):
+    return jet[(abs(jet.hadronFlavour)==hadronFlavour)]
+
 def getJets(ev, maxEta=100, minPt=25):
     return ev.Jet[(ev.Jet.pt>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>1)]
 
-def getBTagsDeepB(jet, year=2016):
+def getBTagsDeepB(jet, year=2016, invert=False):
     if year == 2016:
-        sel = ((jet.btagDeepB>0.6321) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+        sel = ((jet.btagDeepB>0.6321) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
     elif year == 2017:
-        sel = ((jet.btagDeepB>0.4941) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
+        sel = ((jet.btagDeepB>0.4941) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
     elif year == 2018:
-        sel = ((jet.btagDeepB>0.4184) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
+        sel = ((jet.btagDeepB>0.4184) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
     if invert: sel = ~sel
     return jet[sel]
 
 def getBTagsDeepFlavB(jet, year=2016, invert=False):
     if year == 2016:
-        sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+        sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
     elif year == 2017:
-        sel = ((jet.btagDeepFlavB>0.3033) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
+        sel = ((jet.btagDeepFlavB>0.3033) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
     elif year == 2018:
-        sel = ((jet.btagDeepFlavB>0.2770) & (abs(jet.eta)<2.4)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
+        sel = ((jet.btagDeepFlavB>0.2770) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
     if invert: sel = ~sel
     return jet[sel]
 
