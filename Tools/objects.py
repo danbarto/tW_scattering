@@ -79,7 +79,7 @@ class Collections:
         self.getSelection()
         
         if self.obj == "Electron" and self.wp == "tight":
-            self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0)
+            self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
         if self.obj == "Electron" and self.wp == "tightTTH":
@@ -146,11 +146,15 @@ class Collections:
         if self.v>0: print ()
                     
     def get(self):
-        return self.cand[self.selection]
+        return self.cand[self.selection] # unfortunately, we loose information like etaSC in this step... :(
         #return selection
 
     def getSigmaIEtaIEta(self):
         return ((abs(self.cand.etaSC)<=1.479) & (self.cand.sieie<0.011)) | ((abs(self.cand.etaSC)>1.479) & (self.cand.sieie<0.030))
+
+    def isTriggerSafeNoIso(self):
+        if self.v>0: print (" - trigger safe")
+        return ((abs(self.cand.etaSC)<=1.479) & (self.cand.sieie<0.011) & (self.cand.hoe<0.08) & (abs(self.cand.eInvMinusPInv)<0.01) ) | ((abs(self.cand.etaSC)>1.479) & (self.cand.sieie<0.031) & (self.cand.hoe<0.08) & (abs(self.cand.eInvMinusPInv)<0.01))
         
     def getMVAscore(self):
         MVA = np.minimum(np.maximum(self.cand.mvaFall17V2noIso, -1.0 + 1.e-6), 1.0 - 1.e-6)
@@ -182,6 +186,7 @@ class Collections:
         hl = ( highEta & lowPt & (MVA > highEtaCuts[2] ) )
         hm = ( highEta & midPt & (MVA > (highEtaCuts[0]+(highEtaCuts[1]-highEtaCuts[0])/15*(self.cand.pt-10)) ) )
         hh = ( highEta & highPt & (MVA > highEtaCuts[1] ) )
+        if self.v>0: print (" - tight electron MVA ID")
         
         return ( ll | lm | lh | ml | mm | mh | hl | hm | hh )
     
@@ -189,5 +194,6 @@ class Collections:
     def getIsolation(self, mini, jet, jetv2 ):
         # again, this is only for 2018 so far
         jetRelIso = 1/(self.cand.jetRelIso+1)
+        if self.v>0: print (" - custom multi isolation")
         return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
         
