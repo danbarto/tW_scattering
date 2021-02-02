@@ -45,7 +45,7 @@ conda create --name daskanalysisenv uproot dask dask-jobqueue matplotlib pandas 
 ```
 And then install residual packages with pip
 ```
-conda run --name daskworkerenv pip install coffea=0.6.51
+conda run --name daskworkerenv pip install coffea==0.6.51
 conda run --name daskanalysisenv pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator
 ```
 
