@@ -7,7 +7,7 @@ from coffea import hist
 import re
 bkgonly = re.compile('(?!(MuonEG))')
 
-def makePlot(histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False):
+def makePlot(histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None):
     
     processes = [ p[0] for p in histo.values().keys() if not p[0]=='MuonEG' ]
     
@@ -57,9 +57,13 @@ def makePlot(histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normaliz
         except:
             pass
 
-    
-    rax.set_ylim(0.1,1.9)
+    if ratio_range:
+        rax.set_ylim(*ratio_range)
+    else:
+        rax.set_ylim(0.1,1.9)
     rax.set_ylabel('Obs./Pred.')
+    if axis_label:
+        rax.set_xlabel(axis_label)
     ax.set_ylabel('Events')
     
     addUncertainties(ax, axis, histogram, mc_sel, [], [], overflow='over', rebin=bins, ratio=False, scales=scales)
@@ -82,6 +86,10 @@ def makePlot(histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normaliz
 
     fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
     fig.text(0.8, 0.995, '13 TeV', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+
+    if normalize:
+        fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+
 
     if save:
         fig.savefig(save)
