@@ -344,3 +344,65 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
     def postprocess(self, accumulator):
         return accumulator
+
+
+
+if __name__ == '__main__':
+
+    from klepto.archives import dir_archive
+    from Tools.samples import * # fileset_2018 #, fileset_2018_small
+    from processor.std_acumulators import *
+
+    overwrite = True
+    
+    # load the config and the cache
+    cfg = loadConfig()
+    
+    cacheName = 'forward'
+    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
+    histograms = sorted(list(desired_output.keys()))
+    
+    year = 2018
+    
+    fileset = {
+        #'tW_scattering': fileset_2018['tW_scattering'],
+        'topW_v2': fileset_2018['topW_v2'],
+        'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
+        'MuonEG': fileset_2018['MuonEG'],
+        'WW': fileset_2018['WW'],
+        'WZ': fileset_2018['WZ'],
+        'DY': fileset_2018['DY'],
+    }
+    
+    exe_args = {
+        'workers': 16,
+        'function_args': {'flatten': False},
+        "schema": NanoAODSchema,
+    }
+    exe = processor.futures_executor
+    
+    if not overwrite:
+        cache.load()
+    
+    if cfg == cache.get('cfg') and histograms == cache.get('histograms') and cache.get('simple_output'):
+        output = cache.get('simple_output')
+    
+    else:
+        print ("I'm running now")
+        
+        output = processor.run_uproot_job(
+            fileset,
+            "Events",
+            forwardJetAnalyzer(year=year, variations=variations, accumulator=desired_output),
+            exe,
+            exe_args,
+            chunksize=250000,
+        )
+        
+        cache['fileset']        = fileset
+        cache['cfg']            = cfg
+        cache['histograms']     = histograms
+        cache['simple_output']  = output
+        cache.dump()
+
+
