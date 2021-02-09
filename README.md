@@ -40,13 +40,13 @@ conda install --name base conda-pack -y
 
 Create environments with as much stuff from anaconda
 ```
-conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr -y
-conda create --name daskanalysisenv uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr -y
+conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr yahist -y
+conda create --name daskanalysisenv uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr yahist -y
 ```
 And then install residual packages with pip
 ```
-conda run --name daskworkerenv pip install coffea==0.6.51
-conda run --name daskanalysisenv pip install jupyter-server-proxy coffea==0.6.51 autopep8 jupyter_nbextensions_configurator
+conda run --name daskworkerenv pip install coffea
+conda run --name daskanalysisenv pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto
 ```
 
 Make the tarball for the worker nodes (this will be needed for DASK only)
