@@ -37,11 +37,17 @@ def match2(first, second, deltaRCut=0.4):
     return ak.any((combs['0'].delta_r2(combs['1'])<drCut2), axis=2)
 
 def choose(first, n=2):
-    combs = ak.combinations(first, n)
+    tmp = ak.combinations(first, n)
+    combs = (tmp['0'] + tmp['1'])
+    combs['0'] = tmp['0']
+    combs['1'] = tmp['1']
     return combs
 
 def cross(first, second):
-    combs = ak.cartesian([first, second])
+    tmp = ak.cartesian([first, second])
+    combs = (tmp['0'] + tmp['1'])
+    combs['0'] = tmp['0']
+    combs['1'] = tmp['1']
     return combs
 
 

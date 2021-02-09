@@ -6,6 +6,16 @@ import os
 import awkward1 as ak
 import numpy as np
 
+def getPtEtaPhi(coll, pt_var='pt', eta_var='eta', phi_var='phi'):
+    return ak.zip({
+                    'pt':  getattr(coll, pt_var),
+                    'eta': getattr(coll, eta_var),
+                    'phi': getattr(coll, phi_var),
+                    'p': coll.p, # this is uncorrected....
+                    'btagDeepFlavB': coll.btagDeepFlavB,
+                    'jetId': coll.jetId,
+                    'puId': coll.puId,
+                })
 
 def getTaus(ev, WP='veto'):
     if WP == 'veto':
@@ -22,8 +32,8 @@ def getFatJets(ev):
 def getHadronFlavour(jet, hadronFlavour=5):
     return jet[(abs(jet.hadronFlavour)==hadronFlavour)]
 
-def getJets(ev, maxEta=100, minPt=25):
-    return ev.Jet[(ev.Jet.pt>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>1)]
+def getJets(ev, maxEta=100, minPt=25, pt_var='pt'):
+    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>1)]
 
 def getBTagsDeepB(jet, year=2016, invert=False):
     if year == 2016:

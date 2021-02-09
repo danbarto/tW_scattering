@@ -33,8 +33,8 @@ class LeptonSF:
             self.ext.add_weight_sets(["mu_2016_id SF %s"%muonID_2016])
             self.ext.add_weight_sets(["mu_2016_iso SF %s"%muonIso_2016])
        
-            #self.ext.add_weight_sets(["ele_2016_reco EGamma_SF2D %s"%electronReco_2016])
-            #self.ext.add_weight_sets(["ele_2016_reco_low EGamma_SF2D %s"%electronRecoLow_2016])
+            self.ext.add_weight_sets(["ele_2016_reco EGamma_SF2D %s"%electronReco_2016])
+            self.ext.add_weight_sets(["ele_2016_reco_low EGamma_SF2D %s"%electronRecoLow_2016])
             self.ext.add_weight_sets(["ele_2016_id Run2016_MVATightIP2D3DIDEmu %s"%electronSF_2016])
             self.ext.add_weight_sets(["ele_2016_iso Run2016_MultiIsoEmu %s"%electronSF_2016])
         
@@ -42,8 +42,8 @@ class LeptonSF:
             self.ext.add_weight_sets(["mu_2017_id NUM_MediumID_DEN_genTracks_pt_abseta %s"%muonID_2017])
             self.ext.add_weight_sets(["mu_2017_iso TnP_MC_NUM_MultiIsoMCut_DEN_MediumID_PAR_pt_eta %s"%muonIso_2017])
        
-            #self.ext.add_weight_sets(["ele_2017_reco EGamma_SF2D %s"%electronReco_2017])
-            #self.ext.add_weight_sets(["ele_2017_reco_low EGamma_SF2D %s"%electronRecoLow_2017])
+            self.ext.add_weight_sets(["ele_2017_reco EGamma_SF2D %s"%electronReco_2017])
+            self.ext.add_weight_sets(["ele_2017_reco_low EGamma_SF2D %s"%electronRecoLow_2017])
             self.ext.add_weight_sets(["ele_2017_id Run2017_MVATightIP2D3DIDEmu %s"%electronSF_2017])
             self.ext.add_weight_sets(["ele_2017_iso Run2017_MultiIsoEmuJECv32 %s"%electronSF_2017]) # I gess this is the right one
 
@@ -51,7 +51,7 @@ class LeptonSF:
             self.ext.add_weight_sets(["mu_2018_id NUM_MediumID_DEN_TrackerMuons_pt_abseta %s"%muonID_2018])
             self.ext.add_weight_sets(["mu_2018_iso SF2D %s"%muonIso_2018])
        
-            #self.ext.add_weight_sets(["ele_2018_reco EGamma_SF2D %s"%electronReco_2018])
+            self.ext.add_weight_sets(["ele_2018_reco EGamma_SF2D %s"%electronReco_2018])
             self.ext.add_weight_sets(["ele_2018_id Run2018_MVATightIP2D3DIDEmu %s"%electronSF_2018])
             self.ext.add_weight_sets(["ele_2018_iso Run2018_MultiIsoEmu %s"%electronSF_2018])
         
@@ -63,8 +63,8 @@ class LeptonSF:
     def get(self, ele, mu):
         
         if self.year == 2016:
-            #ele_sf_reco     = self.evaluator["ele_2016_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
-            #ele_sf_reco_low = self.evaluator["ele_2016_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
+            ele_sf_reco     = self.evaluator["ele_2016_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
+            ele_sf_reco_low = self.evaluator["ele_2016_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
             ele_sf_id       = self.evaluator["ele_2016_id"](ele.eta + ele.deltaEtaSC, ele.pt)
             ele_sf_iso      = self.evaluator["ele_2016_iso"](ele.eta + ele.deltaEtaSC, ele.pt)
 
@@ -72,11 +72,11 @@ class LeptonSF:
             mu_sf_iso       = self.evaluator["mu_2016_iso"](mu.pt, abs(mu.eta))
 
             #sf = ele_sf_id.prod() * ele_sf_iso.prod() * ele_sf_reco.prod() * ele_sf_reco_low.prod() * mu_sf_id.prod() * mu_sf_iso.prod()
-            sf = ele_sf_id.prod() * ele_sf_iso.prod() * mu_sf_id.prod() * mu_sf_iso.prod()
+            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_reco_low, axis=1) * ele_sf_id.prod() * ele_sf_iso.prod() * mu_sf_id.prod() * mu_sf_iso.prod() #FIXME
 
         elif self.year == 2017:
-            #ele_sf_reco     = self.evaluator["ele_2017_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
-            #ele_sf_reco_low = self.evaluator["ele_2017_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
+            ele_sf_reco     = self.evaluator["ele_2017_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
+            ele_sf_reco_low = self.evaluator["ele_2017_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
             ele_sf_id       = self.evaluator["ele_2017_id"](ele.eta + ele.deltaEtaSC, ele.pt)
             ele_sf_iso      = self.evaluator["ele_2017_iso"](ele.eta + ele.deltaEtaSC, ele.pt)
 
@@ -84,10 +84,10 @@ class LeptonSF:
             mu_sf_iso       = self.evaluator["mu_2017_iso"](mu.pt, abs(mu.eta))
 
             #sf = ele_sf_id.prod() * ele_sf_iso.prod() * ele_sf_reco.prod() * ele_sf_reco_low.prod() * mu_sf_id.prod() * mu_sf_iso.prod()
-            sf = ele_sf_id.prod() * ele_sf_iso.prod() * mu_sf_id.prod() * mu_sf_iso.prod()
+            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_reco_low, axis=1) *  ele_sf_id.prod() * ele_sf_iso.prod() * mu_sf_id.prod() * mu_sf_iso.prod() #FIXME
 
         elif self.year == 2018:
-            #ele_sf_reco     = self.evaluator["ele_2018_reco"](ele.eta, ele.pt)
+            ele_sf_reco     = self.evaluator["ele_2018_reco"](ele.eta, ele.pt)
             ele_sf_id       = self.evaluator["ele_2018_id"](ele.eta + ele.deltaEtaSC, ele.pt)
             ele_sf_iso      = self.evaluator["ele_2018_iso"](ele.eta + ele.deltaEtaSC, ele.pt)
 
@@ -95,7 +95,7 @@ class LeptonSF:
             mu_sf_iso       = self.evaluator["mu_2018_iso"](abs(mu.eta), mu.pt)
 
             #sf = ele_sf_id.prod() * ele_sf_iso.prod() * ele_sf_reco.prod() * mu_sf_id.prod() * mu_sf_iso.prod()
-            sf = ak.prod(ele_sf_id, axis=1) * ak.prod(ele_sf_iso, axis=1) * ak.prod(mu_sf_id, axis=1) * ak.prod(mu_sf_iso, axis=1)
+            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_id, axis=1) * ak.prod(ele_sf_iso, axis=1) * ak.prod(mu_sf_id, axis=1) * ak.prod(mu_sf_iso, axis=1)
 
 
         return sf
