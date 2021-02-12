@@ -13,7 +13,10 @@ caches:
   triLep_small: triLep_small
   WH: WH
   WH_small: WH_small
-lumi: 137
+lumi:
+  2016: 35.9
+  2017: 41.9
+  2018: 60.0
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
   localSkim: /hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/
