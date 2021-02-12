@@ -171,9 +171,15 @@ echo -e "\n--- begin running ---\n" #                           <----- section d
 
 chirp ChirpMetisStatus "before_cmsRun"
 
-setup_cmssw CMSSW_10_2_7 slc6_amd64_gcc700 
+setup_cmssw CMSSW_10_2_7 slc7_amd64_gcc700 
 mkdir -p CMSSW_10_2_7/src/Configuration/GenProduction/python/
 cp psets/tW_scattering.py CMSSW_10_2_7/src/Configuration/GenProduction/python/
+
+echo "Running the following configs:"
+echo $gencfg
+echo $step1cfg
+echo $step2cfg
+echo $minicfg
 
 cmsRun $gencfg
 cmsRun $step1cfg
@@ -181,7 +187,7 @@ cmsRun $step2cfg
 cmsRun $minicfg
 
 
-setup_cmssw CMSSW_10_2_22 slc6_amd64_gcc700 
+setup_cmssw CMSSW_10_2_22 slc7_amd64_gcc700 
 
 
 cmsRun $nanocfg
