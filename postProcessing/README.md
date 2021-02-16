@@ -12,7 +12,7 @@ Grant permissions to read repositories (repo).
 Copy the credentials to a file `github_credentials.txt` in this directory. Never commit the file to github!
 Once this is done, you're ready to go.
 
-You can run the submitter like this:
+You can run the submitter like this (run cmsenv first):
 ```
 python submitter.py --dryRun --tag 0p1p20 --user ksalyer --skim MET
 ```

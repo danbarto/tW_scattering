@@ -1,5 +1,6 @@
 /hadoop/cms/store/user/dspitzba/tW_scattering/tW_scattering/nanoAOD/ 0.0478
 /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v2/ 0.0478
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/ 0.00502
 /TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext1-v1/NANOAODSIM 0.2043
 /TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM 0.40620
 /TTJets_DiLept_TuneCP5_13TeV-madgraphMLM-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM 87.315

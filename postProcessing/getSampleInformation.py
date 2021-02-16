@@ -15,6 +15,7 @@ import concurrent.futures
 
 import os
 import uproot
+import awkward as ak
 import numpy as np
 import glob
 
@@ -36,14 +37,14 @@ def getSplitFactor(sample, target=1e6):
     print (fin)
     tree = uproot.open(fin)["Events"]
     print (len(tree))
-    met = tree.array("MET_pt")
-    muon_pt = tree.array('Muon_pt')
-    nMuon = muon_pt[( (muon_pt>10) & (np.abs(tree.array('Muon_eta'))<2.4) )].counts
-    electron_pt = tree.array('Electron_pt')
-    nElectron = electron_pt[( (electron_pt>10) & (np.abs(tree.array('Electron_eta'))<2.4) )].counts
+    met = tree['MET_pt'].array()
+    muon_pt = tree['Muon_pt'].array()
+    nMuon = ak.num(muon_pt[( (muon_pt>10) & (np.abs(tree['Muon_eta'].array())<2.4) )])
+    electron_pt = tree['Electron_pt'].array()
+    nElectron = ak.num(electron_pt[( (electron_pt>10) & (np.abs(tree['Electron_eta'].array())<2.4) )])
     lepton_filter = (nMuon+nElectron)>1
-    jet_pt = tree.array('Jet_pt')
-    jet_filter = ( jet_pt[ ( (jet_pt>25) & (np.abs(tree.array('Jet_eta'))<2.4) ) ].counts > 1 )
+    jet_pt = tree['Jet_pt'].array()
+    jet_filter = ( ak.num(jet_pt[ ( (jet_pt>25) & (np.abs(tree['Jet_eta'].array())<2.4) ) ]) > 1 )
     nEvents_all  = len(met)
     nEvents_pass = len(met[lepton_filter & jet_filter])
 
@@ -79,12 +80,12 @@ def getMetaUproot(file, local=True):
         return 0,0,0
 
     if local:
-        res = r.array('genEventCount')[0], r.array('genEventSumw')[0], r.array('genEventSumw2')[0]
+        res = r['genEventCount'].array()[0], r['genEventSumw'].array()[0], r['genEventSumw2'].array()[0]
     else:
         try:
-            res = r.array('genEventCount_')[0], r.array('genEventSumw_')[0], r.array('genEventSumw2_')[0]
+            res = r['genEventCount_'].array()[0], r['genEventSumw_'].array()[0], r['genEventSumw2_'].array()[0]
         except:
-            res = r.array('genEventCount')[0], r.array('genEventSumw')[0], r.array('genEventSumw2')[0]
+            res = r['genEventCount'].array()[0], r['genEventSumw'].array()[0], r['genEventSumw2'].array()[0]
     return res
     
 

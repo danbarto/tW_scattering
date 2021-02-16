@@ -69,5 +69,5 @@ if __name__ == "__main__":
 
     for i in range(500):
         submit()
-        time.sleep(60*60)
+        time.sleep(60*60*5)
 
