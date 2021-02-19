@@ -12,6 +12,7 @@ delta_axis              = hist.Bin("delta",         r"$\delta$", 100,0,10 )
 multiplicity_axis       = hist.Bin("multiplicity",  r"N", 20, -0.5, 19.5)
 ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N", 100, -0.5, 99.5) # e.g. for PV
 norm_axis               = hist.Bin("norm",          r"N", 25, 0, 1)
+score_axis              = hist.Bin("score",          r"N", 100, 0, 1)
 
 variations = ['pt_jesTotalUp', 'pt_jesTotalDown']
 

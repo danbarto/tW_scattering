@@ -25,7 +25,7 @@ groups_2018 = {
     'ttbar1l':       ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     #'ttbar2l':       ['/TTTo2L2Nu', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'ttbar2l':       ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
-    'ttbar1l_MG':    ['/TTJets_SingleLept', '/ST_[s,t]-channel'],
+    'ttbar1l_MG':    ['/TTJets_SingleLept'],
     'TTW':           ['/TTWJets'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
     'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]'], # there's also a powheg sample

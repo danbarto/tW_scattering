@@ -27,7 +27,9 @@ out_dict = {
     'TTW':            processor.defaultdict_accumulator(int),
     'TTZ':            processor.defaultdict_accumulator(int),
     'TTH':            processor.defaultdict_accumulator(int),
+    'rare':           processor.defaultdict_accumulator(int),
     'ttbar':          processor.defaultdict_accumulator(int),
+    'ttbar1l_MG':     processor.defaultdict_accumulator(int),
 }
 
 variables = [
@@ -37,22 +39,47 @@ variables = [
     'ht',
     'st',
     'n_jet',
+    'n_btag',
     'n_fwd',
     'n_central',
     'n_tau',
     'n_track',
+    'n_lep_tight',
+    'n_lep',
+
     'fwd_jet_p',
     'fwd_jet_pt',
     'fwd_jet_eta',
+    'fwd_jet_phi',
+
     'lead_jet_pt',
+    'lead_jet_eta',
+    'lead_jet_phi',
+
     'sublead_jet_pt',
+    'sublead_jet_eta',
+    'sublead_jet_phi',
+
+    'lead_btag_pt',
+    'lead_btag_eta',
+    'lead_btag_phi',
+
+    'sublead_btag_pt',
+    'sublead_btag_eta',
+    'sublead_btag_phi',
+
     'lead_lep_pt',
     'lead_lep_eta',
+    'lead_lep_phi',
+
     'sublead_lep_pt',
     'sublead_lep_eta',
+    'sublead_lep_phi',
+
     'dilepton_mass',
     'dilepton_pt',
     'label',
+    'weight',
 ]
 
 for var in variables:
@@ -92,16 +119,16 @@ class ML_preprocessor(processor.ProcessorABC):
         cfg = loadConfig()
         
         ## Muons
-        muon     = Collections(ev, "Muon", "tightTTH").get()
-        vetomuon = Collections(ev, "Muon", "vetoTTH").get()
+        muon     = Collections(ev, "Muon", "vetoTTH").get()
+        tightmuon = Collections(ev, "Muon", "tightTTH").get()
         dimuon   = choose(muon, 2)
         SSmuon   = ak.any((dimuon['0'].charge * dimuon['1'].charge)>0, axis=1)
         leading_muon_idx = ak.singletons(ak.argmax(muon.pt, axis=1))
         leading_muon = muon[leading_muon_idx]
         
         ## Electrons
-        electron     = Collections(ev, "Electron", "tightTTH").get()
-        vetoelectron = Collections(ev, "Electron", "vetoTTH").get()
+        electron     = Collections(ev, "Electron", "vetoTTH").get()
+        tightelectron = Collections(ev, "Electron", "tightTTH").get()
         dielectron   = choose(electron, 2)
         SSelectron   = ak.any((dielectron['0'].charge * dielectron['1'].charge)>0, axis=1)
         leading_electron_idx = ak.singletons(ak.argmax(electron.pt, axis=1))
@@ -136,6 +163,8 @@ class ML_preprocessor(processor.ProcessorABC):
         track     = getIsoTracks(ev)
         ## forward jets
         j_fwd = fwd[ak.singletons(ak.argmax(fwd.p, axis=1))] # highest momentum spectator
+
+        high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
         
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
@@ -153,15 +182,15 @@ class ML_preprocessor(processor.ProcessorABC):
         ## event selectors
         filters   = getFilters(ev, year=self.year, dataset=dataset)
         
-        dilep     = ((ak.num(electron) + ak.num(muon))==2)
+        dilep     = ((ak.num(tightelectron) + ak.num(tightmuon))==2)
         lep0pt    = ((ak.num(electron[(electron.pt>25)]) + ak.num(muon[(muon.pt>25)]))>0)
         lep1pt    = ((ak.num(electron[(electron.pt>20)]) + ak.num(muon[(muon.pt>20)]))>1)
-        lepveto   = ((ak.num(vetoelectron) + ak.num(vetomuon))==2)
+        lepveto   = ((ak.num(electron) + ak.num(muon))==2)
         
         
         selection = PackedSelection()
         selection.add('lepveto',       lepveto)
-        selection.add('dilep',         dilep )
+        #selection.add('dilep',         dilep )
         selection.add('filter',        (filters) )
         selection.add('p_T(lep0)>25',  lep0pt )
         selection.add('p_T(lep1)>20',  lep1pt )
@@ -171,7 +200,8 @@ class ML_preprocessor(processor.ProcessorABC):
         selection.add('N_btag>0',      (ak.num(btag)>=1) )
         selection.add('N_fwd>0',       (ak.num(fwd)>=1 ))
         
-        ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
+        #ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
+        ss_reqs = ['lepveto', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
         bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0']
 
         ss_reqs_d = { sel: True for sel in ss_reqs }
@@ -188,24 +218,44 @@ class ML_preprocessor(processor.ProcessorABC):
             cutflow_reqs_d.update({req: True})
             cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4}
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'ttbar1l_MG': 4}
         if dataset in labels:
             label_mult = labels[dataset]
         else:
             label_mult = 5
         label = np.ones(len(ev[BL])) * label_mult
 
+        output["n_lep"] += processor.column_accumulator(ak.to_numpy( (ak.num(electron) + ak.num(muon))[BL] ))
+        output["n_lep_tight"] += processor.column_accumulator(ak.to_numpy( (ak.num(tightelectron) + ak.num(tightmuon))[BL] ))
+
         output["lead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].pt, axis=1)))
-        output["sublead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].pt, axis=1)))
         output["lead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].eta, axis=1)))
+        output["lead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].phi, axis=1)))
+
+        output["sublead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].pt, axis=1)))
         output["sublead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].eta, axis=1)))
+        output["sublead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].phi, axis=1)))
 
         output["lead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pt, axis=1)))
+        output["lead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].eta, axis=1)))
+        output["lead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].phi, axis=1)))
+
         output["sublead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].pt, axis=1)))
+        output["sublead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].eta, axis=1)))
+        output["sublead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].phi, axis=1)))
+
+        output["lead_btag_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].pt, axis=1)))
+        output["lead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].eta, axis=1)))
+        output["lead_btag_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].phi, axis=1)))
+
+        output["sublead_btag_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].pt, axis=1)))
+        output["sublead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].eta, axis=1)))
+        output["sublead_btag_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].phi, axis=1)))
 
         output["fwd_jet_p"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].p, axis=1)))
         output["fwd_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].pt, axis=1)))
         output["fwd_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].eta, axis=1)))
+        output["fwd_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].phi, axis=1)))
 
         output["mjj_max"] += processor.column_accumulator(ak.to_numpy(ak.max(mjf[BL], axis=1)))
         output["delta_eta_jj"] += processor.column_accumulator(ak.to_numpy(ak.flatten(delta_eta[BL], axis=1)))
@@ -214,6 +264,7 @@ class ML_preprocessor(processor.ProcessorABC):
         output["ht"] += processor.column_accumulator(ak.to_numpy(ht[BL]))
         output["st"] += processor.column_accumulator(ak.to_numpy(st[BL]))
         output["n_jet"] += processor.column_accumulator(ak.to_numpy(ak.num(jet[BL])))
+        output["n_btag"] += processor.column_accumulator(ak.to_numpy(ak.num(btag[BL])))
         output["n_fwd"] += processor.column_accumulator(ak.to_numpy(ak.num(fwd[BL])))
         output["n_central"] += processor.column_accumulator(ak.to_numpy(ak.num(central[BL])))
         output["n_tau"] += processor.column_accumulator(ak.to_numpy(ak.num(tau[BL])))
@@ -223,6 +274,7 @@ class ML_preprocessor(processor.ProcessorABC):
         output["dilepton_mass"] += processor.column_accumulator(ak.to_numpy(ak.flatten(dilepton_mass[BL], axis=1)))
 
         output["label"] += processor.column_accumulator(label)
+        output["weight"] += processor.column_accumulator(weight.weight()[BL])
         
         output["presel"]["all"] += len(ev[ss_selection])
         output["sel"]["all"] += len(ev[BL])
@@ -249,13 +301,15 @@ if __name__ == '__main__':
     cfg = loadConfig()
     
     fileset = {
-        #'topW_v2': fileset_2018['topW_v2'],
+        ##'topW_v2': fileset_2018['topW_v2'],
         'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
-        #'topW_v3': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/*_1.root'), # 6x larger stats
+        ##'topW_v3': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/*_1.root'), # 6x larger stats
         'TTW': fileset_2018['TTW'],
         'TTZ': fileset_2018['TTZ'],
         'TTH': fileset_2018['TTH'],
         'ttbar': fileset_2018['ttbar'],
+        'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
+        #'ttbar1l_MG': fileset_2018['ttbar1l_MG'],
     }
     
     
@@ -287,8 +341,11 @@ if __name__ == '__main__':
     df_out = pd.DataFrame( df_dict )
 
     if overwrite:
-        os.remove(os.path.expandvars('$TWHOME/ML/data/multiclass_input.h5'))
+        try:
+            os.remove(os.path.expandvars('$TWHOME/ML/data/multiclass_input_loose.h5'))
+        except:
+            print ("File not there") # bad practice!
 
-    df_out.to_hdf('data/multiclass_input.h5', key='df', format='table', mode='a', append=True)
+    df_out.to_hdf('data/multiclass_input_loose.h5', key='df', format='table', mode='a', append=True)
 
 

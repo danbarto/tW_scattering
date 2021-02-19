@@ -1,22 +1,27 @@
+import os
 import re
+from coffea import hist
+import uproot3
+import numpy as np
+from Tools.dataCard import *
 
 notdata = re.compile('(?!pseudodata)')
-notsignal = re.compile('(?!tW_scattering)')
+notsignal = re.compile('(?!topW_v2)')
 
 def myRebin(var, nbins, binsize, threshold):
-    #values = output[var]['tW_scattering'].sum("dataset").values()[()]
-    values = output[var]['tW_scattering'].sum("dataset").values()[()]
+    #values = output[var]['topW_v2'].sum("dataset").values()[()]
+    values = output[var]['topW_v2'].sum("dataset").values()[()]
     bin_boundaries = [0]
     last_index = 0
 
     for i in range(nbins): # loop over the bins like a cave man
-        #output['leadingForward_p']['tW_scattering'].sum("dataset").values()[()]
+        #output['leadingForward_p']['topW_v2'].sum("dataset").values()[()]
         if values[last_index:i].sum() > threshold:
             bin_boundaries.append(i)
             last_index = i
     return np.array(bin_boundaries)*binsize
 
-def makeCardFromHist(hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True):
+def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True):
     print ("Writing cards using histogram:", hist_name)
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
     if not os.path.isdir(card_dir):
@@ -31,31 +36,32 @@ def makeCardFromHist(hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, 
     # scale some processes
     scales = { 
         'ttbar': nonprompt_scale, 
-        'tW_scattering': signal_scale,
+        'topW_v2': signal_scale,
         'TTW': bkg_scale, # only scale the most important backgrounds
         'TTZ': bkg_scale,
         'TTH': bkg_scale,
     }
     histogram.scale(scales, axis='dataset')
     
+    onlyttx     = re.compile('(TTW|TTZ|TTH|TTTT|diboson|DY|rare)')
     #observation = hist.export1d(histogram['pseudodata'].integrate('dataset'), overflow=overflow)
-    observation = export1d(histogram[notdata].integrate('dataset'), overflow=overflow)
-    tw          = export1d(histogram['tW_scattering'].integrate('dataset'), overflow=overflow)
-    onlyttx     = re.compile('(TTW|TTZ|TTH|TTTT|diboson|DY)')
-    bkg         = export1d(histogram[onlyttx].integrate('dataset'), overflow=overflow)
-    nonprompt   = export1d(histogram['ttbar'].integrate('dataset'), overflow=overflow)
+    observation = hist.export1d(histogram[notdata].integrate('dataset'))
+    tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'))
+    bkg         = hist.export1d(histogram[onlyttx].integrate('dataset'))
+    nonprompt   = hist.export1d(histogram['ttbar'].integrate('dataset'))
     
-    file = uproot.recreate(shape_file, compression=uproot.ZLIB(4))
-    
-    file["signal"]    = tw
-    file["nonprompt"] = nonprompt
-    file["bkg"]       = bkg
-    file["data_obs"]  = observation
+    fout = uproot3.recreate(shape_file)
+
+    fout["signal"]    = tw
+    fout["nonprompt"] = nonprompt
+    fout["bkg"]       = bkg
+    fout["data_obs"]  = observation
+    fout.close()
     
     # Get the total yields to write into a data card
     totals = {}
     
-    totals['signal']      = histogram['tW_scattering'].integrate('dataset').values(overflow=overflow)[()].sum()
+    totals['signal']      = histogram['topW_v2'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['bkg']         = histogram[onlyttx].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['nonprompt']   = histogram['ttbar'].integrate('dataset').values(overflow=overflow)[()].sum()
     #totals['observation'] = histogram['pseudodata'].integrate('dataset').values(overflow=overflow)[()].sum()
@@ -103,7 +109,6 @@ if __name__ == '__main__':
 
     '''
 
-    from Tools.dataCard import *
     from Tools.helpers import export1d
 
     year = 2018

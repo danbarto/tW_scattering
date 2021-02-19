@@ -361,7 +361,7 @@ class dataCard:
         
         with uproot.open(uniqueDirname+"/higgsCombineTest.MultiDimFit.mH120.root") as f:
             tree = f['limit']
-            result = copy.deepcopy( tree.pandas.df(["r","deltaNLL", "nll", "nll0"]) )
+            result = copy.deepcopy( tree.arrays() )
     
         shutil.rmtree(uniqueDirname)
 

@@ -7,7 +7,7 @@ from coffea import hist
 import re
 bkgonly = re.compile('(?!(MuonEG))')
 
-def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False):
+def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False):
     
     processes = [ p[0] for p in output[histo].values().keys() if not p[0]=='MuonEG' ]
     
@@ -92,7 +92,10 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
         ax.set_yscale('log')
         
     y_mult = 1.3 if not log else 100
-    ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+    if ymax:
+        ax.set_ylim(0.01, ymax)
+    else:
+        ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
 
     ax.legend(
         loc='upper right',
