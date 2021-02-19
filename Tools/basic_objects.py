@@ -23,7 +23,7 @@ def getTaus(ev, WP='veto'):
 
 def getIsoTracks(ev, WP='veto'):
     if WP == 'veto':
-        return ev.IsoTrack[(ev.IsoTrack.pt > 10) & (abs(ev.IsoTrack.eta) < 2.4) & ((ev.IsoTrack.rel_iso < 0.1) | ((ev.IsoTrack.pfRelIso03_all*ev.IsoTrack.pt) < 6))]
+        return ev.IsoTrack[(ev.IsoTrack.pt > 10) & (abs(ev.IsoTrack.eta) < 2.4) & ((ev.IsoTrack.pfRelIso03_all < 0.1) | ((ev.IsoTrack.pfRelIso03_all*ev.IsoTrack.pt) < 6))]
  
     
 def getFatJets(ev):

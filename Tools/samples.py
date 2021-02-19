@@ -14,6 +14,7 @@ data_path = os.path.join(cfg['meta']['localSkim'], tag)
 groups_2018 = {
     'tW_scattering': ['/tW_scattering[-_]'],
     'topW_v2':       ['/ProjectMetis_TTWJetsToLNuEWK'],
+    'topW_v3':       ['/ProjectMetis_TTWplusJetsToLNuEWK', '/ProjectMetis_TTWminusJetsToLNuEWK'],
     # careful - TTX is a sum of all TTX but TTW
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
     'TTW':           ['/TTWJets'],

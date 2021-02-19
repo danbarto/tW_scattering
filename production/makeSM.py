@@ -17,7 +17,7 @@ def submit():
         #'TTWJetsToLNuEWK_5f_NLO':       '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball_retired.tar.xz', # that's the SM point, but using the SMEFT model. No lepton filtering, so name is actually confusing
         #'TTWJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
         'TTWplusJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWplusJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
-        #'TTWminusJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWminusJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
+        'TTWminusJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWminusJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
     }
 
     total_summary = {}

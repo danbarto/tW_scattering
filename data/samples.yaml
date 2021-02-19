@@ -398,13 +398,21 @@
   split: 207
   sumWeight: 22576.62849550001
   xsec: 0.0478
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWminusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/:
+  files: 279
+  nEvents: 558000
+  name: ProjectMetis_TTWminusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWminusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/
+  split: 131
+  sumWeight: 987.4172219743998
+  xsec: 0.00502
 /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/:
-  files: 374
-  nEvents: 748000
+  files: 460
+  nEvents: 920000
   name: ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4
   path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/
-  split: 139
-  sumWeight: 2691.5409674640014
+  split: 135
+  sumWeight: 3310.981772328002
   xsec: 0.00502
 /hadoop/cms/store/user/dspitzba/tW_scattering/tW_scattering/nanoAOD/:
   files: 56
