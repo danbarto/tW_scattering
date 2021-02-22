@@ -109,6 +109,8 @@ class SS_analysis(processor.ProcessorABC):
         filters   = getFilters(ev, year=self.year, dataset=dataset)
         
         dilep     = ((ak.num(electron) + ak.num(muon))==2)
+        pos_charge = ((ak.sum(electron.pdgId, axis=1) + ak.sum(muon.pdgId, axis=1))<0)
+        neg_charge = ((ak.sum(electron.pdgId, axis=1) + ak.sum(muon.pdgId, axis=1))>0)
         lep0pt    = ((ak.num(electron[(electron.pt>25)]) + ak.num(muon[(muon.pt>25)]))>0)
         lep0pt_40 = ((ak.num(electron[(electron.pt>40)]) + ak.num(muon[(muon.pt>40)]))>0)
         lep0pt_100 = ((ak.num(electron[(electron.pt>100)]) + ak.num(muon[(muon.pt>100)]))>0)
@@ -119,9 +121,14 @@ class SS_analysis(processor.ProcessorABC):
         # define the weight
         weight = Weights( len(ev) )
         
+        #mult = 1
+        #if dataset=='inclusive': mult = 0.0478/47.448
+        #if dataset=='plus': mult = 0.0036/7.205
+
         if not dataset=='MuonEG':
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
+            #weight.add("weight", ev.genWeight*cfg['lumi'][self.year]*mult)
             
             # PU weight - not in the babies...
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
@@ -141,6 +148,8 @@ class SS_analysis(processor.ProcessorABC):
         selection.add('p_T(lep1)>20',  lep1pt )
         selection.add('p_T(lep1)>30',  lep1pt_30 )
         selection.add('SS',            ( SSlepton | SSelectron | SSmuon) )
+        selection.add('pos',           ( pos_charge ) )
+        selection.add('neg',           ( neg_charge ) )
         selection.add('N_jet>4',       (ak.num(jet)>=5) )
         selection.add('N_central>3',   (ak.num(central)>=4) )
         selection.add('N_btag>0',      (ak.num(btag)>=1) )
@@ -150,7 +159,7 @@ class SS_analysis(processor.ProcessorABC):
         selection.add('delta_eta',     (ak.any(delta_eta>2, axis=1) ) )
         selection.add('fwd_p>500',     (ak.any(j_fwd.p>500, axis=1) ) )
         
-        ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
+        ss_reqs = ['lepveto', 'dilep', 'SS', 'pos', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20']
         bl_reqs = ss_reqs + ['N_jet>4', 'N_central>3', 'N_btag>0', 'ST', 'MET>50', 'N_fwd>0', 'delta_eta']
         sr_reqs = bl_reqs + ['fwd_p>500', 'p_T(lep0)>40', 'p_T(lep1)>30']
 
