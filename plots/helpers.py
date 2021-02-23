@@ -9,6 +9,9 @@ bkgonly = re.compile('(?!(MuonEG))')
 
 def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False):
     
+    if save:
+        finalizePlotDir( '/'.join(save.split('/')[:-1]) )
+    
     processes = [ p[0] for p in output[histo].values().keys() if not p[0]=='MuonEG' ]
     
     histogram = output[histo].copy()
@@ -163,6 +166,7 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
 colors = {
     'tW_scattering': '#FF595E',
     'topW_v2': '#FF595E',
+    'topW_v3': '#FF595E',
     #'tW_scattering': '#000000', # this would be black
     'TTW': '#8AC926',
     'TTX': '#FFCA3A',
@@ -172,7 +176,7 @@ colors = {
     'ttbar': '#1982C4',
     'wjets': '#6A4C93',
     'diboson': '#525B76',
-    'rare': '#525B76',
+    'rare': '#6A4C93',
     'WZ': '#525B76',
     'WW': '#34623F',
     'DY': '#6A4C93',
@@ -188,6 +192,7 @@ other colors (sets from coolers.com):
 my_labels = {
     'tW_scattering': 'top-W scat.',
     'topW_v2': 'top-W scat.',
+    'topW_v3': 'top-W scat.',
     'TTW': r'$t\bar{t}$W+jets',
     'TTX': r'$t\bar{t}$Z/H',
     'TTH': r'$t\bar{t}$H',
@@ -245,7 +250,7 @@ fill_opts = {
 
 line_opts = {
     'linestyle':'-',
-#    'elinewidth': 1,
+    'linewidth': 3,
 }
 
 signal_fill_opts = {

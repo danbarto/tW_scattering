@@ -13,6 +13,7 @@ from Tools.config_helpers import *
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
+from Tools.helpers import mt
 
 import sys
 import warnings
@@ -81,6 +82,7 @@ variables = [
     'dilepton_mass',
     'dilepton_pt',
     'min_bl_dR',
+    'min_mt_lep_met',
     'label',
     'weight',
 ]
@@ -151,6 +153,10 @@ class ML_preprocessor(processor.ProcessorABC):
         
         dilepton_mass = (leading_lepton+trailing_lepton).mass
         dilepton_pt = (leading_lepton+trailing_lepton).pt
+        dilepton_dR = delta_r(leading_lepton, trailing_lepton)
+
+        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
 
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
@@ -178,7 +184,7 @@ class ML_preprocessor(processor.ProcessorABC):
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
         j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
-        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
+        delta_eta   = ak.fill_none(ak.pad_none(abs(j_fwd2.eta - j_fwd.eta), 1, clip=True), 0)
 
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
@@ -211,7 +217,8 @@ class ML_preprocessor(processor.ProcessorABC):
         
         #ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
         ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
-        bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0']
+        #bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0']
+        bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0']
 
         ss_reqs_d = { sel: True for sel in ss_reqs }
         ss_selection = selection.require(**ss_reqs_d)
@@ -276,12 +283,12 @@ class ML_preprocessor(processor.ProcessorABC):
         output["sublead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].eta, axis=1)))
         output["sublead_btag_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].phi, axis=1)))
 
-        output["fwd_jet_p"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].p, axis=1)))
-        output["fwd_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].pt, axis=1)))
-        output["fwd_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].eta, axis=1)))
-        output["fwd_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(j_fwd[BL].phi, axis=1)))
+        output["fwd_jet_p"]   += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].p, 1, clip=True), 0), axis=1)))
+        output["fwd_jet_pt"]  += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].pt, 1, clip=True), 0), axis=1)))
+        output["fwd_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].eta,1, clip=True), 0), axis=1)))
+        output["fwd_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].phi,1, clip=True), 0), axis=1)))
 
-        output["mjj_max"] += processor.column_accumulator(ak.to_numpy(ak.max(mjf[BL], axis=1)))
+        output["mjj_max"] += processor.column_accumulator(ak.to_numpy(ak.fill_none(ak.max(mjf[BL], axis=1),0)))
         output["delta_eta_jj"] += processor.column_accumulator(ak.to_numpy(ak.flatten(delta_eta[BL], axis=1)))
 
         output["met"] += processor.column_accumulator(ak.to_numpy(met_pt[BL]))
@@ -297,6 +304,7 @@ class ML_preprocessor(processor.ProcessorABC):
         output["dilepton_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(dilepton_pt[BL], axis=1)))
         output["dilepton_mass"] += processor.column_accumulator(ak.to_numpy(ak.flatten(dilepton_mass[BL], axis=1)))
         output["min_bl_dR"] += processor.column_accumulator(ak.to_numpy(min_bl_dR[BL]))
+        output["min_mt_lep_met"] += processor.column_accumulator(ak.to_numpy(min_mt_lep_met[BL]))
 
         output["label"] += processor.column_accumulator(label)
         output["weight"] += processor.column_accumulator(weight.weight()[BL])
