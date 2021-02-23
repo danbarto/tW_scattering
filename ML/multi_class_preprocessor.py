@@ -71,13 +71,16 @@ variables = [
     'lead_lep_pt',
     'lead_lep_eta',
     'lead_lep_phi',
+    'lead_lep_charge',
 
     'sublead_lep_pt',
     'sublead_lep_eta',
     'sublead_lep_phi',
+    'sublead_lep_charge',
 
     'dilepton_mass',
     'dilepton_pt',
+    'min_bl_dR',
     'label',
     'weight',
 ]
@@ -96,7 +99,9 @@ class ML_preprocessor(processor.ProcessorABC):
         self.year = year
         
         self._accumulator = processor.dict_accumulator( out_dict )
-        
+        self.btagSF = btag_scalefactor(year)
+
+        self.leptonSF = LeptonSF(year=year)
 
 
     @property
@@ -166,6 +171,10 @@ class ML_preprocessor(processor.ProcessorABC):
 
         high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
         
+        bl          = cross(lepton, high_score_btag)
+        bl_dR       = delta_r(bl['0'], bl['1'])
+        min_bl_dR   = ak.min(bl_dR, axis=1)
+
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
         j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
@@ -190,7 +199,7 @@ class ML_preprocessor(processor.ProcessorABC):
         
         selection = PackedSelection()
         selection.add('lepveto',       lepveto)
-        #selection.add('dilep',         dilep )
+        selection.add('dilep',         dilep )
         selection.add('filter',        (filters) )
         selection.add('p_T(lep0)>25',  lep0pt )
         selection.add('p_T(lep1)>20',  lep1pt )
@@ -201,7 +210,7 @@ class ML_preprocessor(processor.ProcessorABC):
         selection.add('N_fwd>0',       (ak.num(fwd)>=1 ))
         
         #ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
-        ss_reqs = ['lepveto', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
+        ss_reqs = ['lepveto', 'dilep', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'SS']
         bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0']
 
         ss_reqs_d = { sel: True for sel in ss_reqs }
@@ -210,7 +219,20 @@ class ML_preprocessor(processor.ProcessorABC):
         BL = selection.require(**bl_reqs_d)
 
         weight = Weights( len(ev) )
-        weight.add("weight", ev.weight)
+
+        if not dataset=='MuonEG':
+            # lumi weight
+            weight.add("weight", ev.weight)
+
+            # PU weight - not in the babies...
+            weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
+
+            # b-tag SFs
+            weight.add("btag", self.btagSF.Method1a(btag, light))
+
+            # lepton SFs
+            weight.add("lepton", self.leptonSF.get(electron, muon))
+
 
         cutflow     = Cutflow(output, ev, weight=weight)
         cutflow_reqs_d = {}
@@ -231,10 +253,12 @@ class ML_preprocessor(processor.ProcessorABC):
         output["lead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].pt, axis=1)))
         output["lead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].eta, axis=1)))
         output["lead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].phi, axis=1)))
+        output["lead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].charge, axis=1)))
 
         output["sublead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].pt, axis=1)))
         output["sublead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].eta, axis=1)))
         output["sublead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].phi, axis=1)))
+        output["sublead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].charge, axis=1)))
 
         output["lead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pt, axis=1)))
         output["lead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].eta, axis=1)))
@@ -272,6 +296,7 @@ class ML_preprocessor(processor.ProcessorABC):
         
         output["dilepton_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(dilepton_pt[BL], axis=1)))
         output["dilepton_mass"] += processor.column_accumulator(ak.to_numpy(ak.flatten(dilepton_mass[BL], axis=1)))
+        output["min_bl_dR"] += processor.column_accumulator(ak.to_numpy(min_bl_dR[BL]))
 
         output["label"] += processor.column_accumulator(label)
         output["weight"] += processor.column_accumulator(weight.weight()[BL])
@@ -342,10 +367,10 @@ if __name__ == '__main__':
 
     if overwrite:
         try:
-            os.remove(os.path.expandvars('$TWHOME/ML/data/multiclass_input_loose.h5'))
+            os.remove(os.path.expandvars('$TWHOME/ML/data/multiclass_input.h5'))
         except:
             print ("File not there") # bad practice!
 
-    df_out.to_hdf('data/multiclass_input_loose.h5', key='df', format='table', mode='a', append=True)
+    df_out.to_hdf('data/multiclass_input.h5', key='df', format='table', mode='a', append=True)
 
 

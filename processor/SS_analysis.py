@@ -150,7 +150,9 @@ class SS_analysis(processor.ProcessorABC):
         selection.add('SS',            ( SSlepton | SSelectron | SSmuon) )
         selection.add('pos',           ( pos_charge ) )
         selection.add('neg',           ( neg_charge ) )
+        selection.add('N_jet>3',       (ak.num(jet)>=4) )
         selection.add('N_jet>4',       (ak.num(jet)>=5) )
+        selection.add('N_central>2',   (ak.num(central)>=3) )
         selection.add('N_central>3',   (ak.num(central)>=4) )
         selection.add('N_btag>0',      (ak.num(btag)>=1) )
         selection.add('MET>50',        (ev.MET.pt>50) )
@@ -159,8 +161,8 @@ class SS_analysis(processor.ProcessorABC):
         selection.add('delta_eta',     (ak.any(delta_eta>2, axis=1) ) )
         selection.add('fwd_p>500',     (ak.any(j_fwd.p>500, axis=1) ) )
         
-        ss_reqs = ['lepveto', 'dilep', 'SS', 'pos', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20']
-        bl_reqs = ss_reqs + ['N_jet>4', 'N_central>3', 'N_btag>0', 'ST', 'MET>50', 'N_fwd>0', 'delta_eta']
+        ss_reqs = ['lepveto', 'dilep', 'SS', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20']
+        bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0', 'N_jet>4', 'N_central>3', 'ST', 'MET>50', 'delta_eta']
         sr_reqs = bl_reqs + ['fwd_p>500', 'p_T(lep0)>40', 'p_T(lep1)>30']
 
         ss_reqs_d = { sel: True for sel in ss_reqs }

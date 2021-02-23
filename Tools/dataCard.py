@@ -242,9 +242,15 @@ class dataCard:
         years = list(cards.keys())
         cmd = ''
         for year in years:
-            cmd += " dc_%s=%s"%(year, cards[year])
+            card_file = cards[year].split('/')[-1]
+            print ("Copying card file to temp:", card_file)
+            shutil.copyfile(cards[year], uniqueDirname+'/'+card_file)
+            cmd += " dc_%s=%s"%(year, card_file)
 
-        combineCommand  = "cd "+uniqueDirname+";combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
+        print (cmd)
+
+        combineCommand  = "cd "+uniqueDirname+"; eval `scramv1 runtime -sh`; combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
+        print ("Executing %s"%combineCommand)
         os.system(combineCommand)
         resFile = cards[years[0]].replace(str(years[0]), 'COMBINED')
         f = resFile.split('/')[-1]

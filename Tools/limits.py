@@ -43,18 +43,24 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     }
     histogram.scale(scales, axis='dataset')
     
-    onlyttx     = re.compile('(TTW|TTZ|TTH|TTTT|diboson|DY|rare)')
+    other_sel   = re.compile('(TTTT|diboson|DY|rare)')
     #observation = hist.export1d(histogram['pseudodata'].integrate('dataset'), overflow=overflow)
-    observation = hist.export1d(histogram[notdata].integrate('dataset'))
-    tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'))
-    bkg         = hist.export1d(histogram[onlyttx].integrate('dataset'))
-    nonprompt   = hist.export1d(histogram['ttbar'].integrate('dataset'))
+    observation = hist.export1d(histogram[notdata].integrate('dataset'), overflow=overflow)
+    tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'), overflow=overflow)
+    ttw         = hist.export1d(histogram['TTW'].integrate('dataset'), overflow=overflow)
+    ttz         = hist.export1d(histogram['TTZ'].integrate('dataset'), overflow=overflow)
+    tth         = hist.export1d(histogram['TTH'].integrate('dataset'), overflow=overflow)
+    rare        = hist.export1d(histogram[other_sel].integrate('dataset'), overflow=overflow)
+    nonprompt   = hist.export1d(histogram['ttbar'].integrate('dataset'), overflow=overflow)
     
     fout = uproot3.recreate(shape_file)
 
     fout["signal"]    = tw
     fout["nonprompt"] = nonprompt
-    fout["bkg"]       = bkg
+    fout["ttw"]       = ttw
+    fout["ttz"]       = ttz
+    fout["tth"]       = tth
+    fout["rare"]      = rare
     fout["data_obs"]  = observation
     fout.close()
     
@@ -62,14 +68,17 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     totals = {}
     
     totals['signal']      = histogram['topW_v2'].integrate('dataset').values(overflow=overflow)[()].sum()
-    totals['bkg']         = histogram[onlyttx].integrate('dataset').values(overflow=overflow)[()].sum()
+    totals['ttw']         = histogram['TTW'].integrate('dataset').values(overflow=overflow)[()].sum()
+    totals['ttz']         = histogram['TTZ'].integrate('dataset').values(overflow=overflow)[()].sum()
+    totals['tth']         = histogram['TTH'].integrate('dataset').values(overflow=overflow)[()].sum()
+    totals['rare']        = histogram['rare'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['nonprompt']   = histogram['ttbar'].integrate('dataset').values(overflow=overflow)[()].sum()
     #totals['observation'] = histogram['pseudodata'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['observation'] = histogram[notdata].integrate('dataset').values(overflow=overflow)[()].sum()
     
     print ("{:30}{:.2f}".format("Signal expectation:",totals['signal']) )
     print ("{:30}{:.2f}".format("Non-prompt background:",totals['nonprompt']) )
-    print ("{:30}{:.2f}".format("t(t)X(X)/rare background:",totals['bkg']) )
+    print ("{:30}{:.2f}".format("t(t)X(X)/rare background:",totals['ttw']+totals['ttz']+totals['tth']+totals['rare']) )
     print ("{:30}{:.2f}".format("Observation:", totals['observation']) )
     
     
@@ -80,18 +89,27 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     
     # add the uncertainties (just flat ones for now)
     card.addUncertainty('lumi', 'lnN')
-    card.addUncertainty('ttx', 'lnN')
+    card.addUncertainty('ttw_norm', 'lnN')
+    card.addUncertainty('ttz_norm', 'lnN')
+    card.addUncertainty('tth_norm', 'lnN')
+    card.addUncertainty('rare_norm', 'lnN')
     card.addUncertainty('fake', 'lnN')
     
     # add the single bin
-    card.addBin('Bin0', [ 'bkg', 'nonprompt' ], 'Bin0')
+    card.addBin('Bin0', [ 'ttw', 'ttz', 'tth', 'rare', 'nonprompt' ], 'Bin0')
     card.specifyExpectation('Bin0', 'signal', totals['signal'] )
-    card.specifyExpectation('Bin0', 'bkg', totals['bkg'] )
+    card.specifyExpectation('Bin0', 'ttw', totals['ttw'] )
+    card.specifyExpectation('Bin0', 'ttz', totals['ttz'] )
+    card.specifyExpectation('Bin0', 'tth', totals['tth'] )
+    card.specifyExpectation('Bin0', 'rare', totals['rare'] )
     card.specifyExpectation('Bin0', 'nonprompt', totals['nonprompt'] )
     
     # set uncertainties
     if systematics:
-        card.specifyUncertainty('ttx', 'Bin0', 'bkg', 1.20 )
+        card.specifyUncertainty('ttw_norm', 'Bin0', 'ttw', 1.15 )
+        card.specifyUncertainty('ttz_norm', 'Bin0', 'ttz', 1.10 )
+        card.specifyUncertainty('tth_norm', 'Bin0', 'tth', 1.20 )
+        card.specifyUncertainty('rare_norm', 'Bin0', 'rare', 1.20 )
         card.specifyUncertainty('fake', 'Bin0', 'nonprompt', 1.25 )
         card.specifyFlatUncertainty('lumi', 1.03)
     
