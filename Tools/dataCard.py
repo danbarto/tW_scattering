@@ -88,9 +88,9 @@ class dataCard:
         self.expectation[(b,p)] = round(exp, self.precision)
 
     def specifyObservation(self, b, obs):
-        if not isinstance(obs, int):
-            print("Observation not an integer! (",obs,")")
-            return
+        #if not isinstance(obs, int):
+        #    print("Observation not an integer! (",obs,")")
+        #    return
         self.observation[b] = obs
 
     def specifyContamination(self, b, cont):

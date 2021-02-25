@@ -118,7 +118,9 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
 
     if save:
         #finalizePlotDir(outdir)
-        fig.savefig(save)
+        fig.savefig("{}.pdf".format(save))
+        fig.savefig("{}.png".format(save))
+        #fig.savefig(save)
         print ("Figure saved in:", save)
 
 

@@ -43,8 +43,20 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     }
     histogram.scale(scales, axis='dataset')
     
+    ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option
+    data_counts = np.asarray(np.round(histogram[notdata].integrate('dataset').values(overflow=overflow)[()], 0), int)
+    data_hist = histogram['topW_v2']
+    data_hist.clear()
+    data_hist_bins = data_hist.axes()[1]
+    for i, edge in enumerate(data_hist_bins.edges(overflow=overflow)):
+        if i >= len(data_counts): break
+        for y in range(data_counts[i]):
+            data_hist.fill(**{'dataset': 'data', data_hist_bins.name: edge+0.0001})
+            
+
     other_sel   = re.compile('(TTTT|diboson|DY|rare)')
-    #observation = hist.export1d(histogram['pseudodata'].integrate('dataset'), overflow=overflow)
+    ##observation = hist.export1d(histogram['pseudodata'].integrate('dataset'), overflow=overflow)
+    #observation = hist.export1d(data_hist['data'].integrate('dataset'), overflow=overflow)
     observation = hist.export1d(histogram[notdata].integrate('dataset'), overflow=overflow)
     tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'), overflow=overflow)
     ttw         = hist.export1d(histogram['TTW'].integrate('dataset'), overflow=overflow)
@@ -73,7 +85,8 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     totals['tth']         = histogram['TTH'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['rare']        = histogram['rare'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['nonprompt']   = histogram['ttbar'].integrate('dataset').values(overflow=overflow)[()].sum()
-    #totals['observation'] = histogram['pseudodata'].integrate('dataset').values(overflow=overflow)[()].sum()
+    ##totals['observation'] = histogram['pseudodata'].integrate('dataset').values(overflow=overflow)[()].sum()
+    #totals['observation'] = int(sum(data_hist['data'].sum('dataset').values(overflow=overflow)[()]))
     totals['observation'] = histogram[notdata].integrate('dataset').values(overflow=overflow)[()].sum()
     
     print ("{:30}{:.2f}".format("Signal expectation:",totals['signal']) )
@@ -113,8 +126,9 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
         card.specifyUncertainty('fake', 'Bin0', 'nonprompt', 1.25 )
         card.specifyFlatUncertainty('lumi', 1.03)
     
-    # observation
-    card.specifyObservation('Bin0', int(round(totals['observation'],0)))
+    ## observation
+    #card.specifyObservation('Bin0', int(round(totals['observation'],0)))
+    card.specifyObservation('Bin0', totals['observation'])
     
     print ("Done.\n")
     

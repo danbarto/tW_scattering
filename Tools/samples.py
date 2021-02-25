@@ -33,6 +33,26 @@ groups_2018 = {
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
     'DY':            ['/DYJetsToLL'],
+
+    'TTWZ':             ['/TTWZ[-_]'],
+    'TTZToLLNuNu_M-10': ['/TTZToLLNuNu_M-10[-_]'],
+    'TTZToLL_M-1to10':  ['/TTZToLL_M-1to10[-_]'],
+    'TTZToQQ':          ['/TTZToQQ[-_]'],
+    'ST_tWll':          ['/ST_tWll[-_]'],
+    'tZq':              ['/tZq[-_]'],
+
+    'ttHToNonbb':       ['/ttHToNonbb[-_]'],
+    'THW':              ['/THW[-_]'],
+    'THQ':              ['/THQ[-_]'],
+
+    'TTWJetsToLNu':     ['/TTWJetsToLNu'],
+    'TTWJetsToQQ':      ['/TTWJetsToQQ'],
+
+    'TTToSemiLeptonic': ['/TTToSemiLeptonic'],
+    'ST_t-channel':     ['/ST_t-channel'],
+    'ST_s-channel':     ['/ST_s-channel'],
+    'ST_tW':            ['/ST_tW[-_]'],
+
     'MuonEG':        ['/MuonEG_Run2018[ABCD]'],
 }
 
