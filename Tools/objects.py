@@ -1,9 +1,9 @@
 '''
 Standardized object selection, based on SS(++) analysis
-Trigger-safe requirements for electrons missing!
 '''
 import os
 
+import copy
 import numpy as np
 import awkward1 as ak
 
@@ -25,6 +25,10 @@ def delta_r2(first, second):
     
 def delta_r(first, second):
     return np.sqrt(delta_r2(first, second))
+
+def delta_r_v2(first, second):
+    combs = ak.cartesian([first, second], nested=True)
+    return np.sqrt(delta_r2(combs['0'], combs['1']))
 
 def match(first, second, deltaRCut=0.4):
     drCut2 = deltaRCut**2
@@ -71,16 +75,53 @@ class Collections:
         
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
+            ev['Muon', 'absMiniIso'] = ev.Muon.miniPFRelIso_all*ev.Muon.pt
+            ev['Muon', 'ptErrRel']   = ev.Muon.ptErr/ev.Muon.pt
+
+            # this is what we are using:
+            # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
+            # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
+            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+
+            mask_close = (delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
+            mask_far = ~(delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
+
+            deepJet = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
+            conePt = 0.9 * ev.Jet[ev.Muon.jetIdx].pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+
+            ev['Muon', 'deepJet'] = deepJet
+            ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
+            ev['Muon', 'conePt'] = conePt
+
             self.cand = ev.Muon
-            self.cand.ptErrRel      = ev.Muon.ptErr/ev.Muon.pt
-            self.cand.absMiniIso    = ev.Muon.miniPFRelIso_all*ev.Muon.pt
-            self.cand.deepJet       = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB
             
         elif self.obj == "Electron":
+            # calculate new variables. asignment is awkward, but what can you do.
+            ev['Electron', 'absMiniIso'] = ev.Electron.miniPFRelIso_all*ev.Electron.pt
+            ev['Electron', 'etaSC'] = ev.Electron.eta + ev.Electron.deltaEtaSC
+
+            # the following line is only needed if we do our own matching.
+            # right now, we keep using the NanoAOD match, but check the deltaR distance
+            # jet_index, mask_match, mask_nomatch = self.matchJets(ev.Electron, ev.Jet)
+
+            # this is what we are using:
+            # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
+            # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
+            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+
+            mask_close = (delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
+            mask_far = ~(delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
+
+            deepJet = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
+            conePt = 0.9 * ev.Jet[ev.Electron.jetIdx].pt * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+
+            ev['Electron', 'deepJet'] = deepJet
+            ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
+            ev['Electron', 'conePt'] = conePt
+            
             self.cand = ev.Electron
-            self.cand.absMiniIso    = ev.Electron.miniPFRelIso_all*ev.Electron.pt
-            self.cand.etaSC         = ev.Electron.eta + ev.Electron.deltaEtaSC # verify this
-            self.cand.deepJet       = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB
             
         self.getSelection()
         
@@ -88,12 +129,30 @@ class Collections:
             self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
-        if self.obj == "Electron" and self.wp == "tightTTH":
+        if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH'):
             self.selection = self.selection & self.getSigmaIEtaIEta()
         
     def getValue(self, var):
         #return np.nan_to_num(getattr(self.cand, var), -999)
         return getattr(self.cand, var)
+
+    def matchJets(self, obj, jet, deltaRCut=0.4):
+
+        combs = ak.cartesian([obj, jet], nested=True)
+
+        jet_index = ak.local_index(delta_r(combs['0'], combs['1']))[delta_r(combs['0'], combs['1'])<0.4]
+        jet_index_pad = ak.flatten(
+                        ak.fill_none(
+                            ak.pad_none(jet_index, target=1, clip=True, axis=2),
+                        0),
+                    axis=2)
+
+        mask = ak.num(jet_index, axis=2)>0  # a mask for obj with a matched jet
+        mask_match = mask*1 + ~mask*0
+        mask_nomatch = mask*0 + ~mask*1
+
+        return jet_index_pad, mask_match, mask_nomatch
+
     
     def getSelection(self):
         self.selection = (self.cand.pt>0)
@@ -152,7 +211,9 @@ class Collections:
         if self.v>0: print ()
                     
     def get(self):
-        return self.cand[self.selection] # unfortunately, we loose information like etaSC in this step... :(
+        #print (self.cand.deepJet)
+        #return copy.deepcopy(self.cand[self.selection])  # unfortunately, we loose information like etaSC in this step... :(
+        return self.cand[self.selection]
         #return selection
 
     def getSigmaIEtaIEta(self):
