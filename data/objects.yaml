@@ -215,7 +215,6 @@ Muon:
     eta:
       max: 2.4
       extra: abs
-    mediumId: 1
     looseId: 1
     dxy:
       max: 0.05
@@ -234,3 +233,5 @@ Muon:
       max: 0.2770
     ptErrRel:
       max: 0.2
+    jetRelIso:
+      max: 0.5
