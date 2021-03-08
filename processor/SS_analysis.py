@@ -52,7 +52,7 @@ class SS_analysis(processor.ProcessorABC):
         trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
 
         ## Muons
-        muon     = Collections(ev, "Muon", "tightTTH").get()
+        muon     = Collections(ev, "Muon", "tightSSTTH").get()
         vetomuon = Collections(ev, "Muon", "vetoTTH").get()
         dimuon   = choose(muon, 2)
         SSmuon   = ak.any((dimuon['0'].charge * dimuon['1'].charge)>0, axis=1)
@@ -60,7 +60,7 @@ class SS_analysis(processor.ProcessorABC):
         leading_muon = muon[leading_muon_idx]
         
         ## Electrons
-        electron     = Collections(ev, "Electron", "tightTTH").get()
+        electron     = Collections(ev, "Electron", "tightSSTTH").get()
         vetoelectron = Collections(ev, "Electron", "vetoTTH").get()
         dielectron   = choose(electron, 2)
         SSelectron   = ak.any((dielectron['0'].charge * dielectron['1'].charge)>0, axis=1)
@@ -77,6 +77,9 @@ class SS_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
         
+        n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
+        n_chargeflip = getChargeFlips(electron, ev.GenPart) + getChargeFlips(muon, ev.GenPart)
+
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
         jet       = jet[ak.argsort(jet.pt_nom, ascending=False)] # need to sort wrt smeared and recorrected jet pt
@@ -161,8 +164,8 @@ class SS_analysis(processor.ProcessorABC):
         selection.add('delta_eta',     (ak.any(delta_eta>2, axis=1) ) )
         selection.add('fwd_p>500',     (ak.any(j_fwd.p>500, axis=1) ) )
         
-        ss_reqs = ['lepveto', 'dilep', 'SS', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20']
-        bl_reqs = ss_reqs + ['N_jet>3', 'N_central>2', 'N_btag>0', 'N_fwd>0', 'N_jet>4', 'N_central>3', 'ST', 'MET>50', 'delta_eta']
+        ss_reqs = ['lepveto', 'dilep', 'SS', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'N_jet>3', 'N_central>2', 'N_btag>0']
+        bl_reqs = ss_reqs + ['N_fwd>0', 'N_jet>4', 'N_central>3', 'ST', 'MET>50', 'delta_eta']
         sr_reqs = bl_reqs + ['fwd_p>500', 'p_T(lep0)>40', 'p_T(lep1)>30']
 
         ss_reqs_d = { sel: True for sel in ss_reqs }
@@ -193,6 +196,7 @@ class SS_analysis(processor.ProcessorABC):
         output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight.weight()[BL])
         output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight.weight()[BL])
         output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
+        output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[ss_selection], n2=n_nonprompt[ss_selection], n_ele=ak.num(electron)[ss_selection], weight=weight.weight()[ss_selection])
         
         output['MET'].fill(
             dataset = dataset,

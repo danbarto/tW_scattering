@@ -9,6 +9,7 @@ from metis.CondorTask import CondorTask
 from metis.StatsParser import StatsParser
 from metis.Utils import do_cmd
 
+from Tools.helpers import data_path, get_samples
 from Tools.config_helpers import *
 
 # load samples
@@ -32,9 +33,7 @@ def getYearFromDAS(DASname):
         ### our private samples right now are all Autumn18 but have no identifier.
         return 2018, 'X', False, False
 
-data_path = os.path.expandvars('$TWHOME/data/')
-with open(data_path+'samples.yaml') as f:
-    samples = yaml.load(f, Loader=Loader)
+samples = get_samples()  # loads the nanoAOD samples
 
 # load config
 cfg = loadConfig()

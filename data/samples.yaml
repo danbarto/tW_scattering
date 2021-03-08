@@ -390,6 +390,22 @@
   split: 2
   sumWeight: 3682.9220400808586
   xsec: 0.01398
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full_RunIIAutumn18_NANO_v4/:
+  files: 472
+  nEvents: 472000
+  name: ProjectMetis_TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full_RunIIAutumn18_NANO_v4
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full_RunIIAutumn18_NANO_v4/
+  split: 208
+  sumWeight: 42835.314252500095
+  xsec: 0.08918
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_EFT_myNLO_full_RunIIAutumn18_NANO_v4/:
+  files: 484
+  nEvents: 484000
+  name: ProjectMetis_TTWJetsToLNuEWK_5f_EFT_myNLO_full_RunIIAutumn18_NANO_v4
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_EFT_myNLO_full_RunIIAutumn18_NANO_v4/
+  split: 187
+  sumWeight: 52829.392440439944
+  xsec: 0.109
 /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v2/:
   files: 478
   nEvents: 478000

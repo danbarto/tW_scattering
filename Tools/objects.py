@@ -54,6 +54,18 @@ def cross(first, second):
     combs['1'] = tmp['1']
     return combs
 
+def getNonPromptFromMatch(obj):
+    return ak.num(obj[obj.genPartIdx<0])
+
+def getNonPromptFromFlavour(obj, allow_tau=True):
+    # gamma* -> ll is always treated as prompt in NanoAOD
+    if allow_tau:
+        return ak.num(obj[((obj.genPartFlav!=1) & (obj.genPartFlav!=15))]) # this treats tau->enu / tau->munu as prompt
+    else:
+        return ak.num(obj[(obj.genPartFlav!=1)])
+
+def getChargeFlips(obj, gen):
+    return ak.num(obj[(gen[obj.genPartIdx].pdgId/abs(gen[obj.genPartIdx].pdgId) != obj.pdgId/abs(obj.pdgId))])
 
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
@@ -127,10 +139,16 @@ class Collections:
         
         if self.obj == "Electron" and self.wp == "tight":
             self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
+            if self.v>0: print (" - custom ID and multi-isolation")
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
-        if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH'):
+            if self.v>0: print (" - custom multi-isolation")
+        if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH' or self.wp == "tightSSTTH" or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & self.getSigmaIEtaIEta()
+            if self.v>0: print (" - SigmaIEtaIEta")
+        if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
+            self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
+            if self.v>0: print (" - interpolated deepJet")
         
     def getValue(self, var):
         #return np.nan_to_num(getattr(self.cand, var), -999)
@@ -157,7 +175,9 @@ class Collections:
     def getSelection(self):
         self.selection = (self.cand.pt>0)
         if self.wp == None: return
-        if self.v>0: print ("## %s selection for WP %s ##"%(self.obj, self.wp))
+        if self.v>0:
+            print ()
+            print ("## %s selection for WP %s ##"%(self.obj, self.wp))
         for var in obj_def[self.obj][self.wp].keys():
             #print (var)
             if type(obj_def[self.obj][self.wp][var]) == type(1):
@@ -208,13 +228,10 @@ class Collections:
                     except:
                         pass
                     
-        if self.v>0: print ()
                     
     def get(self):
-        #print (self.cand.deepJet)
-        #return copy.deepcopy(self.cand[self.selection])  # unfortunately, we loose information like etaSC in this step... :(
+        if self.v>0: print ("Found %s objects passing the selection"%sum(ak.num(self.cand[self.selection])))
         return self.cand[self.selection]
-        #return selection
 
     def getSigmaIEtaIEta(self):
         return ((abs(self.cand.etaSC)<=1.479) & (self.cand.sieie<0.011)) | ((abs(self.cand.etaSC)>1.479) & (self.cand.sieie<0.030))
@@ -263,4 +280,11 @@ class Collections:
         jetRelIso = 1/(self.cand.jetRelIso+1)
         if self.v>0: print (" - custom multi isolation")
         return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
-        
+
+    def getThreshold(self, pt, min_pt=20, max_pt=45, low=0.2770, high=0.0494):
+        '''
+        get the deepJet threshold for ttH FO muons. default values are for 2018.
+        '''
+        k = (low-high)/(min_pt-max_pt)
+        d = low - k*min_pt
+        return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high

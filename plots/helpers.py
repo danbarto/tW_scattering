@@ -7,163 +7,6 @@ from coffea import hist
 import re
 bkgonly = re.compile('(?!(MuonEG))')
 
-def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False):
-    
-    if save:
-        finalizePlotDir( '/'.join(save.split('/')[:-1]) )
-    
-    processes = [ p[0] for p in output[histo].values().keys() if not p[0]=='MuonEG' ]
-    
-    histogram = output[histo].copy()
-    histogram = histogram.project(axis, 'dataset')
-    if bins:
-        histogram = histogram.rebin(axis, bins)
-
-    y_max = histogram[mc_sel].sum("dataset").values(overflow='over')[()].max()
-
-    MC_total = histogram[mc_sel].sum("dataset").values(overflow='over')[()].sum()
-    Data_total = 0
-    if data_sel:
-        Data_total = histogram[data_sel].sum("dataset").values(overflow='over')[()].sum()
-    
-    print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
-    
-    if normalize and data_sel:
-        scales = { process: Data_total/MC_total for process in processes }
-        histogram.scale(scales, axis='dataset')
-    else:
-        scales = {}
-
-    if shape:
-        scales = { process: 1/histogram[process].sum("dataset").values(overflow='over')[()].sum() for process in processes }
-        histogram.scale(scales, axis='dataset')
-    
-    if data_sel:
-        fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
-    else:
-        fig, ax  = plt.subplots(1,1,figsize=(10,10) )
-
-    if shape:
-        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
-    else:
-        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts)
-    if data_sel:
-        ax = hist.plot1d(histogram[data_sel], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
-
-        hist.plotratio(
-                num=histogram[data_sel].sum("dataset"),
-                denom=histogram[mc_sel].sum("dataset"),
-                ax=rax,
-                error_opts=data_err_opts,
-                denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
-                guide_opts={},
-                unc='num',
-                #unc=None,
-                overflow='over'
-        )
-    
-    
-    handles, labels = ax.get_legend_handles_labels()
-    new_labels = []
-    for handle, label in zip(handles, labels):
-        try:
-            new_labels.append(my_labels[label])
-            if not label=='MuonEG':
-                handle.set_color(colors[label])
-        except:
-            pass
-
-    if data_sel:
-        if ratio_range:
-            rax.set_ylim(*ratio_range)
-        else:
-            rax.set_ylim(0.1,1.9)
-        rax.set_ylabel('Obs./Pred.')
-        if axis_label:
-            rax.set_xlabel(axis_label)
-
-    ax.set_xlabel(axis_label)
-    ax.set_ylabel('Events')
-    
-    if not shape:
-        addUncertainties(ax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
-
-    if data_sel:
-        addUncertainties(rax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
-    
-    if log:
-        ax.set_yscale('log')
-        
-    y_mult = 1.3 if not log else 100
-    if ymax:
-        ax.set_ylim(0.01, ymax)
-    else:
-        ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
-
-    ax.legend(
-        loc='upper right',
-        ncol=2,
-        borderaxespad=0.0,
-        labels=new_labels,
-        handles=handles,
-    )
-    plt.subplots_adjust(hspace=0)
-
-    fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.8, 0.995, '13 TeV', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-
-    if normalize:
-        fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-
-
-    if save:
-        #finalizePlotDir(outdir)
-        fig.savefig("{}.pdf".format(save))
-        fig.savefig("{}.png".format(save))
-        #fig.savefig(save)
-        print ("Figure saved in:", save)
-
-
-def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
-    
-    if rebin:
-        h = h.project(axis, 'dataset').rebin(axis, rebin)
-    
-    bins = h[selection].axis(axis).edges(overflow=overflow)
-    
-    values = h[selection].project(axis, 'dataset').sum('dataset').values(overflow=overflow, sumw2=True)[()]
-    central = values[0]
-    stats = values[1]
-    
-    up = np.zeros_like(central)
-    down = np.zeros_like(central)
-    
-    for up_var in up_vars:
-        if rebin:
-            up_var = up_var.project(axis, 'dataset').rebin(axis, rebin)
-            up_var.scale(scales, axis='dataset')
-        up += (up_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
-    
-    for down_var in down_vars:
-        if rebin:
-            down_var = down_var.project(axis, 'dataset').rebin(axis, rebin)
-            down_var.scale(scales, axis='dataset')
-        down += (down_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
-    
-    up   += stats 
-    down += stats
- 
-    if ratio:
-        up = np.ones_like(central) + np.sqrt(up)/central
-        down = np.ones_like(central) - np.sqrt(down)/central
-    else:
-        up = central + np.sqrt(up)
-        down = central - np.sqrt(down)
-    
-    opts = {'step': 'post', 'label': 'uncertainty', 'hatch': '///',
-                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0}
-    
-    ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
 colors = {
     'tW_scattering': '#FF595E',
@@ -263,3 +106,192 @@ signal_fill_opts = {
     'alpha': 0.1
 }
 
+
+def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None):
+    
+    if save:
+        finalizePlotDir( '/'.join(save.split('/')[:-1]) )
+    
+    
+    if histo is None:
+        processes = [ p[0] for p in output.values().keys() if not p[0]=='MuonEG' ]
+        histogram = output.copy()
+    else:
+        processes = [ p[0] for p in output[histo].values().keys() if not p[0]=='MuonEG' ]
+        histogram = output[histo].copy()
+
+    histogram = histogram.project(axis, 'dataset')
+    if bins:
+        histogram = histogram.rebin(axis, bins)
+
+    y_max = histogram[mc_sel].sum("dataset").values(overflow='over')[()].max()
+
+    MC_total = histogram[mc_sel].sum("dataset").values(overflow='over')[()].sum()
+    Data_total = 0
+    if data_sel:
+        Data_total = histogram[data_sel].sum("dataset").values(overflow='over')[()].sum()
+    
+    print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
+    
+    if normalize and data_sel:
+        scales = { process: Data_total/MC_total for process in processes }
+        histogram.scale(scales, axis='dataset')
+    else:
+        scales = {}
+
+    if shape:
+        scales = { process: 1/histogram[process].sum("dataset").values(overflow='over')[()].sum() for process in processes }
+        histogram.scale(scales, axis='dataset')
+    
+    if data_sel:
+        fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
+    else:
+        fig, ax  = plt.subplots(1,1,figsize=(10,10) )
+
+    if shape:
+        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+    else:
+        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
+    if data_sel:
+        ax = hist.plot1d(histogram[data_sel], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
+
+        hist.plotratio(
+                num=histogram[data_sel].sum("dataset"),
+                denom=histogram[mc_sel].sum("dataset"),
+                ax=rax,
+                error_opts=data_err_opts,
+                denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
+                guide_opts={},
+                unc='num',
+                #unc=None,
+                overflow='over'
+        )
+    
+    
+    handles, labels = ax.get_legend_handles_labels()
+    updated_labels = []
+    for handle, label in zip(handles, labels):
+        #print (label)
+        try:
+            updated_labels.append(new_labels[label])
+            if not label=='MuonEG':
+                handle.set_color(new_colors[label])
+        except:
+            pass
+
+    if data_sel:
+        if ratio_range:
+            rax.set_ylim(*ratio_range)
+        else:
+            rax.set_ylim(0.1,1.9)
+        rax.set_ylabel('Obs./Pred.')
+        if axis_label:
+            rax.set_xlabel(axis_label)
+
+    ax.set_xlabel(axis_label)
+    ax.set_ylabel('Events')
+    
+    if not shape:
+        addUncertainties(ax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+
+    if data_sel:
+        addUncertainties(rax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+    
+    if log:
+        ax.set_yscale('log')
+        
+    y_mult = 1.3 if not log else 100
+    if ymax:
+        ax.set_ylim(0.01, ymax)
+    else:
+        ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+
+    ax.legend(
+        loc='upper right',
+        ncol=2,
+        borderaxespad=0.0,
+        labels=updated_labels,
+        handles=handles,
+    )
+    plt.subplots_adjust(hspace=0)
+
+    fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    fig.text(0.8, 0.995, '13 TeV', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+
+    if normalize:
+        fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+
+
+    if save:
+        #finalizePlotDir(outdir)
+        fig.savefig("{}.pdf".format(save))
+        fig.savefig("{}.png".format(save))
+        #fig.savefig(save)
+        print ("Figure saved in:", save)
+
+
+def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
+    
+    if rebin:
+        h = h.project(axis, 'dataset').rebin(axis, rebin)
+    
+    bins = h[selection].axis(axis).edges(overflow=overflow)
+    
+    values = h[selection].project(axis, 'dataset').sum('dataset').values(overflow=overflow, sumw2=True)[()]
+    central = values[0]
+    stats = values[1]
+    
+    up = np.zeros_like(central)
+    down = np.zeros_like(central)
+    
+    for up_var in up_vars:
+        if rebin:
+            up_var = up_var.project(axis, 'dataset').rebin(axis, rebin)
+            up_var.scale(scales, axis='dataset')
+        up += (up_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
+    
+    for down_var in down_vars:
+        if rebin:
+            down_var = down_var.project(axis, 'dataset').rebin(axis, rebin)
+            down_var.scale(scales, axis='dataset')
+        down += (down_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
+    
+    up   += stats 
+    down += stats
+ 
+    if ratio:
+        up = np.ones_like(central) + np.sqrt(up)/central
+        down = np.ones_like(central) - np.sqrt(down)/central
+    else:
+        up = central + np.sqrt(up)
+        down = central - np.sqrt(down)
+    
+    opts = {'step': 'post', 'label': 'uncertainty', 'hatch': '///',
+                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0}
+    
+    ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
+
+
+def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
+    """
+    Scale NanoAOD samples to a physical cross section.
+    Merge NanoAOD samples into categories, e.g. several ttZ samples into one ttZ category.
+    
+    histogram -- coffea histogram
+    samples -- samples dictionary that contains the x-sec and sumWeight
+    fileset -- fileset dictionary used in the coffea processor
+    nano_mapping -- dictionary to map NanoAOD samples into categories
+    lumi -- integrated luminosity in 1/fb
+    """
+    histogram = histogram.copy()
+    
+    scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
+    histogram.scale(scales, axis='dataset')
+    for cat in nano_mapping:
+        # print (cat)
+        if len(nano_mapping[cat])>1:
+            for sample in nano_mapping[cat][1:]:
+                histogram[nano_mapping[cat][0]].add(histogram[sample])
+                histogram = histogram.remove([sample], 'dataset')
+                
+    return histogram
