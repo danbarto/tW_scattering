@@ -1,5 +1,6 @@
 import numpy as np
 import awkward1 as ak
+import re
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 
 def mask_or(ev, collection, masks):
@@ -96,17 +97,32 @@ def getFilters(ev, year=2018, dataset='None'):
     else:
         return mask_and(ev, "Flag", filters_MC)
         
-def getTriggers(ev, year=2018, dataset='None'):
+def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
     # these are the MET triggers from the MT2 analysis
     
     triggers = {}
     
+    same_flavor = (abs(leading_pdg) == abs(subleading_pdg))
+    leading_ele = (abs(leading_pdg) == 11)
+    leading_mu  = (abs(leading_pdg) == 13)
+
     if year == 2018:
         triggers['MuonEG'] = [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu27_Ele37_CaloIdL_MW",
             "Mu37_Ele27_CaloIdL_MW",
+        ]
+
+        triggers['DoubleMuon'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu37_TkMu27",
+        ]
+
+        triggers['DoubleEG'] = [\
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
         ]
 
         triggers['MET'] = [\
@@ -128,8 +144,28 @@ def getTriggers(ev, year=2018, dataset='None'):
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
         ]
         
-    if dataset.lower().count('muon') or dataset.lower().count('electron'):
-        return mask_or(ev, "HLT", triggers[dataset])
+    if re.search(re.compile("MuonEG"), dataset):
+        trigger = mask_or(ev, "HLT", triggers["MuonEG"])
+        return trigger & ~same_flavor
+
+    elif re.search(re.compile("DoubleMuon"), dataset):
+        trigger = mask_or(ev, "HLT", triggers["MuonEG"])
+        return trigger & same_flavor & leading_mu
+
+    elif re.search(re.compile("DoubleEG|EGamma"), dataset):
+        trigger = mask_or(ev, "HLT", triggers["DoubleEG"])
+        return trigger & same_flavor & leading_ele
+
     else:
-        return mask_or(ev, "HLT", triggers['MuonEG']) # should be OR of all dilepton triggers
+        # these triggers aren't fully efficient yet. check if we're missing something.
+        mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) & same_flavor & leading_mu)
+        ee = (mask_or(ev, "HLT", triggers['DoubleEG']) & same_flavor & leading_ele)
+        em = (mask_or(ev, "HLT", triggers['MuonEG']) & ~same_flavor)
+        return (mm | ee | em)
+
+
+    #if re.search(re.compile("MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleElectron"), dataset):  #  dataset.lower().count('muon') or dataset.lower().count('electron'):
+    #    return mask_or(ev, "HLT", triggers[dataset])
+    #else:
+    #    return mask_or(ev, "HLT", triggers['MuonEG'] + triggers['DoubleMuon'] + triggers['DoubleEG'])  # should be OR of all dilepton triggers
 

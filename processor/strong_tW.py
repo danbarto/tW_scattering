@@ -227,7 +227,7 @@ if __name__ == '__main__':
     year = 2018
     
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
-    from processor.std_acumulators import *
+    from processor.default_accumulators import *
 
 
     fileset = {

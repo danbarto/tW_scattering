@@ -328,6 +328,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 output['fwd_jet_'+var].fill(
                     dataset = dataset,
                     pt  = ak.flatten(high_p_fwd[BL].pt),
+                    p   = ak.flatten(high_p_fwd[BL].p),
                     eta = ak.flatten(high_p_fwd[BL].eta),
                     phi = ak.flatten(high_p_fwd[BL].phi),
                     weight = weight.weight()[BL]
@@ -351,7 +352,7 @@ if __name__ == '__main__':
 
     from klepto.archives import dir_archive
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
-    from processor.std_acumulators import *
+    from processor.default_accumulators import *
 
     overwrite = True
     
