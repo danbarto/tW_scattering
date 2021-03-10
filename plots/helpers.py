@@ -5,7 +5,6 @@ from Tools.helpers import finalizePlotDir
 from coffea import hist
 
 import re
-bkgonly = re.compile('(?!(MuonEG))')
 
 
 colors = {
@@ -107,12 +106,15 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[]):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
     
-    
+    mc_sel   = re.compile('(?!(%s))'%('|'.join(data+omit))) if len(data+omit)>0 else re.compile('')
+    data_sel = re.compile('|'.join(data))
+    bkg_sel  = re.compile('(?!(%s))'%('|'.join(data+signals+omit))) if len(data+signals+omit)>0 else re.compile('')
+
     if histo is None:
         processes = [ p[0] for p in output.values().keys() if not p[0]=='MuonEG' ]
         histogram = output.copy()
@@ -124,11 +126,11 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
     if bins:
         histogram = histogram.rebin(axis, bins)
 
-    y_max = histogram[mc_sel].sum("dataset").values(overflow='over')[()].max()
+    y_max = histogram[bkg_sel].sum("dataset").values(overflow='over')[()].max()
 
-    MC_total = histogram[mc_sel].sum("dataset").values(overflow='over')[()].sum()
+    MC_total = histogram[bkg_sel].sum("dataset").values(overflow='over')[()].sum()
     Data_total = 0
-    if data_sel:
+    if data:
         Data_total = histogram[data_sel].sum("dataset").values(overflow='over')[()].sum()
     
     print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
@@ -143,21 +145,25 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
         scales = { process: 1/histogram[process].sum("dataset").values(overflow='over')[()].sum() for process in processes }
         histogram.scale(scales, axis='dataset')
     
-    if data_sel:
+    if data:
         fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
     else:
         fig, ax  = plt.subplots(1,1,figsize=(10,10) )
 
+    if signals:
+        for sig in signals:
+            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+
     if shape:
-        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
     else:
-        ax = hist.plot1d(histogram[mc_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
-    if data_sel:
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
+    if data:
         ax = hist.plot1d(histogram[data_sel], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
 
         hist.plotratio(
                 num=histogram[data_sel].sum("dataset"),
-                denom=histogram[mc_sel].sum("dataset"),
+                denom=histogram[bkg_sel].sum("dataset"),
                 ax=rax,
                 error_opts=data_err_opts,
                 denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
@@ -179,7 +185,7 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
         except:
             pass
 
-    if data_sel:
+    if data:
         if ratio_range:
             rax.set_ylim(*ratio_range)
         else:
@@ -192,10 +198,10 @@ def makePlot(output, histo, axis, bins=None, mc_sel=bkgonly, data_sel='MuonEG', 
     ax.set_ylabel('Events')
     
     if not shape:
-        addUncertainties(ax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+        addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
-    if data_sel:
-        addUncertainties(rax, axis, histogram, mc_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+    if data:
+        addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
     
     if log:
         ax.set_yscale('log')

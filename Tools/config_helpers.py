@@ -43,3 +43,10 @@ def finalizePlotDir( path ):
     if not os.path.isdir(path):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
+
+def make_small(fileset, small, n_max=1):
+    if small:
+        for proc in fileset:
+            fileset[proc] = fileset[proc][:n_max]
+    return fileset
+

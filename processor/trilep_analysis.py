@@ -9,10 +9,10 @@ import numpy as np
 from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
-from Tools.config_helpers import *
+from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
-from Tools.lepton_scalefactors import *
+#from Tools.lepton_scalefactors import *
 from Tools.selections import Selection
 
 class trilep_analysis(processor.ProcessorABC):
@@ -22,7 +22,7 @@ class trilep_analysis(processor.ProcessorABC):
         
         self.btagSF = btag_scalefactor(year)
         
-        self.leptonSF = LeptonSF(year=year)
+        #self.leptonSF = LeptonSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -125,8 +125,8 @@ class trilep_analysis(processor.ProcessorABC):
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
-            # lepton SFs
-            weight.add("lepton", self.leptonSF.get(electron, muon))
+            ## lepton SFs
+            #weight.add("lepton", self.leptonSF.get(electron, muon))
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -252,17 +252,19 @@ if __name__ == '__main__':
 
     from klepto.archives import dir_archive
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
-    from processor.std_acumulators import *
+    from processor.default_accumulators import *
 
     overwrite = False
+    year = 2018
+    small = True
     
     # load the config and the cache
     cfg = loadConfig()
     
     cacheName = 'trilep_analysis'
+    if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    year = 2018
     
     fileset = {
         'topW_v3': fileset_2018['topW_v3'],
@@ -271,8 +273,11 @@ if __name__ == '__main__':
         'TTH': fileset_2018['TTH'],
         'diboson': fileset_2018['diboson'],
         'ttbar': fileset_2018['top2l'], # like 20 events (10x signal)
+        'DY': fileset_2018['DY'], # like 20 events (10x signal)
     }
 
+    fileset = make_small(fileset, small)
+    
     add_processes_to_output(fileset, desired_output)
 
     # add some histograms that we defined in the processor
