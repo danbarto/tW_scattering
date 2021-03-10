@@ -164,7 +164,7 @@ class trilep_analysis(processor.ProcessorABC):
         output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
         
         # make a plot of the dilepton mass, but without applying the cut on the dilepton mass itself (N-1 plot)
-        output['mll_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
+        output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
 
         output['MET'].fill(
             dataset = dataset,
@@ -279,7 +279,7 @@ if __name__ == '__main__':
     # everything else is taken the default_accumulators.py
     from processor.default_accumulators import mass_axis, dataset_axis
     desired_output.update({
-        "mll_mass": hist.Hist("Counts", dataset_axis, mass_axis),
+        "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))
@@ -325,6 +325,7 @@ if __name__ == '__main__':
             'p_T(lep1)>20',
             'trigger',
             'offZ',
+            'MET>50',
             'N_jet>2',
             'N_central>1',
             'N_btag>0',
