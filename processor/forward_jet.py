@@ -10,11 +10,19 @@ import numpy as np
 from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
-from Tools.config_helpers import *
+from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
+from Tools.selections import Selection
 
+def zip_rle(output, dataset):
+    return ak.to_numpy(
+        ak.zip([
+            output['%s_run'%dataset].value.astype(int),
+            output['%s_lumi'%dataset].value.astype(int),
+            output['%s_event'%dataset].value.astype(int),
+            ]))
 
 class forwardJetAnalyzer(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -49,7 +57,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['skimmedEvents']['all'] += len(ev)
         
         ## Muons
-        muon     = Collections(ev, "Muon", "tightTTH").get()
+        muon     = Collections(ev, "Muon", "tightSSTTH").get()
         vetomuon = Collections(ev, "Muon", "vetoTTH").get()
         dimuon   = choose(muon, 2)
         SSmuon   = ak.any((dimuon['0'].charge * dimuon['1'].charge)>0, axis=1)
@@ -58,7 +66,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         leading_muon = muon[leading_muon_idx]
         
         ## Electrons
-        electron     = Collections(ev, "Electron", "tightTTH").get()
+        electron     = Collections(ev, "Electron", "tightSSTTH").get()
         vetoelectron = Collections(ev, "Electron", "vetoTTH").get()
         dielectron   = choose(electron, 2)
         SSelectron   = ak.any((dielectron['0'].charge * dielectron['1'].charge)>0, axis=1)
@@ -114,19 +122,10 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         ht_central = ak.sum(central.pt, axis=1)
         
-        ## event selectors
-        filters   = getFilters(ev, year=self.year, dataset=dataset)
-        triggers  = getTriggers(ev, year=self.year, dataset=dataset)
-        
-        dilep     = ((ak.num(electron)==1) & (ak.num(muon)==1))
-        lep0pt    = ((ak.num(electron[(electron.pt>25)]) + ak.num(muon[(muon.pt>25)]))>0)
-        lep1pt    = ((ak.num(electron[(electron.pt>20)]) + ak.num(muon[(muon.pt>20)]))>1)
-        lepveto   = ((ak.num(vetoelectron) + ak.num(vetomuon))==2)
-        
         # define the weight
         weight = Weights( len(ev) )
         
-        if not dataset=='MuonEG':
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
             
@@ -139,66 +138,58 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
         
-        selection = PackedSelection()
-        selection.add('lepveto',       lepveto)
-        selection.add('dilep',         dilep )
-        selection.add('trigger',       (triggers) )
-        selection.add('filter',        (filters) )
-        selection.add('p_T(lep0)>25',  lep0pt )
-        selection.add('p_T(lep1)>20',  lep1pt )
-        selection.add('OS',            OSlepton )
-        selection.add('N_btag=2',      (ak.num(btag)==2) ) 
-        selection.add('N_jet>2',       (ak.num(jet)>=3) )
-        selection.add('N_central>1',   (ak.num(central)>=2) )
-        selection.add('N_fwd>0',       (ak.num(fwd)>=1) )
-        selection.add('MET>30',        (ev.MET.pt>30) )
         
-        os_reqs = ['lepveto', 'dilep', 'trigger', 'filter', 'p_T(lep0)>25', 'p_T(lep1)>20', 'OS']
-        bl_reqs = os_reqs + ['N_btag=2', 'N_jet>2', 'N_central>1', 'N_fwd>0', 'MET>30']
-
-        os_reqs_d = { sel: True for sel in os_reqs }
-        os_selection = selection.require(**os_reqs_d)
-        bl_reqs_d = { sel: True for sel in bl_reqs }
-        BL = selection.require(**bl_reqs_d)
-
         cutflow     = Cutflow(output, ev, weight=weight)
-        cutflow_reqs_d = {}
-        for req in bl_reqs:
-            cutflow_reqs_d.update({req: True})
-            cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
+
+        sel = Selection(
+            dataset = dataset,
+            events = ev,
+            year = self.year,
+            ele = electron,
+            ele_veto = vetoelectron,
+            mu = muon,
+            mu_veto = vetomuon,
+            jet_all = jet,
+            jet_central = central,
+            jet_btag = btag,
+            jet_fwd = fwd,
+            met = ev.MET,
+        )
+
+        BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
         
         # first, make a few super inclusive plots
-        output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[os_selection].npvs, weight=weight.weight()[os_selection])
-        output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[os_selection].npvsGood, weight=weight.weight()[os_selection])
-        output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[os_selection], weight=weight.weight()[os_selection])
-        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[os_selection], weight=weight.weight()[os_selection])
-        output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[os_selection], weight=weight.weight()[os_selection])
-        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[os_selection], weight=weight.weight()[os_selection])
-        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[os_selection], weight=weight.weight()[os_selection])
-        output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[os_selection], weight=weight.weight()[os_selection])
+        output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
+        output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
+        output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
+        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
+        output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
+        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
+        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
+        output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
         
         output['MET'].fill(
             dataset = dataset,
-            pt  = ev.MET[os_selection].pt,
-            phi  = ev.MET[os_selection].phi,
-            weight = weight.weight()[os_selection]
-        )
-        
-        output['electron'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(electron[BL].pt)),
-            eta = ak.to_numpy(ak.flatten(electron[BL].eta)),
-            phi = ak.to_numpy(ak.flatten(electron[BL].phi)),
+            pt  = ev.MET[BL].pt,
+            phi  = ev.MET[BL].phi,
             weight = weight.weight()[BL]
         )
         
-        output['muon'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(muon[BL].pt)),
-            eta = ak.to_numpy(ak.flatten(muon[BL].eta)),
-            phi = ak.to_numpy(ak.flatten(muon[BL].phi)),
-            weight = weight.weight()[BL]
-        )
+        #output['electron'].fill(
+        #    dataset = dataset,
+        #    pt  = ak.to_numpy(ak.flatten(electron[BL].pt)),
+        #    eta = ak.to_numpy(ak.flatten(electron[BL].eta)),
+        #    phi = ak.to_numpy(ak.flatten(electron[BL].phi)),
+        #    weight = weight.weight()[BL]
+        #)
+        #
+        #output['muon'].fill(
+        #    dataset = dataset,
+        #    pt  = ak.to_numpy(ak.flatten(muon[BL].pt)),
+        #    eta = ak.to_numpy(ak.flatten(muon[BL].eta)),
+        #    phi = ak.to_numpy(ak.flatten(muon[BL].phi)),
+        #    weight = weight.weight()[BL]
+        #)
         
         output['lead_lep'].fill(
             dataset = dataset,
@@ -263,9 +254,18 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(jet[:, 2:3][BL].phi),
             weight = weight.weight()[BL]
         )
+
+        if re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+            #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
+            run_ = ak.to_numpy(ev.run)
+            lumi_ = ak.to_numpy(ev.luminosityBlock)
+            event_ = ak.to_numpy(ev.event)
+            output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
+            output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
+            output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
         
         # Now, take care of systematic unceratinties
-        if not dataset=='MuonEG':
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             alljets = getJets(ev, minPt=0, maxEta=4.7)
             alljets = alljets[(alljets.jetId>1)]
             for var in self.variations:
@@ -288,24 +288,44 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
                 ## Get the two leading b-jets in terms of btag score
                 high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
-        
-                # get the modified selection -> more difficult
-                selection.add('N_jet>2_'+var, (ak.num(jet.pt)>=3)) # stupid bug here...
-                selection.add('N_btag=2_'+var,      (ak.num(btag)==2) ) 
-                selection.add('N_central>1_'+var,   (ak.num(central)>=2) )
-                selection.add('N_fwd>0_'+var,       (ak.num(fwd)>=1) )
-                selection.add('MET>30_'+var, (getattr(ev.MET, var)>30) )
 
-                ## Don't change the selection for now...
-                bl_reqs = os_reqs + ['N_jet>2_'+var, 'MET>30_'+var, 'N_btag=2_'+var, 'N_central>1_'+var, 'N_fwd>0_'+var]
-                bl_reqs_d = { sel: True for sel in bl_reqs }
-                BL = selection.require(**bl_reqs_d)
+                met = ev.MET
+                met['pt'] = getattr(met, var)
+
+                sel = Selection(
+                    dataset = dataset,
+                    events = ev,
+                    year = self.year,
+                    ele = electron,
+                    ele_veto = vetoelectron,
+                    mu = muon,
+                    mu_veto = vetomuon,
+                    jet_all = jet,
+                    jet_central = central,
+                    jet_btag = btag,
+                    jet_fwd = fwd,
+                    met = met,
+                )
+
+                BL = sel.dilep_baseline(SS=False)
+
+                # get the modified selection -> more difficult
+                #selection.add('N_jet>2_'+var, (ak.num(jet.pt)>=3)) # stupid bug here...
+                #selection.add('N_btag=2_'+var,      (ak.num(btag)==2) ) 
+                #selection.add('N_central>1_'+var,   (ak.num(central)>=2) )
+                #selection.add('N_fwd>0_'+var,       (ak.num(fwd)>=1) )
+                #selection.add('MET>30_'+var, (getattr(ev.MET, var)>30) )
+
+                ### Don't change the selection for now...
+                #bl_reqs = os_reqs + ['N_jet>2_'+var, 'MET>30_'+var, 'N_btag=2_'+var, 'N_central>1_'+var, 'N_fwd>0_'+var]
+                #bl_reqs_d = { sel: True for sel in bl_reqs }
+                #BL = selection.require(**bl_reqs_d)
 
                 # the OS selection remains unchanged
-                output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[os_selection], weight=weight.weight()[os_selection])
-                output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[os_selection], weight=weight.weight()[os_selection])
-                output['N_b_'+var].fill(dataset=dataset, multiplicity=ak.num(btag)[os_selection], weight=weight.weight()[os_selection])
-                output['N_central_'+var].fill(dataset=dataset, multiplicity=ak.num(central)[os_selection], weight=weight.weight()[os_selection])
+                output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
+                output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
+                output['N_b_'+var].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
+                output['N_central_'+var].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
 
 
                 # We don't need to redo all plots with variations. E.g., just add uncertainties to the jet plots.
@@ -328,7 +348,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 output['fwd_jet_'+var].fill(
                     dataset = dataset,
                     pt  = ak.flatten(high_p_fwd[BL].pt),
-                    p   = ak.flatten(high_p_fwd[BL].p),
+                    #p   = ak.flatten(high_p_fwd[BL].p),
                     eta = ak.flatten(high_p_fwd[BL].eta),
                     phi = ak.flatten(high_p_fwd[BL].phi),
                     weight = weight.weight()[BL]
@@ -336,9 +356,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 
                 output['MET_'+var].fill(
                     dataset = dataset,
-                    pt  = getattr(ev.MET, var)[os_selection],
-                    phi  = ev.MET[os_selection].phi,
-                    weight = weight.weight()[os_selection]
+                    pt  = getattr(ev.MET, var)[BL],
+                    phi  = ev.MET[BL].phi,
+                    weight = weight.weight()[BL]
                 )
         
         return output
@@ -355,26 +375,41 @@ if __name__ == '__main__':
     from processor.default_accumulators import *
 
     overwrite = True
-    
+    year = 2018
+    small = False
+
     # load the config and the cache
     cfg = loadConfig()
     
     cacheName = 'forward'
+    if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
-    histograms = sorted(list(desired_output.keys()))
     
-    year = 2018
     
     fileset = {
         #'tW_scattering': fileset_2018['tW_scattering'],
-        'topW_v2': fileset_2018['topW_v2'],
+        #'topW_v2': fileset_2018['topW_v2'],
         'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
         'MuonEG': fileset_2018['MuonEG'],
+        'DoubleMuon': fileset_2018['DoubleMuon'],
+        'EGamma': fileset_2018['EGamma'],
         'WW': fileset_2018['WW'],
         'WZ': fileset_2018['WZ'],
         'DY': fileset_2018['DY'],
     }
-    
+
+    fileset = make_small(fileset, small, 10)
+
+    add_processes_to_output(fileset, desired_output)
+    for rle in ['run', 'lumi', 'event']:
+        desired_output.update({
+                'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+             })
+
+    histograms = sorted(list(desired_output.keys()))
+
     exe_args = {
         'workers': 16,
         'function_args': {'flatten': False},
@@ -394,7 +429,7 @@ if __name__ == '__main__':
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            forwardJetAnalyzer(year=year, variations=variations, accumulator=desired_output),
+            forwardJetAnalyzer(year=year, variations=[], accumulator=desired_output),  # not using variations now
             exe,
             exe_args,
             chunksize=250000,
@@ -406,4 +441,24 @@ if __name__ == '__main__':
         cache['simple_output']  = output
         cache.dump()
 
+    # this is a check for double counting.
 
+    em = zip_rle(output, 'MuonEG')
+    e = zip_rle(output, 'EGamma')
+    mm = zip_rle(output, 'DoubleMuon')
+
+    print ("Total events from MuonEG:", len(em))
+    print ("Total events from EGamma:", len(e))
+    print ("Total events from DoubleMuon:", len(mm))
+
+    em_mm = np.intersect1d(em, mm)
+    print ("Overlap MuonEG/DoubleMuon:", len(em_mm))
+    # print (em_mm)
+
+    e_mm = np.intersect1d(e, mm)
+    print ("Overlap EGamma/DoubleMuon:", len(e_mm))
+    # print (e_mm)
+
+    em_e = np.intersect1d(em, e)
+    print ("Overlap MuonEG/EGamma:", len(em_e))
+    # print (em_e)

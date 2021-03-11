@@ -127,7 +127,7 @@ class ML_preprocessor(processor.ProcessorABC):
         
         ## Muons
         muon     = Collections(ev, "Muon", "vetoTTH").get()
-        tightmuon = Collections(ev, "Muon", "tightTTH").get()
+        tightmuon = Collections(ev, "Muon", "tightSSTTH").get()
         dimuon   = choose(muon, 2)
         SSmuon   = ak.any((dimuon['0'].charge * dimuon['1'].charge)>0, axis=1)
         leading_muon_idx = ak.singletons(ak.argmax(muon.pt, axis=1))
@@ -135,7 +135,7 @@ class ML_preprocessor(processor.ProcessorABC):
         
         ## Electrons
         electron     = Collections(ev, "Electron", "vetoTTH").get()
-        tightelectron = Collections(ev, "Electron", "tightTTH").get()
+        tightelectron = Collections(ev, "Electron", "tightSSTTH").get()
         dielectron   = choose(electron, 2)
         SSelectron   = ak.any((dielectron['0'].charge * dielectron['1'].charge)>0, axis=1)
         leading_electron_idx = ak.singletons(ak.argmax(electron.pt, axis=1))
@@ -247,7 +247,7 @@ class ML_preprocessor(processor.ProcessorABC):
         #    cutflow_reqs_d.update({req: True})
         #    cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'ttbar1l_MG': 4}
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'ttbar1l_MG': 4, 'DY': 6 }
         if dataset in labels:
             label_mult = labels[dataset]
         else:
@@ -330,42 +330,21 @@ if __name__ == '__main__':
     overwrite = True
     year = 2018
  
-    #sample = 'TTZToLL_M-1to10'
-    #sample = 'TTZToLLNuNu_M-10'
-    #sample = 'ST_tWll'
-    #sample = 'tZq'
-    #sample = 'TTWZ'
-
-    #sample = 'ttHToNonbb'
-    #sample = 'THQ'
-
-    #sample = 'TTWJetsToQQ'
-    #sample = 'TTWJetsToLNu'
-    #sample = 'topW_v3'
-
-    #sample = 'TTToSemiLeptonic'
-    #sample = 'ST_t-channel'
-    #sample = 'ST_s-channel'
-    #sample = 'ST_tW'
-
-    sample = 'DY'
-   
     # load the config and the cache
     cfg = loadConfig()
     
     fileset = {
         ##'topW_v2': fileset_2018['topW_v2'],
-        #'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
+        'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
         ##'topW_v3': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/*_1.root'), # 6x larger stats
-        #'TTW': fileset_2018['TTW'],
+        'TTW': fileset_2018['TTW'],
         'TTZ': fileset_2018['TTZ'],
-        #'TTH': fileset_2018['TTH'],
+        'TTH': fileset_2018['TTH'],
         'ttbar': fileset_2018['ttbar'],
         'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
+        'DY': fileset_2018['DY'],
         #'ttbar1l_MG': fileset_2018['ttbar1l_MG'],
     }
-    
-    fileset = {sample: fileset_2018[sample]}
     
     exe_args = {
         'workers': 16,
@@ -394,6 +373,4 @@ if __name__ == '__main__':
 
     df_out = pd.DataFrame( df_dict )
 
-    df_out.to_hdf('data/multiclass_input_%s.h5'%sample, key='df', format='table', mode='w')#, append=True)
-
-
+    df_out.to_hdf('data/multiclass_input.h5', key='df', format='table', mode='w')#, append=True)

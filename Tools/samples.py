@@ -58,7 +58,9 @@ groups_2018 = {
     'ST_s-channel':     ['/ST_s-channel'],
     'ST_tW':            ['/ST_tW[-_]'],
 
-    'MuonEG':        ['/MuonEG_Run2018[ABCD]'],
+    'MuonEG':           ['/MuonEG_Run2018[ABCD]'],
+    'EGamma':           ['/EGamma_Run2018[ABCD]'],
+    'DoubleMuon':       ['/DoubleMuon_Run2018[ABCD]'],
 }
 
 #samples_2016 = glob.glob(data_path_2016 + '/*')

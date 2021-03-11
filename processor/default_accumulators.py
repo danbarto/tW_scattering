@@ -68,6 +68,7 @@ desired_output = {
 
             'skimmedEvents':    processor.defaultdict_accumulator(int),
             'totalEvents':      processor.defaultdict_accumulator(int),
+
 }
 
 outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N_fwd', 'N_central', 'MET']

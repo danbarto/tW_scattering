@@ -43,12 +43,20 @@ class Selection:
         diele   = choose(self.ele, 2)
         dilep   = cross(self.mu, self.ele)
 
-        is_SS = ( ak.any((dimu['0'].charge * dimu['1'].charge)>0, axis=1) | \
-                  ak.any((diele['0'].charge * diele['1'].charge)>0, axis=1) | \
-                  ak.any((dilep['0'].charge * dilep['1'].charge)>0, axis=1) )
+        if SS:
+            is_SS = ( ak.any((dimu['0'].charge * dimu['1'].charge)>0, axis=1) | \
+                      ak.any((diele['0'].charge * diele['1'].charge)>0, axis=1) | \
+                      ak.any((dilep['0'].charge * dilep['1'].charge)>0, axis=1) )
+        else:
+            is_OS = ( ak.any((dimu['0'].charge * dimu['1'].charge)<0, axis=1) | \
+                      ak.any((diele['0'].charge * diele['1'].charge)<0, axis=1) | \
+                      ak.any((dilep['0'].charge * dilep['1'].charge)<0, axis=1) )
 
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
-        lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
+        lepton_pdgId_pt_ordered = ak.fill_none(
+            ak.pad_none(
+                lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True),
+        0)
 
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
@@ -63,13 +71,17 @@ class Selection:
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
-        self.selection.add('SS',            is_SS )
+        if SS:
+            self.selection.add('SS',            is_SS )
+        else:
+            self.selection.add('OS',            is_OS )
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_jet>4',       (ak.num(self.jet_all)>4) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
+        self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
 
@@ -80,10 +92,11 @@ class Selection:
             'p_T(lep0)>25',
             'p_T(lep1)>20',
             'trigger',
-            'SS',
+            'SS' if SS else 'OS',
             'N_jet>3',
             'N_central>2',
             'N_btag>0',
+            'MET>30',
             'N_fwd>0',
         ]
         

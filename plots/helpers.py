@@ -116,10 +116,10 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     bkg_sel  = re.compile('(?!(%s))'%('|'.join(data+signals+omit))) if len(data+signals+omit)>0 else re.compile('')
 
     if histo is None:
-        processes = [ p[0] for p in output.values().keys() if not p[0]=='MuonEG' ]
+        processes = [ p[0] for p in output.values().keys() if not p[0] in data ]
         histogram = output.copy()
     else:
-        processes = [ p[0] for p in output[histo].values().keys() if not p[0]=='MuonEG' ]
+        processes = [ p[0] for p in output[histo].values().keys() if not p[0] in data ]
         histogram = output[histo].copy()
 
     histogram = histogram.project(axis, 'dataset')
@@ -132,6 +132,14 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     Data_total = 0
     if data:
         Data_total = histogram[data_sel].sum("dataset").values(overflow='over')[()].sum()
+        #observation = histogram[data[0]].sum('dataset').copy()
+        #first = True
+        #for d in data:
+        #    print (d)
+        #    if not first:
+        #        observation.add(histogram[d].sum('dataset'))
+        #        print ("adding")
+        #    first = False
     
     print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
     
@@ -159,7 +167,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     else:
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
     if data:
-        ax = hist.plot1d(histogram[data_sel], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
+        ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
+        #ax = hist.plot1d(observation, ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
 
         hist.plotratio(
                 num=histogram[data_sel].sum("dataset"),
@@ -177,10 +186,12 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     handles, labels = ax.get_legend_handles_labels()
     updated_labels = []
     for handle, label in zip(handles, labels):
-        #print (label)
         try:
-            updated_labels.append(new_labels[label])
-            if not label=='MuonEG':
+            if label is None or label=='None':
+                updated_labels.append("Observation")
+                handle.set_color('#000000')
+            else:
+                updated_labels.append(new_labels[label])
                 handle.set_color(new_colors[label])
         except:
             pass

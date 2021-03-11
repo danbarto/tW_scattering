@@ -144,19 +144,29 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
         ]
         
+    #print (dataset)
     if re.search(re.compile("MuonEG"), dataset):
+        #print ("In MuonEG branch")
         trigger = mask_or(ev, "HLT", triggers["MuonEG"])
-        return trigger & ~same_flavor
+        #print (sum(trigger & ~same_flavor))
+        return (trigger & ~same_flavor)
+        #return trigger
 
     elif re.search(re.compile("DoubleMuon"), dataset):
-        trigger = mask_or(ev, "HLT", triggers["MuonEG"])
-        return trigger & same_flavor & leading_mu
+        #print ("In DoubleMuon branch")
+        trigger = mask_or(ev, "HLT", triggers["DoubleMuon"])
+        #print (sum(trigger & same_flavor & leading_mu))
+        return (trigger & same_flavor & leading_mu)
+        #return trigger
 
     elif re.search(re.compile("DoubleEG|EGamma"), dataset):
+        #print ("In EGamma branch")
         trigger = mask_or(ev, "HLT", triggers["DoubleEG"])
-        return trigger & same_flavor & leading_ele
+        #print (sum(trigger & same_flavor & leading_ele))
+        return (trigger & same_flavor & leading_ele)
 
     else:
+        #print ("In MC branch")
         # these triggers aren't fully efficient yet. check if we're missing something.
         mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) & same_flavor & leading_mu)
         ee = (mask_or(ev, "HLT", triggers['DoubleEG']) & same_flavor & leading_ele)

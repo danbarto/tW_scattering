@@ -19,7 +19,7 @@ import awkward as ak
 import numpy as np
 import glob
 
-from Tools.config_helpers import *
+from Tools.config_helpers import loadConfig, redirector_fnal, redirector_ucsd, getName
 
 from metis.Sample import DirectorySample, DBSSample
 
@@ -32,7 +32,7 @@ def getSplitFactor(sample, target=1e6):
         fin = sample.get_files()[0].name
     else:
         average_events = sample.get_nevents()/len(sample.get_files())
-        fin = redirector_fnal + sample.get_files()[0].name
+        fin = redirector_ucsd + sample.get_files()[0].name
 
     print (fin)
     tree = uproot.open(fin)["Events"]
@@ -139,7 +139,7 @@ def getDict(sample):
         sample_dict['files'] = len(allFiles)
 
         if not isData:
-            nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector=redirector_fnal)
+            nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
         else:
             nEvents, sumw, sumw2 = metis_sample.get_nevents(),0,0
 
