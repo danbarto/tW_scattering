@@ -1,0 +1,348 @@
+Electron:
+  tight:
+    pt:
+      min: 15
+    etaSC:
+      max: 2.5
+      extra: abs
+    convVeto: 1
+    lostHits: 0
+    tightCharge: 2
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 4.0
+      extra: abs
+    
+  veto:
+    pt:
+      min: 10
+    etaSC:
+      max: 2.5
+      extra: abs
+    convVeto: 1
+    lostHits: 0
+    tightCharge: 2
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 4.0
+      extra: abs
+    
+  vetoTTH:
+    pt:
+      min: 7
+    etaSC:
+      max: 2.5
+      extra: abs
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 8.0
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    lostHits:
+      max: 1
+    mvaFall17V2noIso_WPL: 1
+
+  fakeableTTH:
+    pt:
+      min: 10
+    etaSC:
+      max: 2.5
+      extra: abs
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 8.0
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    sieie:
+      max: 0.03
+    hoe:
+      max: 0.10
+    eInvMinusPInv:
+      min: -0.04
+    convVeto: 1
+    lostHits: 0
+    mvaFall17V2noIso_WP80: 1
+    jetRelIso:
+      max: 0.7
+    deepJet:
+      max: 0.2770
+    mvaTTH:
+      max: 0.80
+
+  fakeableSSTTH:
+    pt:
+      min: 10
+    etaSC:
+      max: 2.5
+      extra: abs
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 8.0
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    sieie:
+      max: 0.03
+    hoe:
+      max: 0.10
+    eInvMinusPInv:
+      min: -0.04
+    convVeto: 1
+    lostHits: 0
+    mvaFall17V2noIso_WP80: 1
+    jetRelIso:
+      max: 0.7
+    deepJet:
+      max: 0.2770
+    mvaTTH:
+      max: 0.80
+    tightCharge: 2
+
+  tightTTH:
+    pt:
+      min: 10
+    etaSC:
+      max: 2.5
+      extra: abs
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 8.0
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    sieie:
+      max: 0.03
+    hoe:
+      max: 0.10
+    eInvMinusPInv:
+      min: -0.04
+    convVeto: 1
+    lostHits: 0
+    mvaFall17V2noIso_WPL: 1
+    deepJet:
+      max: 0.2770
+    mvaTTH:
+      min: 0.80
+
+  tightSSTTH:
+    pt:
+      min: 10
+    etaSC:
+      max: 2.5
+      extra: abs
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.1
+      extra: abs
+    sip3d:
+      max: 8.0
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    sieie:
+      max: 0.03
+    hoe:
+      max: 0.10
+    eInvMinusPInv:
+      min: -0.04
+    convVeto: 1
+    lostHits: 0
+    mvaFall17V2noIso_WPL: 1
+    deepJet:
+      max: 0.2770
+    mvaTTH:
+      min: 0.80
+    tightCharge: 2
+
+
+Muon:
+  tight:
+    pt:
+      min: 15
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.05
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+      
+  veto:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.05
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+
+  vetoTTH:
+    pt:
+      min: 5
+    eta:
+      max: 2.4
+      extra: abs
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+
+  fakeableTTH:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    mvaTTH:
+      max: 0.85
+    jetRelIso:
+      max: 0.5
+
+  fakeableSSTTH:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    mvaTTH:
+      max: 0.85
+    ptErrRel:
+      max: 0.2
+    jetRelIso:
+      max: 0.5
+
+  tightTTH:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    mvaTTH:
+      min: 0.85
+    deepJet:
+      max: 0.2770
+
+  tightSSTTH:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    mvaTTH:
+      min: 0.85
+    deepJet:
+      max: 0.2770
+    ptErrRel:
+      max: 0.2

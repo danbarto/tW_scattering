@@ -1,8 +1,10 @@
 '''
 Just a collection of useful functions
+Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
+#mport awkward1 as ak
 
 #import yaml
 from yaml import load, dump
@@ -16,10 +18,15 @@ except ImportError:
 import os
 import shutil
 import math
+import copy
 
 import glob
 
 data_path = os.path.expandvars('$TWHOME/data/')
+
+def get_samples():
+    with open(data_path+'samples.yaml') as f:
+        return load(f, Loader=Loader)
 
 def loadConfig():
     with open(data_path+'config.yaml') as f:
@@ -30,6 +37,12 @@ def dumpConfig(cfg):
     with open(data_path+'config.yaml', 'w') as f:
         dump(cfg, f, Dumper=Dumper, default_flow_style=False)
     return True
+
+def get_scheduler_address():
+    with open(os.path.expandvars('$TWHOME/scheduler_address.txt'), 'r') as f:
+        lines = f.readlines()
+        scheduler_address = lines[0].replace('\n','')
+    return scheduler_address
 
 def getName( DAS ):
     split = DAS.split('/')
@@ -45,29 +58,44 @@ def finalizePlotDir( path ):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
     
-def addRowToCutFlow( output, df, cfg, name, selection, processes=['TTW', 'TTX', 'diboson', 'ttbar', 'tW_scattering'] ):
+
+def doAwkwardLookup(h, ar):
     '''
-    add one row with name and selection for each process to the cutflow accumulator
+    takes a ya_hist histogram (which has a lookup function) and an awkward array.
     '''
-    for process in processes:
-        if selection is not None:
-            output[process][name] += ( sum(df['weight'][ (df['dataset']==process) & selection ].flatten() )*cfg['lumi'] )
-            output[process][name+'_w2'] += ( sum((df['weight'][ (df['dataset']==process) & selection ]**2).flatten() )*cfg['lumi']**2 )
-        else:
-            output[process][name] += ( sum(df['weight'][ (df['dataset']==process) ].flatten() )*cfg['lumi'] )
-            output[process][name+'_w2'] += ( sum((df['weight'][ (df['dataset']==process) ]**2).flatten() )*cfg['lumi']**2 )
-            
-def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3):
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(
+                ak.flatten(ar)
+            ) 
+        ), ak.num(ar) )
+
+def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
-    Takes a cache and returns a formated cut-flow table of processes.
+    Takes the output of a coffea processor (i.e. a python dictionary) and returns a formated cut-flow table of processes.
     Lines and processes have to follow the naming of the coffea processor output.
     '''
     res = {}
+    eff = {}
     for proc in processes:
         res[proc] = {line: "%s +/- %s"%(round(output[proc][line], significantFigures-len(str(int(output[proc][line])))), round(math.sqrt(output[proc][line+'_w2']), significantFigures-len(str(int(output[proc][line]))))) for line in lines}
+        
+        # for efficiencies. doesn't deal with uncertainties yet
+        eff[proc] = {lines[i]: round(output[proc][lines[i]]/output[proc][lines[i-1]], significantFigures) if (i>0 and output[proc][lines[i-1]]>0) else 1. for i,x in enumerate(lines)}
+    
+    if total:
+        res['total'] = {line: "%s"%round( sum([ output[proc][line] for proc in total ] ), significantFigures-len(str(int(sum([ output[proc][line] for proc in total ] ))))) for line in lines }
+    
+    # if a signal is specified, calculate S/B
+    if signal is not None:
+        backgrounds = copy.deepcopy(processes)
+        backgrounds.remove(signal)
+        res['S/B'] = {line: round( output[signal][line]/sum([ output[proc][line] for proc in backgrounds ]) if sum([ output[proc][line] for proc in backgrounds ])>0 else 1, significantFigures) for line in lines }
+            
+    if not absolute:
+        res=eff
     df = pd.DataFrame(res)
     df = df.reindex(lines) # restores the proper order
-    print (df[processes])
     return df
 
 ## event shape variables. computing intensive
@@ -175,4 +203,8 @@ def mt(pt1, phi1, pt2, phi2):
     '''
     return np.sqrt( 2*pt1*pt2 * (1 - np.cos(phi1-phi2)) )
 
-
+def pad_and_flatten(val): 
+    try:
+        return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
+    except AttributeError:
+        return val.flatten()

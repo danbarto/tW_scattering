@@ -1,19 +1,26 @@
 caches:
   base: $TWHOME/caches/
+  diLepOS: diLepOS
+  diLepOS_small: diLepOS_small
   doublemuonProcessor: doublemuonProcessor
+  example: example
   simpleProcessor: simpleProcessor
   singleLep: singleLep
   singleLep_small: singleLep_small
+  strong_tW: strong_tW
+  strong_tW_small: strong_tW_small
   triLep: triLep
   triLep_small: triLep_small
-  diLepOS: diLepOS
-  diLepOS_small: diLepOS_small
-  example: example
-lumi: 137
+  WH: WH
+  WH_small: WH_small
+lumi:
+  2016: 35.9
+  2017: 41.9
+  2018: 60.0
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
   localSkim: /hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/
   plots: /home/users/$USER/public_html/tW_scattering/
-  version: 0.1.6
+  version: 0.1.12
 signalSelection:
   met: 50

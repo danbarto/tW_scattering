@@ -33,7 +33,8 @@ infiles   = [
   #director+'/store/mc/RunIIAutumn18NanoAODv5/DYJetsToLL_M-50_TuneCP2_13TeV-madgraphMLM-pythia8/NANOAODSIM/PUFall18Fast_Nano1June2019_lhe_102X_upgrade2018_realistic_v19-v1/250000/9A3D4107-5366-C243-915A-F4426F464D2F.root',
   #'/hadoop/cms/store/user/dspitzba/tW_scattering/tW_scattering/nanoAOD/tW_scattering_nanoAOD_100.root'
   #director + '/store/mc/RunIIFall17NanoAODv7/WminusH_HToBB_WToLNu_M125_13TeV_powheg_pythia8/NANOAODSIM/PU2017_12Apr2018_Nano02Apr2020_102X_mc2017_realistic_v8-v1/70000/AC066AE4-C6E2-C245-9F85-D017D83507EB.root'
-  '/hadoop/cms/store/user/mbryson/WH_hadronic/WH_had_750_1/test/WH_hadronic_nanoAOD_500.root'
+  #'/hadoop/cms/store/user/mbryson/WH_hadronic/WH_had_750_1/test/WH_hadronic_nanoAOD_500.root'
+  'root://xrootd.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv6/W1JetsToLNu_NuPt-200_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/250000/3917F723-A4EF-AF42-9CA9-D5358FF660CB.root'
   #'/hadoop/cms/store/user/dspitzba/tW_scattering/tW_scattering/nanoAOD/tW_scattering_nanoAOD_500.root'
 ]
 if args.infiles:
