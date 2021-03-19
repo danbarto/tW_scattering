@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import awkward1 as ak
 
 from coffea import processor, hist
@@ -8,11 +10,17 @@ import numpy as np
 
 from Tools.objects import *
 from Tools.basic_objects import *
-from Tools.cutflow import *
-from Tools.config_helpers import *
-from Tools.triggers import *
+from Tools.cutflow import Cutflow
+from Tools.helpers import pad_and_flatten, mt
+from Tools.config_helpers import loadConfig, make_small
+from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
+
+os.environ['KERAS_BACKEND'] = 'theano'
+#from keras.models import load_model
+from ML.multiclassifier import load_model
+
 
 class SS_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -76,11 +84,22 @@ class SS_analysis(processor.ProcessorABC):
         leading_lepton = lepton[leading_lepton_idx]
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
+
+        dilepton_mass = (leading_lepton+trailing_lepton).mass
+        dilepton_pt = (leading_lepton+trailing_lepton).pt
+        dilepton_dR = delta_r(leading_lepton, trailing_lepton)
         
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
         
         n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
         n_chargeflip = getChargeFlips(electron, ev.GenPart) + getChargeFlips(muon, ev.GenPart)
+
+        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+
+        ## Tau and other stuff
+        tau       = getTaus(ev)
+        track     = getIsoTracks(ev)
 
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
@@ -94,6 +113,12 @@ class SS_analysis(processor.ProcessorABC):
         fwd       = getFwdJet(light)
         fwd_noPU  = getFwdJet(light, puId=False)
         
+        high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
+
+        bl          = cross(lepton, high_score_btag)
+        bl_dR       = delta_r(bl['0'], bl['1'])
+        min_bl_dR   = ak.min(bl_dR, axis=1)
+
         ## forward jets
         j_fwd = fwd[ak.singletons(ak.argmax(fwd.p, axis=1))] # highest momentum spectator
         
@@ -187,6 +212,59 @@ class SS_analysis(processor.ProcessorABC):
             cutflow_reqs_d.update({req: True})
             cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
         
+
+        if False:
+            # define the inputs to the NN
+            # this is super stupid. there must be a better way.
+            NN_inputs = np.stack([
+                ak.to_numpy(ak.num(jet[BL])),
+                ak.to_numpy(ak.num(tau[BL])),
+                ak.to_numpy(ak.num(track[BL])),
+                ak.to_numpy(st[BL]),
+                ak.to_numpy(ev.MET[BL].pt),
+                ak.to_numpy(ak.max(mjf[BL], axis=1)),
+                ak.to_numpy(pad_and_flatten(delta_eta[BL])),
+                ak.to_numpy(pad_and_flatten(leading_lepton[BL].pt)),
+                ak.to_numpy(pad_and_flatten(leading_lepton[BL].eta)),
+                ak.to_numpy(pad_and_flatten(trailing_lepton[BL].pt)),
+                ak.to_numpy(pad_and_flatten(trailing_lepton[BL].eta)),
+                ak.to_numpy(pad_and_flatten(dilepton_mass[BL])),
+                ak.to_numpy(pad_and_flatten(dilepton_pt[BL])),
+                ak.to_numpy(pad_and_flatten(j_fwd[BL].pt)),
+                ak.to_numpy(pad_and_flatten(j_fwd[BL].p)),
+                ak.to_numpy(pad_and_flatten(j_fwd[BL].eta)),
+                ak.to_numpy(pad_and_flatten(jet[:, 0:1][BL].pt)),
+                ak.to_numpy(pad_and_flatten(jet[:, 1:2][BL].pt)),
+                ak.to_numpy(pad_and_flatten(jet[:, 0:1][BL].eta)),
+                ak.to_numpy(pad_and_flatten(jet[:, 1:2][BL].eta)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1][BL].pt)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2][BL].pt)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1][BL].eta)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2][BL].eta)),
+                ak.to_numpy(min_bl_dR[BL]),
+                ak.to_numpy(min_mt_lep_met[BL]),
+            ])
+
+            NN_inputs = np.moveaxis(NN_inputs, 0, 1)
+
+            model, scaler = load_model('v6')
+
+            #print (np.shape(NN_inputs))
+            try:
+                NN_inputs_scaled = scaler.transform(NN_inputs)
+
+                NN_pred    = model.predict( NN_inputs_scaled )
+
+                best_score = np.argmax(NN_pred, axis=1)
+
+            except ValueError:
+                #print ("Empty NN_inputs")
+                NN_pred = np.array([])
+                best_score = np.array([])
+
+            output['node'].fill(dataset=dataset, multiplicity=best_score, weight=weight.weight()[BL])
+
+
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[ss_selection].npvs, weight=weight.weight()[ss_selection])
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[ss_selection].npvsGood, weight=weight.weight()[ss_selection])
@@ -293,31 +371,45 @@ if __name__ == '__main__':
     from processor.default_accumulators import *
 
     overwrite = True
+    small = True
     
     # load the config and the cache
     cfg = loadConfig()
     
     cacheName = 'SS_analysis'
+    if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
-    histograms = sorted(list(desired_output.keys()))
     
     year = 2018
     
     fileset = {
-        'topW_v2': fileset_2018['topW_v2'],
+        'topW_v3': fileset_2018['topW_v3'],
         'TTW': fileset_2018['TTW'],
         'TTZ': fileset_2018['TTZ'],
         'TTH': fileset_2018['TTH'],
+        'diboson': fileset_2018['diboson'],
         'ttbar': fileset_2018['ttbar'],
     }
     
+    fileset = make_small(fileset, small)
     
+    add_processes_to_output(fileset, desired_output)
+
     exe_args = {
         'workers': 16,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
     }
     exe = processor.futures_executor
+
+    # add some histograms that we defined in the processor
+    # everything else is taken the default_accumulators.py
+    from processor.default_accumulators import multiplicity_axis, dataset_axis
+    desired_output.update({
+        "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+    })
+
+    histograms = sorted(list(desired_output.keys()))
     
     if not overwrite:
         cache.load()
@@ -334,7 +426,8 @@ if __name__ == '__main__':
             SS_analysis(year=year, variations=variations, accumulator=desired_output),
             exe,
             exe_args,
-            chunksize=250000,
+            chunksize=100000,
+            #chunksize=250000,
         )
         
         cache['fileset']        = fileset
@@ -343,4 +436,46 @@ if __name__ == '__main__':
         cache['simple_output']  = output
         cache.dump()
 
+    
+    import warnings
+    warnings.filterwarnings('ignore')
+    
+    import matplotlib.pyplot as plt
+    import mplhep as hep
+    plt.style.use(hep.style.CMS)
+    
+    from plots.helpers import makePlot
+    
+    # defining some new axes for rebinning.
+    N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
+    N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
+    pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
+    eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
+    
+    my_labels = {
+        'topW_v3': 'top-W scat.',
+        'TTZ': r'$t\bar{t}Z$',
+        'TTW': r'$t\bar{t}W$',
+        'TTH': r'$t\bar{t}H$',
+        'diboson': 'VV/VVV',
+        'ttbar': r'$t\bar{t}$',
+    }
+    
+    my_colors = {
+        'topW_v3': '#FF595E',
+        'TTZ': '#FFCA3A',
+        'TTW': '#8AC926',
+        'TTH': '#34623F',
+        'diboson': '#525B76',
+        'ttbar': '#1982C4',
+    }
 
+    makePlot(output, 'node', 'multiplicity',
+         data=[],
+         bins=N_bins_red, log=False, normalize=False, axis_label=r'$p_{T}$ (lead lep) (GeV)',
+         new_colors=my_colors, new_labels=my_labels,
+         order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar', 'topW_v3'],
+         save='/home/users/dspitzba/public_html/tW_scattering/dump/ML_node',
+        )
