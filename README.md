@@ -99,7 +99,7 @@ source activate_conda.sh
 
 To start a jupyter server just do
 ```
-( conda activate daskanalysisenv && jupyter notebook --no-browser )
+( conda activate coffeadev && jupyter notebook --no-browser )
 ```
 In order to use jupyter you need to establish another ssh connection from your computer:
 ```
@@ -129,8 +129,15 @@ To deactivate the environment, just type `conda deactivate`
 
 Uninstall the jupyter kernel if you're having problems with it:
 ```
-jupyter kernelspec uninstall daskanalysisenv
+jupyter kernelspec uninstall coffeadev
 ```
+and then reinstall it again
+```
+python -m ipykernel install --user --name=coffeadev
+jupyter nbextension install --py widgetsnbextension --user
+jupyter nbextension enable widgetsnbextension --user --py
+```
+
 
 If you already have a jupyter server running **on the uaf**, a different port than 8893 might be used. In this case, alter the `ssh -N -f ...` command so that it matches the ports. To stop a running jupyter server that is running but you can't find anymore, run `ps aux | grep $USER`. This will return you the list of processes attributed to your user. You should also find sth like
 ```
