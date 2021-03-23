@@ -15,8 +15,6 @@ We do this in a virtual environment, using the miniconda environment management 
 You might get some error messages about packages that couldn't get uninstalled that you (usually) can ignore.
 
 ```
-mkdir daskucsd
-cd daskucsd
 curl -O -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b 
 
@@ -40,13 +38,13 @@ conda install --name base conda-pack -y
 
 Create environments with as much stuff from anaconda
 ```
-conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr yahist -y
-conda create --name daskanalysisenv uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr yahist -y
+conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr -y
+conda create --name coffeadev uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr -y
 ```
 And then install residual packages with pip
 ```
-conda run --name daskworkerenv pip install coffea
-conda run --name daskanalysisenv pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto
+conda run --name daskworkerenv pip install coffea yahist
+conda run --name coffeadev pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto yahist
 ```
 
 Make the tarball for the worker nodes (this will be needed for DASK only)
