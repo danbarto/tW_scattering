@@ -17,7 +17,6 @@ You might get some error messages about packages that couldn't get uninstalled t
 ```
 curl -O -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b 
-
 ```
 
 Add conda to the end of ~/.bashrc, so relogin after executing this line
@@ -57,6 +56,16 @@ I had to update my python version, so you might have to run
 ```
 conda install python=3.8.6
 ```
+
+### Coffea developer mode
+
+If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository
+```
+git clone https://github.com/CoffeaTeam/coffea
+cd coffea
+pip install --editable .[dev]
+```
+Full instructions are given [here](https://coffeateam.github.io/coffea/installation.html#for-developers).
 
 ### Setting up CMS software and analysis code
 
