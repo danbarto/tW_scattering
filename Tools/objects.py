@@ -5,7 +5,11 @@ import os
 
 import copy
 import numpy as np
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 
 from yaml import load, dump
 try:
@@ -95,8 +99,8 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
-            mask_far = ~(delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
+            mask_close = (delta_r2(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4**2)*1
+            mask_far = ~(delta_r2(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4**2)*1
 
             deepJet = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
@@ -122,8 +126,8 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
-            mask_far = ~(delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
+            mask_close = (delta_r2(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4**2)*1
+            mask_far = ~(delta_r2(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4**2)*1
 
             deepJet = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match

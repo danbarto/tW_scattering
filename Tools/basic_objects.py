@@ -3,7 +3,11 @@ Standardized object selections for simple objects like jets
 '''
 import os
 
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 import numpy as np
 
 def getPtEtaPhi(coll, pt_var='pt', eta_var='eta', phi_var='phi'):

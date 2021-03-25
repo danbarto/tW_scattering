@@ -2,7 +2,11 @@
 Maybe standard selections should go in here?
 
 '''
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 
 from coffea.analysis_tools import Weights, PackedSelection
 from Tools.triggers import getTriggers, getFilters

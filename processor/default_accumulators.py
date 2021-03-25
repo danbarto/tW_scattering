@@ -1,4 +1,3 @@
-import awkward1 as ak
 from coffea import processor, hist
 
 

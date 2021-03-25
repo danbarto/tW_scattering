@@ -216,8 +216,8 @@ def get_class_weight(df):
 
 if __name__ == '__main__':
 
-    load_weights = True
-    version = 'v6'
+    load_weights = False
+    version = 'v7'
 
     plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/"
 
