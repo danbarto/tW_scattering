@@ -1,5 +1,4 @@
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 try:
     import awkward1 as ak
 except ImportError:
@@ -24,37 +23,7 @@ from Tools.selections import Selection
 import warnings
 warnings.filterwarnings("ignore")
 
-#from keras.models import load_model
-#from ML.multiclassifier import load_model
-#from keras import backend as k
-os.environ['KERAS_BACKEND'] = 'theano'
-
-import keras
-import joblib
-
-def load_model(version='v5'):
-    model = keras.models.load_model(os.path.expandvars('$TWHOME/ML/networks/weights_%s.h5a'%version))
-    scaler = joblib.load(os.path.expandvars('$TWHOME/ML/networks/scaler_%s.joblib'%version))
-    return model, scaler
-
-
-## extra imports to set GPU options
-#import tensorflow as tf
-
-####################################
-## TensorFlow wizardry
-##config = tf.ConfigProto()
-#config = tf.compat.v1.ConfigProto
-#
-## Don't pre-allocate memory; allocate as-needed
-#config.gpu_options.allow_growth = True
-#
-## Only allow a total of half the GPU memory to be allocated
-#config.gpu_options.per_process_gpu_memory_fraction = 0.5
-#
-## Create a session with the above options specified.
-#k.tensorflow_backend.set_session(tf.Session(config=config))
-
+from ML.multiclassifier_tools import load_onnx_model, predict_onnx
 
 class SS_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -246,13 +215,12 @@ class SS_analysis(processor.ProcessorABC):
 
             NN_inputs = np.moveaxis(NN_inputs, 0, 1)
 
-            model, scaler = load_model('v6')
+            model, scaler = load_onnx_model('v8')
 
-            #print (np.shape(NN_inputs))
             try:
                 NN_inputs_scaled = scaler.transform(NN_inputs)
 
-                NN_pred    = model.predict( NN_inputs_scaled )
+                NN_pred    = predict_onnx(model, NN_inputs_scaled)
 
                 best_score = np.argmax(NN_pred, axis=1)
 
@@ -267,6 +235,7 @@ class SS_analysis(processor.ProcessorABC):
 
             output['node'].fill(dataset=dataset, multiplicity=best_score, weight=weight_BL)
 
+            output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
             output['node0_score'].fill(dataset=dataset, score=NN_pred[best_score==0][:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==0])
             output['node1_score'].fill(dataset=dataset, score=NN_pred[best_score==1][:,1] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==1])
             output['node2_score'].fill(dataset=dataset, score=NN_pred[best_score==2][:,2] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==2])
@@ -288,6 +257,8 @@ class SS_analysis(processor.ProcessorABC):
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight_BL)
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight_BL)
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight_BL)
+        output['ST'].fill(dataset=dataset, pt=st[BL], weight=weight_BL)
+        output['HT'].fill(dataset=dataset, pt=ht[BL], weight=weight_BL)
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
@@ -418,7 +389,7 @@ if __name__ == '__main__':
     add_processes_to_output(fileset, desired_output)
 
     exe_args = {
-        'workers': 4,
+        'workers': 12,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
     }
@@ -426,14 +397,17 @@ if __name__ == '__main__':
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
-    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis
+    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis
     desired_output.update({
+        "ST": hist.Hist("Counts", dataset_axis, pt_axis),
+        "HT": hist.Hist("Counts", dataset_axis, pt_axis),
         "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
-        "node0_score": hist.Hist("Score", dataset_axis, score_axis),
-        "node1_score": hist.Hist("Score", dataset_axis, score_axis),
-        "node2_score": hist.Hist("Score", dataset_axis, score_axis),
-        "node3_score": hist.Hist("Score", dataset_axis, score_axis),
-        "node4_score": hist.Hist("Score", dataset_axis, score_axis),
+        "node0_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node1_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node2_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node3_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node4_score": hist.Hist("Counts", dataset_axis, score_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))
@@ -463,10 +437,6 @@ if __name__ == '__main__':
         cache['simple_output']  = output
         cache.dump()
 
-    
-    import warnings
-    warnings.filterwarnings('ignore')
-    
     import matplotlib.pyplot as plt
     import mplhep as hep
     plt.style.use(hep.style.CMS)

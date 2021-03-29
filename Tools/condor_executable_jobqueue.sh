@@ -24,17 +24,20 @@ ls -lrth
 
 mkdir temp ; cd temp
 
-mv ../{daskworkerenv.tar.*,*.py,analysis.tar.*} .
+mv ../{workerenv.tar.*,*.py,analysis.tar.*} .
 echo "started extracting at $(date +%s)"
-tar xf daskworkerenv.tar.*
+tar xf workerenv.tar.*
 tar xf analysis.tar.*
 echo "finished extracting at $(date +%s)"
 
-source daskworkerenv/bin/activate
+source workerenv/bin/activate
+
+pip install coffea
+pip install yahist
 
 ls -lrth
 export PYTHONPATH=`pwd`:$PYTHONPATH
-export PATH=`pwd`/daskworkerenv/bin:$PATH
+export PATH=`pwd`/workerenv/bin:$PATH
 
 echo "I'm currently here:"
 pwd
@@ -52,9 +55,5 @@ ls -lrth
 echo $PYTHONPATH
 echo "Test run for python"
 python -m Tools.cutflow
-
-echo "Downloading some files that will be handy"
-wget https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions18/13TeV/ReReco/Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt
-
 
 $@

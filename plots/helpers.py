@@ -106,7 +106,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[]):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -217,7 +217,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     if log:
         ax.set_yscale('log')
         
-    y_mult = 1.3 if not log else 100
+    y_mult = 1.7 if not log else 100
     if ymax:
         ax.set_ylim(0.01, ymax)
     else:
@@ -232,8 +232,11 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     )
     plt.subplots_adjust(hspace=0)
 
-    fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.8, 0.995, '13 TeV', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    if len(data)>0:
+        fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    else:
+        fig.text(0.0, 0.995, '$\\bf{CMS}$ Simulation', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    fig.text(0.6, 0.995, r'$%.1f\ fb^{-1}$ (13 TeV)'%(lumi), fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
     if normalize:
         fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
@@ -249,6 +252,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
 def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
     
+    #print (up_vars)
+
     if rebin:
         h = h.project(axis, 'dataset').rebin(axis, rebin)
     
@@ -258,6 +263,8 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
     central = values[0]
     stats = values[1]
     
+    #print (central)
+    
     up = np.zeros_like(central)
     down = np.zeros_like(central)
     
@@ -265,6 +272,7 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
         if rebin:
             up_var = up_var.project(axis, 'dataset').rebin(axis, rebin)
             up_var.scale(scales, axis='dataset')
+        #print (up_var[selection].values())
         up += (up_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
     
     for down_var in down_vars:

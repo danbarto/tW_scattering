@@ -11,6 +11,8 @@ from yahist import Hist1D
 import tensorflow as tf
 from keras.utils import np_utils
 
+import onnxruntime as rt
+
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, RobustScaler
@@ -58,8 +60,8 @@ def baseline_model(input_dim, out_dim):
 
 
 def simpleAccuracy(pred, dummy_y):
-    pred_Y = np.argmax(pred, axis=1)
-    true_Y = np.argmax(dummy_y, axis=1)
+    pred_Y = pred.argmax(axis=1)
+    true_Y = dummy_y.argmax(axis=1)
     
     # this gives the measure of correctly tagged events, over the total
     return sum(pred_Y == true_Y)/len(true_Y)
@@ -73,10 +75,11 @@ def test_train(test, train, y_test, y_train, labels=[], bins=25, node=0, plot_di
     h = {}
     for i, label in enumerate(labels):
         
-        _ks, _p = scipy.stats.kstest(
-            train[:,node][(y_train==i)],
-            test[:,node][(y_test==i)]
-        )
+        #_ks, _p = scipy.stats.kstest(
+        #    train[:,node][(y_train==i)],
+        #    test[:,node][(y_test==i)]
+        #)
+        _ks, _p = -1, -1
         
         ks[label] = (_p, _ks)
 
@@ -104,15 +107,16 @@ def test_train_cat(test, train, y_test, y_train, labels=[], n_cat=5, plot_dir=No
     h = {}
     for i, label in enumerate(labels):
         
-        _ks, _p = scipy.stats.kstest(
-            np.argmax(train, axis=1)[(y_train==i)],
-            np.argmax(test, axis=1)[(y_test==i)]
-        )
+        #_ks, _p = scipy.stats.kstest(
+        #    train.argmax(axis=1)[(y_train==i)],
+        #    test.argmax(axis=1)[(y_test==i)]
+        #)
+        _ks, _p = -1, -1
 
         ks[label] = (_p, _ks)
         
-        h[label+'_test'] = Hist1D(np.argmax(test, axis=1)[(y_test==i)], bins=bins, weights=weight_test[(y_test==i)]).normalize()
-        h[label+'_train'] = Hist1D(np.argmax(train, axis=1)[(y_train==i)], bins=bins, label=label+' (p=%.2f, KS=%.2f)'%(_p, _ks), weights=weight_train[(y_train==i)]).normalize()
+        h[label+'_test'] = Hist1D(test.argmax(axis=1)[(y_test==i)], bins=bins, weights=weight_test[(y_test==i)]).normalize()
+        h[label+'_train'] = Hist1D(train.argmax(axis=1)[(y_train==i)], bins=bins, label=label+' (p=%.2f, KS=%.2f)'%(_p, _ks), weights=weight_train[(y_train==i)]).normalize()
         
 
         h[label+'_test'].plot(color=colors[i], histtype="step", ls='--', linewidth=2)
@@ -154,14 +158,21 @@ def get_ROC(test, train, y_test, y_train, node=0):
 
 def prepare_data(f_in, selection, robust=False, reuse=False, fout=None):
 
+    label_ID = 'label_cat'  # was: label
+
     if not reuse:
         df = pd.read_hdf(f_in) # load data processed with ML_processor.py
         df = df[selection]
 
-        labels = df['label'].values
+
+        labels = df[label_ID].values
+        process_labels = df['label'].values
         
-        df = df[(labels<5)]
-        labels = labels[labels<5]
+        df = df[(process_labels<5)]
+        labels = labels[process_labels<5] # filter out high weight DY events
+
+        df = df[(labels<4)]
+        labels = labels[labels<4] # filter out high weight DY events
 
         df_train, df_test, y_train, y_test = train_test_split(df, labels, train_size= int( 0.9*labels.shape[0] ), random_state=42 )
 
@@ -179,10 +190,11 @@ def prepare_data(f_in, selection, robust=False, reuse=False, fout=None):
         df_train = df[df['test_label']==0]
         df_test = df[df['test_label']==1]
 
-        y_train = df_train['label'].values
-        y_test = df_test['label'].values
+        y_train = df_train[label_ID].values
+        y_test = df_test[label_ID].values
 
-    print ("Number of non-prompt events (=ttbar):", len(df[df['label']==4]))
+    for i in range(5):
+        print ("Number of events in category %s:"%i, len(df[df[label_ID]==i]))
 
     return df_train, df_test, y_train, y_test#, df_mean, df_std
 
@@ -206,6 +218,15 @@ def load_model(version='v5'):
     scaler = joblib.load(os.path.expandvars('$TWHOME/ML/networks/scaler_%s.joblib'%version))
     return model, scaler
 
+def load_onnx_model(version='v8'):
+    model = rt.InferenceSession(os.path.expandvars('$TWHOME/ML/networks/weights_%s.onnx'%version))
+    scaler = joblib.load(os.path.expandvars('$TWHOME/ML/networks/scaler_%s.joblib'%version))
+    return model, scaler
+
+def predict_onnx(model, data):
+    input_name = model.get_inputs()[0].name
+    pred_onx = model.run(None, {input_name: data.astype(np.float32)})[0]
+    return pred_onx
 
 def get_class_weight(df):
     '''
@@ -217,11 +238,11 @@ def get_class_weight(df):
 if __name__ == '__main__':
 
     load_weights = False
-    version = 'v7'
+    version = 'v11'
 
-    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/"
+    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/%s/"%version
 
-    df = pd.read_hdf('data/multiclass_input.h5')
+    df = pd.read_hdf('data/multiclass_input_v2.h5')
 
     variables = [
         ## best results with all variables, but should get pruned at some point...
@@ -257,14 +278,15 @@ if __name__ == '__main__':
         ###'weight', # this does of course _not_ work 🤡 
     ]
 
-    preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))
+    #preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))
+    preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['weight']>0))
     
     colors = ['gray', 'blue', 'red', 'green', 'orange']
     
     bins = [x/20 for x in range(21)]
 
-    #df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input.h5', preselection, reuse=False, fout='data/multiclass_input_split.h5')
-    df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_split.h5', preselection, reuse=True)
+    df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split.h5')
+    #df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
     
     X_train = df_train[variables].values
     X_test  = df_test[variables].values
@@ -328,17 +350,26 @@ if __name__ == '__main__':
     df['score_ttW'] = pred_all[:,1]
     df['score_ttZ'] = pred_all[:,2]
     df['score_ttH'] = pred_all[:,3]
-    df['score_ttbar'] = pred_all[:,4]
-    df['score_best'] = np.argmax(pred_all, axis=1)
+    #df['score_ttbar'] = pred_all[:,4]
+    df['score_best'] = pred_all.argmax(axis=1)
     
+    label_ID = 'label'  # was: label
     processes = {
-        'topW_v2': df[df['label']==0],
-        'TTW': df[df['label']==1],
-        'TTZ': df[df['label']==2],
-        'TTH': df[df['label']==3],
-        'ttbar': df[df['label']==4],
-        'rare': df[df['label']==5],
+        'topW_v2': df[df[label_ID]==0],
+        'TTW':     df[df[label_ID]==1],
+        'TTZ':     df[df[label_ID]==2],
+        'TTH':     df[df[label_ID]==3],
+        'ttbar':   df[df[label_ID]==4],
+        'rare':    df[df[label_ID]==5],
     }
+    #processes = {
+    #    'topW_v2': df[df[label_ID]==0],
+    #    'prompt':     df[df[label_ID]==1],
+    #    'lost lepton':     df[df[label_ID]==2],
+    #    'charge flip':     df[df[label_ID]==3],
+    #    'non prompt':   df[df[label_ID]==4],
+    #    #'rare':    df[df[label_ID]==5],
+    #}
 
     sel_baseline = ((df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['n_jet']>4) & (df['n_central']>3) & (df['st']>600) & (df['met']>50) & (df['delta_eta_jj']>2.0) & (df['fwd_jet_p']>500))
 
@@ -437,33 +468,35 @@ if __name__ == '__main__':
         pred_train,
         y_test_int,
         y_train_int,
-        labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
-        n_cat=5,
+        #labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
+        labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
+        n_cat=4,  # was: 5
         plot_dir=plot_dir,
         weight_test = df_test['weight'].values,
         weight_train = df_train['weight'].values,
     )
 
-    for label in ks:
-        if ks[label][0]<0.05:
-            print ("- !! Found small p-value for process %s: %.2f"%(label, ks[label][0]))
+    #for label in ks:
+    #    if ks[label][0]<0.05:
+    #        print ("- !! Found small p-value for process %s: %.2f"%(label, ks[label][0]))
 
     print ("Checking for overtraining in the different nodes...")
 
-    for node in [0,1,2,3,4]:
+    for node in [0,1,2,3]:  # also had 4
         ks = test_train(
             pred_test,
             pred_train,
             y_test_int,
             y_train_int,
-            labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
+            #labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
+            labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
             node=node,
             bins=bins,
             plot_dir=plot_dir,
             weight_test = df_test['weight'].values,
             weight_train = df_train['weight'].values,
         )
-        for label in ks:
-            if ks[label][0]<0.05:
-                print ("- !! Found small p-value for process %s in node %s: %.2f"%(label, node, ks[label][0]))
+        #for label in ks:
+        #    if ks[label][0]<0.05:
+        #        print ("- !! Found small p-value for process %s in node %s: %.2f"%(label, node, ks[label][0]))
 

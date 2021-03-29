@@ -23,7 +23,7 @@ should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = ""
 Transfer_Executable     = True
-transfer_input_files    = utils.py,cachepreload.py,daskworkerenv.tar.gz,analysis.tar.gz
+transfer_input_files    = utils.py,cachepreload.py,workerenv.tar.gz,analysis.tar.gz
 output                  = logs/1e.$(Cluster).$(Process).out
 error                   = logs/1e.$(Cluster).$(Process).err
 log                     = logs/$(Cluster).log
@@ -113,7 +113,7 @@ def make_htcondor_cluster(
         dashboard_address=8787,
         ):
 
-    input_files = [os.path.join(BASEDIR, x) for x in ["utils.py","cachepreload.py","daskworkerenv.tar.gz","analysis.tar.gz"]]
+    input_files = [os.path.join(BASEDIR, x) for x in ["utils.py","cachepreload.py","workerenv.tar.gz","analysis.tar.gz"]]
     log_directory = os.path.join(BASEDIR, "logs/")
     proxy_file = "/tmp/x509up_u{0}".format(os.getuid())
 
@@ -141,7 +141,7 @@ def make_htcondor_cluster(
                 "Stream_Error": False,
                 "+DESIRED_Sites":'"T2_US_UCSD"',
                 # "Requirements": '((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true) && (TARGET.Machine != "sdsc-18.t2.ucsd.edu") && (TARGET.Machine != "sdsc-20.t2.ucsd.edu") && (TARGET.Machine != "cabinet-7-7-36.t2.ucsd.edu") && (TARGET.Machine != "cabinet-4-4-18.t2.ucsd.edu"))',
-                "Requirements": '((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true))',
+                "Requirements": '(HAS_SINGULARITY=?=True)',
                 },
             }
     if local:

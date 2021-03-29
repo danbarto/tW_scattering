@@ -1,5 +1,7 @@
-
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
@@ -15,6 +17,9 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
+
+import warnings
+warnings.filterwarnings("ignore")
 
 def zip_rle(output, dataset):
     return ak.to_numpy(
@@ -162,17 +167,23 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
-        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
+
+        BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0'])
+        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL_minusNb], weight=weight.weight()[BL_minusNb])
+
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
-        output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
+
+        BL_minusFwd = sel.dilep_baseline(SS=False, omit=['N_fwd>0'])
+        output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
         
+        BL_minusMET = sel.dilep_baseline(SS=False, omit=['MET>50'])
         output['MET'].fill(
             dataset = dataset,
-            pt  = ev.MET[BL].pt,
-            phi  = ev.MET[BL].phi,
-            weight = weight.weight()[BL]
+            pt  = ev.MET[BL_minusMET].pt,
+            phi  = ev.MET[BL_minusMET].phi,
+            weight = weight.weight()[BL_minusMET]
         )
         
         #output['electron'].fill(
@@ -323,8 +334,10 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
                 # the OS selection remains unchanged
                 output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
-                output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
-                output['N_b_'+var].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
+                BL_minusFwd = sel.dilep_baseline(SS=False, omit=['N_fwd>0'])
+                output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
+                BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0'])
+                output['N_b_'+var].fill(dataset=dataset, multiplicity=ak.num(btag)[BL_minusNb], weight=weight.weight()[BL_minusNb])
                 output['N_central_'+var].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
 
 
@@ -353,12 +366,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(high_p_fwd[BL].phi),
                     weight = weight.weight()[BL]
                 )
-                
+
+                BL_minusMET = sel.dilep_baseline(SS=False, omit=['MET>50'])        
                 output['MET_'+var].fill(
                     dataset = dataset,
-                    pt  = getattr(ev.MET, var)[BL],
-                    phi  = ev.MET[BL].phi,
-                    weight = weight.weight()[BL]
+                    pt  = getattr(ev.MET, var)[BL_minusMET],
+                    phi  = ev.MET[BL_minusMET].phi,
+                    weight = weight.weight()[BL_minusMET]
                 )
         
         return output
@@ -376,7 +390,8 @@ if __name__ == '__main__':
 
     overwrite = True
     year = 2018
-    small = False
+    local = False
+    small = True
 
     # load the config and the cache
     cfg = loadConfig()
@@ -388,17 +403,19 @@ if __name__ == '__main__':
     
     fileset = {
         #'tW_scattering': fileset_2018['tW_scattering'],
-        #'topW_v2': fileset_2018['topW_v2'],
+        'topW_v3': fileset_2018['topW_v3'],
         'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
         'MuonEG': fileset_2018['MuonEG'],
         'DoubleMuon': fileset_2018['DoubleMuon'],
         'EGamma': fileset_2018['EGamma'],
-        'WW': fileset_2018['WW'],
-        'WZ': fileset_2018['WZ'],
+        'diboson': fileset_2018['diboson'],
+        'TTXnoW': fileset_2018['TTXnoW'],
+        'TTW': fileset_2018['TTW'],
+        #'WZ': fileset_2018['WZ'],
         'DY': fileset_2018['DY'],
     }
 
-    fileset = make_small(fileset, small, 10)
+    fileset = make_small(fileset, small, 1)
 
     add_processes_to_output(fileset, desired_output)
     for rle in ['run', 'lumi', 'event']:
@@ -410,26 +427,43 @@ if __name__ == '__main__':
 
     histograms = sorted(list(desired_output.keys()))
 
-    exe_args = {
-        'workers': 16,
-        'function_args': {'flatten': False},
-        "schema": NanoAODSchema,
-    }
-    exe = processor.futures_executor
     
     if not overwrite:
         cache.load()
     
+    
+    if local:
+        exe_args = {
+            'workers': 10,
+            'function_args': {'flatten': False},
+            "schema": NanoAODSchema,
+        }
+        exe = processor.futures_executor
+
+    else:
+        from Tools.helpers import get_scheduler_address
+        from dask.distributed import Client, progress
+
+        scheduler_address = get_scheduler_address()
+        c = Client(scheduler_address)
+
+        exe_args = {
+            'client': c,
+            'function_args': {'flatten': False},
+            "schema": NanoAODSchema,
+        }
+        exe = processor.dask_executor
+
     if cfg == cache.get('cfg') and histograms == cache.get('histograms') and cache.get('simple_output'):
         output = cache.get('simple_output')
-    
+
     else:
         print ("I'm running now")
         
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            forwardJetAnalyzer(year=year, variations=[], accumulator=desired_output),  # not using variations now
+            forwardJetAnalyzer(year=year, variations=['pt_jesTotalDown', 'pt_jesTotalUp'], accumulator=desired_output),  # not using variations now
             exe,
             exe_args,
             chunksize=250000,

@@ -8,7 +8,9 @@ Prerequisite: if you haven't, add this line to your `~/.profile`:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 ```
 
-### Setting up the environment
+## Setting up miniconda
+
+Skip this part if you already have conda running on uaf.
 
 From within your home directory on the uaf, follow the below instructions to set up the tools to run coffea.
 We do this in a virtual environment, using the miniconda environment management package.
@@ -35,24 +37,33 @@ Install package to tarball environments
 conda install --name base conda-pack -y
 ```
 
+## Setting up a environment for our work
+
 Create environments with as much stuff from anaconda
 ```
-conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr -y
 conda create --name coffeadev uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr -y
 ```
 And then install residual packages with pip
 ```
-conda run --name daskworkerenv pip install coffea yahist
 conda run --name coffeadev pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto yahist
 ```
 
-Make the tarball for the worker nodes (this will be needed for DASK only)
+## Setting up an environment for the DASK workers
+
 ```
-conda pack -n daskworkerenv --arcroot daskworkerenv -f --format tar.gz \
-    --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
+conda deactivate
+conda create --name workerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr coffea -y
+conda activate workerenv
 ```
 
-I had to update my python version, so you might have to run
+Pack it
+```
+conda pack -n workerenv --arcroot workerenv -f --format tar.gz --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
+```
+
+### DASK trouble shooting
+
+I had to update my (local) python version, so you might have to run
 ```
 conda install python=3.8.6
 ```

@@ -6,14 +6,12 @@ run with ipython -i start_cluster.py, and then keep it in the background
 
 import os
 
-from dask.distributed import Client
+from dask.distributed import Client, progress
 import distributed
 
 from Tools.condor_utils import make_htcondor_cluster
 
-from dask.distributed import Client, progress
-
-cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "4GB", memory = "3GB",)
+cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "5GB", memory = "5GB",)
 
 cluster.scale(50)
 

@@ -84,6 +84,7 @@ variables = [
     'min_bl_dR',
     'min_mt_lep_met',
     'label',
+    'label_cat',
     'weight',
 ]
 
@@ -124,6 +125,8 @@ class ML_preprocessor(processor.ProcessorABC):
         
         # load the config - probably not needed anymore
         cfg = loadConfig()
+        
+        gen_lep = ev.GenL
         
         ## Muons
         muon     = Collections(ev, "Muon", "vetoTTH").get()
@@ -252,7 +255,19 @@ class ML_preprocessor(processor.ProcessorABC):
             label_mult = labels[dataset]
         else:
             label_mult = 5
+
         label = np.ones(len(ev[BL])) * label_mult
+
+        n_nonprompt = (getNonPromptFromFlavour(tightelectron) + getNonPromptFromFlavour(tightmuon))[BL]
+        n_chargeflip = (getChargeFlips(tightelectron, ev.GenPart) + getChargeFlips(tightmuon, ev.GenPart))[BL]
+        n_genlep = ak.num(ev.GenL, axis=1)[BL]
+
+        label_cat = (n_nonprompt>0)*100 + (n_chargeflip>0)*1000 + (n_genlep>2)*10 + np.ones(len(ev[BL])) # >1000 for charge flip, >100 for non prompt, >10 for more than 2 gen lep, 1 for prompt
+        if dataset=='topW_v3':
+            label_cat = np.ones(len(ev[BL])) * 0
+        else:
+            label_cat = 4*(label_cat>=1000) + 3*((label_cat>=100) & (label_cat<1000)) + 2*((label_cat>=10) & (label_cat<100)) + 1*(label_cat<10)  # this makes charge flip 4, nonprompt 3...
+            label_cat = np.array(label_cat)
 
         output["n_lep"] += processor.column_accumulator(ak.to_numpy( (ak.num(electron) + ak.num(muon))[BL] ))
         output["n_lep_tight"] += processor.column_accumulator(ak.to_numpy( (ak.num(tightelectron) + ak.num(tightmuon))[BL] ))
@@ -307,6 +322,7 @@ class ML_preprocessor(processor.ProcessorABC):
         output["min_mt_lep_met"] += processor.column_accumulator(ak.to_numpy(min_mt_lep_met[BL]))
 
         output["label"] += processor.column_accumulator(label)
+        output["label_cat"] += processor.column_accumulator(label_cat)
         output["weight"] += processor.column_accumulator(weight.weight()[BL])
         
         output["presel"]["all"] += len(ev[ss_selection])
@@ -373,4 +389,4 @@ if __name__ == '__main__':
 
     df_out = pd.DataFrame( df_dict )
 
-    df_out.to_hdf('data/multiclass_input.h5', key='df', format='table', mode='w')#, append=True)
+    df_out.to_hdf('data/multiclass_input_v2.h5', key='df', format='table', mode='w')#, append=True)
