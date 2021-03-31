@@ -39,7 +39,7 @@ cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "10
 
 print ("Scaling cluster at address %s now."%cluster.scheduler_address)
 
-cluster.scale(10)
+cluster.scale(25)
 
 with open('scheduler_address.txt', 'w') as f:
     f.write(str(cluster.scheduler_address))

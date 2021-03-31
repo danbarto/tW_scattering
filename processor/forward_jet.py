@@ -390,8 +390,8 @@ if __name__ == '__main__':
 
     overwrite = True
     year = 2018
-    local = False
-    small = True
+    local = True
+    small = False
 
     # load the config and the cache
     cfg = loadConfig()
@@ -434,7 +434,7 @@ if __name__ == '__main__':
     
     if local:
         exe_args = {
-            'workers': 10,
+            'workers': 12,
             'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }

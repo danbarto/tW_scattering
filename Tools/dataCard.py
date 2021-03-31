@@ -11,9 +11,9 @@ quantile_dict = {
 }
 
 class dataCard:
-    def __init__(self):
+    def __init__(self, releaseLocation='.'):
         self.reset()
-        self.releaseLocation = os.path.abspath('.')
+        self.releaseLocation = os.path.abspath(releaseLocation)
 
     def reset(self):
         self.bins = []
@@ -338,14 +338,22 @@ class dataCard:
         else:
           filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
           self.writeToFile(filename)
-
-        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --freezeParameters r %s %s"%(options,filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --expectSignal=1 --freezeParameters r --setParameters r=1 --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 %s"%filename
+        #combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --freezeParameters r %s %s"%(options,filename)
         os.system(combineCommand)
-        nll = self.readNLLFile(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root")
-        nll["bestfit"] = nll["nll"]
-        #shutil.rmtree(uniqueDirname)
 
-        return nll
+        #nll = self.readNLLFile(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root")
+        #nll["bestfit"] = nll["nll"]
+        ##shutil.rmtree(uniqueDirname)
+
+        import uproot
+        import copy
+        #with uproot.open(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root") as f:
+        with uproot.open(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root") as f:
+            tree = f['limit']
+            result = copy.deepcopy( tree.arrays() )
+
+        return result
 
     def nllScan(self, fname=None, rmin=0, rmax=5, npoints=11, options=""):
         import uuid, os

@@ -250,7 +250,7 @@ class ML_preprocessor(processor.ProcessorABC):
         #    cutflow_reqs_d.update({req: True})
         #    cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'ttbar1l_MG': 4, 'DY': 6 }
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'ttbar1l_MG': 4, 'DY': 6, 'topW_EFT_cp8':100 }
         if dataset in labels:
             label_mult = labels[dataset]
         else:
@@ -351,15 +351,16 @@ if __name__ == '__main__':
     
     fileset = {
         ##'topW_v2': fileset_2018['topW_v2'],
-        'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
+        #'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
+        'topW_EFT_cp8': fileset_2018['topW_EFT_cp8']
         ##'topW_v3': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/*_1.root'), # 6x larger stats
-        'TTW': fileset_2018['TTW'],
-        'TTZ': fileset_2018['TTZ'],
-        'TTH': fileset_2018['TTH'],
-        'ttbar': fileset_2018['ttbar'],
-        'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
-        'DY': fileset_2018['DY'],
-        #'ttbar1l_MG': fileset_2018['ttbar1l_MG'],
+        #'TTW': fileset_2018['TTW'],
+        #'TTZ': fileset_2018['TTZ'],
+        #'TTH': fileset_2018['TTH'],
+        #'ttbar': fileset_2018['ttbar'],
+        #'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
+        #'DY': fileset_2018['DY'],
+        ##'ttbar1l_MG': fileset_2018['ttbar1l_MG'],
     }
     
     exe_args = {
@@ -389,4 +390,4 @@ if __name__ == '__main__':
 
     df_out = pd.DataFrame( df_dict )
 
-    df_out.to_hdf('data/multiclass_input_v2.h5', key='df', format='table', mode='w')#, append=True)
+    df_out.to_hdf('data/multiclass_input_v2_EFT.h5', key='df', format='table', mode='w')#, append=True)

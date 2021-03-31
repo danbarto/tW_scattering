@@ -237,12 +237,14 @@ def get_class_weight(df):
 
 if __name__ == '__main__':
 
-    load_weights = False
+    load_weights = True
     version = 'v11'
+    is_cat = True
 
     plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/%s/"%version
 
     df = pd.read_hdf('data/multiclass_input_v2.h5')
+    df_bsm = pd.read_hdf('data/multiclass_input_v2_EFT.h5')
 
     variables = [
         ## best results with all variables, but should get pruned at some point...
@@ -285,8 +287,8 @@ if __name__ == '__main__':
     
     bins = [x/20 for x in range(21)]
 
-    df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split.h5')
-    #df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
+    #df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split.h5')
+    df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
     
     X_train = df_train[variables].values
     X_test  = df_test[variables].values
@@ -342,7 +344,11 @@ if __name__ == '__main__':
     X_all_scaled  = scaler.transform(X_all)
     X_test_scaled = scaler.transform(X_test)
 
+    X_bsm = df_bsm[variables].values
+    X_bsm_scaled = scaler.transform(X_bsm)
+
     pred_all    = model.predict( X_all_scaled )
+    pred_bsm    = model.predict( X_bsm_scaled )
     pred_train  = model.predict( X_train_scaled )
     pred_test   = model.predict( X_test_scaled )
     
@@ -352,8 +358,12 @@ if __name__ == '__main__':
     df['score_ttH'] = pred_all[:,3]
     #df['score_ttbar'] = pred_all[:,4]
     df['score_best'] = pred_all.argmax(axis=1)
+
+    df_bsm['score_topW'] = pred_bsm[:,0]
+    df_bsm['score_best'] = pred_bsm.argmax(axis=1)
     
-    label_ID = 'label'  # was: label
+    #label_ID = 'label'  # was: label
+    label_ID = 'label_cat'  # was: label
     processes = {
         'topW_v2': df[df[label_ID]==0],
         'TTW':     df[df[label_ID]==1],
@@ -362,14 +372,38 @@ if __name__ == '__main__':
         'ttbar':   df[df[label_ID]==4],
         'rare':    df[df[label_ID]==5],
     }
-    #processes = {
-    #    'topW_v2': df[df[label_ID]==0],
-    #    'prompt':     df[df[label_ID]==1],
-    #    'lost lepton':     df[df[label_ID]==2],
-    #    'charge flip':     df[df[label_ID]==3],
-    #    'non prompt':   df[df[label_ID]==4],
-    #    #'rare':    df[df[label_ID]==5],
-    #}
+
+    print ("## Real baseline selection (as in selections.py)")
+    sel_BL = ((df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['met']>30))
+    signal_BL = sum(df[(sel_BL & (df['label']==0))]['weight']) * 137
+    bkg_BL = sum(df[(sel_BL & (df['label']!=0))]['weight']) * 137
+
+    prompt_BL = sum(df[(sel_BL & (df['label_cat']==1))]['weight']) * 137
+    LL_BL = sum(df[(sel_BL & (df['label_cat']==2))]['weight']) * 137
+    nonprompt_BL = sum(df[(sel_BL & (df['label_cat']==3))]['weight']) * 137
+    flip_BL = sum(df[(sel_BL & (df['label_cat']==4))]['weight']) * 137
+
+    TTW_BL = sum(df[(sel_BL & (df['label']==1))]['weight']) * 137
+    TTZ_BL = sum(df[(sel_BL & (df['label']==2))]['weight']) * 137
+    TTH_BL = sum(df[(sel_BL & (df['label']==3))]['weight']) * 137
+    tt_BL = sum(df[(sel_BL & (df['label']==4))]['weight']) * 137
+    rare_BL = sum(df[(sel_BL & (df['label']==5))]['weight']) * 137
+    DY_BL = sum(df[(sel_BL & (df['label']==6))]['weight']) * 137
+
+
+    print (" - signal: %.2f"%signal_BL)
+    print (" - bkg: %.2f"%bkg_BL)
+    print ("    - prompt: %.2f"%prompt_BL)
+    print ("    - lost lepton: %.2f"%LL_BL)
+    print ("    - nonprompt: %.2f"%nonprompt_BL)
+    print ("    - charge flip: %.2f"%flip_BL)
+    print ()
+    print ("    - TTW: %.2f"%TTW_BL)
+    print ("    - TTZ: %.2f"%TTZ_BL)
+    print ("    - TTH: %.2f"%TTH_BL)
+    print ("    - tt: %.2f"%tt_BL)
+    print ("    - rare: %.2f"%rare_BL)
+    print ("    - DY: %.2f"%DY_BL)
 
     sel_baseline = ((df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['n_jet']>4) & (df['n_central']>3) & (df['st']>600) & (df['met']>50) & (df['delta_eta_jj']>2.0) & (df['fwd_jet_p']>500))
 
@@ -381,16 +415,30 @@ if __name__ == '__main__':
     print (" - bkg: %.2f"%bkg_baseline)
 
     sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) )
+    sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) & (df_bsm['n_fwd']>0) )
 
     signal_NN_baseline = sum(df[(sel_topW & (df['label']==0))]['weight']) * 137
     bkg_NN_baseline = sum(df[(sel_topW & (df['label']!=0))]['weight']) * 137
+    prompt_NN_baseline = sum(df[(sel_topW & (df['label_cat']==1))]['weight']) * 137
+    LL_NN_baseline = sum(df[(sel_topW & (df['label_cat']==2))]['weight']) * 137
+    nonprompt_NN_baseline = sum(df[(sel_topW & (df['label_cat']==3))]['weight']) * 137
+    flip_NN_baseline = sum(df[(sel_topW & (df['label_cat']==4))]['weight']) * 137
 
     print ("w/ NN, baseline expectations are:")
     print (" - signal: %.2f"%signal_NN_baseline)
-    print (" - nonprompt: %.2f"%bkg_NN_baseline)
+    print (" - bkg: %.2f"%bkg_NN_baseline)
+    print ("    - prompt: %.2f"%prompt_NN_baseline)
+    print ("    - lost lepton: %.2f"%LL_NN_baseline)
+    print ("    - nonprompt: %.2f"%nonprompt_NN_baseline)
+    print ("    - charge flip: %.2f"%flip_NN_baseline)
+
+    #raise NotImplementedError
 
     sel_topW_pos = (sel_topW & (df['lead_lep_charge']>0))
     sel_topW_neg = (sel_topW & (df['lead_lep_charge']<0))
+
+    sel_topW_bsm_pos = (sel_topW_bsm & (df_bsm['lead_lep_charge']>0))
+    sel_topW_bsm_neg = (sel_topW_bsm & (df_bsm['lead_lep_charge']<0))
 
     sel_BL_pos = (sel_baseline & (df['lead_lep_charge']>0))
     sel_BL_neg = (sel_baseline & (df['lead_lep_charge']<0))
@@ -401,18 +449,33 @@ if __name__ == '__main__':
     sel_ttbar = ((df['score_best']==4))
 
     score_axis      = hist.Bin("score", r"N", 8, 0.20, 0.6)
+    score_axis_ext  = hist.Bin("score", r"N", 10, 0.00, 1.0)
     momentum_axis   = hist.Bin("p",     r"p", 20, 0, 500)
+    nodes_axis      = hist.Bin("node",  r"node", 5, -0.5, 4.5)
     
     h_score_topW_pos = hist.Hist("score", dataset_axis, score_axis)
     h_score_topW_neg = hist.Hist("score", dataset_axis, score_axis)
+
+    h_score_topW_bsm_pos = hist.Hist("score", dataset_axis, score_axis)
+    h_score_topW_bsm_neg = hist.Hist("score", dataset_axis, score_axis)
+
+    h_score_incl = hist.Hist("score", dataset_axis, score_axis_ext)
+    h_nodes = hist.Hist("nodes", dataset_axis, nodes_axis)
     
     h_p_topW_pos = hist.Hist("p", dataset_axis, momentum_axis)
     h_p_topW_neg = hist.Hist("p", dataset_axis, momentum_axis)
+
+    h_score_topW_bsm_pos.fill(dataset='EFT', score=df_bsm[sel_topW_bsm_pos]["score_topW"].values, weight=df_bsm[sel_topW_bsm_pos]["weight"].values*137)
+    h_score_topW_bsm_neg.fill(dataset='EFT', score=df_bsm[sel_topW_bsm_neg]["score_topW"].values, weight=df_bsm[sel_topW_bsm_neg]["weight"].values*137)
 
     for proc in processes:
         h_score_topW_pos.fill(dataset=proc, score=processes[proc][sel_topW_pos]["score_topW"].values, weight=processes[proc][sel_topW_pos]["weight"].values*137)
         h_score_topW_neg.fill(dataset=proc, score=processes[proc][sel_topW_neg]["score_topW"].values, weight=processes[proc][sel_topW_neg]["weight"].values*137)
 
+        h_score_incl.fill(dataset=proc, score=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["score_topW"].values, weight=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["weight"].values*137)
+
+        h_nodes.fill(dataset=proc, node=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["score_best"].values, weight=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["weight"].values*137)
+        
         h_p_topW_pos.fill(dataset=proc, p=processes[proc][sel_BL_pos]["lead_lep_pt"].values, weight=processes[proc][sel_BL_pos]["weight"].values*137)
         h_p_topW_neg.fill(dataset=proc, p=processes[proc][sel_BL_neg]["lead_lep_pt"].values, weight=processes[proc][sel_BL_neg]["weight"].values*137)
     
@@ -420,35 +483,98 @@ if __name__ == '__main__':
         'score_topW_pos': h_score_topW_pos,
         'score_topW_neg': h_score_topW_neg,
 
+        'score_incl': h_score_incl,
+
+        'nodes': h_nodes,
+
         'p_topW_pos': h_p_topW_pos,
         'p_topW_neg': h_p_topW_neg,
 
     }
 
+    my_labels = {
+        'topW_v2': 'top-W scat.',
+        'TTW': 'prompt',
+        'TTZ': 'lost lepton',
+        'TTH': 'nonprompt',
+        'ttbar': 'charge flip',
+        'rare': 'rare',
+    }
+    
+    my_colors = {
+        'topW_v2': '#FF595E',
+        'TTZ': '#FFCA3A',
+        'TTW': '#8AC926',
+        'TTH': '#34623F',
+        'rare': '#525B76',
+        'ttbar': '#1982C4',
+    }
+
     makePlot(output, 'score_topW_pos', 'score',
          log=False, normalize=False, axis_label=r'$top-W\ score$',
+         new_colors=my_colors, new_labels=my_labels,
          save=plot_dir+'/score_topW_pos',
+         order=['rare', 'TTH', 'ttbar', 'TTZ', 'TTW', 'topW_v2'],
+         lumi=137,
         )
 
     makePlot(output, 'score_topW_pos', 'score',
          log=False, normalize=False, shape=True, axis_label=r'$top-W\ score$',
+         new_colors=my_colors, new_labels=my_labels,
+         order=['rare', 'TTH', 'TTZ', 'TTW', 'topW_v2'],
+         omit=['ttbar', 'rare'],
          save=plot_dir+'/score_topW_pos_shape', ymax=0.5,
         )
 
     makePlot(output, 'score_topW_neg', 'score',
          log=False, normalize=False, axis_label=r'$top-W\ score$',
+         new_colors=my_colors, new_labels=my_labels,
          save=plot_dir+'/score_topW_neg',
+         order=['rare', 'TTH', 'ttbar', 'TTZ', 'TTW', 'topW_v2'],
+         lumi=137,
         )
 
+    makePlot(output, 'score_incl', 'score',
+         log=True, normalize=False, axis_label=r'$top-W\ score$',
+         new_colors=my_colors, new_labels=my_labels,
+         save=plot_dir+'/score_incl',
+         order=['rare', 'TTH', 'ttbar', 'TTZ', 'TTW', 'topW_v2'],
+         #signals=["topW_v2"],
+         lumi=137,
+        )
+
+    makePlot(output, 'nodes', 'node',
+         log=False, normalize=False, axis_label=r'node',
+         new_colors=my_colors, new_labels=my_labels,
+         save=plot_dir+'/node',
+         order=['rare', 'TTH', 'ttbar', 'TTZ', 'TTW', 'topW_v2'],
+         #signals=["topW_v2"],
+         lumi=137,
+        )
+
+
+    makePlot(output, 'score_incl', 'score',
+         log=False, normalize=False, shape=True, axis_label=r'$top-W\ score$',
+         new_colors=my_colors, new_labels=my_labels,
+         save=plot_dir+'/score_incl_shape', ymax=0.5,
+         order=['rare', 'TTH', 'ttbar', 'TTZ', 'TTW', 'topW_v2'],
+         lumi=137,
+        )
+
+    #raise NotImplementedError
+
     # cards with NN    
-    SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
-    SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
+    SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=is_cat)
+    SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=is_cat)
 
     # as a comparison, cut based cards
     SR_card_pos = makeCardFromHist(output, 'p_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
     SR_card_neg = makeCardFromHist(output, 'p_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
-    
-    card = dataCard()
+        
+    SR_NN_card_bsm_pos = makeCardFromHist(output, 'score_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_pos)
+    SR_NN_card_bsm_neg = makeCardFromHist(output, 'score_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_neg)
+
+    card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
     
     SR_NN_card = card.combineCards({'pos': SR_NN_card_pos, 'neg':SR_NN_card_neg})
     results_NN = card.nllScan(SR_NN_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
@@ -456,10 +582,30 @@ if __name__ == '__main__':
     SR_card = card.combineCards({'pos': SR_card_pos, 'neg':SR_card_neg})
     results = card.nllScan(SR_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
 
+    SR_NN_card_bsm = card.combineCards({'pos': SR_NN_card_bsm_pos, 'neg':SR_NN_card_bsm_neg})
+    results_bsm_nll = card.calcNLL(SR_NN_card_bsm)
+    results_sm_nll = card.calcNLL(SR_NN_card)
+
     card.cleanUp()
     
     print ("NN: NLL for r=0: %.2f"%(results_NN[results_NN['r']==0]['deltaNLL']*2)[0])
     print ("cut: NLL for r=0: %.2f"%(results[results['r']==0]['deltaNLL']*2)[0])
+
+    fig, ax = plt.subplots(1,1,figsize=(10,10))
+    #plt.figure()
+
+    ax.plot(results['r'][1:], results['deltaNLL'][1:]*2, label=r'Expected baseline SR', c='green')
+    ax.plot(results_NN['r'][1:], results_NN['deltaNLL'][1:]*2, label=r'Expected NN SR', c='black')
+    #plt.plot(results_opt['r'][1:], results_opt['deltaNLL'][1:]*2, label=r'Expected NN SR, +/- charge', c='orange')
+    #plt.plot(results_stat['r'][1:], results_stat['deltaNLL'][1:]*2, label=r'Expected NN SR, stat only', c='red')
+    #plt.plot(results_Run3['r'][1:], results_Run3['deltaNLL'][1:]*2, label=r'Expected NN SR, Run3', c='blue')
+    
+    ax.set_xlabel(r'$r$')
+    ax.set_ylabel(r'$-2\Delta  ln L$')
+    ax.legend()
+
+    fig.savefig(plot_dir+'/delta_NLL.pdf')
+    fig.savefig(plot_dir+'/delta_NLL.png')
 
     print ("Checking for overtraining in max node asignment...")
 

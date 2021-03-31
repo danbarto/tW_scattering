@@ -21,7 +21,7 @@ def myRebin(var, nbins, binsize, threshold):
             last_index = i
     return np.array(bin_boundaries)*binsize
 
-def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True):
+def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None):
     print ("Writing cards using histogram:", hist_name)
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
     if not os.path.isdir(card_dir):
@@ -58,7 +58,7 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     ##observation = hist.export1d(histogram['pseudodata'].integrate('dataset'), overflow=overflow)
     #observation = hist.export1d(data_hist['data'].integrate('dataset'), overflow=overflow)
     observation = hist.export1d(histogram[notdata].integrate('dataset'), overflow=overflow)
-    tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'), overflow=overflow)
+    tw          = hist.export1d(histogram['topW_v2'].integrate('dataset'), overflow=overflow) if bsm_hist is None else hist.export1d(bsm_hist.integrate('dataset'), overflow=overflow)
     ttw         = hist.export1d(histogram['TTW'].integrate('dataset'), overflow=overflow)
     ttz         = hist.export1d(histogram['TTZ'].integrate('dataset'), overflow=overflow)
     tth         = hist.export1d(histogram['TTH'].integrate('dataset'), overflow=overflow)
@@ -79,7 +79,10 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     # Get the total yields to write into a data card
     totals = {}
     
-    totals['signal']      = histogram['topW_v2'].integrate('dataset').values(overflow=overflow)[()].sum()
+    if bsm_hist is not None:
+        totals['signal']      = bsm_hist.integrate('dataset').values(overflow=overflow)[()].sum()
+    else:
+        totals['signal']      = histogram['topW_v2'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['ttw']         = histogram['TTW'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['ttz']         = histogram['TTZ'].integrate('dataset').values(overflow=overflow)[()].sum()
     totals['tth']         = histogram['TTH'].integrate('dataset').values(overflow=overflow)[()].sum()
@@ -119,11 +122,11 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     
     # set uncertainties
     if systematics:
-        card.specifyUncertainty('ttw_norm', 'Bin0', 'ttw', 1.15 )
-        card.specifyUncertainty('ttz_norm', 'Bin0', 'ttz', 1.10 )
-        card.specifyUncertainty('tth_norm', 'Bin0', 'tth', 1.20 )
-        card.specifyUncertainty('rare_norm', 'Bin0', 'rare', 1.20 )
-        card.specifyUncertainty('fake', 'Bin0', 'nonprompt', 1.25 )
+        card.specifyUncertainty('ttw_norm', 'Bin0', 'ttw', 1.15 if not categories else 1.10 )  # this is the prompt category
+        card.specifyUncertainty('ttz_norm', 'Bin0', 'ttz', 1.10 if not categories else 1.10 )  # lost lepton
+        card.specifyUncertainty('tth_norm', 'Bin0', 'tth', 1.20 if not categories else 1.25 )  # nonprompt
+        card.specifyUncertainty('rare_norm', 'Bin0', 'rare', 1.20 if not categories else 1.10 )  # charge flip
+        card.specifyUncertainty('fake', 'Bin0', 'nonprompt', 1.25 if not categories else 1.10 )  # nothing
         card.specifyFlatUncertainty('lumi', 1.03)
     
     ## observation
