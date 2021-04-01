@@ -116,7 +116,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=False):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -170,14 +170,14 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
     if signals:
         for sig in signals:
-            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
 
     if shape:
-        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     else:
-        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes), binwnorm=binwnorm)
     if data:
-        ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
+        ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False, binwnorm=binwnorm)
         #ax = hist.plot1d(observation, ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
 
         hist.plotratio(
@@ -218,12 +218,12 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     ax.set_xlabel(axis_label)
     ax.set_ylabel('Events')
     
-    if not shape:
-        addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+    #if not shape:
+    #    addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
-    if data:
-        addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
-    
+    #if data:
+    #    addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+    #
     if log:
         ax.set_yscale('log')
         
@@ -232,6 +232,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         ax.set_ylim(0.01, ymax)
     else:
         ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+        #if binwnorm: ax.set_ylim(0.5)
 
     ax.legend(
         loc='upper right',
