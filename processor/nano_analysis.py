@@ -22,7 +22,7 @@ class nano_analysis(processor.ProcessorABC):
         
         self.btagSF = btag_scalefactor(year)
         
-        self.leptonSF = LeptonSF(year=year)
+        #self.leptonSF = LeptonSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
