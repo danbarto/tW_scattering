@@ -21,7 +21,7 @@ def myRebin(var, nbins, binsize, threshold):
             last_index = i
     return np.array(bin_boundaries)*binsize
 
-def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None):
+def makeCardFromHist(out_cache, hist_name, scales={'nonprompt':1, 'signal':1}, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None):
     print ("Writing cards using histogram:", hist_name)
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
     if not os.path.isdir(card_dir):
@@ -34,13 +34,6 @@ def makeCardFromHist(out_cache, hist_name, nonprompt_scale=1, signal_scale=1, bk
     #histogram = histogram.rebin('mass', bins[hist_name]['bins'])
     
     # scale some processes
-    scales = { 
-        'ttbar': nonprompt_scale, 
-        'topW_v2': signal_scale,
-        'TTW': bkg_scale, # only scale the most important backgrounds
-        'TTZ': bkg_scale,
-        'TTH': bkg_scale,
-    }
     histogram.scale(scales, axis='dataset')
     
     ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option

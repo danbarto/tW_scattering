@@ -33,7 +33,8 @@ groups_2018 = {
     'ttbar1l_MG':    ['/TTJets_SingleLept'],
     'TTW':           ['/TTWJets'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
-    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]'], # there's also a powheg sample
+    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'], # there's also a powheg sample
+    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample

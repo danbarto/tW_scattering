@@ -24,8 +24,8 @@ import glob
 
 data_path = os.path.expandvars('$TWHOME/data/')
 
-def get_samples():
-    with open(data_path+'samples.yaml') as f:
+def get_samples(f_in='samples.yaml'):
+    with open(data_path+f_in) as f:
         return load(f, Loader=Loader)
 
 def loadConfig():

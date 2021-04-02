@@ -360,6 +360,9 @@ if __name__ == '__main__':
     df['score_best'] = pred_all.argmax(axis=1)
 
     df_bsm['score_topW'] = pred_bsm[:,0]
+    df_bsm['score_ttW'] = pred_bsm[:,1]
+    df_bsm['score_ttZ'] = pred_bsm[:,2]
+    df_bsm['score_ttH'] = pred_bsm[:,3]
     df_bsm['score_best'] = pred_bsm.argmax(axis=1)
     
     #label_ID = 'label'  # was: label
@@ -452,12 +455,17 @@ if __name__ == '__main__':
     score_axis_ext  = hist.Bin("score", r"N", 10, 0.00, 1.0)
     momentum_axis   = hist.Bin("p",     r"p", 20, 0, 500)
     nodes_axis      = hist.Bin("node",  r"node", 5, -0.5, 4.5)
+    energy_axis     = hist.Bin("e",     r"E", 9, 200, 2000)
     
     h_score_topW_pos = hist.Hist("score", dataset_axis, score_axis)
     h_score_topW_neg = hist.Hist("score", dataset_axis, score_axis)
 
+    h_st_topW_pos = hist.Hist("score", dataset_axis, energy_axis)
+
     h_score_topW_bsm_pos = hist.Hist("score", dataset_axis, score_axis)
     h_score_topW_bsm_neg = hist.Hist("score", dataset_axis, score_axis)
+
+    h_st_topW_bsm_pos = hist.Hist("score", dataset_axis, energy_axis)
 
     h_score_incl = hist.Hist("score", dataset_axis, score_axis_ext)
     h_nodes = hist.Hist("nodes", dataset_axis, nodes_axis)
@@ -468,9 +476,14 @@ if __name__ == '__main__':
     h_score_topW_bsm_pos.fill(dataset='EFT', score=df_bsm[sel_topW_bsm_pos]["score_topW"].values, weight=df_bsm[sel_topW_bsm_pos]["weight"].values*137)
     h_score_topW_bsm_neg.fill(dataset='EFT', score=df_bsm[sel_topW_bsm_neg]["score_topW"].values, weight=df_bsm[sel_topW_bsm_neg]["weight"].values*137)
 
+    h_st_topW_bsm_pos.fill(dataset='EFT', e=df_bsm[sel_topW_bsm_pos]["st"].values, weight=df_bsm[sel_topW_bsm_pos]["weight"].values*137)
+    #h_st_topW_pos.fill(dataset='EFT', e=df_bsm[sel_topW_bsm_pos]["st"].values, weight=df_bsm[sel_topW_bsm_pos]["weight"].values*137)
+
     for proc in processes:
         h_score_topW_pos.fill(dataset=proc, score=processes[proc][sel_topW_pos]["score_topW"].values, weight=processes[proc][sel_topW_pos]["weight"].values*137)
         h_score_topW_neg.fill(dataset=proc, score=processes[proc][sel_topW_neg]["score_topW"].values, weight=processes[proc][sel_topW_neg]["weight"].values*137)
+
+        h_st_topW_pos.fill(dataset=proc, e=processes[proc][sel_topW_pos]["st"].values, weight=processes[proc][sel_topW_pos]["weight"].values*137)
 
         h_score_incl.fill(dataset=proc, score=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["score_topW"].values, weight=processes[proc][((df['n_lep_tight']==2)&(df['n_fwd']>0))]["weight"].values*137)
 
@@ -482,6 +495,8 @@ if __name__ == '__main__':
     output = {
         'score_topW_pos': h_score_topW_pos,
         'score_topW_neg': h_score_topW_neg,
+
+        'st_topW_pos': h_st_topW_pos,
 
         'score_incl': h_score_incl,
 
@@ -564,15 +579,15 @@ if __name__ == '__main__':
     #raise NotImplementedError
 
     # cards with NN    
-    SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=is_cat)
-    SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True, categories=is_cat)
+    SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='', systematics=True, categories=is_cat)
+    SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='', systematics=True, categories=is_cat)
 
     # as a comparison, cut based cards
-    SR_card_pos = makeCardFromHist(output, 'p_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
-    SR_card_neg = makeCardFromHist(output, 'p_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='', systematics=True)
+    SR_card_pos = makeCardFromHist(output, 'p_topW_pos', overflow='all', ext='', systematics=True)
+    SR_card_neg = makeCardFromHist(output, 'p_topW_neg', overflow='all', ext='', systematics=True)
         
-    SR_NN_card_bsm_pos = makeCardFromHist(output, 'score_topW_pos', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_pos)
-    SR_NN_card_bsm_neg = makeCardFromHist(output, 'score_topW_neg', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_neg)
+    SR_NN_card_bsm_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_pos)
+    SR_NN_card_bsm_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_neg)
 
     card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
     
@@ -582,9 +597,9 @@ if __name__ == '__main__':
     SR_card = card.combineCards({'pos': SR_card_pos, 'neg':SR_card_neg})
     results = card.nllScan(SR_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
 
-    SR_NN_card_bsm = card.combineCards({'pos': SR_NN_card_bsm_pos, 'neg':SR_NN_card_bsm_neg})
-    results_bsm_nll = card.calcNLL(SR_NN_card_bsm)
-    results_sm_nll = card.calcNLL(SR_NN_card)
+    #SR_NN_card_bsm = card.combineCards({'pos': SR_NN_card_bsm_pos, 'neg':SR_NN_card_bsm_neg})
+    #results_bsm_nll = card.calcNLL(SR_NN_card_bsm)
+    #results_sm_nll = card.calcNLL(SR_NN_card)
 
     card.cleanUp()
     
@@ -646,3 +661,15 @@ if __name__ == '__main__':
         #    if ks[label][0]<0.05:
         #        print ("- !! Found small p-value for process %s in node %s: %.2f"%(label, node, ks[label][0]))
 
+
+    # Correlations
+    from ML.multiclassifier_tools import get_correlation_matrix
+    get_correlation_matrix(
+        df[((df['label']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))][(variables+['score_topW', 'score_ttW', 'score_ttZ', 'score_ttH'])], 
+        f_out=plot_dir+'/correlation.png'
+    )
+    
+
+    # dump the merged data frame with the NN scores
+    df_out = pd.concat([df, df_bsm])
+    df_out.to_hdf('data/mini_baby_NN_%s.h5'%version, key='df', format='table', mode='w')

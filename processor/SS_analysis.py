@@ -360,7 +360,8 @@ if __name__ == '__main__':
 
     overwrite = True
     small = False
-    
+    save = False
+
     # load the config and the cache
     cfg = loadConfig()
     
@@ -378,6 +379,8 @@ if __name__ == '__main__':
         'TTZ': fileset_2018['TTZ'],
         'TTH': fileset_2018['TTH'],
         'diboson': fileset_2018['diboson'],
+        #'wpwp': fileset_2018['wpwp'],
+        'TTTT': fileset_2018['TTTT'],
         'ttbar': fileset_2018['ttbar'],
         'MuonEG': fileset_2018['MuonEG'],
         'DoubleMuon': fileset_2018['DoubleMuon'],
@@ -431,11 +434,12 @@ if __name__ == '__main__':
             #chunksize=250000,
         )
         
-        cache['fileset']        = fileset
-        cache['cfg']            = cfg
-        cache['histograms']     = histograms
-        cache['simple_output']  = output
-        cache.dump()
+        if save:
+            cache['fileset']        = fileset
+            cache['cfg']            = cfg
+            cache['histograms']     = histograms
+            cache['simple_output']  = output
+            cache.dump()
 
     import matplotlib.pyplot as plt
     import mplhep as hep
