@@ -155,11 +155,13 @@ def main():
 
     config = loadConfig()
 
-    # get list of samples
-    sampleList = readSampleNames( data_path+'samples.txt' )
+    name = 'samples_QCD'
 
-    if os.path.isfile(data_path+'samples.yaml'):
-        with open(data_path+'samples.yaml') as f:
+    # get list of samples
+    sampleList = readSampleNames( data_path+'%s.txt'%name )
+
+    if os.path.isfile(data_path+'%s.yaml'%name):
+        with open(data_path+'%s.yaml'%name) as f:
             samples = yaml.load(f, Loader=Loader)
     else:
         samples = {}
@@ -192,7 +194,7 @@ def main():
 
     print ("Done with the heavy lifting. Dumping results to yaml file now.")
 
-    with open(data_path+'samples.yaml', 'w') as f:
+    with open(data_path+'%s.yaml'%name, 'w') as f:
         yaml.dump(samples, f, Dumper=Dumper)
 
     print ("Done.")
