@@ -153,9 +153,14 @@ def getDict(sample):
 
 def main():
 
+    import argparse
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
+    args = argParser.parse_args()
+
     config = loadConfig()
 
-    name = 'samples_QCD'
+    name = args.name
 
     # get list of samples
     sampleList = readSampleNames( data_path+'%s.txt'%name )

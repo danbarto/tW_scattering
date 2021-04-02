@@ -26,9 +26,7 @@ def load_yaml(f_in=data_path+'nano_mapping.yaml'):
     return res
 
 def loadConfig():
-    with open(data_path+'config.yaml') as f:
-        config = load(f, Loader=Loader)
-    return config
+    return load_yaml(data_path+'config.yaml')
 
 def dumpConfig(cfg):
     with open(data_path+'config.yaml', 'w') as f:
