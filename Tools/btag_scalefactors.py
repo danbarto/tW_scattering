@@ -8,17 +8,7 @@ import os
 from coffea.btag_tools import BTagScaleFactor
 from yahist import Hist1D, Hist2D
 
-def doAwkwardLookup(h, ar):
-    '''
-    takes a ya_hist histogram (which has a lookup function) and an awkward array.
-    '''
-    return ak.unflatten(
-        h.lookup(
-            ak.to_numpy(
-                ak.flatten(ar)
-            ) 
-        ), ak.num(ar) )
-
+from Tools.helpers import yahist_1D_lookup
 
 
 class btag_scalefactor:
@@ -47,15 +37,15 @@ class btag_scalefactor:
         effs: dictionary of the tagging efficiencies (1D yahist objects)
         btag_sf: coffea b-tag SF object
         '''
-        tagged_b = doAwkwardLookup(self.effs['b'], tagged.pt)*(tagged.hadronFlavour==5)
-        tagged_c = doAwkwardLookup(self.effs['c'], tagged.pt)*(tagged.hadronFlavour==4)
-        tagged_light = doAwkwardLookup(self.effs['light'], tagged.pt)*(tagged.hadronFlavour==0)
+        tagged_b = yahist_1D_lookup(self.effs['b'], tagged.pt)*(tagged.hadronFlavour==5)
+        tagged_c = yahist_1D_lookup(self.effs['c'], tagged.pt)*(tagged.hadronFlavour==4)
+        tagged_light = yahist_1D_lookup(self.effs['light'], tagged.pt)*(tagged.hadronFlavour==0)
         
         tagged_SFs = self.btag_sf.eval('central', tagged.hadronFlavour, abs(tagged.eta), tagged.pt )
         
-        untagged_b = doAwkwardLookup(self.effs['b'], untagged.pt)*(untagged.hadronFlavour==5)
-        untagged_c = doAwkwardLookup(self.effs['c'], untagged.pt)*(untagged.hadronFlavour==4)
-        untagged_light = doAwkwardLookup(self.effs['light'], untagged.pt)*(untagged.hadronFlavour==0)
+        untagged_b = yahist_1D_lookup(self.effs['b'], untagged.pt)*(untagged.hadronFlavour==5)
+        untagged_c = yahist_1D_lookup(self.effs['c'], untagged.pt)*(untagged.hadronFlavour==4)
+        untagged_light = yahist_1D_lookup(self.effs['light'], untagged.pt)*(untagged.hadronFlavour==0)
         
         untagged_SFs = self.btag_sf.eval('central', untagged.hadronFlavour, abs(untagged.eta), untagged.pt )
         

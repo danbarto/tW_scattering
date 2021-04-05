@@ -4,16 +4,16 @@ Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
-#mport awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
 
-#import yaml
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-
-#from yaml import Loader, Dumper
 
 import os
 import shutil
@@ -58,17 +58,6 @@ def finalizePlotDir( path ):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
     
-
-def doAwkwardLookup(h, ar):
-    '''
-    takes a ya_hist histogram (which has a lookup function) and an awkward array.
-    '''
-    return ak.unflatten(
-        h.lookup(
-            ak.to_numpy(
-                ak.flatten(ar)
-            ) 
-        ), ak.num(ar) )
 
 def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
@@ -210,3 +199,24 @@ def pad_and_flatten(val):
         #return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
     except ValueError:
         return ak.flatten(val)
+
+
+def yahist_1D_lookup(h, ar):
+    '''
+    takes a yahist 1D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar)) 
+        ), ak.num(ar) )
+
+def yahist_2D_lookup(h, ar1, ar2):
+    '''
+    takes a yahist 2D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar1)),
+            ak.to_numpy(ak.flatten(ar2)),
+        ), ak.num(ar1) )
+

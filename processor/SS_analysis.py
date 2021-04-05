@@ -359,7 +359,7 @@ if __name__ == '__main__':
     from processor.default_accumulators import *
 
     overwrite = True
-    small = False
+    small = True
     save = False
 
     # load the config and the cache
