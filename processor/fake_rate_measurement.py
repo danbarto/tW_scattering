@@ -91,8 +91,8 @@ class nano_analysis(processor.ProcessorABC):
         muon_selection = ((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1)) & (deltaR > 1.0)
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(events[muon_selection].pt))
-            eta = ak.to_numpy(ak.flatten(events[muon_selection].eta))
+            pt  = ak.to_numpy(ak.flatten(events[((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1))].pt)),
+            eta = ak.to_numpy(ak.flatten(events[((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1))].eta))
         )
         
         return output
