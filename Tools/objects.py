@@ -71,7 +71,7 @@ def getNonPromptFromFlavour(obj, allow_tau=True):
 def getChargeFlips(obj, gen):
     return ak.num(obj[(gen[obj.genPartIdx].pdgId/abs(gen[obj.genPartIdx].pdgId) != obj.pdgId/abs(obj.pdgId))])
 
-with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
+with open(os.path.expandvars('data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
 class Collections:
