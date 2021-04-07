@@ -1,4 +1,4 @@
-import awkward1 as ak
+import awkward as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
@@ -33,10 +33,12 @@ class nano_analysis(processor.ProcessorABC):
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
         
+        events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet in event
         output = self.accumulator.identity()
         
         # we can use a very loose preselection to filter the events. nothing is done with this presel, though
         presel = ak.num(events.Jet)>=0
+        
         
         ev = events[presel]
         dataset = ev.metadata['dataset']
@@ -58,16 +60,9 @@ class nano_analysis(processor.ProcessorABC):
         muon         = Collections(ev, "Muon", "tightSSTTH").get()
         fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
         #vetomuon     = Collections(ev, "Muon", "vetoTTH").get()    # "loose" muons
-
-        ## Merge electrons and muons - this should work better now in ak1
-#         dilepton = cross(muon, electron)
-#         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
-
-#         lepton   = ak.concatenate([muon, electron], axis=1)
-#         leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
-#         leading_lepton = lepton[leading_lepton_idx]
-#         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
-#         trailing_lepton = lepton[trailing_lepton_idx]
+        
+        ##Jets
+        Jets = events.Jet
         
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
@@ -88,13 +83,17 @@ class nano_analysis(processor.ProcessorABC):
 #             weight = weight.weight()[baseline]
 #         )
         
-        muon_selection = ((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1)) & (deltaR > 1.0)
+        muon_selection = ((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1))
+        output['single_mu_fakeable'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) & (ak.num(muon)==0) & (ak.num(Jets[~match(Jets, fakeablemuon, deltaRCut=0.7)])>=1)].pt)),
+            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) & (ak.num(muon)==0) & (ak.num(Jets[~match(Jets, fakeablemuon, deltaRCut=0.7)])>=1)].eta))
+        )
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(events[((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1))].pt)),
-            eta = ak.to_numpy(ak.flatten(events[((ak.num(fakeablemuon)==1) ^ (ak.num(muon)==1))].eta))
+            pt  = ak.to_numpy(ak.flatten(muon[(ak.num(fakeablemuon)==0) & (ak.num(muon)==1) & (ak.num(Jets[~match(Jets, muon, deltaRCut=0.7)])>=1)].pt)),
+            eta = ak.to_numpy(ak.flatten(muon[(ak.num(fakeablemuon)==0) & (ak.num(muon)==1) & (ak.num(Jets[~match(Jets, muon, deltaRCut=0.7)])>=1)].eta))
         )
-        
         return output
 
     def postprocess(self, accumulator):
@@ -106,7 +105,7 @@ class nano_analysis(processor.ProcessorABC):
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from processor.default_accumulators import desired_output, add_processes_to_output
+    from processor.default_accumulators import desired_output, add_processes_to_output, dataset_axis, pt_axis, eta_axis
 
     from Tools.helpers import get_samples
     from Tools.config_helpers import redirector_ucsd, redirector_fnal
@@ -128,6 +127,11 @@ if __name__ == '__main__':
     fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=True)
 
     add_processes_to_output(fileset, desired_output)
+    
+    desired_output.update({
+        "single_mu_fakeable": hist.Hist("Counts", dataset_axis, pt_axis, eta_axis),
+        "single_mu": hist.Hist("Counts", dataset_axis, pt_axis, eta_axis)
+    })
 
     exe_args = {
         'workers': 16,
