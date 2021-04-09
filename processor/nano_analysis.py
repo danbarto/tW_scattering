@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     from Tools.helpers import get_samples
     from Tools.config_helpers import redirector_ucsd, redirector_fnal
-    from Tools.nano_mapping import make_fileset
+    from Tools.nano_mapping import make_fileset, nano_mapping
 
     overwrite = True
     
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     
     samples = get_samples()
 
-    fileset = make_fileset(['DY', 'TTZ'], samples, redirector=redirector_ucsd, small=True)
+    fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True)
 
     add_processes_to_output(fileset, desired_output)
 
@@ -165,3 +165,54 @@ if __name__ == '__main__':
         cache['histograms']     = histograms
         cache['simple_output']  = output
         cache.dump()
+
+    import matplotlib.pyplot as plt
+    import mplhep as hep
+    plt.style.use(hep.style.CMS)
+    
+    
+    # load the functions to make a nice plot from the output histograms
+    # and the scale_and_merge function that scales the individual histograms
+    # to match the physical cross section
+    
+    from plots.helpers import makePlot, scale_and_merge
+    
+    # define a few axes that we can use to rebin our output histograms
+    N_bins_red     = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+    
+    # define nicer labels and colors
+    
+    my_labels = {
+        nano_mapping['TTW'][0]: 'ttW',
+        nano_mapping['TTZ'][0]: 'ttZ',
+        nano_mapping['DY'][0]: 'DY',
+        nano_mapping['top'][0]: 't/tt+jets',
+    }
+    
+    my_colors = {
+        nano_mapping['TTW'][0]: '#8AC926',
+        nano_mapping['TTZ'][0]: '#FFCA3A',
+        nano_mapping['DY'][0]: '#6A4C93',
+        nano_mapping['top'][0]: '#1982C4',
+    }
+
+    # take the N_ele histogram out of the output, apply the x-secs from samples to the samples in fileset
+    # then merge the histograms into the categories defined in nano_mapping
+
+    print ("Total events in output histogram N_ele: %.2f"%output['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
+    
+    my_hists = {}
+    my_hists['N_ele'] = scale_and_merge(output['N_ele'], samples, fileset, nano_mapping)
+    print ("Total scaled events in merged histogram N_ele: %.2f"%my_hists['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
+    
+    # Now make a nice plot of the electron multiplicity.
+    # You can have a look at all the "magic" (and hard coded monstrosities) that happens in makePlot
+    # in plots/helpers.py
+    
+    makePlot(my_hists, 'N_ele', 'multiplicity',
+             data=[],
+             bins=N_bins_red, log=True, normalize=False, axis_label=r'$N_{electron}$',
+             new_colors=my_colors, new_labels=my_labels,
+             #order=[nano_mapping['DY'][0], nano_mapping['TTZ'][0]],
+             save=os.path.expandvars(cfg['meta']['plots'])+'/nano_analysis/N_ele_test.png'
+            )

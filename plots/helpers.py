@@ -116,7 +116,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=False):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -218,12 +218,13 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     ax.set_xlabel(axis_label)
     ax.set_ylabel('Events')
     
-    #if not shape:
-    #    addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+    if not binwnorm:
+        if not shape:
+            addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
-    #if data:
-    #    addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
-    #
+        if data:
+            addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+    
     if log:
         ax.set_yscale('log')
         
@@ -319,15 +320,16 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     nano_mapping -- dictionary to map NanoAOD samples into categories
     lumi -- integrated luminosity in 1/fb
     """
-    histogram = histogram.copy()
+    temp = histogram.copy()
     
     scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
-    histogram.scale(scales, axis='dataset')
+    temp.scale(scales, axis='dataset')
     for cat in nano_mapping:
         # print (cat)
         if len(nano_mapping[cat])>1:
             for sample in nano_mapping[cat][1:]:
-                histogram[nano_mapping[cat][0]].add(histogram[sample])
-                histogram = histogram.remove([sample], 'dataset')
+                print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
+                temp[nano_mapping[cat][0]].add(temp[sample])
+                temp = temp.remove([sample], 'dataset')
                 
-    return histogram
+    return temp
