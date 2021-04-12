@@ -1,3 +1,19 @@
+? /QCD_Pt-1000toInf_MuEnrichedPt5_TuneCP5_13TeV_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM
+: files: 16
+  nEvents: 10719790
+  name: QCD_Pt-1000toInf_MuEnrichedPt5_TuneCP5_13TeV_pythia8_RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1
+  path: null
+  split: 4
+  sumWeight: 10713122.628512723
+  xsec: 1.08
+? /QCD_Pt-120to170_EMEnriched_TuneCP5_13TeV_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM
+: files: 24
+  nEvents: 9964143
+  name: QCD_Pt-120to170_EMEnriched_TuneCP5_13TeV_pythia8_RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1
+  path: null
+  split: 24
+  sumWeight: 9964254.271704543
+  xsec: 66500.0
 ? /QCD_Pt-120to170_MuEnrichedPt5_TuneCP5_13TeV_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM
 : files: 1
   nEvents: 633668
@@ -86,6 +102,14 @@
   split: 9
   sumWeight: 2901355.0
   xsec: 1100.0
+? /QCD_Pt-30to50_EMEnriched_TuneCP5_13TeV_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext1-v1/NANOAODSIM
+: files: 30
+  nEvents: 13170984
+  name: QCD_Pt-30to50_EMEnriched_TuneCP5_13TeV_pythia8_RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext1-v1
+  path: null
+  split: 30
+  sumWeight: 13170984.0
+  xsec: 6420000.0
 ? /QCD_Pt-30to50_MuEnrichedPt5_TuneCP5_13TeV_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM
 : files: 27
   nEvents: 29884616

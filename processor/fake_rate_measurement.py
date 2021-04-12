@@ -94,6 +94,16 @@ class nano_analysis(processor.ProcessorABC):
             pt  = ak.to_numpy(ak.flatten(muon[(ak.num(fakeablemuon)==0) & (ak.num(muon)==1) & (ak.num(Jets[~match(Jets, muon, deltaRCut=0.7)])>=1)].pt)),
             eta = ak.to_numpy(ak.flatten(muon[(ak.num(fakeablemuon)==0) & (ak.num(muon)==1) & (ak.num(Jets[~match(Jets, muon, deltaRCut=0.7)])>=1)].eta))
         )
+        output['single_e_fakeable'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==0) & (ak.num(Jets[~match(Jets, fakeableelectron, deltaRCut=0.7)])>=1)].pt)),
+            eta = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==0) & (ak.num(Jets[~match(Jets, fakeableelectron, deltaRCut=0.7)])>=1)].eta))
+        )
+        output['single_e'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(electron[(ak.num(fakeableelectron)==0) & (ak.num(electron)==1) & (ak.num(Jets[~match(Jets, electron, deltaRCut=0.7)])>=1)].pt)),
+            eta = ak.to_numpy(ak.flatten(electron[(ak.num(fakeableelectron)==0) & (ak.num(electron)==1) & (ak.num(Jets[~match(Jets, electron, deltaRCut=0.7)])>=1)].eta))
+        )
         return output
 
     def postprocess(self, accumulator):
