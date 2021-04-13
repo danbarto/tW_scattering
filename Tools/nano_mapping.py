@@ -10,6 +10,8 @@ from metis.Sample import DBSSample
 from Tools.helpers import get_samples
 from Tools.config_helpers import redirector_ucsd, load_yaml, data_path
 
+import uproot
+
 nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
 def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False):
@@ -17,14 +19,11 @@ def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False):
     for dataset in datasets:
         for nano_sample in nano_mapping[dataset]:
             dbs_files = DBSSample(dataset=nano_sample).get_files()
-            #if small:
-            #    dbs_files = dbs_files[:1]
             files = [ redirector+x.name for x in dbs_files ]
             if not small:
                 fileset.update({nano_sample: files})
             else:
                 fileset.update({nano_sample: files[:1]})
-            #fileset.update({nano_sample: files})
 
     return fileset
 

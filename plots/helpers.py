@@ -116,7 +116,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -133,8 +133,10 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         histogram = output[histo].copy()
 
     histogram = histogram.project(axis, 'dataset')
+    if overlay: overlay = overlay.project(axis, 'dataset')
     if bins:
         histogram = histogram.rebin(axis, bins)
+        if overlay: overlay = overlay.rebin(axis, bins)
 
     y_max = histogram[bkg_sel].sum("dataset").values(overflow='over')[()].max()
 
@@ -171,6 +173,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     if signals:
         for sig in signals:
             ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
+    if overlay:
+        ax = hist.plot1d(overlay, overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
 
     if shape:
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
