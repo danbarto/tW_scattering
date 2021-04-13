@@ -57,13 +57,15 @@ if __name__ == '__main__':
     
     df_in = pd.read_hdf('../ML/data/mini_baby_NN_v11.h5')
     
-    sel = ((df_in['score_best']==0) \
-         & (df_in['n_lep_tight']==2) \
-         & (df_in['n_fwd']>0) \
-         & (df_in['lead_lep_charge']>0) \
-           )
+    baseline = ((df_in['n_lep_tight']==2) \
+            #& (df_in['score_best']==0) \
+            #& (df_in['label_cat']<3) \
+            #& (df_in['n_lep_tight']==2) \
+            & (df_in['n_fwd']>0) \
+            #& (df_in['lead_lep_charge']>0) \
+             )
     
-    df_in = df_in[sel]
+    df_in = df_in[baseline]
     
     tw_sm = df_in[df_in['label']==0]
     bkg   = df_in[((df_in['label']>0) & (df_in['label']<99))]
@@ -84,6 +86,7 @@ if __name__ == '__main__':
         print ("\n\n ### Next Variable ### \n")
         print (" ..:: %s ::.. \n"%variable)
         
+        #x_df = x_df[((x_df['score_best']==0) & (x_df['lead_lep_charge']>0))]
         
         x = x_df[variable].values
         weight = x_df['weight'].values*137
@@ -116,36 +119,60 @@ if __name__ == '__main__':
         energy_axis     = hist.Bin("e",     r"E", 8, 0.20, 0.6)  # if 9 was already optimal I'll call myself eyeball champ.
         opt_axis        = hist.Bin("e",     r"E", [0]+list(optb.splits) if optb.splits[0]>0 else list(optb.splits))
 
-        processes = get_processes(df_in, label='label_cat')
+        #regions = {'pos': lambda x: x['lead_lep_charge']>0, 'neg': lambda x: x['lead_lep_charge']<0}  # pos/neg charge split
+        regions = {'pos_sig': lambda x: ((x['lead_lep_charge']>0)&(x['score_best']==0)),
+                   'neg_sig': lambda x: ((x['lead_lep_charge']<0)&(x['score_best']==0)),
+                   'pos_ttw': lambda x: ((x['lead_lep_charge']>0)&(x['score_best']==1)),
+                   'neg_ttw': lambda x: ((x['lead_lep_charge']<0)&(x['score_best']==1)),
+                   }
+        #regions = {'pos': lambda x: x['lead_lep_charge']>0}  # pos/neg charge split
+        sm_cards = {}
+        sm_cards_def = {}
+        bsm_cards = {}
 
-        h_sm_default = hist.Hist("e", dataset_axis, energy_axis)
-        h_bsm_default = hist.Hist("e", dataset_axis, energy_axis)
+        for region in regions:
 
-        h_sm_opt = hist.Hist("e", dataset_axis, opt_axis)
-        h_bsm_opt = hist.Hist("e", dataset_axis, opt_axis)
+            processes = get_processes(df_in[regions[region](df_in)], label='label_cat')
+            #processes = get_processes(df_in, label='label_cat')
 
-        for proc in processes:
-            h_sm_default.fill(dataset=proc, e=processes[proc][variable].values, weight=processes[proc]["weight"].values*137)
-            h_sm_opt.fill(dataset=proc, e=processes[proc][variable].values, weight=processes[proc]["weight"].values*137)
+            h_sm_default = hist.Hist("e", dataset_axis, energy_axis)
+            h_bsm_default = hist.Hist("e", dataset_axis, energy_axis)
 
-        h_bsm_default.fill(dataset='EFT', e=sig[variable].values, weight=sig["weight"].values*137)
-        h_bsm_opt.fill(dataset='EFT', e=sig[variable].values, weight=sig["weight"].values*137)
+            h_sm_opt = hist.Hist("e", dataset_axis, opt_axis)
+            h_bsm_opt = hist.Hist("e", dataset_axis, opt_axis)
 
-        output = {
-            'sm_default': h_sm_default,
-            'sm_opt': h_sm_opt,
-        }
+            for proc in processes:
+                h_sm_default.fill(dataset=proc, e=processes[proc][variable].values, weight=processes[proc]["weight"].values*137)
+                h_sm_opt.fill(dataset=proc, e=processes[proc][variable].values, weight=processes[proc]["weight"].values*137)
+
+            sig_sel = regions[region](sig)
+            h_bsm_default.fill(dataset='EFT', e=sig[sig_sel][variable].values, weight=sig[sig_sel]["weight"].values*137)
+            h_bsm_opt.fill(dataset='EFT', e=sig[sig_sel][variable].values, weight=sig[sig_sel]["weight"].values*137)
+
+            output = {
+                'sm_default': h_sm_default,
+                'sm_opt': h_sm_opt,
+            }
 
 
-        card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+            card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
 
-        #sm_card_default = makeCardFromHist(output, 'sm_default', overflow='all', ext='', systematics=True, categories=True)
-        sm_card_opt = makeCardFromHist(output, 'sm_opt', overflow='all', ext='', systematics=True, categories=True)
+            sm_card_default = makeCardFromHist(output, 'sm_default', overflow='all', ext='_'+region, systematics=True, categories=True)
+            sm_card_opt = makeCardFromHist(output, 'sm_opt', overflow='all', ext='_'+region, systematics=True, categories=True)
+            sm_cards[region] = sm_card_opt
+            sm_cards_def[region] = sm_card_default
+
+            if not use_SM:
+                bsm_card_opt = makeCardFromHist(output, 'sm_opt', overflow='all', ext='_bsm_'+region, systematics=True, categories=True, bsm_hist=h_bsm_opt)
+                bsm_cards[region] = bsm_card_opt
+
 
         if use_SM:
             deltaNLL_def = 0
-            #res_def = card.nllScan(sm_card_default, rmin=0, rmax=3, npoints=61, options=' -v -1')
+            sm_card_opt = card.combineCards(sm_cards)
             res_sm = card.nllScan(sm_card_opt, rmin=0, rmax=3, npoints=61, options=' -v -1')
+            sm_card_default = card.combineCards(sm_cards_def)
+            #res_def = card.nllScan(sm_card_default, rmin=0, rmax=3, npoints=61, options=' -v -1')
             #deltaNLL_def = (res_def[res_def['r']==0]['deltaNLL']*2)[0]
             deltaNLL = (res_sm[res_sm['r']==0]['deltaNLL']*2)[0]
 
@@ -156,16 +183,19 @@ if __name__ == '__main__':
 
         else:
             #res_sm_default = card.calcNLL(sm_card_default)
+            sm_card_opt = card.combineCards(sm_cards)
             res_sm_opt = card.calcNLL(sm_card_opt)
 
             #bsm_card_default = makeCardFromHist(output, 'sm_default', nonprompt_scale=1, signal_scale=1, bkg_scale=1, overflow='all', ext='_bsm', systematics=True, categories=True, bsm_hist=h_bsm_default)
-            bsm_card_opt = makeCardFromHist(output, 'sm_opt', overflow='all', ext='_bsm', systematics=True, categories=True, bsm_hist=h_bsm_opt)
             #res_bsm_default = card.calcNLL(bsm_card_default)
+            bsm_card_opt = card.combineCards(bsm_cards)
             res_bsm_opt = card.calcNLL(bsm_card_opt)
             deltaNLL = -2*(res_sm_opt['nll0'][0]+res_sm_opt['nll'][0]- (res_bsm_opt['nll0'][0]+res_bsm_opt['nll'][0]))
 
         #print ("Default:", 2*(res_sm_default['nll0'][0]+res_sm_default['nll'][0]- (res_bsm_default['nll0'][0]+res_bsm_default['nll'][0])))
-        print ("Optimal:", deltaNLL)
+
+        print ("Final SM data card is:", sm_card_opt)
+        print ("Optimal:", deltaNLL)        
 
         card.cleanUp()
 

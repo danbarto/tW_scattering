@@ -16,11 +16,15 @@ def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False):
     fileset = {}
     for dataset in datasets:
         for nano_sample in nano_mapping[dataset]:
-            files = [ redirector+x.name for x in DBSSample(dataset=nano_sample).get_files() ]
+            dbs_files = DBSSample(dataset=nano_sample).get_files()
+            #if small:
+            #    dbs_files = dbs_files[:1]
+            files = [ redirector+x.name for x in dbs_files ]
             if not small:
                 fileset.update({nano_sample: files})
             else:
                 fileset.update({nano_sample: files[:1]})
+            #fileset.update({nano_sample: files})
 
     return fileset
 
