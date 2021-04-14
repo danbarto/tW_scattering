@@ -19,7 +19,8 @@ def submit():
         #'TTWplusJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWplusJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
         #'TTWminusJetsToLNuEWK_5f_NLO_v2':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWminusJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz', # that's the actual SM
         #'TTWJetsToLNuEWK_5f_EFT_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # one of the BSM points
-        'TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',  # EFT mix
+        #'TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',  # EFT mix
+        'TTWJetsToLNuEWK_5f_EFT_cpq3_4_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks//TTWJetsToLNuEWK_5f_EFT_myNLO_cpq3_4_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',  # C_pq3 = 4
     }
 
     total_summary = {}
@@ -28,9 +29,9 @@ def submit():
 
     tag = "v4"
     events_per_point = 500000 # produced 500k events before
-    events_per_job = 1000 # up to 2000 works
-    #events_per_point = 500
-    #events_per_job = 100
+    events_per_job = 2000 # up to 2000 works
+    #events_per_point = 50
+    #events_per_job = 10
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:

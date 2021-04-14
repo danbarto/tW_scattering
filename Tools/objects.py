@@ -68,8 +68,9 @@ def getNonPromptFromFlavour(obj, allow_tau=True):
     else:
         return ak.num(obj[(obj.genPartFlav!=1)])
 
-def getChargeFlips(obj, gen):
-    return ak.num(obj[(gen[obj.genPartIdx].pdgId/abs(gen[obj.genPartIdx].pdgId) != obj.pdgId/abs(obj.pdgId))])
+def getChargeFlips(obj, gen=0):
+    # gen is not needed, but keep to not break things
+    return ak.num(obj[(obj.matched_gen.pdgId/abs(obj.matched_gen.pdgId) != obj.pdgId/abs(obj.pdgId))])
 
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
@@ -99,12 +100,12 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r2(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4**2)*1
-            mask_far = ~(delta_r2(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4**2)*1
+            mask_close = (delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
+            mask_far = ~(delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
 
-            deepJet = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ev.Muon.mached_jet.btagDeepFlavB*mask_close  # this defaults to 0
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Jet[ev.Muon.jetIdx].pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ev.Muon.matched_jet.pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
 
             ev['Muon', 'deepJet'] = deepJet
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
@@ -126,12 +127,12 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r2(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4**2)*1
-            mask_far = ~(delta_r2(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4**2)*1
+            mask_close = (delta_r2(ev.Electron.matched_jet, ev.Electron)<0.4**2)*1
+            mask_far = ~(delta_r2(ev.Electron.matched_jet, ev.Electron)<0.4**2)*1
 
-            deepJet = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ev.Electron.matched_jet.btagDeepFlavB*mask_close  # this defaults to 0
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Jet[ev.Electron.jetIdx].pt * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ev.Electron.matched_jet.pt * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
 
             ev['Electron', 'deepJet'] = deepJet
             ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2

@@ -41,7 +41,7 @@ def baseline_model(input_dim, out_dim):
     model.add(tf.keras.layers.Dense(2*input_dim, input_dim=input_dim, activation='relu'))
     model.add(tf.keras.layers.BatchNormalization() )
     model.add( tf.keras.layers.Dropout( rate = 0.3 ) )
-    model.add(tf.keras.layers.Dense(2*input_dim, activation='relu'))
+    model.add(tf.keras.layers.Dense(2*input_dim, activation='relu'))  # changed from 2->4
     model.add(tf.keras.layers.BatchNormalization() )
     model.add( tf.keras.layers.Dropout( rate = 0.3 ) ) # this introduces some stochastic behavior
     model.add(tf.keras.layers.Dense(out_dim, activation='softmax'))
@@ -237,8 +237,8 @@ def get_class_weight(df):
 
 if __name__ == '__main__':
 
-    load_weights = True
-    version = 'v11'
+    load_weights = False
+    version = 'v13'
     is_cat = True
 
     plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/%s/"%version
@@ -281,14 +281,15 @@ if __name__ == '__main__':
     ]
 
     #preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))
-    preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['weight']>0))
+    preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['weight']>0) & (df['label_cat']<3))
+    #preselection = ((df['n_jet']>2) & (df['n_btag']>0) & (df['n_lep_tight']==2) & (df['weight']>0))
     
     colors = ['gray', 'blue', 'red', 'green', 'orange']
     
     bins = [x/20 for x in range(21)]
 
-    #df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split.h5')
-    df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
+    df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split_v13.h5')
+    #df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
     
     X_train = df_train[variables].values
     X_test  = df_test[variables].values
@@ -311,7 +312,7 @@ if __name__ == '__main__':
 
     if not load_weights:
 
-        epochs = 50
+        epochs = 50  # 50 -> 200
         batch_size = 5120
         validation_split = 0.2
 
@@ -355,14 +356,14 @@ if __name__ == '__main__':
     df['score_topW'] = pred_all[:,0]
     df['score_ttW'] = pred_all[:,1]
     df['score_ttZ'] = pred_all[:,2]
-    df['score_ttH'] = pred_all[:,3]
+    #df['score_ttH'] = pred_all[:,3]
     #df['score_ttbar'] = pred_all[:,4]
     df['score_best'] = pred_all.argmax(axis=1)
 
     df_bsm['score_topW'] = pred_bsm[:,0]
     df_bsm['score_ttW'] = pred_bsm[:,1]
     df_bsm['score_ttZ'] = pred_bsm[:,2]
-    df_bsm['score_ttH'] = pred_bsm[:,3]
+    #df_bsm['score_ttH'] = pred_bsm[:,3]
     df_bsm['score_best'] = pred_bsm.argmax(axis=1)
     
     #label_ID = 'label'  # was: label
@@ -417,8 +418,11 @@ if __name__ == '__main__':
     print (" - signal: %.2f"%signal_baseline)
     print (" - bkg: %.2f"%bkg_baseline)
 
-    sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) )
-    sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) & (df_bsm['n_fwd']>0) )
+    #sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) )
+    #sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) & (df_bsm['n_fwd']>0) )
+
+    sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) )
+    sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) )
 
     signal_NN_baseline = sum(df[(sel_topW & (df['label']==0))]['weight']) * 137
     bkg_NN_baseline = sum(df[(sel_topW & (df['label']!=0))]['weight']) * 137
@@ -630,8 +634,9 @@ if __name__ == '__main__':
         y_test_int,
         y_train_int,
         #labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
-        labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
-        n_cat=4,  # was: 5
+        #labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
+        labels=['top-W', 'prompt', 'lost lepton'],
+        n_cat=3,  # was: 5
         plot_dir=plot_dir,
         weight_test = df_test['weight'].values,
         weight_train = df_train['weight'].values,
@@ -643,14 +648,15 @@ if __name__ == '__main__':
 
     print ("Checking for overtraining in the different nodes...")
 
-    for node in [0,1,2,3]:  # also had 4
+    for node in [0,1,2]:  # also had 4
         ks = test_train(
             pred_test,
             pred_train,
             y_test_int,
             y_train_int,
             #labels=['top-W', 'ttW', 'ttZ', 'ttH', 'nonprompt'],
-            labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
+            #labels=['top-W', 'prompt', 'lost lepton', 'nonprompt'],
+            labels=['top-W', 'prompt', 'lost lepton'],
             node=node,
             bins=bins,
             plot_dir=plot_dir,
@@ -665,7 +671,8 @@ if __name__ == '__main__':
     # Correlations
     from ML.multiclassifier_tools import get_correlation_matrix
     get_correlation_matrix(
-        df[((df['label']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))][(variables+['score_topW', 'score_ttW', 'score_ttZ', 'score_ttH'])], 
+        #df[((df['label']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))][(variables+['score_topW', 'score_ttW', 'score_ttZ', 'score_ttH'])], 
+        df[((df['label']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0))][(variables+['score_topW', 'score_ttW', 'score_ttZ'])], 
         f_out=plot_dir+'/correlation.png'
     )
     
