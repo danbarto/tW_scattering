@@ -19,6 +19,7 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
 
+
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
         self.variations = variations
@@ -44,7 +45,7 @@ class nano_analysis(processor.ProcessorABC):
         
         ev = events[presel]
         dataset = ev.metadata['dataset']
-        
+
         # load the config - probably not needed anymore
         cfg = loadConfig()
         
@@ -107,16 +108,16 @@ class nano_analysis(processor.ProcessorABC):
         return accumulator
 
 
-
-
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from processor.default_accumulators import desired_output, add_processes_to_output
+    from processor.default_accumulators import desired_output, add_processes_to_output, add_files_to_output
 
     from Tools.helpers import get_samples
     from Tools.config_helpers import redirector_ucsd, redirector_fnal
     from Tools.nano_mapping import make_fileset, nano_mapping
+
+    from processor.meta_processor import get_sample_meta
 
     overwrite = True
     
@@ -131,14 +132,18 @@ if __name__ == '__main__':
     
     samples = get_samples()
 
-    fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True)
+    fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
+    #fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=True)
 
     add_processes_to_output(fileset, desired_output)
 
+    meta = get_sample_meta(fileset)
+
     exe_args = {
-        'workers': 16,
+        'workers': 6,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
+        "skipbadfiles": True,
     }
     exe = processor.futures_executor
     
@@ -169,7 +174,6 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import mplhep as hep
     plt.style.use(hep.style.CMS)
-    
     
     # load the functions to make a nice plot from the output histograms
     # and the scale_and_merge function that scales the individual histograms
@@ -202,7 +206,8 @@ if __name__ == '__main__':
     print ("Total events in output histogram N_ele: %.2f"%output['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
     
     my_hists = {}
-    my_hists['N_ele'] = scale_and_merge(output['N_ele'], samples, fileset, nano_mapping)
+    #my_hists['N_ele'] = scale_and_merge(output['N_ele'], samples, fileset, nano_mapping)
+    my_hists['N_ele'] = scale_and_merge(output['N_ele'], meta, fileset, nano_mapping)
     print ("Total scaled events in merged histogram N_ele: %.2f"%my_hists['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
     
     # Now make a nice plot of the electron multiplicity.
