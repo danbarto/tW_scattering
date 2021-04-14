@@ -13,7 +13,7 @@ from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 #from Tools.lepton_scalefactors import *
-from Tools.selections import Selection
+from Tools.ttZ_selections import Selection
 
 class trilep_ttZ_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -70,7 +70,7 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
         dimuon = choose(muon,2)
         OS_dimuon = dimuon[(dimuon['0'].charge*dimuon['1'].charge < 0)]
 
-        dielectron = choose(electron)
+        dielectron = choose(electron) #why dont we use the same def as muons
         OS_dielectron = dielectron[(dielectron['0'].charge*dielectron['1'].charge < 0)]
 
         OS_dimuon_bestZmumu = OS_dimuon[ak.singletons(ak.argmin(abs(OS_dimuon.mass-91.2), axis=1))]
@@ -83,7 +83,11 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
 
-        SFOS = ak.concatenate([OS_dielectron, OS_dimuon], axis=1)
+        
+        lep_sfos =  (ak.num(lepton)<=3)
+        #SFOS = ak.num(OS_dielectron[lep_sfos])+ak.num(OS_dimuon[lep_sfos])
+        #SFOS = (ak.num(OS_dielectron) + ak.num(OS_dimuon))
+        SFOS = ak.concatenate([ak.num(OS_dimuon[ak.num(lepton)>=3]), ak.num(OS_dielectron[ak.num(lepton)>=3])])
                                         
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
@@ -124,7 +128,7 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
             
             # PU weight - not in the babies...
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
-            
+           
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
@@ -167,7 +171,10 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
         output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
         # make a plot of the dilepton mass, but without applying the cut on the dilepton mass itself (N-1 plot)
         output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
-        output['N_SFOS'].fill(dataset=dataset, multiplicity=ak.num(SFOS)[BL], weight=weight.weight()[BL])
+        output['N_SFOS'].fill(dataset=dataset, multiplicity=SFOS[sel.trilep_baseline(omit=['offZ'])], weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
+        #output['N_SFOS'].fill(dataset=dataset, multiplicity=SFOS[lep_sfos], weight=weight.weight()[lep_sfos])
+        output['N_OSE'].fill(dataset=dataset, multiplicity=ak.num(OS_dielectron, axis=1)[BL], weight=weight.weight()[BL])
+        output['N_OSM'].fill(dataset=dataset, multiplicity= ak.num(OS_dimuon, axis=1)[BL], weight=weight.weight()[BL])
 
         output['MET'].fill(
             dataset = dataset,
@@ -289,6 +296,8 @@ if __name__ == '__main__':
     desired_output.update({
         "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
         "N_SFOS": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+        "N_OSE": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+        "N_OSM": hist.Hist("Counts", dataset_axis, multiplicity_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))
