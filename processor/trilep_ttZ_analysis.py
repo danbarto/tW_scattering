@@ -86,8 +86,8 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
         
         lep_sfos =  (ak.num(lepton)<=3)
         #SFOS = ak.num(OS_dielectron[lep_sfos])+ak.num(OS_dimuon[lep_sfos])
-        #SFOS = (ak.num(OS_dielectron) + ak.num(OS_dimuon))
-        SFOS = ak.concatenate([ak.num(OS_dimuon[ak.num(lepton)>=3]), ak.num(OS_dielectron[ak.num(lepton)>=3])])
+        SFOS = (ak.num(OS_dielectron) + ak.num(OS_dimuon))
+        #SFOS = ak.concatenate([ak.num(OS_dimuon[ak.num(lepton)>=3]), ak.num(OS_dielectron[ak.num(lepton)>=3])])
                                         
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
@@ -171,7 +171,7 @@ class trilep_ttZ_analysis(processor.ProcessorABC):
         output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
         # make a plot of the dilepton mass, but without applying the cut on the dilepton mass itself (N-1 plot)
         output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
-        output['N_SFOS'].fill(dataset=dataset, multiplicity=SFOS[sel.trilep_baseline(omit=['offZ'])], weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
+        output['N_SFOS'].fill(dataset=dataset, multiplicity=SFOS[lep_sfos + sel.trilep_baseline(omit=['offZ'])], weight=weight.weight()[lep_sfos + sel.trilep_baseline(omit=['offZ'])])
         #output['N_SFOS'].fill(dataset=dataset, multiplicity=SFOS[lep_sfos], weight=weight.weight()[lep_sfos])
         output['N_OSE'].fill(dataset=dataset, multiplicity=ak.num(OS_dielectron, axis=1)[BL], weight=weight.weight()[BL])
         output['N_OSM'].fill(dataset=dataset, multiplicity= ak.num(OS_dimuon, axis=1)[BL], weight=weight.weight()[BL])
