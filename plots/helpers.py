@@ -332,7 +332,7 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
         # print (cat)
         if len(nano_mapping[cat])>1:
             for sample in nano_mapping[cat][1:]:
-                print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
+                # print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
                 temp[nano_mapping[cat][0]].add(temp[sample])
                 temp = temp.remove([sample], 'dataset')
                 

@@ -56,7 +56,11 @@ class nano_analysis(processor.ProcessorABC):
         muon     = ev.Muon
         
         ## Electrons
-        electron     = ev.Electron
+        electron     = Collections(ev, "Electron", "tight").get()
+
+        gen_matched_electron = electron[electron.genPartIdx >= 0]
+        
+        is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
 
         ## Merge electrons and muons - this should work better now in ak1
         dilepton = cross(muon, electron)
@@ -101,6 +105,18 @@ class nano_analysis(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(leading_lepton[baseline].phi)),
             weight = weight.weight()[baseline]
         )
+
+        output["gen_matched_electron"].fill(
+            dataset = dataset,
+            pt  = ak.flatten(gen_matched_electron.pt),
+            eta = abs(ak.flatten(gen_matched_electron.eta)),
+        )
+
+        output["flipped_electron"].fill(
+            dataset = dataset,
+            pt  = ak.flatten(gen_matched_electron[is_flipped].pt),
+            eta = abs(ak.flatten(gen_matched_electron[is_flipped].eta)),
+        )
         
         return output
 
@@ -111,7 +127,7 @@ class nano_analysis(processor.ProcessorABC):
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from processor.default_accumulators import desired_output, add_processes_to_output, add_files_to_output
+    from processor.default_accumulators import desired_output, add_processes_to_output, add_files_to_output, dataset_axis
 
     from Tools.helpers import get_samples
     from Tools.config_helpers import redirector_ucsd, redirector_fnal
@@ -132,10 +148,19 @@ if __name__ == '__main__':
     
     samples = get_samples()
 
-    fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
-    #fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=True)
+    #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
+    #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
+    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=True, n_max=10)
 
     add_processes_to_output(fileset, desired_output)
+
+    pt_axis_coarse  = hist.Bin("pt",            r"$p_{T}$ (GeV)", [15,40,60,80,100,200,300])
+    eta_axis_coarse = hist.Bin("eta",           r"$\eta$", [0,0.8,1.479,2.5])
+    
+    desired_output.update({
+        "gen_matched_electron": hist.Hist("Counts", dataset_axis, pt_axis_coarse, eta_axis_coarse),
+        "flipped_electron": hist.Hist("Counts", dataset_axis, pt_axis_coarse, eta_axis_coarse),
+    })
 
     meta = get_sample_meta(fileset)
 
