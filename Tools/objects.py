@@ -103,7 +103,7 @@ class Collections:
             mask_close = (delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
             mask_far = ~(delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
 
-            deepJet = ev.Muon.mached_jet.btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ev.Muon.matched_jet.btagDeepFlavB*mask_close  # this defaults to 0
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
             conePt = 0.9 * ev.Muon.matched_jet.pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
 
