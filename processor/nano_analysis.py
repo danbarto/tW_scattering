@@ -15,6 +15,7 @@ from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
 from Tools.config_helpers import *
+from Tools.helpers import build_weight_like
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
@@ -110,12 +111,16 @@ class nano_analysis(processor.ProcessorABC):
             dataset = dataset,
             pt  = ak.flatten(gen_matched_electron.pt),
             eta = abs(ak.flatten(gen_matched_electron.eta)),
+            weight = build_weight_like(weight.weight(), (ak.num(gen_matched_electron)>0), gen_matched_electron.pt),
+            #weight = ak.flatten(weight.weight() * ak.ones_like(gen_matched_electron.pt)),
         )
 
         output["flipped_electron"].fill(
             dataset = dataset,
             pt  = ak.flatten(gen_matched_electron[is_flipped].pt),
             eta = abs(ak.flatten(gen_matched_electron[is_flipped].eta)),
+            weight = build_weight_like(weight.weight(), (ak.num(gen_matched_electron[is_flipped])>0), gen_matched_electron[is_flipped].pt),
+            #weight = ak.flatten(weight.weight() * ak.ones_like(gen_matched_electron.pt)),
         )
         
         return output
@@ -135,7 +140,7 @@ if __name__ == '__main__':
 
     from processor.meta_processor import get_sample_meta
 
-    overwrite = True
+    overwrite = False
     
     # load the config and the cache
     cfg = loadConfig()
@@ -150,7 +155,7 @@ if __name__ == '__main__':
 
     #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
     #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
-    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=True, n_max=10)
+    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=True, n_max=1)
 
     add_processes_to_output(fileset, desired_output)
 
@@ -162,7 +167,7 @@ if __name__ == '__main__':
         "flipped_electron": hist.Hist("Counts", dataset_axis, pt_axis_coarse, eta_axis_coarse),
     })
 
-    meta = get_sample_meta(fileset)
+    meta = get_sample_meta(fileset, samples)
 
     exe_args = {
         'workers': 6,

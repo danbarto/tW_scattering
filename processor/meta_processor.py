@@ -45,7 +45,7 @@ class meta_processor(processor.ProcessorABC):
         return accumulator
 
 
-def get_sample_meta(fileset, workers=10, skipbadfiles=True):
+def get_sample_meta(fileset, samples, workers=10, skipbadfiles=True):
     
     from processor.default_accumulators import add_processes_to_output, add_files_to_output
 
@@ -78,6 +78,7 @@ def get_sample_meta(fileset, workers=10, skipbadfiles=True):
         meta[sample]['n_good'] = len(good_files)
         meta[sample]['bad_files'] = skipped_files
         meta[sample]['n_bad'] = len(skipped_files)
+        meta[sample]['xsec'] = samples[sample]['xsec']
 
     return meta
 
