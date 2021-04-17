@@ -6,7 +6,8 @@ cfg = loadConfig()
 
 version = cfg['meta']['version']
 #tag = version.replace('.','p')
-tag = 'topW_v0.2.3' #!FIXME update this!
+tag = 'topW_v0.2.3'
+#tag = 'topW_v0.2.4_trilep' #!FIXME this is temporary
 
 data_path = os.path.join(cfg['meta']['localSkim'], tag)
 

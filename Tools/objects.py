@@ -89,7 +89,6 @@ class Collections:
         #self.year = df['year'][0] ## to be implemented in next verison of babies
         self.year = 2018
         
-        
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
             ev['Muon', 'absMiniIso'] = ev.Muon.miniPFRelIso_all*ev.Muon.pt
@@ -100,14 +99,14 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
-            mask_far = ~(delta_r2(ev.Muon.matched_jet, ev.Muon)<0.4**2)*1
+            mask_close = (ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
 
-            deepJet = ev.Muon.matched_jet.btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Muon.matched_jet.pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
 
-            ev['Muon', 'deepJet'] = deepJet
+            ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
 
@@ -127,14 +126,14 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r2(ev.Electron.matched_jet, ev.Electron)<0.4**2)*1
-            mask_far = ~(delta_r2(ev.Electron.matched_jet, ev.Electron)<0.4**2)*1
+            mask_close = (ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
 
-            deepJet = ev.Electron.matched_jet.btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Electron.matched_jet.pt * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
 
-            ev['Electron', 'deepJet'] = deepJet
+            ev['Electron', 'deepJet'] = ak.copy(deepJet)
             ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Electron', 'conePt'] = conePt
             
@@ -145,12 +144,22 @@ class Collections:
         if self.obj == "Electron" and self.wp == "tight":
             self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
             if self.v>0: print (" - custom ID and multi-isolation")
+
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
             if self.v>0: print (" - custom multi-isolation")
+            #self.selection = self.selection & ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Muon.matched_jet.btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
         if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH' or self.wp == "tightSSTTH" or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & self.getSigmaIEtaIEta()
             if self.v>0: print (" - SigmaIEtaIEta")
+            #self.selection = self.selection & ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Electron.matched_jet.btagDeepFlavB<0.2770)
+            #self.selection = self.selection & (ev.Jet[ev.Electron.jetIdx].btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
         if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
             if self.v>0: print (" - interpolated deepJet")
