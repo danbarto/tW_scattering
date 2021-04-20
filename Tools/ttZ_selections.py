@@ -145,7 +145,7 @@ class Selection:
         lepton   = ak.concatenate([self.mu, self.ele], axis=1)
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
-#        SFOSveto = ((ak.num(OS_diele) + ak.num(OS_dimu)) ==0)
+        SFOSveto = ((ak.num(OS_diele) + ak.num(OS_dimu)) ==0)
         #SFOSveto = ((ak.num(OS_diele[ak.num(lepton)])+ak.num(OS_dimu[ak.num(lepton)]))<=0)
         
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
@@ -174,7 +174,7 @@ class Selection:
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
         self.selection.add('offZ',          offZ )
-#        self.selection.add('SFOSveto',       SFOSveto)
+        self.selection.add('SFOSveto',       SFOSveto)
 
         reqs = [
             'filter',
@@ -184,7 +184,7 @@ class Selection:
             'p_T(lep1)>20',
             'trigger',
             'offZ',
-#            'SFOSveto',
+            'SFOSveto',
             'MET>50',
             'N_jet>2',
             'N_central>1',

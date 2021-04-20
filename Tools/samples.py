@@ -6,8 +6,7 @@ cfg = loadConfig()
 
 version = cfg['meta']['version']
 #tag = version.replace('.','p')
-tag = 'topW_v0.2.3'
-#tag = 'topW_v0.2.4_trilep' #!FIXME this is temporary
+tag = 'topW_v0.2.4_trilep' #!FIXME update this!
 
 data_path = os.path.join(cfg['meta']['localSkim'], tag)
 
@@ -34,8 +33,7 @@ groups_2018 = {
     'ttbar1l_MG':    ['/TTJets_SingleLept'],
     'TTW':           ['/TTWJets'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
-    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'], # there's also a powheg sample
-    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
+    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]'], # there's also a powheg sample
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
@@ -97,4 +95,3 @@ for sample in samples_2018:
                 fileset_2018[group] += glob.glob(sample+'/*.root')
 
 fileset_2018_small = { sample: fileset_2018[sample][:2] for sample in fileset_2018.keys() }
-
