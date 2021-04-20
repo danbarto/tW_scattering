@@ -220,3 +220,5 @@ def yahist_2D_lookup(h, ar1, ar2):
             ak.to_numpy(ak.flatten(ar2)),
         ), ak.num(ar1) )
 
+def build_weight_like(weight, selection, like):
+    return ak.flatten(weight[selection] * ak.ones_like(like[selection]))

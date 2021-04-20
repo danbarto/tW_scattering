@@ -1,4 +1,7 @@
-import awkward1 as ak
+try:
+    import awkward as ak
+except ImportError:
+    import awkward1 as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
@@ -254,9 +257,9 @@ if __name__ == '__main__':
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
     from processor.default_accumulators import *
 
-    overwrite = False
+    overwrite = True
     year = 2018
-    small = True
+    small = False
     
     # load the config and the cache
     cfg = loadConfig()

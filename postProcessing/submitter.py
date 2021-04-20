@@ -9,7 +9,7 @@ from metis.CondorTask import CondorTask
 from metis.StatsParser import StatsParser
 from metis.Utils import do_cmd
 
-from Tools.helpers import data_path, get_samples
+#from Tools.helpers import data_path, get_samples
 from Tools.config_helpers import *
 
 # load samples
@@ -45,13 +45,14 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--tag', action='store', default=None, help="Tag on github for baby production")
 argParser.add_argument('--user', action='store', help="Your github user name")
-argParser.add_argument('--skim', action='store', default="leptons", choices=["leptons","MET", "dijet"], help="Which skim to use")
+argParser.add_argument('--skim', action='store', default="dilep", choices=["dilep", "trilep"], help="Which skim to use")
 argParser.add_argument('--dryRun', action='store_true', default=None, help="Don't submit?")
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 args = argParser.parse_args()
 
 tag = str(args.tag)
+skim = str(args.skim)
 
 ### Read github credentials
 with open('github_credentials.txt', 'r') as f:
@@ -76,7 +77,7 @@ else:
 # example
 sample = DirectorySample(dataset='TTWJetsToLNu_Autumn18v4', location='/hadoop/cms/store/user/dspitzba/nanoAOD/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8__RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/')
 
-outDir = os.path.join(os.path.expandvars(cfg['meta']['localSkim']), tag)
+outDir = os.path.join(os.path.expandvars(cfg['meta']['localSkim']), tag+'_'+skim if skim=='trilep' else tag)
 
 print ("Output will be here: %s"%outDir)
 
@@ -127,7 +128,7 @@ for s in sample_list:
         condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
         cmssw_version = "CMSSW_10_2_9",
         scram_arch = "slc6_amd64_gcc700",
-        min_completion_fraction = 0.99,
+        min_completion_fraction = 1.00,
     )
     
     maker_tasks.append(maker_task)

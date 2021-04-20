@@ -15,9 +15,11 @@ from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
 from Tools.config_helpers import *
+from Tools.helpers import build_weight_like
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
+
 
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -44,7 +46,7 @@ class nano_analysis(processor.ProcessorABC):
         
         ev = events[presel]
         dataset = ev.metadata['dataset']
-        
+
         # load the config - probably not needed anymore
         cfg = loadConfig()
         
@@ -55,7 +57,12 @@ class nano_analysis(processor.ProcessorABC):
         muon     = ev.Muon
         
         ## Electrons
-        electron     = ev.Electron
+        electron     = Collections(ev, "Electron", "tight").get()
+
+        gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
+        gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
+
+        is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
 
         ## Merge electrons and muons - this should work better now in ak1
         dilepton = cross(muon, electron)
@@ -100,6 +107,22 @@ class nano_analysis(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(leading_lepton[baseline].phi)),
             weight = weight.weight()[baseline]
         )
+
+        output["gen_matched_electron"].fill(
+            dataset = dataset,
+            pt  = ak.flatten(gen_matched_electron.pt),
+            eta = abs(ak.flatten(gen_matched_electron.eta)),
+            weight = build_weight_like(weight.weight(), (ak.num(gen_matched_electron)>0), gen_matched_electron.pt),
+            #weight = ak.flatten(weight.weight() * ak.ones_like(gen_matched_electron.pt)),
+        )
+
+        output["flipped_electron"].fill(
+            dataset = dataset,
+            pt  = ak.flatten(gen_matched_electron[is_flipped].pt),
+            eta = abs(ak.flatten(gen_matched_electron[is_flipped].eta)),
+            weight = build_weight_like(weight.weight(), (ak.num(gen_matched_electron[is_flipped])>0), gen_matched_electron[is_flipped].pt),
+            #weight = ak.flatten(weight.weight() * ak.ones_like(gen_matched_electron.pt)),
+        )
         
         return output
 
@@ -107,16 +130,16 @@ class nano_analysis(processor.ProcessorABC):
         return accumulator
 
 
-
-
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from processor.default_accumulators import desired_output, add_processes_to_output
+    from processor.default_accumulators import desired_output, add_processes_to_output, add_files_to_output, dataset_axis
 
     from Tools.helpers import get_samples
     from Tools.config_helpers import redirector_ucsd, redirector_fnal
     from Tools.nano_mapping import make_fileset, nano_mapping
+
+    from processor.meta_processor import get_sample_meta
 
     overwrite = True
     
@@ -131,14 +154,27 @@ if __name__ == '__main__':
     
     samples = get_samples()
 
-    fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True)
+    #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
+    #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
+    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=False)
 
     add_processes_to_output(fileset, desired_output)
 
+    pt_axis_coarse  = hist.Bin("pt",            r"$p_{T}$ (GeV)", [15,40,60,80,100,200,300])
+    eta_axis_coarse = hist.Bin("eta",           r"$\eta$", [0,0.8,1.479,2.5])
+    
+    desired_output.update({
+        "gen_matched_electron": hist.Hist("Counts", dataset_axis, pt_axis_coarse, eta_axis_coarse),
+        "flipped_electron": hist.Hist("Counts", dataset_axis, pt_axis_coarse, eta_axis_coarse),
+    })
+
+    meta = get_sample_meta(fileset, samples)
+
     exe_args = {
-        'workers': 16,
+        'workers': 6,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
+        "skipbadfiles": True,
     }
     exe = processor.futures_executor
     
@@ -169,7 +205,6 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import mplhep as hep
     plt.style.use(hep.style.CMS)
-    
     
     # load the functions to make a nice plot from the output histograms
     # and the scale_and_merge function that scales the individual histograms
@@ -202,7 +237,8 @@ if __name__ == '__main__':
     print ("Total events in output histogram N_ele: %.2f"%output['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
     
     my_hists = {}
-    my_hists['N_ele'] = scale_and_merge(output['N_ele'], samples, fileset, nano_mapping)
+    #my_hists['N_ele'] = scale_and_merge(output['N_ele'], samples, fileset, nano_mapping)
+    my_hists['N_ele'] = scale_and_merge(output['N_ele'], meta, fileset, nano_mapping)
     print ("Total scaled events in merged histogram N_ele: %.2f"%my_hists['N_ele'].sum('dataset').sum('multiplicity').values(overflow='all')[()])
     
     # Now make a nice plot of the electron multiplicity.

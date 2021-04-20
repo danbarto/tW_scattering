@@ -20,10 +20,19 @@ redirector_fnal = 'root://cmsxrootd.fnal.gov/'
 
 data_path = os.path.expandvars('$TWHOME/data/')
 
+def get_samples(f_in='samples.yaml'):
+    with open(data_path+f_in) as f:
+        return load(f, Loader=Loader)
+
 def load_yaml(f_in=data_path+'nano_mapping.yaml'):
     with open(f_in) as f:
         res = load(f, Loader=Loader)
     return res
+
+def dump_yaml(data, f_out):
+    with open(f_out, 'w') as f:
+        dump(data, f, Dumper=Dumper, default_flow_style=False)
+    return True
 
 def loadConfig():
     return load_yaml(data_path+'config.yaml')
