@@ -135,6 +135,8 @@ if __name__ == '__main__':
     samples = get_samples()
 
     fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=True)
+    
+    meta = get_sample_meta(fileset, samples)
 
     add_processes_to_output(fileset, desired_output)
     
@@ -147,6 +149,7 @@ if __name__ == '__main__':
         'workers': 16,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
+        "skipbadfiles": True,
     }
     exe = processor.futures_executor
     
