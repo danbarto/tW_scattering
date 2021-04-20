@@ -110,6 +110,8 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
     leading_ele = (abs(leading_pdg) == 11)
     leading_mu  = (abs(leading_pdg) == 13)
 
+
+    # lepton triggers from here: https://indico.cern.ch/event/718554/contributions/3027981/attachments/1667626/2674497/leptontriggerreview.pdf
     if year == 2018:
         triggers['MuonEG'] = [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
@@ -119,14 +121,14 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ]
 
         triggers['DoubleMuon'] = [\
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
             "Mu37_TkMu27",
         ]
 
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "DoubleEle25_CaloIdL_MW",
         ]
 
         triggers['MET'] = [\

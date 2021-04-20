@@ -59,8 +59,9 @@ class nano_analysis(processor.ProcessorABC):
         ## Electrons
         electron     = Collections(ev, "Electron", "tight").get()
 
-        gen_matched_electron = electron[electron.genPartIdx >= 0]
-        
+        gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
+        gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
+
         is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
 
         ## Merge electrons and muons - this should work better now in ak1
@@ -140,7 +141,7 @@ if __name__ == '__main__':
 
     from processor.meta_processor import get_sample_meta
 
-    overwrite = False
+    overwrite = True
     
     # load the config and the cache
     cfg = loadConfig()
@@ -155,7 +156,7 @@ if __name__ == '__main__':
 
     #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
     #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
-    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=True, n_max=1)
+    fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=False)
 
     add_processes_to_output(fileset, desired_output)
 
