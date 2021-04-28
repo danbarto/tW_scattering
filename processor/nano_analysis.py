@@ -171,7 +171,7 @@ if __name__ == '__main__':
     meta = get_sample_meta(fileset, samples)
 
     exe_args = {
-        'workers': 6,
+        'workers': 12,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
         "skipbadfiles": True,
@@ -193,7 +193,7 @@ if __name__ == '__main__':
             nano_analysis(year=year, variations=[], accumulator=desired_output),
             exe,
             exe_args,
-            chunksize=250000,
+            chunksize=500000,
         )
         
         cache['fileset']        = fileset
