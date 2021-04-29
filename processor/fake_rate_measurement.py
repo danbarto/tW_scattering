@@ -49,17 +49,14 @@ class nano_analysis(processor.ProcessorABC):
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
         
-        ## Muons
-        #muon     = ev.Muon
-        
-        ## Electrons
+        ### For FCNC, we want electron -> tightTTH
         electron         = Collections(ev, "Electron", "tightSSTTH").get()
         fakeableelectron = Collections(ev, "Electron", "fakeableSSTTH").get()
-        #vetoelectron     = Collections(ev, "Electron", "vetoTTH").get() # "loose" electrons
         
-        muon         = Collections(ev, "Muon", "tightSSTTH").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
-        #vetomuon     = Collections(ev, "Muon", "vetoTTH").get()    # "loose" muons
+#         muon         = Collections(ev, "Muon", "tightSSTTH").get()
+#         fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
+        muon         = Collections(ev, "Muon", "tightFCNC").get()
+        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()          
         
         ##Jets
         Jets = events.Jet
