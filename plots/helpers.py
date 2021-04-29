@@ -236,7 +236,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     if ymax:
         ax.set_ylim(0.01, ymax)
     else:
-        ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+        y_max = y_max*y_mult*(Data_total/MC_total) if data else y_max*y_mult
+        ax.set_ylim(0.01, y_max if not shape else 2)
         #if binwnorm: ax.set_ylim(0.5)
 
     ax.legend(
