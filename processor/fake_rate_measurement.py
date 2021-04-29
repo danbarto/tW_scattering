@@ -55,8 +55,8 @@ class nano_analysis(processor.ProcessorABC):
         
 #         muon         = Collections(ev, "Muon", "tightSSTTH").get()
 #         fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
-        muon         = Collections(ev, "Muon", "tightFCNC").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()          
+        muon         = Collections(ev, "Muon", "tightSSTTH").get()
+        fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()          
         
         ##Jets
         Jets = events.Jet
