@@ -248,6 +248,8 @@ Muon:
     sip3d:
       max: 4
       extra: abs
+    ptErrRel:
+      max: 0.2
     miniPFRelIso_all:
       max: 0.11
     jetRelIso:
@@ -273,6 +275,8 @@ Muon:
     sip3d:
       max: 4
       extra: abs
+    ptErrRel:
+      max: 0.2
     miniPFRelIso_all:
       max: 0.4
 
