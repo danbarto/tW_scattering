@@ -49,17 +49,14 @@ class nano_analysis(processor.ProcessorABC):
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
         
-        ## Muons
-        #muon     = ev.Muon
-        
-        ## Electrons
+        ### For FCNC, we want electron -> tightTTH
         electron         = Collections(ev, "Electron", "tightSSTTH").get()
         fakeableelectron = Collections(ev, "Electron", "fakeableSSTTH").get()
-        #vetoelectron     = Collections(ev, "Electron", "vetoTTH").get() # "loose" electrons
         
+#         muon         = Collections(ev, "Muon", "tightSSTTH").get()
+#         fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
         muon         = Collections(ev, "Muon", "tightSSTTH").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
-        #vetomuon     = Collections(ev, "Muon", "vetoTTH").get()    # "loose" muons
+        fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()          
         
         ##Jets
         Jets = events.Jet
@@ -135,6 +132,8 @@ if __name__ == '__main__':
     samples = get_samples()
 
     fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=True)
+    
+    meta = get_sample_meta(fileset, samples)
 
     add_processes_to_output(fileset, desired_output)
     
@@ -147,6 +146,7 @@ if __name__ == '__main__':
         'workers': 16,
         'function_args': {'flatten': False},
         "schema": NanoAODSchema,
+        "skipbadfiles": True,
     }
     exe = processor.futures_executor
     
