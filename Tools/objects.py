@@ -109,6 +109,8 @@ class Collections:
             ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
+            
+            ev['Muon', 'boolFCNCIso'] = self.FCNCIsolation(ev.Muon.jetRelIso, jetRelIsoV2)
 
             self.cand = ev.Muon
             
@@ -302,3 +304,6 @@ class Collections:
         k = (low-high)/(min_pt-max_pt)
         d = low - k*min_pt
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high
+
+    def getFCNCIsolation(self, JetRelIso, JetPtRelV2):
+        return 

@@ -37,6 +37,55 @@ Electron:
       max: 4.0
       extra: abs
     
+  tightFCNC:
+    pt:
+      min: 25
+    eta:
+      max: 2.4
+      extra: abs
+    tightCharge: 2
+    lostHits: 0
+    convVeto: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.07
+    jetRelIso:
+      min: 0.282
+    jetPtRelv2:
+      max: 8.0
+      
+  fakeableFCNC:
+    pt:
+      min: 25
+    eta:
+      max: 2.4
+      extra: abs
+    tightCharge: 2
+    lostHits: 0
+    convVeto: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+    miniPFRelIso_all:
+      max: 0.4
+
+    
   vetoTTH:
     pt:
       min: 7
@@ -253,9 +302,9 @@ Muon:
     miniPFRelIso_all:
       max: 0.11
     jetRelIso:
-      min: 0.351
+      max: 0.351
     jetPtRelv2:
-      max: 6.8
+      min: 6.8
       
   fakeableFCNC:
     pt:
