@@ -28,7 +28,7 @@ def submit():
 
     extra_requirements = "true"
 
-    tag = "v6_4"
+    tag = "v6_5"
     events_per_point = 50 # produced 500k events before
     events_per_job = 10 # up to 2000 works
     njobs = int(events_per_point)//events_per_job
