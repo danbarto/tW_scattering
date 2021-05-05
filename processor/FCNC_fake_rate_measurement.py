@@ -14,6 +14,7 @@ from Tools.config_helpers import *
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
+from Tools.helpers import mt
 
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -40,12 +41,12 @@ class nano_analysis(processor.ProcessorABC):
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-#         selection = PackedSelection()
-#         selection.add('MET<20',   (ev.MET.pt < 20))
-#         selection.add('MET<19',        (ev.MET.pt<19) )
-#         selection_reqs = ['MET<20', 'MET<19']
-#         fcnc_reqs_d = { sel: True for sel in selection_reqs}
-#         fcnc_selection = selection.require(**fcnc_reqs_d)
+        selection = PackedSelection()
+        selection.add('MET<20',   (ev.MET.pt < 20))
+        #selection.add('MET<19',        (ev.MET.pt<19) )
+        selection_reqs = ['MET<20']#, 'MET<19']
+        fcnc_reqs_d = { sel: True for sel in selection_reqs}
+        fcnc_selection = selection.require(**fcnc_reqs_d)
         
         # load the config - probably not needed anymore
         # cfg = loadConfig()
@@ -68,6 +69,10 @@ class nano_analysis(processor.ProcessorABC):
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
+        
+        lepton   = ak.concatenate([muon, electron], axis=1)
+        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
 
         # define the weight
         weight = Weights( len(ev) )
@@ -80,23 +85,35 @@ class nano_analysis(processor.ProcessorABC):
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
         output['single_mu_fakeable'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)][fcnc_reqs_d].conePt)),
-            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)][fcnc_reqs_d].eta))
+            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
+                              & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
+                              ].conePt)),
+            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
+                              & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
+                              ].eta))
         )
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1)][fcnc_reqs_d].conePt)),
-            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1)][fcnc_reqs_d].eta))
+            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
+                              & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
+                              & (min_mt_lep_met < 2000)].conePt)),
+            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
+                              & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
+                              ].eta))
         )
         output['single_e_fakeable'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1)][fcnc_reqs_d].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1)][fcnc_reqs_d].etaSC)))
+            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) 
+                              & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) 
+                         & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection].etaSC)))
         )
         output['single_e'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1)][fcnc_reqs_d].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1)][fcnc_reqs_d].etaSC)))
+            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) 
+                              & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1) & fcnc_selection].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) 
+                          & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1) & fcnc_selection].etaSC)))
         )
         return output
 

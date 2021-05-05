@@ -315,7 +315,7 @@ Muon:
       extra: abs
     mediumId: 1
     looseId: 1
-    #tightCharge: 2
+    tightCharge: 2
     dxy:
       max: 0.05
       extra: abs
