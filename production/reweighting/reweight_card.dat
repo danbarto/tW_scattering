@@ -1,0 +1,232 @@
+# reweight card file created with https://github.com/schoef/gridpacks on 2021-04-20 08:42:09
+# Command line arguments: /home/users/dspitzba/TTW/CMSSW_10_2_9/src/tW_scattering/production/reweighting/make_reweight_card.py --couplings 2 ctZ 3 cpt 3 cpQM 3 cpQ3 3 ctW 3 ctp 3 --referencepoint ctZ 4.0 --filename reweight_card.dat --overwrite
+# Polynomial order: 2
+# Reference Point: ctZ 4.0
+change rwgt_dir rwgt
+
+launch --rwgt_name=dummy # Name of first argument seems to be rwgt_1. Add dummy to fix it.
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 3.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 3.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 3.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 3.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 3.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_6p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 6.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 3.000000
+set cpt 3.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 3.000000
+set cpt 0.000000
+set cpQM 3.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p
+set ctZ 3.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 3.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p
+set ctZ 3.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 3.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p
+set ctZ 3.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_0p_cpt_6p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 6.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_3p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 3.000000
+set cpQM 3.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_3p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 3.000000
+set cpQM 0.000000
+set cpQ3 3.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p
+set ctZ 0.000000
+set cpt 3.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 3.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p
+set ctZ 0.000000
+set cpt 3.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_6p_cpQ3_0p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 6.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_3p_cpQ3_3p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 3.000000
+set cpQ3 3.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_3p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 3.000000
+set cpQ3 0.000000
+set ctW 3.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_3p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 3.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_6p_ctW_0p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 6.000000
+set ctW 0.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_3p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 3.000000
+set ctW 3.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_3p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 3.000000
+set ctW 0.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_6p_ctp_0p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 6.000000
+set ctp 0.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_3p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 3.000000
+set ctp 3.000000
+
+launch --rwgt_name=ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_6p
+set ctZ 0.000000
+set cpt 0.000000
+set cpQM 0.000000
+set cpQ3 0.000000
+set ctW 0.000000
+set ctp 6.000000
+
