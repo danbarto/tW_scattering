@@ -70,7 +70,7 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
         
-        lepton   = ak.concatenate([muon, electron], axis=1)
+        lepton   = ak.concatenate([muon, fakeablemuon, electron, fakeableelectron], axis=1)
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
 
@@ -87,19 +87,19 @@ class nano_analysis(processor.ProcessorABC):
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
                               & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              ].conePt)),
+                              & (min_mt_lep_met < 20)].conePt)),
             eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
                               & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              ].eta))
+                              & (min_mt_lep_met < 20)].eta))
         )
         output['single_mu'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
                               & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              & (min_mt_lep_met < 2000)].conePt)),
+                              & (min_mt_lep_met < 20)].conePt)),
             eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
                               & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              ].eta))
+                              & (min_mt_lep_met < 20)].eta))
         )
         output['single_e_fakeable'].fill(
             dataset = dataset,
