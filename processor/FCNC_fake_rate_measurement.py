@@ -70,10 +70,10 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
         
-        lepton   = ak.concatenate([muon, fakeablemuon, electron, fakeableelectron], axis=1)
+        lepton   = ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-
+        
         # define the weight
         weight = Weights( len(ev) )
         
