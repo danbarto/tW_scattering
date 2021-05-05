@@ -110,7 +110,7 @@ class Collections:
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
             
-            ev['Muon', 'boolFCNCIso'] = self.FCNCIsolation(ev.Muon.jetRelIso, jetRelIsoV2)
+            ev['Muon', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Muon.jetRelIso, ev.Muon.jetPtRelv2)
 
             self.cand = ev.Muon
             
@@ -165,6 +165,7 @@ class Collections:
         if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
             if self.v>0: print (" - interpolated deepJet")
+            
         
     def getValue(self, var):
         #return np.nan_to_num(getattr(self.cand, var), -999)
@@ -305,5 +306,5 @@ class Collections:
         d = low - k*min_pt
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high
 
-    def getFCNCIsolation(self, JetRelIso, JetPtRelV2):
-        return 
+    def getFCNCIsolation(self, jetRelIso, jetPtRelV2):
+        return ((jetRelIso < 0.351) | (jetPtRelV2 > 6.8))

@@ -40,15 +40,15 @@ class nano_analysis(processor.ProcessorABC):
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-        selection = PackedSelection()
-        selection.add('MET<20', (ev.MET.pt < 20))
-        
-        selection_reqs = ['MET<20']
-        fcnc_reqs_d = { sel: True for sel in selection_reqs}
-        fcnc_selection = selection.require(**fcnc_reqs_d)
+#         selection = PackedSelection()
+#         selection.add('MET<20',   (ev.MET.pt < 20))
+#         selection.add('MET<19',        (ev.MET.pt<19) )
+#         selection_reqs = ['MET<20', 'MET<19']
+#         fcnc_reqs_d = { sel: True for sel in selection_reqs}
+#         fcnc_selection = selection.require(**fcnc_reqs_d)
         
         # load the config - probably not needed anymore
-        cfg = loadConfig()
+        # cfg = loadConfig()
         
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)

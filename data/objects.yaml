@@ -301,11 +301,12 @@ Muon:
       max: 0.2
     miniPFRelIso_all:
       max: 0.11
-    jetRelIso:
-      max: 0.351
-    jetPtRelv2:
-      min: 6.8
-      
+    boolFCNCIso: 1 #replaces the below two requirements (includes an OR statement)
+#     jetRelIso: #these are flipped to be like Tuong's
+#       max: 0.351
+#     jetPtRelv2:
+#       min: 6.8
+     
   fakeableFCNC:
     pt:
       min: 20
@@ -314,7 +315,7 @@ Muon:
       extra: abs
     mediumId: 1
     looseId: 1
-    tightCharge: 2
+    #tightCharge: 2
     dxy:
       max: 0.05
       extra: abs
