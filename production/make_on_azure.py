@@ -1,5 +1,5 @@
 '''
-Produce a nanoGEN sample on condor, using metis.
+Produce a NanoAOD sample on condor, using metis.
 Inspired by https://github.com/aminnj/scouting/blob/master/generation/submit_jobs.py
 
 '''
@@ -54,7 +54,7 @@ def submit():
                         ["JobBatchName",reqname],
                         ["IS_CLOUD_JOB", "yes"],
                         ],
-                    "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True) && JOB_GLIDEIN_Entry_Name=="CMSHTPC_T2_US_UCSD_cms-cloud-ce"'
+                    "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True)'
                     },
                 tag = tag,
                 min_completion_fraction = 0.90,
