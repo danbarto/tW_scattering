@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     from processor.meta_processor import get_sample_meta
 
-    overwrite = True
+    overwrite = False
     
     # load the config and the cache
     cfg = loadConfig()

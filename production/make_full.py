@@ -45,6 +45,7 @@ def submit():
                 output_name = "nanoAOD.root",
                 executable = "executables/condor_executable_Autumn18.sh",
                 tarfile = "package.tar.gz",
+                #additional_input_files = gridpack,
                 #scram_arch = "slc7_amd64_gcc630",
                 open_dataset = False,
                 files_per_output = 1,
