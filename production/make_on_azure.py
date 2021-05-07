@@ -31,7 +31,7 @@ def submit():
 
     # v6+ is UL
 
-    tag = "UL17_v6_9"
+    tag = "UL17_v6_10"
     #events_per_point = 250000
     #events_per_job = 250
     events_per_point = 1000
