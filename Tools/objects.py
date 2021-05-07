@@ -126,7 +126,7 @@ class Collections:
             # this is what we are using:
             # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
-            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso), 0 otherwise
 
             mask_close = (ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
             mask_far = ~(ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1

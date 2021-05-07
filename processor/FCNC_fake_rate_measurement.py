@@ -5,6 +5,7 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
 import numpy as np
+import pandas as pd
 
 # this is all very bad practice
 from Tools.objects import *
@@ -70,7 +71,7 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
         
-        lepton   = ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
+        lepton   = fakeablemuon   #ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
         
@@ -82,25 +83,24 @@ class nano_analysis(processor.ProcessorABC):
             weight.add("weight", ev.genWeight)
 
         
-        jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
+        jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
+        default_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & (min_mt_lep_met < 20)
+        debug_sel = (min_mt_lep_met < 20)
         output['single_mu_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
-                              & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              & (min_mt_lep_met < 20)].conePt)),
+                              & fcnc_selection
+                              & (min_mt_lep_met < 20)].pt)),
             eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
-                              & (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
+                              & fcnc_selection
                               & (min_mt_lep_met < 20)].eta))
         )
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
-                              & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              & (min_mt_lep_met < 20)].conePt)),
-            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(muon)==1) & (ak.num(fakeablemuon)==1) 
-                              & (ak.num(jets[~match(jets, muon, deltaRCut=1.0)])>=1) & fcnc_selection
-                              & (min_mt_lep_met < 20)].eta))
+            pt  = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1)].pt)),
+            eta = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1)].eta))
         )
+        
         output['single_e_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) 
@@ -115,6 +115,14 @@ class nano_analysis(processor.ProcessorABC):
             eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) 
                           & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1) & fcnc_selection].etaSC)))
         )
+        
+        #create pandas dataframe for debugging
+        event_p = ak.to_pandas(ev[ak.num(muon, axis=1) == 1][["event"]])
+        event_p["MET_PT"] = ev[ak.num(muon, axis=1) == 1]["MET"]["pt"]
+        muon_p = ak.to_pandas(ak.flatten(muon[ak.num(muon, axis=1) == 1])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
+        #convert to numpy array for the output
+        output['muons_p'] = pd.concat([muon_p, event_p], axis=1).to_numpy()
+        
         return output
 
     def postprocess(self, accumulator):
