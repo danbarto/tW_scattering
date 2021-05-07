@@ -82,7 +82,7 @@ class nano_analysis(processor.ProcessorABC):
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
         default_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & (min_mt_lep_met < 20)
-        debug_sel = (min_mt_lep_met < 20)
+        debug_sel = fcnc_selection & #(min_mt_lep_met < 20)
         
         output['single_mu_fakeable'].fill(
             dataset = dataset,
@@ -115,9 +115,11 @@ class nano_analysis(processor.ProcessorABC):
         )
         
         #create pandas dataframe for debugging
-        event_p = ak.to_pandas(ev[ak.num(muon, axis=1) == 1][["event"]])
-        event_p["MET_PT"] = ev[ak.num(muon, axis=1) == 1]["MET"]["pt"]
-        muon_p = ak.to_pandas(ak.flatten(muon[ak.num(muon, axis=1) == 1])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
+        passed_events = ev[(ak.num(muon)==1) & debug_sel]
+        passed_muons = muon[(ak.num(muon)==1) & debug_sel]
+        event_p = ak.to_pandas(passed_events[["event"]])
+        event_p["MET_PT"] = passed_events["MET"]["pt"]
+        muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
         #convert to numpy array for the output
         events_array = pd.concat([muon_p, event_p], axis=1).to_numpy()
         output['muons_p'] += processor.column_accumulator(events_array)
