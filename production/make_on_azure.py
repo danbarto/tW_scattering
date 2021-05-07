@@ -31,11 +31,11 @@ def submit():
 
     # v6+ is UL
 
-    tag = "UL17_v6_10"
+    tag = "UL17_v7"
     #events_per_point = 250000
     #events_per_job = 250
-    events_per_point = 1000
-    events_per_job = 250
+    events_per_point = 1000000
+    events_per_job = 2000
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
@@ -53,7 +53,9 @@ def submit():
                 arguments = gridpack.split('/')[-1],
                 condor_submit_params = {
                     "sites":"T2_US_UCSD", #
-                    "memory": 1950,
+                    #"memory": 1950,
+                    "cpus": 1,
+                    "memory": 15600,
                     "cpus": 8,
                     "classads": [
                         ["param_nevents",events_per_job],
