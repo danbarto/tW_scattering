@@ -59,8 +59,6 @@ class nano_analysis(processor.ProcessorABC):
         electron         = Collections(ev, "Electron", "tightFCNC").get()
         fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
         
-#         muon         = Collections(ev, "Muon", "tightSSTTH").get()
-#         fakeablemuon = Collections(ev, "Muon", "fakeableSSTTH").get()
         muon         = Collections(ev, "Muon", "tightFCNC").get()
         fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()          
         
@@ -82,10 +80,10 @@ class nano_analysis(processor.ProcessorABC):
             # generator weight
             weight.add("weight", ev.genWeight)
 
-        
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
         default_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & (min_mt_lep_met < 20)
         debug_sel = (min_mt_lep_met < 20)
+        
         output['single_mu_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
@@ -97,8 +95,8 @@ class nano_analysis(processor.ProcessorABC):
         )
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1)].pt)),
-            eta = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1)].eta))
+            pt  = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1) & debug_sel].pt)),
+            eta = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1) & debug_sel].eta))
         )
         
         output['single_e_fakeable'].fill(
@@ -121,7 +119,8 @@ class nano_analysis(processor.ProcessorABC):
         event_p["MET_PT"] = ev[ak.num(muon, axis=1) == 1]["MET"]["pt"]
         muon_p = ak.to_pandas(ak.flatten(muon[ak.num(muon, axis=1) == 1])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
         #convert to numpy array for the output
-        output['muons_p'] = pd.concat([muon_p, event_p], axis=1).to_numpy()
+        events_array = pd.concat([muon_p, event_p], axis=1).to_numpy()
+        output['muons_p'] += processor.column_accumulator(events_array)
         
         return output
 

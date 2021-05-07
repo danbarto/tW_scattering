@@ -97,14 +97,21 @@ class Collections:
             # this is what we are using:
             # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
-            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
-
+            # (FOR TTH) - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+            # (FOR SS) - pt_cone = pt*(1 + max(0,I_m-I_1)) if pt_rel > I_3; max(pt, pt(matched_jet)*I_2) otherwise
+            
+            #TTH conePt
             mask_close = (ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
             mask_far = ~(ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
-
+            #conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+            
+            #SS conePt
+            I_1 = 0.11; I_2 = 0.74; I_3 = 6.8
+            conePt = 0#(ev.Muon.pt*(1 + max(0, ev.Muon.miniPFRelIso_all - I_1)) * (ev.Muon.jetPtRelv2 > I_3)) + (max(ev.Muon.pt, ev.Muon.matched_jet.pt * I_2)* ~(ev.Muon.jetPtRelv2 > I_3))
+            
             deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+            
 
             ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
