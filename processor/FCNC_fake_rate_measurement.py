@@ -82,7 +82,7 @@ class nano_analysis(processor.ProcessorABC):
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
         default_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & (min_mt_lep_met < 20)
-        debug_sel = fcnc_selection & #(min_mt_lep_met < 20)
+        debug_sel = fcnc_selection #(min_mt_lep_met < 20)
         
         output['single_mu_fakeable'].fill(
             dataset = dataset,
