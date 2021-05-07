@@ -21,16 +21,21 @@ def submit():
         #'TTWJetsToLNuEWK_5f_EFT_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # one of the BSM points
         #'TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',  # EFT mix
         #'TTWJetsToLNuEWK_5f_EFT_cpq3_4_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks//TTWJetsToLNuEWK_5f_EFT_myNLO_cpq3_4_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',  # C_pq3 = 4
-        'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        'TTWJetsToLNuEWK_5f_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',
+        #'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
 
     total_summary = {}
 
     extra_requirements = "true"
 
-    tag = "v6_5"
-    events_per_point = 50 # produced 500k events before
-    events_per_job = 10 # up to 2000 works
+    # v6+ is UL
+
+    tag = "UL17_v6_9"
+    #events_per_point = 250000
+    #events_per_job = 250
+    events_per_point = 1000
+    events_per_job = 250
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
@@ -39,7 +44,8 @@ def submit():
         task = CondorTask(
                 sample = DummySample(dataset="/%s/RunIIAutumn18/NANO"%reqname,N=njobs,nevents=int(events_per_point)),
                 output_name = "nanoAOD.root",
-                executable = "executables/condor_executable_UL18.sh",
+                #executable = "executables/condor_executable_UL18.sh",
+                executable = "executables/condor_executable_UL17.sh",
                 tarfile = "package.tar.gz",
                 additional_input_files = [gridpack],
                 open_dataset = False,
@@ -48,6 +54,7 @@ def submit():
                 condor_submit_params = {
                     "sites":"T2_US_UCSD", #
                     "memory": 1950,
+                    "cpus": 8,
                     "classads": [
                         ["param_nevents",events_per_job],
                         ["metis_extraargs",""],
@@ -66,6 +73,8 @@ def submit():
         StatsParser(data=total_summary, webdir="~/public_html/dump/tW_gen/").do()
 
 if __name__ == "__main__":
+
+    print ("Running")
 
     for i in range(500):
         submit()
