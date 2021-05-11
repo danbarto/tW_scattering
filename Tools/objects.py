@@ -107,7 +107,12 @@ class Collections:
             
             #SS conePt
             I_1 = 0.11; I_2 = 0.74; I_3 = 6.8
-            conePt = 0#(ev.Muon.pt*(1 + max(0, ev.Muon.miniPFRelIso_all - I_1)) * (ev.Muon.jetPtRelv2 > I_3)) + (max(ev.Muon.pt, ev.Muon.matched_jet.pt * I_2)* ~(ev.Muon.jetPtRelv2 > I_3))
+            PF_unflatten = ak.from_regular(ev.Muon.miniPFRelIso_all[:,:,np.newaxis])
+            max_miniIso = ak.max(ak.concatenate([PF_unflatten - I_1, ak.zeros_like(PF_unflatten)], axis=2), axis=2) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
+            muon_pt_unflatten = ak.from_regular(ev.Muon.pt[:,:,np.newaxis])
+            jet_pt_unflatten = ak.from_regular(ev.Muon.matched_jet.pt[:,:,np.newaxis])
+            max_pt = ak.max(ak.concatenate([muon_pt_unflatten, jet_pt_unflatten * I_2], axis=2), axis=2) #max(ev.Muon.pt, ev.Muon.matched_jet.pt * I_2)
+            conePt = (ev.Muon.pt*(1 + max_miniIso)) * (ev.Muon.jetPtRelv2 > I_3) + (max_pt * ~(ev.Muon.jetPtRelv2 > I_3))
             
             deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match

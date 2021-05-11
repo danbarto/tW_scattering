@@ -42,13 +42,6 @@ class nano_analysis(processor.ProcessorABC):
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-        selection = PackedSelection()
-        selection.add('MET<20',   (ev.MET.pt < 20))
-        #selection.add('MET<19',        (ev.MET.pt<19) )
-        selection_reqs = ['MET<20']#, 'MET<19']
-        fcnc_reqs_d = { sel: True for sel in selection_reqs}
-        fcnc_selection = selection.require(**fcnc_reqs_d)
-        
         # load the config - probably not needed anymore
         # cfg = loadConfig()
         
@@ -60,7 +53,7 @@ class nano_analysis(processor.ProcessorABC):
         fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
         
         muon         = Collections(ev, "Muon", "tightFCNC").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()          
+        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()
         
         ##Jets
         Jets = events.Jet
@@ -68,10 +61,18 @@ class nano_analysis(processor.ProcessorABC):
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
-        
+    
         lepton   = fakeablemuon   #ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+        
+        selection = PackedSelection()
+        selection.add('MET<20',   (ev.MET.pt < 20))
+        selection.add('mt<20',     min_mt_lep_met < 20)
+        #selection.add('MET<19',        (ev.MET.pt<19) )
+        selection_reqs = ['MET<20', 'mt<20']#, 'MET<19']
+        fcnc_reqs_d = { sel: True for sel in selection_reqs}
+        fcnc_selection = selection.require(**fcnc_reqs_d)
         
         # define the weight
         weight = Weights( len(ev) )
@@ -81,22 +82,19 @@ class nano_analysis(processor.ProcessorABC):
             weight.add("weight", ev.genWeight)
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
-        default_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & (min_mt_lep_met < 20)
-        debug_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection
-        
+        single_muon_sel = (ak.num(muon)==1) & (ak.num(fakeablemuon)==1) | (ak.num(muon)==0) & (ak.num(fakeablemuon)==1)
+        debug_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
+        tight_muon_sel = (ak.num(muon)==1) & debug_sel
+        loose_muon_sel = (ak.num(fakeablemuon)==1) & debug_sel
         output['single_mu_fakeable'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
-                              & fcnc_selection
-                              & (min_mt_lep_met < 20)].pt)),
-            eta = ak.to_numpy(ak.flatten(fakeablemuon[(ak.num(fakeablemuon)==1) 
-                              & fcnc_selection
-                              & (min_mt_lep_met < 20)].eta))
+            pt  = ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].eta)))
         )
         output['single_mu'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1) & debug_sel].pt)),
-            eta = ak.to_numpy(ak.flatten(muon[(ak.num(muon)==1) & debug_sel].eta))
+            pt  = ak.to_numpy(ak.flatten(muon[tight_muon_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(muon[tight_muon_sel].eta)))
         )
         
         output['single_e_fakeable'].fill(
@@ -115,10 +113,11 @@ class nano_analysis(processor.ProcessorABC):
         )
         
         #create pandas dataframe for debugging
-        passed_events = ev[(ak.num(muon)==1) & debug_sel]
-        passed_muons = muon[(ak.num(muon)==1) & debug_sel]
+        passed_events = ev[tight_muon_sel]
+        passed_muons = muon[tight_muon_sel]
         event_p = ak.to_pandas(passed_events[["event"]])
         event_p["MET_PT"] = passed_events["MET"]["pt"]
+        event_p["mt"] = min_mt_lep_met[tight_muon_sel]
         muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
         #convert to numpy array for the output
         events_array = pd.concat([muon_p, event_p], axis=1).to_numpy()
