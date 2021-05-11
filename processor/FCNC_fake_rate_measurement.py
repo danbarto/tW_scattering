@@ -120,8 +120,19 @@ class nano_analysis(processor.ProcessorABC):
         event_p["mt"] = min_mt_lep_met[tight_muon_sel]
         muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
         #convert to numpy array for the output
-        events_array = pd.concat([muon_p, event_p], axis=1).to_numpy()
-        output['muons_p'] += processor.column_accumulator(events_array)
+        events_array = pd.concat([muon_p, event_p], axis=1)
+        
+        events_to_add = [6886009]
+        for e in events_to_add:
+            tmp_event = ev[ev.event==e]
+            added_event = ak.to_pandas(tmp_event[["event"]])
+            added_event["MET_PT"] = tmp_event["MET"]["pt"]
+            added_event["mt"] = min_mt_lep_met[ev.event==e]
+            add_muon = ak.to_pandas(ak.flatten(muon[ev.event==e])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
+            add_concat = pd.concat([add_muon, added_event], axis=1)
+            events_array = pd.concat([events_array, add_concat], axis=0)
+        
+        output['muons_p'] += processor.column_accumulator(events_array.to_numpy())
         
         return output
 
