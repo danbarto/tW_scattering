@@ -25,8 +25,8 @@ class Selection:
         self.__dict__.update(kwargs)
 
 
-        # not yet sure whether this should go here, or later
-        self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
+        ## not yet sure whether this should go here, or later
+        #self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
     def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True):
@@ -71,7 +71,7 @@ class Selection:
 
         self.selection.add('lepveto',       lepveto)
         self.selection.add('dilep',         is_dilep)
-        self.selection.add('filter',        self.filters)
+        #self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
@@ -90,7 +90,7 @@ class Selection:
         self.selection.add('ST>600',        (st>600) )
 
         ss_reqs = [
-            'filter',
+        #    'filter',
             'lepveto',
             'dilep',
             'p_T(lep0)>25',

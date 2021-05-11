@@ -385,6 +385,8 @@ if __name__ == '__main__':
         'MuonEG': fileset_2018['MuonEG'],
         'DoubleMuon': fileset_2018['DoubleMuon'],
         'EGamma': fileset_2018['EGamma'],
+        #'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        #'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
     
     fileset = make_small(fileset, small)
