@@ -19,10 +19,10 @@ from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}):
+    def __init__(self, year=2016, variations=[], accumulator={}, debug=False):
         self.variations = variations
         self.year = year
-        
+        self.debug = debug
         self.btagSF = btag_scalefactor(year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
@@ -102,31 +102,32 @@ class nano_analysis(processor.ProcessorABC):
             eta = np.abs(ak.to_numpy(ak.flatten(muon[tight_muon_sel].eta)))
         )
         
-        #create pandas dataframe for debugging
-        passed_events = ev[tight_muon_sel]
-        passed_muons = muon[tight_muon_sel]
-        event_p = ak.to_pandas(passed_events[["event"]])
-        event_p["MET_PT"] = passed_events["MET"]["pt"]
-        event_p["mt"] = min_mt_lep_met[tight_muon_sel]
-        event_p["num_tight_mu"] = ak.to_numpy(ak.num(muon)[tight_muon_sel])
-        event_p["num_loose_mu"] = ak.num(fakeablemuon)[tight_muon_sel]
-        muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
-        #convert to numpy array for the output
-        events_array = pd.concat([muon_p, event_p], axis=1)
-        
-        events_to_add = [6886009]
-        for e in events_to_add:
-            tmp_event = ev[ev.event==e]
-            added_event = ak.to_pandas(tmp_event[["event"]])
-            added_event["MET_PT"] = tmp_event["MET"]["pt"]
-            added_event["mt"] = min_mt_lep_met[ev.event==e]
-            added_event["num_tight_mu"] = ak.to_numpy(ak.num(muon)[ev.event==e])
-            added_event["num_loose_mu"] = ak.to_numpy(ak.num(fakeablemuon)[ev.event==e])
-            add_muon = ak.to_pandas(ak.flatten(muon[ev.event==e])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
-            add_concat = pd.concat([add_muon, added_event], axis=1)
-            events_array = pd.concat([events_array, add_concat], axis=0)
-        
-        output['muons_p'] += processor.column_accumulator(events_array.to_numpy())
+        if self.debug:
+            #create pandas dataframe for debugging
+            passed_events = ev[tight_muon_sel]
+            passed_muons = muon[tight_muon_sel]
+            event_p = ak.to_pandas(passed_events[["event"]])
+            event_p["MET_PT"] = passed_events["MET"]["pt"]
+            event_p["mt"] = min_mt_lep_met[tight_muon_sel]
+            event_p["num_tight_mu"] = ak.to_numpy(ak.num(muon)[tight_muon_sel])
+            event_p["num_loose_mu"] = ak.num(fakeablemuon)[tight_muon_sel]
+            muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
+            #convert to numpy array for the output
+            events_array = pd.concat([muon_p, event_p], axis=1)
+
+            events_to_add = [6886009]
+            for e in events_to_add:
+                tmp_event = ev[ev.event==e]
+                added_event = ak.to_pandas(tmp_event[["event"]])
+                added_event["MET_PT"] = tmp_event["MET"]["pt"]
+                added_event["mt"] = min_mt_lep_met[ev.event==e]
+                added_event["num_tight_mu"] = ak.to_numpy(ak.num(muon)[ev.event==e])
+                added_event["num_loose_mu"] = ak.to_numpy(ak.num(fakeablemuon)[ev.event==e])
+                add_muon = ak.to_pandas(ak.flatten(muon[ev.event==e])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
+                add_concat = pd.concat([add_muon, added_event], axis=1)
+                events_array = pd.concat([events_array, add_concat], axis=0)
+
+            output['muons_df'] += processor.column_accumulator(events_array.to_numpy())
         
         return output
 
