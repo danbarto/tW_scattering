@@ -123,7 +123,7 @@ class Collections:
             ev['Muon', 'conePt'] = conePt
             ev['Muon', 'jetRelIso'] = ev.Muon.jetRelIso
             ev['Muon', 'jetPtRelv2'] = ev.Muon.jetPtRelv2
-            ev['Muon', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Muon.jetRelIso, ev.Muon.jetPtRelv2)
+            ev['Muon', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Muon.jetRelIso, ev.Muon.jetPtRelv2, I_2, I_3) & (ev.Muon.miniPFRelIso_all < I_1)
             ev['Muon', 'boolFCNCfake'] = (ev.Muon.genPartFlav != 1) & (ev.Muon.genPartFlav != 15)
 
             self.cand = ev.Muon
@@ -147,11 +147,27 @@ class Collections:
 
             deepJet = ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+            
+            #TTH conePt
+            #conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+            #SS conePt
+            I_1 = 0.07; I_2 = 0.78; I_3 = 8.0
+            PF_unflatten = ak.from_regular(ev.Electron.miniPFRelIso_all[:,:,np.newaxis])
+            max_miniIso = ak.max(ak.concatenate([PF_unflatten - I_1, ak.zeros_like(PF_unflatten)], axis=2), axis=2) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
+            electron_pt_unflatten = ak.from_regular(ev.Electron.pt[:,:,np.newaxis])
+            jet_pt_unflatten = ak.from_regular(ev.Electron.matched_jet.pt[:,:,np.newaxis])
+            max_pt = ak.max(ak.concatenate([electron_pt_unflatten, jet_pt_unflatten * I_2], axis=2), axis=2) #max(ev.Muon.pt, ev.Muon.matched_jet.pt * I_2)
+            conePt = (ev.Electron.pt*(1 + max_miniIso)) * (ev.Electron.jetPtRelv2 > I_3) + (max_pt * ~(ev.Electron.jetPtRelv2 > I_3))
+            
 
             ev['Electron', 'deepJet'] = ak.copy(deepJet)
             ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Electron', 'conePt'] = conePt
+            
+            ev['Electron', 'jetRelIso'] = ev.Electron.jetRelIso
+            ev['Electron', 'jetPtRelv2'] = ev.Electron.jetPtRelv2
+            ev['Electron', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Electron.jetRelIso, ev.Electron.jetPtRelv2, I_2, I_3) & (ev.Electron.miniPFRelIso_all < I_1)
+            ev['Electron', 'boolFCNCfake'] = (ev.Electron.genPartFlav != 1) & (ev.Electron.genPartFlav != 15)
             
             self.cand = ev.Electron
             
@@ -320,6 +336,9 @@ class Collections:
         d = low - k*min_pt
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high
 
-    def getFCNCIsolation(self, jetRelIso, jetPtRelV2):
-        return ((jetRelIso < 0.351) | (jetPtRelV2 > 6.8))
-    
+    def getFCNCIsolation(self, jetRelIso, jetPtRelV2, I_2, I_3):
+        if (self.year==2018) or (self.year==2017):
+            jetRelIso_cut = 1/I_2 - 1
+            return ((jetRelIso < jetRelIso_cut) | (jetPtRelV2 > I_3)) 
+        elif self.year==2016:
+            raise "need to define 2016 Isolation in getFCNCIsolation()"
