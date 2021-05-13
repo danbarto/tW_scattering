@@ -121,8 +121,10 @@ class Collections:
             ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
-            
+            ev['Muon', 'jetRelIso'] = ev.Muon.jetRelIso
+            ev['Muon', 'jetPtRelv2'] = ev.Muon.jetPtRelv2
             ev['Muon', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Muon.jetRelIso, ev.Muon.jetPtRelv2)
+            ev['Muon', 'boolFCNCfake'] = (ev.Muon.genPartFlav != 1) & (ev.Muon.genPartFlav != 15)
 
             self.cand = ev.Muon
             
@@ -320,3 +322,4 @@ class Collections:
 
     def getFCNCIsolation(self, jetRelIso, jetPtRelV2):
         return ((jetRelIso < 0.351) | (jetPtRelV2 > 6.8))
+    

@@ -281,7 +281,7 @@ Muon:
       
   tightFCNC:
     pt:
-      min: 20
+      min: 10
     eta:
       max: 2.4
       extra: abs
@@ -309,7 +309,7 @@ Muon:
      
   fakeableFCNC:
     pt:
-      min: 20
+      min: 10
     eta:
       max: 2.4
       extra: abs

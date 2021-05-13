@@ -6,6 +6,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 
 import numpy as np
 import pandas as pd
+from yahist import Hist1D, Hist2D
 
 # this is all very bad practice
 from Tools.objects import *
@@ -86,6 +87,10 @@ class nano_analysis(processor.ProcessorABC):
         debug_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
         tight_muon_sel = (ak.num(muon)==1) & debug_sel
         loose_muon_sel = (ak.num(fakeablemuon)==1) & debug_sel
+        true_positive_mu  = (ak.num(muon[tight_muon_sel])==1) & (muon.boolFCNCfake==0)
+        false_positive_mu = (ak.num(muon[tight_muon_sel])==1) & (muon.boolFCNCfake==1)
+        true_negative_mu  = (ak.num(fakeablemuon[loose_muon_sel])==1) & (muon.boolFCNCfake==1)
+        false_negative_mu = (ak.num(fakeablemuon[loose_muon_sel])==1) & (muon.boolFCNCfake==0)
         output['single_mu_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].conePt)),
@@ -97,28 +102,15 @@ class nano_analysis(processor.ProcessorABC):
             eta = np.abs(ak.to_numpy(ak.flatten(muon[tight_muon_sel].eta)))
         )
         
-        output['single_e_fakeable'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) 
-                              & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) 
-                         & (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection].etaSC)))
-        )
-        output['single_e'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) 
-                              & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1) & fcnc_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[(ak.num(fakeableelectron)==1) & (ak.num(electron)==1) 
-                          & (ak.num(jets[~match(jets, electron, deltaRCut=1.0)])>=1) & fcnc_selection].etaSC)))
-        )
-        
         #create pandas dataframe for debugging
         passed_events = ev[tight_muon_sel]
         passed_muons = muon[tight_muon_sel]
         event_p = ak.to_pandas(passed_events[["event"]])
         event_p["MET_PT"] = passed_events["MET"]["pt"]
         event_p["mt"] = min_mt_lep_met[tight_muon_sel]
-        muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
+        event_p["num_tight_mu"] = ak.to_numpy(ak.num(muon)[tight_muon_sel])
+        event_p["num_loose_mu"] = ak.num(fakeablemuon)[tight_muon_sel]
+        muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
         #convert to numpy array for the output
         events_array = pd.concat([muon_p, event_p], axis=1)
         
@@ -128,7 +120,9 @@ class nano_analysis(processor.ProcessorABC):
             added_event = ak.to_pandas(tmp_event[["event"]])
             added_event["MET_PT"] = tmp_event["MET"]["pt"]
             added_event["mt"] = min_mt_lep_met[ev.event==e]
-            add_muon = ak.to_pandas(ak.flatten(muon[ev.event==e])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all"]])
+            added_event["num_tight_mu"] = ak.to_numpy(ak.num(muon)[ev.event==e])
+            added_event["num_loose_mu"] = ak.to_numpy(ak.num(fakeablemuon)[ev.event==e])
+            add_muon = ak.to_pandas(ak.flatten(muon[ev.event==e])[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
             add_concat = pd.concat([add_muon, added_event], axis=1)
             events_array = pd.concat([events_array, add_concat], axis=0)
         
