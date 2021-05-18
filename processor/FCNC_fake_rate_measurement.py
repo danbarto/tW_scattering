@@ -84,13 +84,16 @@ class nano_analysis(processor.ProcessorABC):
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
         single_muon_sel = (ak.num(muon)==1) & (ak.num(fakeablemuon)==1) | (ak.num(muon)==0) & (ak.num(fakeablemuon)==1)
-        debug_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
-        tight_muon_sel = (ak.num(muon)==1) & debug_sel
-        loose_muon_sel = (ak.num(fakeablemuon)==1) & debug_sel
-        true_positive_mu  = (ak.num(muon[tight_muon_sel])==1) & (muon.boolFCNCfake==0)
-        false_positive_mu = (ak.num(muon[tight_muon_sel])==1) & (muon.boolFCNCfake==1)
-        true_negative_mu  = (ak.num(fakeablemuon[loose_muon_sel])==1) & (muon.boolFCNCfake==1)
-        false_negative_mu = (ak.num(fakeablemuon[loose_muon_sel])==1) & (muon.boolFCNCfake==0)
+        two_lepton_sel = (ak.num(fakeablemuon) + ak.num(fakeableelectron)) == 2
+        TT_sel = ((ak.num(muon) + ak.num(electron)) == 2) & two_lepton_sel
+        TL_sel = ((ak.num(muon) + ak.num(electron)) == 1) & two_lepton_sel
+        single_electron_sel = (ak.num(electron)==1) & (ak.num(fakeableelectron)==1) | (ak.num(electron)==0) & (ak.num(fakeableelectron)==1)
+        fcnc_muon_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
+        fcnc_electron_sel = (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection & single_electron_sel
+        tight_muon_sel     = (ak.num(muon)==1)             & fcnc_muon_sel
+        loose_muon_sel     = (ak.num(fakeablemuon)==1)     & fcnc_muon_sel
+        tight_electron_sel = (ak.num(electron)==1)         & fcnc_electron_sel
+        loose_electron_sel = (ak.num(fakeableelectron)==1) & fcnc_electron_sel
         output['single_mu_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].conePt)),
@@ -100,6 +103,16 @@ class nano_analysis(processor.ProcessorABC):
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(muon[tight_muon_sel].conePt)),
             eta = np.abs(ak.to_numpy(ak.flatten(muon[tight_muon_sel].eta)))
+        )
+        output['single_e_fakeable'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(fakeableelectron[loose_electron_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[loose_electron_sel].eta)))
+        )
+        output['single_e'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(electron[tight_electron_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(electron[tight_electron_sel].eta)))
         )
         
         if self.debug:
@@ -133,8 +146,6 @@ class nano_analysis(processor.ProcessorABC):
 
     def postprocess(self, accumulator):
         return accumulator
-
-
 
 
 if __name__ == '__main__':

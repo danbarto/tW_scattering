@@ -57,10 +57,53 @@ Electron:
       extra: abs
     miniPFRelIso_all:
       max: 0.07
-    jetRelIso:
-      min: 0.282
-    jetPtRelv2:
-      max: 8.0
+    boolFCNCIso: 1
+      
+  tightFCNCGenPrompt:
+    pt:
+      min: 25
+    eta:
+      max: 2.4
+      extra: abs
+    tightCharge: 2
+    lostHits: 0
+    convVeto: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.07
+    boolFCNCIso: 1
+    boolFCNCfake: 0
+    
+  tightFCNCGenNonprompt:
+    pt:
+      min: 25
+    eta:
+      max: 2.4
+      extra: abs
+    tightCharge: 2
+    lostHits: 0
+    convVeto: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.07
+    boolFCNCIso: 1
+    boolFCNCfake: 1
       
   fakeableFCNC:
     pt:
@@ -85,6 +128,29 @@ Electron:
     miniPFRelIso_all:
       max: 0.4
 
+  fakeableFCNCGenPrompt:
+    pt:
+      min: 25
+    eta:
+      max: 2.4
+      extra: abs
+    tightCharge: 2
+    lostHits: 0
+    convVeto: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+    miniPFRelIso_all:
+      max: 0.4
+    boolFCNCfake: 0
     
   vetoTTH:
     pt:
@@ -302,10 +368,60 @@ Muon:
     miniPFRelIso_all:
       max: 0.11
     boolFCNCIso: 1 #replaces the below two requirements (includes an OR statement)
-#     jetRelIso: #these are flipped to be like Tuong's
+#     jetRelIso: 
 #       max: 0.351
 #     jetPtRelv2:
 #       min: 6.8
+
+  tightFCNCGenPrompt:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    tightCharge: 2
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+    miniPFRelIso_all:
+      max: 0.11
+    boolFCNCIso: 1 
+    boolFCNCfake: 0
+
+  tightFCNCGenNonprompt:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    tightCharge: 2
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+    miniPFRelIso_all:
+      max: 0.11
+    boolFCNCIso: 1 
+    boolFCNCfake: 1
      
   fakeableFCNC:
     pt:
@@ -329,6 +445,30 @@ Muon:
       max: 0.2
     miniPFRelIso_all:
       max: 0.4
+      
+  fakeableFCNCGenPrompt:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    mediumId: 1
+    looseId: 1
+    tightCharge: 2
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+    miniPFRelIso_all:
+      max: 0.4
+      boolFCNCfake: 0
 
   vetoTTH:
     pt:

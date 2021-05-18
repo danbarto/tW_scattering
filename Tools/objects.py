@@ -342,3 +342,8 @@ class Collections:
             return ((jetRelIso < jetRelIso_cut) | (jetPtRelV2 > I_3)) 
         elif self.year==2016:
             raise "need to define 2016 Isolation in getFCNCIsolation()"
+            
+    def getFCNCTruthMatch(self, *gen_params):
+        
+        return
+        
