@@ -47,65 +47,58 @@ fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
 ##Jets
 Jets = events.Jet
 
-breakpoint()
-Te_Tu_Selection = SS_selection(tight_electron_gen_prompt, tight_muon_gen_prompt)
-
 
 ## MET -> can switch to puppi MET
 met_pt  = ev.MET.pt
 met_phi = ev.MET.phi
 
 #get loose leptons that are explicitly not tight
-loose_muon_gen_prompt_orthogonal = loose_muon_gen_prompt[(ak.num(loose_muon_gen_prompt)==1) & (ak.num(tight_muon_gen_prompt)==0) | 
-                                                         (ak.num(loose_muon_gen_prompt)==2) & (ak.num(tight_muon_gen_prompt)==1) ]
+muon_orthogonality_param = ((ak.num(loose_muon_gen_prompt)==1) & (ak.num(tight_muon_gen_prompt)==0) | 
+                            (ak.num(loose_muon_gen_prompt)==2) & (ak.num(tight_muon_gen_prompt)==1) )
 
-loose_electron_gen_prompt_orthogonal = loose_muon_gen_prompt[(ak.num(loose_electron_gen_prompt)==1) & (ak.num(tight_electron_gen_prompt)==0) | 
-                                                             (ak.num(loose_electron_gen_prompt)==2) & (ak.num(tight_electron_gen_prompt)==1) ]
+electron_orthogonality_param = ((ak.num(loose_electron_gen_prompt)==1) & (ak.num(tight_electron_gen_prompt)==0) | 
+                                (ak.num(loose_electron_gen_prompt)==2) & (ak.num(tight_electron_gen_prompt)==1) )
+
+loose_muon_gen_prompt_orthogonal = loose_muon_gen_prompt[muon_orthogonality_param]
+loose_electron_gen_prompt_orthogonal = loose_muon_gen_prompt[electron_orthogonality_param]
 
 
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
 jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
-jet_sel = (ak.num(jets[~(match(jets, tight_muon_gen_prompt, deltaRCut=0.4) | 
-                         match(jets, tight_muon_gen_nonprompt, deltaRCut=0.4) | 
-                         match(jets, tight_electron_gen_prompt, deltaRCut=0.4) | 
-                         match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
-                         match(jets, loose_muon_gen_prompt_orthogonal, deltaRCut=0.4) | 
-                         match(jets, loose_electron_gen_prompt_orthogonal, deltaRCut=0.4))])>=2)
+jet_sel = (ak.num(jets[~( match(jets, tight_muon_gen_prompt       , deltaRCut=0.4) | 
+                          match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
+                          match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
+                          match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
+                         (match(jets, loose_muon_gen_prompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
+                         (match(jets, loose_electron_gen_prompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
 
 dilepton = cross(muon, electron)
 SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
 
-two_lepton_sel = (ak.num(tight_muon_gen_prompt) + ak.num(tight_electron_gen_prompt) + ak.num(tight_muon_gen_nonprompt) + ak.num(tight_electron_gen_nonprompt)) == 2
-Te_Te_sel = (ak.num(tight_electron_gen_prompt) == 1)  & (ak.num(tight_electron_gen_nonprompt) == 1) & two_lepton_sel & jet_sel
-Tu_Tu_sel = (ak.num(tight_muon_gen_prompt) == 1)      & (ak.num(tight_muon_gen_nonprompt) == 1)     & two_lepton_sel & jet_sel
-Te_Lu_sel = (ak.num(tight_electron_gen_prompt) == 1)  & (ak.num(loose_muon_gen_prompt) == 1)        & two_lepton_sel & jet_sel
-Tu_Le_sel = (ak.num(tight_muon_gen_prompt) == 1)      & (ak.num(loose_electron_gen_prompt) == 1)    & two_lepton_sel & jet_sel
+two_lepton_sel = (ak.num(tight_muon_gen_prompt) + ak.num(tight_electron_gen_prompt) + 
+                  ak.num(tight_muon_gen_nonprompt) + ak.num(tight_electron_gen_nonprompt)) == 2
 
-#modify this to clean the jets for the measurement region
-#& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
+#TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
+#account for all of the possible lepton combinations below:
+TT_selection = (SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)     |
+                SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt)     |
+                SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) | 
+                SS_selection(tight_muon_gen_prompt, tight_muon_gen_nonprompt)         ) & two_lepton_sel & jet_sel
+#SS_selection gives us all events that have a same sign pair of leptons coming from the provided two object collections
 
+#TL selection is one tight lepton that is a gen-level prompt, and one loose (and NOT tight) lepton that is a gen-level nonprompt.
+#The orthogonality_param is a hacky way to ensure that we are only looking at 2 lepton events that have a tight not loose lepton in the event
+TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_prompt)     & muon_orthogonality_param)     |
+                (SS_selection(tight_muon_gen_prompt, loose_muon_gen_prompt)         & muon_orthogonality_param)     |
+                (SS_selection(tight_electron_gen_prompt, loose_electron_gen_prompt) & electron_orthogonality_param) |
+                (SS_selection(tight_muon_gen_prompt, loose_electron_gen_prompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
 
-pt_muon_Tu_Tu  = ak.to_numpy(ak.flatten(fakeablemuon[Tu_Tu_sel].conePt))
-eta_muon_Tu_Tu = ak.to_numpy(ak.flatten(fakeablemuon[Tu_Tu_sel].eta))
+pt_muon_TT  = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].conePt))
+eta_muon_TT = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].eta))
 
-pt_electron_Te_Te  = ak.to_numpy(ak.flatten(fakeableelectron[Te_Te_sel].conePt))
-eta_electron_Te_Te = ak.to_numpy(ak.flatten(fakeableelectron[Te_Te_sel].eta))
+pt_electron_TT  = ak.to_numpy(ak.flatten(fakeableelectron[TT_selection].conePt))
+eta_electron_TT = ak.to_numpy(ak.flatten(fakeableelectron[TT_selection].eta))
 
-pt_muon_Tu_Le = ak.to_numpy(ak.flatten(fakeablemuon[Tu_Le_sel].conePt))
-eta_muon_Tu_Le = ak.to_numpy(ak.flatten(fakeablemuon[Tu_Le_sel].eta))
-
-#SS conePt
-# I_1 = 0.11; I_2 = 0.74; I_3 = 6.8
-# floor_miniIso = (ev.Muon.miniPFRelIso_all - I_1) * ((ev.Muon.miniPFRelIso_all - I_1) > 0) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
-# PF_unflatten = ak.from_regular(ev.Muon.miniPFRelIso_all[:,:,np.newaxis])
-# max_miniIso = ak.max(ak.concatenate([PF_unflatten - I_1, ak.zeros_like(PF_unflatten)], axis=2), axis=2) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
-# muon_pt_unflatten = ak.from_regular(ev.Muon.pt[:,:,np.newaxis])
-# jet_pt_unflatten = ak.from_regular(ev.Muon.matched_jet.pt[:,:,np.newaxis])
-# max_pt = ak.max(ak.concatenate([muon_pt_unflatten, jet_pt_unflatten * I_2], axis=2), axis=2) #max(ev.Muon.pt, ev.Muon.matched_jet.pt * I_2)
-# conePt = (ev.Muon.pt*(1 + max_miniIso)) * (ev.Muon.jetPtRelv2 > I_3) + (max_pt * ~(ev.Muon.jetPtRelv2 > I_3))
-
-# mask_close = (ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
-# mask_far = ~(ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
-
-# jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
+pt_muon_TL = ak.to_numpy(ak.flatten(fakeablemuon[TL_selection].conePt))
+eta_muon_TL = ak.to_numpy(ak.flatten(fakeablemuon[TL_selection].eta))
