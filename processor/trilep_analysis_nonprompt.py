@@ -1,4 +1,4 @@
-import awkward1 as ak
+import awkward as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
@@ -13,6 +13,9 @@ from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 #from Tools.lepton_scalefactors import *
+from Tools.ttH_lepton_scalefactors import *
+from Tools.selections import Selection
+
 from Tools.selections import Selection
 
 class trilep_analysis(processor.ProcessorABC):
@@ -21,7 +24,7 @@ class trilep_analysis(processor.ProcessorABC):
         self.year = year
         
         self.btagSF = btag_scalefactor(year)
-        
+        #self.leptonSF = LeptonSF(year=year)        
         #self.leptonSF = LeptonSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
@@ -48,11 +51,12 @@ class trilep_analysis(processor.ProcessorABC):
         output['skimmedEvents']['all'] += len(ev)
         
         ## Generated leptons
-        gen_lep = ev.GenL
+        '''gen_lep = ev.GenL
         leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
-        trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
+        trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]'''
 
         ## Muons
+
         muon     = Collections(ev, "Muon", "tightTTH").get()
         vetomuon = Collections(ev, "Muon", "vetoTTH").get()
         leading_muon_idx = ak.singletons(ak.argmax(muon.pt, axis=1))
@@ -70,7 +74,7 @@ class trilep_analysis(processor.ProcessorABC):
         dimuon = choose(muon,2)
         OS_dimuon = dimuon[(dimuon['0'].charge*dimuon['1'].charge < 0)]
 
-        dielectron = choose(electron)
+        dielectron = choose(electron,2)
         OS_dielectron = dielectron[(dielectron['0'].charge*dielectron['1'].charge < 0)]
 
         OS_dimuon_bestZmumu = OS_dimuon[ak.singletons(ak.argmin(abs(OS_dimuon.mass-91.2), axis=1))]
@@ -100,8 +104,8 @@ class trilep_analysis(processor.ProcessorABC):
         
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
-        j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
-        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
+#        j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
+#        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
 
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
@@ -114,10 +118,9 @@ class trilep_analysis(processor.ProcessorABC):
         # define the weight
         weight = Weights( len(ev) )
         
-        if not dataset=='MuonEG':
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
-            #weight.add("weight", ev.genWeight*cfg['lumi'][self.year]*mult)
             
             # PU weight - not in the babies...
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
@@ -125,8 +128,8 @@ class trilep_analysis(processor.ProcessorABC):
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
-            ## lepton SFs
-            #weight.add("lepton", self.leptonSF.get(electron, muon))
+          #  lepton SFs
+          #  weight.add("lepton", self.leptonSF.get(electron, muon))
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -153,16 +156,17 @@ class trilep_analysis(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
-        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
-        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
+        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(vetoelectron)[BL], weight=weight.weight()[BL])
+        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(vetomuon)[BL], weight=weight.weight()[BL])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
-        output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight.weight()[BL])
+        '''output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight.weight()[BL])
         output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight.weight()[BL])
         output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight.weight()[BL])
         output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight.weight()[BL])
         output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight.weight()[BL])
-        output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
-        
+        output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])'''
+       
+    
         # make a plot of the dilepton mass, but without applying the cut on the dilepton mass itself (N-1 plot)
         output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
 
@@ -173,7 +177,7 @@ class trilep_analysis(processor.ProcessorABC):
             weight = weight.weight()[BL]
         )
 
-        output['lead_gen_lep'].fill(
+        '''output['lead_gen_lep'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
             eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
@@ -187,7 +191,7 @@ class trilep_analysis(processor.ProcessorABC):
             eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
             phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
             weight = weight.weight()[BL]
-        )
+        )'''
         
         output['lead_lep'].fill(
             dataset = dataset,
@@ -239,7 +243,12 @@ class trilep_analysis(processor.ProcessorABC):
         )
             
         output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(j_fwd[BL].p), weight = weight.weight()[BL])
-        
+               
+        vetolepton   = ak.concatenate([vetomuon, vetoelectron], axis=1)    
+        trilep = choose3(vetolepton, 3)
+        trilep_m = trilep.mass
+        output['m3l'].fill(dataset=dataset, mass=ak.flatten(trilep_m[BL]), weight=weight.weight()[BL])
+
         return output
 
     def postprocess(self, accumulator):
@@ -254,14 +263,15 @@ if __name__ == '__main__':
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
     from processor.default_accumulators import *
 
-    overwrite = False
+    overwrite = True
     year = 2018
-    small = True
+    small = False
     
     # load the config and the cache
     cfg = loadConfig()
-    
-    cacheName = 'trilep_analysis'
+    '''hi hayden, you're going to forget what the cache names are. 'trilep_analysis_SS_2tight' 'trilep_analysis_3tight' 'trilep_analysis_2tight_1veto'''
+  
+    cacheName = 'trilep_analysis_SS_2tight'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
@@ -274,6 +284,9 @@ if __name__ == '__main__':
         'diboson': fileset_2018['diboson'],
         'ttbar': fileset_2018['top2l'], # like 20 events (10x signal)
         'DY': fileset_2018['DY'], # like 20 events (10x signal)
+        'MuonEG': fileset_2018['MuonEG'],
+        'DoubleMuon': fileset_2018['DoubleMuon'],
+        'EGamma': fileset_2018['EGamma'],
     }
 
     fileset = make_small(fileset, small)
@@ -285,6 +298,7 @@ if __name__ == '__main__':
     from processor.default_accumulators import mass_axis, dataset_axis
     desired_output.update({
         "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
+        "m3l": hist.Hist("Counts", dataset_axis, mass_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))
@@ -339,4 +353,3 @@ if __name__ == '__main__':
 
     from Tools.helpers import getCutFlowTable
     df = getCutFlowTable(output, processes=list(fileset.keys()), lines=lines, significantFigures=4, signal='topW_v3')
-
