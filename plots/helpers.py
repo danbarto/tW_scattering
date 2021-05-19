@@ -331,12 +331,15 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
     # print (scales)
     temp.scale(scales, axis='dataset')
+
     for cat in nano_mapping:
         # print (cat)
         if len(nano_mapping[cat])>1:
+            #print (temp[nano_mapping[cat][0]].values())
             for sample in nano_mapping[cat][1:]:
                 # print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
                 temp[nano_mapping[cat][0]].add(temp[sample])
+                #print (temp[nano_mapping[cat][0]].values())
                 temp = temp.remove([sample], 'dataset')
                 
     return temp

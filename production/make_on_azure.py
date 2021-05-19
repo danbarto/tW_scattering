@@ -21,7 +21,7 @@ def submit():
         #'TTWJetsToLNuEWK_5f_EFT_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # one of the BSM points
         #'TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',  # EFT mix
         #'TTWJetsToLNuEWK_5f_EFT_cpq3_4_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks//TTWJetsToLNuEWK_5f_EFT_myNLO_cpq3_4_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',  # C_pq3 = 4
-        'TTWJetsToLNuEWK_5f_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',
+        #'TTWJetsToLNuEWK_5f_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',
         'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
 
@@ -31,11 +31,11 @@ def submit():
 
     # v6+ is UL
 
-    tag = "UL16_postVFP_v7"
+    tag = "UL18_v7"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
-    events_per_point = 1000000
+    events_per_point = 4000000
     events_per_job = 2000
     njobs = int(events_per_point)//events_per_job
 
@@ -45,9 +45,9 @@ def submit():
         task = CondorTask(
                 sample = DummySample(dataset="/%s/RunIIAutumn18/NANO"%reqname,N=njobs,nevents=int(events_per_point)),
                 output_name = "nanoAOD.root",
-                #executable = "executables/condor_executable_UL18.sh",
+                executable = "executables/condor_executable_UL18.sh",
                 #executable = "executables/condor_executable_UL17.sh",
-                executable = "executables/condor_executable_UL16_postVFP.sh",
+                #executable = "executables/condor_executable_UL16_postVFP.sh",
                 tarfile = "package.tar.gz",
                 additional_input_files = [gridpack],
                 open_dataset = False,

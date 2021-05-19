@@ -34,7 +34,7 @@ def getYearFromDAS(DASname):
         return 2018, 'X', False, False
 
 #samples = get_samples()  # loads the nanoAOD samples
-samples = get_samples("samples_UL17.yaml")  # loads the nanoAOD samples
+samples = get_samples("samples_UL18.yaml")  # loads the nanoAOD samples
 
 # load config
 cfg = loadConfig()

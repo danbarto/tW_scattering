@@ -118,6 +118,8 @@ if __name__ == '__main__':
         
         energy_axis     = hist.Bin("e",     r"E", 8, 0.20, 0.6)  # if 9 was already optimal I'll call myself eyeball champ.
         opt_axis        = hist.Bin("e",     r"E", [0]+list(optb.splits) if optb.splits[0]>0 else list(optb.splits))
+        #opt_axis        = hist.Bin("e",     r"E", [0, 0.15, 0.24, 0.31, 0.36, 0.40, 0.45, 1.0])
+        #opt_axis        = hist.Bin("e",     r"E", [0, 0.1, 0.2, 0.3, 0.4, 0.5, 1.0])
 
         #regions = {'pos': lambda x: x['lead_lep_charge']>0, 'neg': lambda x: x['lead_lep_charge']<0}  # pos/neg charge split
         regions = {'pos_sig': lambda x: ((x['lead_lep_charge']>0)&(x['score_best']==0)),
