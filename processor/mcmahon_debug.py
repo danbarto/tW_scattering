@@ -18,6 +18,7 @@ from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
 from Tools.SS_selection import SS_selection
+from Tools.fake_rate import fake_rate
 
 #electron     = Collections(events, "Electron", "tightSSTTH").get()
 
@@ -93,6 +94,10 @@ TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_prompt) 
                 (SS_selection(tight_muon_gen_prompt, loose_muon_gen_prompt)         & muon_orthogonality_param)     |
                 (SS_selection(tight_electron_gen_prompt, loose_electron_gen_prompt) & electron_orthogonality_param) |
                 (SS_selection(tight_muon_gen_prompt, loose_electron_gen_prompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
+
+
+muon_FR = fake_rate("../data/fake_rates.p")
+weights = muon_FR.FR_weight(loose_muon_gen_prompt)
 
 pt_muon_TT  = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].conePt))
 eta_muon_TT = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].eta))

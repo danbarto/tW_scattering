@@ -84,7 +84,6 @@ class nano_analysis(processor.ProcessorABC):
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
         single_muon_sel = (ak.num(muon)==1) & (ak.num(fakeablemuon)==1) | (ak.num(muon)==0) & (ak.num(fakeablemuon)==1)
-        two_lepton_sel = (ak.num(fakeablemuon) + ak.num(fakeableelectron)) == 2
         single_electron_sel = (ak.num(electron)==1) & (ak.num(fakeableelectron)==1) | (ak.num(electron)==0) & (ak.num(fakeableelectron)==1)
         fcnc_muon_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
         fcnc_electron_sel = (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection & single_electron_sel
@@ -92,6 +91,7 @@ class nano_analysis(processor.ProcessorABC):
         loose_muon_sel     = (ak.num(fakeablemuon)==1)     & fcnc_muon_sel
         tight_electron_sel = (ak.num(electron)==1)         & fcnc_electron_sel
         loose_electron_sel = (ak.num(fakeableelectron)==1) & fcnc_electron_sel
+        
         output['single_mu_fakeable'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].conePt)),

@@ -17,6 +17,7 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
+from Tools.fake_rate import fake_rate
 
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}, debug=False):
@@ -116,8 +117,10 @@ class nano_analysis(processor.ProcessorABC):
         dilepton = cross(muon, electron)
         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
 
-        two_lepton_sel = (ak.num(tight_muon_gen_prompt) + ak.num(tight_electron_gen_prompt) + 
-                          ak.num(tight_muon_gen_nonprompt) + ak.num(tight_electron_gen_nonprompt)) == 2
+        two_lepton_sel = ( ak.num(tight_muon_gen_prompt)     + ak.num(tight_electron_gen_prompt)    + 
+                           ak.num(tight_muon_gen_nonprompt)  + ak.num(tight_electron_gen_nonprompt) + 
+                          (ak.num(loose_muon_gen_prompt)     - ak.num(tight_muon_gen_prompt))       +    #muon L!T counts
+                          (ak.num(loose_electron_gen_prompt) - ak.num(tight_electron_gen_prompt)))  == 2 #electron L!T counts
 
         #TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
         #account for all of the possible lepton combinations below:
@@ -134,6 +137,8 @@ class nano_analysis(processor.ProcessorABC):
                         (SS_selection(tight_electron_gen_prompt, loose_electron_gen_prompt) & electron_orthogonality_param) |
                         (SS_selection(tight_muon_gen_prompt, loose_electron_gen_prompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
 
+        muon_FR = fake_rate("../data/fake_rates.p")
+        
         output['TT_tight_mu_prompt'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(tight_mu_gen_prompt[TT_selection].conePt)),
