@@ -186,6 +186,9 @@ if __name__ == '__main__':
     #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
     #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
     #fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=True)
+
+    # Use just one local file for debugging.
+    # Copied with: `xrdcp root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root .`
     fileset = {'/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM': ['022107FA-F567-1B44-B139-A18ADC996FCF.root']}
 
     pt_axis_coarse  = hist.Bin("pt",            r"$p_{T}$ (GeV)", [15,40,60,80,100,200,300])
