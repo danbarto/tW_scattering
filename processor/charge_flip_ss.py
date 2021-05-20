@@ -59,14 +59,14 @@ class charge_flip_ss(processor.ProcessorABC):
         electron     = Collections(ev, "Electron", "tight").get()
         electron = electron[(electron.pt > 20) & (abs(electron.eta) < 2.4)]
 
-        electron = electron[( (electron.genPartIdx >= 0) & (abs(electron.matched_gen.pdgId)==11) )] #from here on all leptons are gen-matched
+        electron = electron[( (electron.genPartIdx >= 0) & (np.abs(electron.matched_gen.pdgId)==11) )] #from here on all leptons are gen-matched
         
         
         ##Muons
         muon     = Collections(ev, "Muon", "tight").get()
         muon = muon[(muon.pt > 20) & (abs(muon.eta) < 2.4)]
         
-        muon = muon[( (muon.genPartIdx >= 0) & (abs(muon.matched_gen.pdgId)==13) )]
+        muon = muon[( (muon.genPartIdx >= 0) & (np.abs(muon.matched_gen.pdgId)==13) )]
         
         
         ##Leptons
@@ -189,7 +189,8 @@ if __name__ == '__main__':
 
     # Use just one local file for debugging.
     # Copied with: `xrdcp root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root .`
-    fileset = {'/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM': ['022107FA-F567-1B44-B139-A18ADC996FCF.root']}
+    #fileset = {'/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM': ['022107FA-F567-1B44-B139-A18ADC996FCF.root']}
+    fileset = {'/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM': ['root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/70000/DEF2382F-FEDD-2B49-9498-97EE3AD7A0AA.root']}
 
     pt_axis_coarse  = hist.Bin("pt",            r"$p_{T}$ (GeV)", [15,40,60,80,100,200,300])
     eta_axis_coarse = hist.Bin("eta",           r"$\eta$", [0,0.8,1.479,2.5])
