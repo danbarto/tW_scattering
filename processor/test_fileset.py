@@ -6,17 +6,18 @@ from Tools.nano_mapping import make_fileset, nano_mapping
 
 samples = get_samples()
 
-fileset = make_fileset(['top'], samples, redirector=redirector_ucsd, small=False)
+fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=False)
 
 good = []
 bad = []
 
-for f_in in fileset[list(fileset.keys())[0]]:
-    print (f_in)
-    try:
-        tree = uproot.open(f_in)["Events"]
-        good.append(f_in)
-    except OSError:
-        print ("XRootD Error")
-        bad.append(f_in)
+for sample in list(fileset.keys()):
+    for f_in in fileset[sample]:
+        print (f_in)
+        try:
+            tree = uproot.open(f_in)["Events"]
+            good.append(f_in)
+        except OSError:
+            print ("XRootD Error")
+            bad.append(f_in)
         
