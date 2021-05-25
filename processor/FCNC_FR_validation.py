@@ -21,7 +21,7 @@ from Tools.fake_rate import fake_rate
 from Tools.SS_selection import SS_selection
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, debug=False):
+    def __init__(self, year=2018, variations=[], accumulator={}, debug=False):
         self.variations = variations
         self.year = year
         self.debug = debug
@@ -158,7 +158,9 @@ class nano_analysis(processor.ProcessorABC):
         muon_2018 = fake_rate("../data/fake_rate/FR_muon_2018.p")
         muon_2016 = fake_rate("../data/fake_rate/FR_muon_2016.p")
         
-        weight_muon_2018 = muon_2018.FR_weight(loose_muon_gen_nonprompt)
+        if self.year==2018:
+            weight_muon = muon_2018.FR_weight(loose_muon_gen_nonprompt)
+            weight_electron = electron_2018.FR_weight(loose_electron_gen_nonprompt)
         
         output['EE_SR'].fill(
             dataset = dataset,
@@ -170,7 +172,54 @@ class nano_analysis(processor.ProcessorABC):
             pt  = ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel].conePt)),
             eta = np.abs(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel].eta))) #add weight
         )
-
+        output['EE_CR_weighted'].fill(
+            dataset = dataset
+        )
+        output['MM_SR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(tight_muon_gen_nonprompt[MM_SR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(tight_muon_gen_nonprompt[MM_SR_sel].eta)))
+        )
+        output['MM_CR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[MM_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[MM_CR_sel].eta))) #add weight
+        )
+        output['MM_CR_weighted'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[MM_CR_sel].conePt * weight_muon[MM_CR_sel])),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[MM_CR_sel].eta * weight_muon[MM_CR_sel]))) #add weight
+        )
+        output['EM_SR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(tight_muon_gen_nonprompt[EM_SR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(tight_muon_gen_nonprompt[EM_SR_sel].eta)))
+        )
+        output['EM_CR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[EM_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[EM_CR_sel].eta))) #add weight
+        )
+        output['EM_CR_weighted'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[EM_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_muon_gen_nonprompt[EM_CR_sel].eta * weight_muon))) #add weight
+        )
+        output['ME_SR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(tight_electron_gen_nonprompt[ME_SR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(tight_electron_gen_nonprompt[ME_SR_sel].eta)))
+        )
+        output['ME_CR'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[ME_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[ME_CR_sel].eta))) #add weight
+        )
+        output['ME_CR_weighted'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[ME_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[ME_CR_sel].eta))) #add weight
+        )
         
         if self.debug:
             #create pandas dataframe for debugging
