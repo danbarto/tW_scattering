@@ -162,8 +162,8 @@ class nano_analysis(processor.ProcessorABC):
             weight_muon = muon_2018.FR_weight(loose_muon_gen_nonprompt)
             weight_electron = electron_2018.FR_weight(loose_electron_gen_nonprompt)
         
-        output['EE_CR'] = np.array([np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))))])
-        output['EE_CR_weighted'] = np.array([np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))) * ak.to_numpy(weight_electron[EE_CR_sel]))])
+        output['EE_CR'] += processor.column_accumulator(np.array([np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))))]))
+        output['EE_CR_weighted'] += processor.column_accumulator(np.array([np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))) * ak.to_numpy(weight_electron[EE_CR_sel]))]))
         
         return output
 
