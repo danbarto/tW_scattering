@@ -18,6 +18,7 @@ from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
 from Tools.fake_rate import fake_rate
+from Tools.SS_selection import SS_selection
 
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}, debug=False):
@@ -34,7 +35,7 @@ class nano_analysis(processor.ProcessorABC):
 
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
-        
+
         events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet in event
         output = self.accumulator.identity()
         
@@ -63,8 +64,8 @@ class nano_analysis(processor.ProcessorABC):
         tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt").get()
         tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt").get()
 
-        loose_muon_gen_prompt     = Collections(ev, "Muon", "fakeableFCNCGenPrompt").get()
-        loose_electron_gen_prompt = Collections(ev, "Electron", "fakeableFCNCGenPrompt").get()
+        loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt").get()
+        loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt").get()
         
         ##Jets
         Jets = events.Jet
@@ -80,29 +81,20 @@ class nano_analysis(processor.ProcessorABC):
         selection = PackedSelection()
         selection.add('MET<20',   (ev.MET.pt < 20))
         selection.add('mt<20',     min_mt_lep_met < 20)
-        #selection.add('MET<19',        (ev.MET.pt<19) )
-        selection_reqs = ['MET<20', 'mt<20']#, 'MET<19']
+        selection_reqs = ['MET<20', 'mt<20'] 
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         fcnc_selection = selection.require(**fcnc_reqs_d)
         
         # define the weight
-        weight = Weights( len(ev) )
-        
-        if not dataset=='MuonEG':
-            # generator weight
-            weight.add("weight", ev.genWeight)
+        #weight = Weights( len(ev) )
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
         #get loose leptons that are explicitly not tight
-        muon_orthogonality_param = ((ak.num(loose_muon_gen_prompt)==1) & (ak.num(tight_muon_gen_prompt)==0) | 
-                                    (ak.num(loose_muon_gen_prompt)==2) & (ak.num(tight_muon_gen_prompt)==1) )
+        muon_orthogonality_param = ((ak.num(loose_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_nonprompt)==0) | 
+                                    (ak.num(loose_muon_gen_nonprompt)==2) & (ak.num(tight_muon_gen_nonprompt)==1) )
 
-        electron_orthogonality_param = ((ak.num(loose_electron_gen_prompt)==1) & (ak.num(tight_electron_gen_prompt)==0) | 
-                                        (ak.num(loose_electron_gen_prompt)==2) & (ak.num(tight_electron_gen_prompt)==1) )
-
-        loose_muon_gen_prompt_orthogonal = loose_muon_gen_prompt[muon_orthogonality_param]
-        loose_electron_gen_prompt_orthogonal = loose_muon_gen_prompt[electron_orthogonality_param]
-
+        electron_orthogonality_param = ((ak.num(loose_electron_gen_nonprompt)==1) & (ak.num(tight_electron_gen_nonprompt)==0) | 
+                                        (ak.num(loose_electron_gen_nonprompt)==2) & (ak.num(tight_electron_gen_nonprompt)==1) )
 
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
@@ -111,53 +103,72 @@ class nano_analysis(processor.ProcessorABC):
                                   match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
                                   match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
                                   match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
-                                 (match(jets, loose_muon_gen_prompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
-                                 (match(jets, loose_electron_gen_prompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
+                                 (match(jets, loose_muon_gen_nonprompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
+                                 (match(jets, loose_electron_gen_nonprompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
 
         dilepton = cross(muon, electron)
         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
 
         two_lepton_sel = ( ak.num(tight_muon_gen_prompt)     + ak.num(tight_electron_gen_prompt)    + 
                            ak.num(tight_muon_gen_nonprompt)  + ak.num(tight_electron_gen_nonprompt) + 
-                          (ak.num(loose_muon_gen_prompt)     - ak.num(tight_muon_gen_prompt))       +    #muon L!T counts
-                          (ak.num(loose_electron_gen_prompt) - ak.num(tight_electron_gen_prompt)))  == 2 #electron L!T counts
+                          (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))       +    #muon L!T counts
+                          (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt)))  == 2 #electron L!T counts
 
         #TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
         #account for all of the possible lepton combinations below:
         TT_selection = (SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)     |
                         SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt)     |
                         SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) | 
-                        SS_selection(tight_muon_gen_prompt, tight_muon_gen_nonprompt)         ) & two_lepton_sel & jet_sel
+                        SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)         ) & two_lepton_sel & jet_sel
         #SS_selection gives us all events that have a same sign pair of leptons coming from the provided two object collections
 
         #TL selection is one tight lepton that is a gen-level prompt, and one loose (and NOT tight) lepton that is a gen-level nonprompt.
         #The orthogonality_param is a hacky way to ensure that we are only looking at 2 lepton events that have a tight not loose lepton in the event
-        TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_prompt)     & muon_orthogonality_param)     |
-                        (SS_selection(tight_muon_gen_prompt, loose_muon_gen_prompt)         & muon_orthogonality_param)     |
-                        (SS_selection(tight_electron_gen_prompt, loose_electron_gen_prompt) & electron_orthogonality_param) |
-                        (SS_selection(tight_muon_gen_prompt, loose_electron_gen_prompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
-
-        muon_FR = fake_rate("../data/fake_rates.p")
+        TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt)     & muon_orthogonality_param)     |
+                        (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt)         & muon_orthogonality_param)     |
+                        (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) |
+                        (SS_selection(tight_muon_gen_prompt, loose_electron_gen_nonprompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
         
-        output['TT_tight_mu_prompt'].fill(
+        """Now We are making the different selections for the different regions. As a reminder, our SR is one tight gen-level prompt and one tight gen-level nonprompt, and our CR is
+        one tight gen-level prompt and one loose NOT tight gen-level nonprompt"""
+        #EE SR (Tight gen-level prompt e + Tight gen-level nonprompt e)
+        EE_SR_sel = SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) & two_lepton_sel & jet_sel
+        #EE CR (Tight gen-level prompt e + L!T gen-level nonprompt e)
+        EE_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) & two_lepton_sel & jet_sel
+        
+        #MM SR (Tight gen-level prompt mu + Tight gen-level nonprompt mu)
+        MM_SR_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)  & two_lepton_sel & jet_sel
+        #MM CR (Tight gen-level prompt mu + L!T gen-level nonprompt mu)
+        MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
+        
+        #EM SR (Tight gen-level prompt e + Tight gen-level nonprompt mu)
+        EM_SR_sel = SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt) & two_lepton_sel & jet_sel
+        #EM_CR (Tight gen-level prompt e + L!T gen-level nonprompt mu)
+        EM_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
+        
+        #ME SR (Tight gen-level prompt mu + Tight gen-level nonprompt e)
+        ME_SR_sel = SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt) & two_lepton_sel & jet_sel
+        #ME CR (Tight gen-level prompt mu + L!T gen-level nonprompt e)
+        ME_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) & two_lepton_sel & jet_sel
+        
+        debug_sel = (SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt) | SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)) & two_lepton_sel & jet_sel
+
+        electron_2018 = fake_rate("../data/fake_rate/FR_electron_2018.p")
+        electron_2016 = fake_rate("../data/fake_rate/FR_electron_2016.p")
+        muon_2018 = fake_rate("../data/fake_rate/FR_muon_2018.p")
+        muon_2016 = fake_rate("../data/fake_rate/FR_muon_2016.p")
+        
+        weight_muon_2018 = muon_2018.FR_weight(loose_muon_gen_nonprompt)
+        
+        output['EE_SR'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(tight_mu_gen_prompt[TT_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(tight_mu_gen_prompt[TT_selection].eta)))
+            pt  = ak.to_numpy(ak.flatten(tight_electron_gen_nonprompt[EE_SR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(tight_electron_gen_nonprompt[EE_SR_sel].eta)))
         )
-        output['TT_tight_mu_nonprompt'].fill(
+        output['EE_CR'].fill(
             dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(tight_mu_gen_nonprompt[TT_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(tight_mu_gen_nonprompt[TT_selection].eta)))
-        )
-        output['TL_tight_mu_prompt'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(tight_mu_gen_prompt[TT_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(tight_mu_gen_prompt[TT_selection].eta)))
-        )
-        output['TL_tight_mu_nonprompt'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(tight_mu_gen_nonprompt[TT_selection].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(tight_mu_gen_nonprompt[TT_selection].eta)))
+            pt  = ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel].conePt)),
+            eta = np.abs(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel].eta))) #add weight
         )
 
         

@@ -128,7 +128,7 @@ Electron:
     miniPFRelIso_all:
       max: 0.4
 
-  fakeableFCNCGenPrompt:
+  fakeableFCNCGenNonprompt:
     pt:
       min: 25
     eta:
@@ -150,7 +150,7 @@ Electron:
       max: 0.2
     miniPFRelIso_all:
       max: 0.4
-    boolFCNCfake: 0
+    boolFCNCfake: 1
     
   vetoTTH:
     pt:
@@ -446,7 +446,7 @@ Muon:
     miniPFRelIso_all:
       max: 0.4
       
-  fakeableFCNCGenPrompt:
+  fakeableFCNCGenNonprompt:
     pt:
       min: 10
     eta:
@@ -468,7 +468,7 @@ Muon:
       max: 0.2
     miniPFRelIso_all:
       max: 0.4
-      boolFCNCfake: 0
+      boolFCNCfake: 1
 
   vetoTTH:
     pt:

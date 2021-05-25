@@ -7,7 +7,7 @@ import numpy as np
 # events = NanoEventsFactory.from_root('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v2/nanoSkim_1.root', schemaclass=NanoAODSchema).events()
 
 # events = NanoEventsFactory.from_root('root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/QCD_Pt-120to170_MuEnrichedPt5_TuneCP5_13TeV_pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/70000/DE335891-829A-B943-99BE-E5A179F5F3EB.root', schemaclass=NanoAODSchema).events()
-events = NanoEventsFactory.from_root('/hadoop/cms/store/user/ksalyer/FCNC_NanoSkim/fcnc_v3/TTJets_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8_RunIISummer16NanoAODv7-PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1_NANOAODSIM_fcnc_v3/output_2.root', schemaclass=NanoAODSchema).events()
+events = NanoEventsFactory.from_root('/hadoop/cms/store/user/ksalyer/FCNC_NanoSkim/fcnc_v3/TTJets_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8_RunIISummer16NanoAODv7-PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1_NANOAODSIM_fcnc_v3/output_10.root', schemaclass=NanoAODSchema).events()
 #
 from Tools.objects import *
 from Tools.basic_objects import *
@@ -39,30 +39,20 @@ tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt").
 tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt").get()
 tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt").get()
 
-loose_muon_gen_prompt     = Collections(ev, "Muon", "fakeableFCNCGenPrompt").get()
-loose_electron_gen_prompt = Collections(ev, "Electron", "fakeableFCNCGenPrompt").get()
+#nonprompt
+loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt").get()
+loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt").get()
 
 electron         = Collections(ev, "Electron", "tightFCNC").get()
 fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
 
-##Jets
-Jets = events.Jet
-
-
-## MET -> can switch to puppi MET
-met_pt  = ev.MET.pt
-met_phi = ev.MET.phi
-
+jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
 #get loose leptons that are explicitly not tight
-muon_orthogonality_param = ((ak.num(loose_muon_gen_prompt)==1) & (ak.num(tight_muon_gen_prompt)==0) | 
-                            (ak.num(loose_muon_gen_prompt)==2) & (ak.num(tight_muon_gen_prompt)==1) )
+muon_orthogonality_param = ((ak.num(loose_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_nonprompt)==0) | 
+                            (ak.num(loose_muon_gen_nonprompt)==2) & (ak.num(tight_muon_gen_nonprompt)==1) )
 
-electron_orthogonality_param = ((ak.num(loose_electron_gen_prompt)==1) & (ak.num(tight_electron_gen_prompt)==0) | 
-                                (ak.num(loose_electron_gen_prompt)==2) & (ak.num(tight_electron_gen_prompt)==1) )
-
-loose_muon_gen_prompt_orthogonal = loose_muon_gen_prompt[muon_orthogonality_param]
-loose_electron_gen_prompt_orthogonal = loose_muon_gen_prompt[electron_orthogonality_param]
-
+electron_orthogonality_param = ((ak.num(loose_electron_gen_nonprompt)==1) & (ak.num(tight_electron_gen_nonprompt)==0) | 
+                                (ak.num(loose_electron_gen_nonprompt)==2) & (ak.num(tight_electron_gen_nonprompt)==1) )
 
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
@@ -71,39 +61,44 @@ jet_sel = (ak.num(jets[~( match(jets, tight_muon_gen_prompt       , deltaRCut=0.
                           match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
                           match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
                           match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
-                         (match(jets, loose_muon_gen_prompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
-                         (match(jets, loose_electron_gen_prompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
+                         (match(jets, loose_muon_gen_nonprompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
+                         (match(jets, loose_electron_gen_nonprompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
 
 dilepton = cross(muon, electron)
 SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
 
-two_lepton_sel = (ak.num(tight_muon_gen_prompt) + ak.num(tight_electron_gen_prompt) + 
-                  ak.num(tight_muon_gen_nonprompt) + ak.num(tight_electron_gen_nonprompt)) == 2
+num_leptons =    ( ak.num(tight_muon_gen_prompt)     + ak.num(tight_electron_gen_prompt)    + 
+                   ak.num(tight_muon_gen_nonprompt)  + ak.num(tight_electron_gen_nonprompt) + 
+                  (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))       +    #muon L!T counts
+                  (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt)))
+
+debug_num_leptons = ( ak.num(tight_muon_gen_prompt)        + ak.num(tight_electron_gen_prompt)       + 
+                      ak.num(tight_muon_gen_nonprompt)     + ak.num(tight_electron_gen_nonprompt) )
+
+two_lepton_sel = (num_leptons == 2) 
 
 #TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
 #account for all of the possible lepton combinations below:
 TT_selection = (SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)     |
                 SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt)     |
                 SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) | 
-                SS_selection(tight_muon_gen_prompt, tight_muon_gen_nonprompt)         ) & two_lepton_sel & jet_sel
+                SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)         ) & two_lepton_sel & jet_sel
 #SS_selection gives us all events that have a same sign pair of leptons coming from the provided two object collections
 
 #TL selection is one tight lepton that is a gen-level prompt, and one loose (and NOT tight) lepton that is a gen-level nonprompt.
 #The orthogonality_param is a hacky way to ensure that we are only looking at 2 lepton events that have a tight not loose lepton in the event
-TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_prompt)     & muon_orthogonality_param)     |
-                (SS_selection(tight_muon_gen_prompt, loose_muon_gen_prompt)         & muon_orthogonality_param)     |
-                (SS_selection(tight_electron_gen_prompt, loose_electron_gen_prompt) & electron_orthogonality_param) |
-                (SS_selection(tight_muon_gen_prompt, loose_electron_gen_prompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
+TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt)     & muon_orthogonality_param)     |
+                (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt)         & muon_orthogonality_param)     |
+                (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) |
+                (SS_selection(tight_muon_gen_prompt, loose_electron_gen_nonprompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
 
+debug_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt) 
 
-muon_FR = fake_rate("../data/fake_rates.p")
+print("length of debug selection: {}".format(len(debug_sel[debug_sel])))
+breakpoint()
+muon_FR = fake_rate("../data/fake_rate/FR_muon_2018.p")
+electron_FR = fake_rate("../data/fake_rate/FR_electron.p")
+
 weights = muon_FR.FR_weight(loose_muon_gen_prompt)
 
-pt_muon_TT  = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].conePt))
-eta_muon_TT = ak.to_numpy(ak.flatten(fakeablemuon[TT_selection].eta))
-
-pt_electron_TT  = ak.to_numpy(ak.flatten(fakeableelectron[TT_selection].conePt))
-eta_electron_TT = ak.to_numpy(ak.flatten(fakeableelectron[TT_selection].eta))
-
-pt_muon_TL = ak.to_numpy(ak.flatten(fakeablemuon[TL_selection].conePt))
-eta_muon_TL = ak.to_numpy(ak.flatten(fakeablemuon[TL_selection].eta))
+print(tight_muon_gen_nonprompt[debug_sel].eta)

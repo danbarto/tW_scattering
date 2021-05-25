@@ -16,6 +16,7 @@ import copy
 import glob
 
 redirector_ucsd = 'root://xcache-redirector.t2.ucsd.edu:2040/'
+redirector_ucsd_noxcache = 'root://redirector.t2.ucsd.edu:/'
 redirector_fnal = 'root://cmsxrootd.fnal.gov/'
 
 data_path = os.path.expandvars('$TWHOME/data/')
