@@ -38,7 +38,6 @@ tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt").get
 tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt").get()
 tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt").get()
 tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt").get()
-
 #nonprompt
 loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt").get()
 loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt").get()

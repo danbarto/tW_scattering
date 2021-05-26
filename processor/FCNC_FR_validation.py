@@ -161,9 +161,27 @@ class nano_analysis(processor.ProcessorABC):
         if self.year==2018:
             weight_muon = muon_2018.FR_weight(loose_muon_gen_nonprompt)
             weight_electron = electron_2018.FR_weight(loose_electron_gen_nonprompt)
+            
+        elif self.year==2016:
+            weight_muon = muon_2016.FR_weight(loose_muon_gen_nonprompt)
+            weight_electron = electron_2016.FR_weight(loose_electron_gen_nonprompt)
         
-        output['EE_CR'] += 1.0 #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))))
-        output['EE_CR_weighted'] += 1.0 #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))) * ak.to_numpy(weight_electron[EE_CR_sel]))
+        output['EE_CR'].fill(dataset = dataset, weight = np.sum(EE_CR_sel[EE_CR_sel])) #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))))
+        output['EE_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[EE_CR_sel]))) #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))) * ak.to_numpy(weight_electron[EE_CR_sel]))
+        output['EE_SR'].fill(dataset = dataset, weight = np.sum(EE_SR_sel[EE_SR_sel]))
+
+        output['MM_CR'].fill(dataset = dataset, weight = np.sum(MM_CR_sel[MM_CR_sel])) 
+        output['MM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[MM_CR_sel]))) 
+        output['MM_SR'].fill(dataset = dataset, weight = np.sum(MM_SR_sel[MM_SR_sel]))
+
+        output['EM_CR'].fill(dataset = dataset, weight = np.sum(EM_CR_sel[EM_CR_sel])) 
+        output['EM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[EM_CR_sel]))) 
+        output['EM_SR'].fill(dataset = dataset, weight = np.sum(EM_SR_sel[EM_SR_sel]))
+        
+        output['ME_CR'].fill(dataset = dataset, weight = np.sum(ME_CR_sel[ME_CR_sel])) 
+        output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ME_CR_sel]))) 
+        output['ME_SR'].fill(dataset = dataset, weight = np.sum(ME_SR_sel[ME_SR_sel]))
+
         
         return output
 
