@@ -34,7 +34,7 @@ cfg = loadConfig()
 muon         = Collections(ev, "Muon", "tightFCNC").get()
 fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()  
 
-tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt").get()
+tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt", year=2016).get()
 tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt").get()
 tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt").get()
 tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt").get()
