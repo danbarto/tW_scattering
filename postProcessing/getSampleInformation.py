@@ -179,7 +179,7 @@ def main():
         sampleList_missing.append(sample)
     
 
-    workers = 12
+    workers = 4
     # then, run over the missing ones
     print ("Will have to work in %s samples."%len(sampleList_missing))
 

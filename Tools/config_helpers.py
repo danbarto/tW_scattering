@@ -15,7 +15,8 @@ import copy
 
 import glob
 
-redirector_ucsd = 'root://xcache-redirector.t2.ucsd.edu:2040/'
+redirector_ucsd = 'root://xcache-redirector.t2.ucsd.edu:2042/' # this one is exclusively for NanoAOD. 165 TB cap.
+redirector_ucsd_mini = 'root://xcache-redirector.t2.ucsd.edu:2040/' # this cache can keep anything, also Nano.
 redirector_fnal = 'root://cmsxrootd.fnal.gov/'
 
 data_path = os.path.expandvars('$TWHOME/data/')
