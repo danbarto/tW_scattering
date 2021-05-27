@@ -343,13 +343,5 @@ class Collections:
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high
 
     def getFCNCIsolation(self, jetRelIso, jetPtRelV2, I_2, I_3):
-        if (self.year==2018) or (self.year==2017):
-            jetRelIso_cut = 1/I_2 - 1
-            return ((jetRelIso < jetRelIso_cut) | (jetPtRelV2 > I_3)) 
-        elif self.year==2016:
-            raise "need to define 2016 Isolation in getFCNCIsolation()"
-            
-    def getFCNCTruthMatch(self, *gen_params):
-        
-        return
-        
+        jetRelIso_cut = 1/I_2 - 1
+        return ((jetRelIso < jetRelIso_cut) | (jetPtRelV2 > I_3)) 
