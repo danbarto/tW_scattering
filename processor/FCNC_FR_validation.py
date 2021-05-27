@@ -159,13 +159,19 @@ class nano_analysis(processor.ProcessorABC):
         debug_sel = (SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt) | SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)) & two_lepton_sel & jet_sel
 
         electron_2018 = fake_rate("../data/fake_rate/FR_electron_2018.p")
+        electron_2017 = fake_rate("../data/fake_rate/FR_electron_2017.p")
         electron_2016 = fake_rate("../data/fake_rate/FR_electron_2016.p")
         muon_2018 = fake_rate("../data/fake_rate/FR_muon_2018.p")
+        muon_2017 = fake_rate("../data/fake_rate/FR_muon_2017.p")
         muon_2016 = fake_rate("../data/fake_rate/FR_muon_2016.p")
         
         if self.year==2018:
             weight_muon = muon_2018.FR_weight(loose_muon_gen_nonprompt)
             weight_electron = electron_2018.FR_weight(loose_electron_gen_nonprompt)
+            
+        elif self.year==2017:
+            weight_muon = muon_2017.FR_weight(loose_muon_gen_nonprompt)
+            weight_electron = electron_2017.FR_weight(loose_electron_gen_nonprompt)
             
         elif self.year==2016:
             weight_muon = muon_2016.FR_weight(loose_muon_gen_nonprompt)
