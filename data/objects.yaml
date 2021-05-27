@@ -39,7 +39,7 @@ Electron:
     
   tightFCNC:
     pt:
-      min: 25
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -61,7 +61,7 @@ Electron:
       
   tightFCNCGenPrompt:
     pt:
-      min: 25
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -82,7 +82,7 @@ Electron:
     
   tightFCNCGenNonprompt:
     pt:
-      min: 25
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -103,7 +103,7 @@ Electron:
       
   fakeableFCNC:
     pt:
-      min: 25
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -126,7 +126,7 @@ Electron:
 
   fakeableFCNCGenNonprompt:
     pt:
-      min: 25
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -343,7 +343,7 @@ Muon:
       
   tightFCNC:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -371,7 +371,7 @@ Muon:
 
   tightFCNCGenPrompt:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -394,7 +394,7 @@ Muon:
 
   tightFCNCGenNonprompt:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -417,7 +417,7 @@ Muon:
      
   fakeableFCNC:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs
@@ -440,7 +440,7 @@ Muon:
       
   fakeableFCNCGenNonprompt:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs

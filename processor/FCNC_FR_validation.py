@@ -99,12 +99,14 @@ class nano_analysis(processor.ProcessorABC):
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
-        jet_sel = (ak.num(jets[~( match(jets, tight_muon_gen_prompt       , deltaRCut=0.4) | 
-                                  match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
-                                  match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
-                                  match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
-                                 (match(jets, loose_muon_gen_nonprompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
-                                 (match(jets, loose_electron_gen_nonprompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
+        jet_sel = (ak.num(jets[~(match(jets, fakeableelectron, deltaRCut=0.4)|match(jets, fakeablemuon, deltaRCut=0.4))])>=2)
+
+        #jet_sel = (ak.num(jets[~( match(jets, tight_muon_gen_prompt       , deltaRCut=0.4) | 
+        #                          match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
+        #                          match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
+        #                          match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
+        #                         (match(jets, loose_muon_gen_nonprompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
+        #                         (match(jets, loose_electron_gen_nonprompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
 
         dilepton = cross(muon, electron)
         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
@@ -142,12 +144,21 @@ class nano_analysis(processor.ProcessorABC):
         EE_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) & two_lepton_sel & jet_sel
         
         #MM SR (Tight gen-level prompt mu + Tight gen-level nonprompt mu)
-        MM_SR_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)  & two_lepton_sel & jet_sel
+
+        test_muon = ak.concatenate([tight_muon_gen_nonprompt, tight_muon_gen_prompt], axis=1)
+        test_muon_SS = (ak.sum(test_muon.charge, axis=1)!=0)
+        #lead_muon_pt = ak.max(test_muon.pt,axis=1)
+        #MM_SR_sel = (ak.num(tight_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_prompt)==1) & (ak.num(fakeablemuon)==2) & (ak.num(fakeableelectron)==0) & jet_sel & test_muon_SS
+        MM_SR_sel = (ak.num(tight_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_prompt)==1) & (ak.num(fakeablemuon)==2) & jet_sel & test_muon_SS & (ak.num(test_muon[test_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
+        #MM_SR_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)  & two_lepton_sel & jet_sel
         #MM CR (Tight gen-level prompt mu + L!T gen-level nonprompt mu)
-        MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
+        MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel & (ak.num(test_muon[test_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
         
         #EM SR (Tight gen-level prompt e + Tight gen-level nonprompt mu)
-        EM_SR_sel = SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt) & two_lepton_sel & jet_sel
+        test_em = ak.concatenate([tight_electron_gen_prompt, tight_muon_gen_nonprompt], axis=1)
+        test_em_SS = (ak.sum(test_em.charge, axis=1)!=0)
+        EM_SR_sel = (ak.num(tight_electron_gen_prompt)==1) & (ak.num(tight_muon_gen_nonprompt)==1) & (ak.num(fakeablemuon)==1) & jet_sel & test_em_SS & (ak.num(test_em[test_em.pt>25])>0) & (ak.num(fakeableelectron)==1)
+        #EM_SR_sel = SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt) & two_lepton_sel & jet_sel
         #EM_CR (Tight gen-level prompt e + L!T gen-level nonprompt mu)
         EM_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
         
