@@ -77,7 +77,7 @@ with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
 
 class Collections:
 
-    def __init__(self, ev, obj, wp, verbose=0):
+    def __init__(self, ev, obj, wp, verbose=0, year=2018):
         self.obj = obj
         self.wp = wp
         if self.wp == None:
@@ -87,7 +87,7 @@ class Collections:
 
         self.v = verbose
         #self.year = df['year'][0] ## to be implemented in next verison of babies
-        self.year = 2018
+        self.year = year
         
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
@@ -106,7 +106,10 @@ class Collections:
             #conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
             
             #SS conePt
-            I_1 = 0.11; I_2 = 0.74; I_3 = 6.8
+            if (self.year == 2017) or (self.year == 2018):
+                I_1 = 0.11; I_2 = 0.74; I_3 = 6.8
+            elif (self.year == 2016):
+                I_1 = 0.16; I_2 = 0.76; I_3 = 7.2
             PF_unflatten = ak.from_regular(ev.Muon.miniPFRelIso_all[:,:,np.newaxis])
             max_miniIso = ak.max(ak.concatenate([PF_unflatten - I_1, ak.zeros_like(PF_unflatten)], axis=2), axis=2) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
             muon_pt_unflatten = ak.from_regular(ev.Muon.pt[:,:,np.newaxis])
@@ -151,7 +154,10 @@ class Collections:
             #TTH conePt
             #conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
             #SS conePt
-            I_1 = 0.07; I_2 = 0.78; I_3 = 8.0
+            if (self.year == 2017) or (self.year == 2018):
+                I_1 = 0.07; I_2 = 0.78; I_3 = 8.0
+            elif (self.year == 2016):
+                I_1 = 0.12; I_2 = 0.8; I_3 = 7.2
             PF_unflatten = ak.from_regular(ev.Electron.miniPFRelIso_all[:,:,np.newaxis])
             max_miniIso = ak.max(ak.concatenate([PF_unflatten - I_1, ak.zeros_like(PF_unflatten)], axis=2), axis=2) #equivalent to max(0, ev.Muon.miniPFRelIso_all - I_1)
             electron_pt_unflatten = ak.from_regular(ev.Electron.pt[:,:,np.newaxis])

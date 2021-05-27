@@ -468,7 +468,7 @@ Muon:
       max: 0.2
     miniPFRelIso_all:
       max: 0.4
-      boolFCNCfake: 1
+    boolFCNCfake: 1
 
   vetoTTH:
     pt:

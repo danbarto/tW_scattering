@@ -59,13 +59,13 @@ class nano_analysis(processor.ProcessorABC):
         fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()
         
         #validation cuts are split up based on gen-level information
-        tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt").get()
-        tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt").get()
-        tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt").get()
-        tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt").get()
+        tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt", year=self.year).get()
+        tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt", year=self.year).get()
+        tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt", year=self.year).get()
+        tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt", year=self.year).get()
 
-        loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt").get()
-        loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt").get()
+        loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt", year=self.year).get()
+        loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt", year=self.year).get()
         
         ##Jets
         Jets = events.Jet
@@ -113,6 +113,11 @@ class nano_analysis(processor.ProcessorABC):
                            ak.num(tight_muon_gen_nonprompt)  + ak.num(tight_electron_gen_nonprompt) + 
                           (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))       +    #muon L!T counts
                           (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt)))  == 2 #electron L!T counts
+        
+        num_leptons = ( ak.num(tight_muon_gen_prompt)        + ak.num(tight_electron_gen_prompt)     + 
+                        ak.num(tight_muon_gen_nonprompt)     + ak.num(tight_electron_gen_nonprompt)  + 
+                       (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))     +
+                       (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt))) 
 
         #TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
         #account for all of the possible lepton combinations below:
