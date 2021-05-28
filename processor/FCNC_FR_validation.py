@@ -193,7 +193,6 @@ class nano_analysis(processor.ProcessorABC):
         output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ME_CR_sel]))) 
         output['ME_SR'].fill(dataset = dataset, weight = np.sum(ME_SR_sel[ME_SR_sel]))
 
-        
         return output
 
     def postprocess(self, accumulator):
