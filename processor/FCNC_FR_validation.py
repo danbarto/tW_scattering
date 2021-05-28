@@ -152,7 +152,10 @@ class nano_analysis(processor.ProcessorABC):
         MM_SR_sel = (ak.num(tight_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_prompt)==1) & (ak.num(fakeablemuon)==2) & jet_sel & test_muon_SS & (ak.num(test_muon[test_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
         #MM_SR_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)  & two_lepton_sel & jet_sel
         #MM CR (Tight gen-level prompt mu + L!T gen-level nonprompt mu)
-        MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel & (ak.num(test_muon[test_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
+        SR_muon = ak.concatenate([tight_muon_gen_prompt, loose_muon_gen_nonprompt], axis=1)
+        SR_muon_SS = (ak.sum(SR_muon.charge, axis=1)!=0)
+        MM_CR_sel = (ak.num(tight_muon_gen_prompt)==1) & (ak.num(loose_muon_gen_nonprompt)==1) & (ak.num(fakeablemuon)==2) & jet_sel & SR_muon_SS & (ak.num(SR_muon[SR_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
+        #MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel & (ak.num(test_muon[test_muon.pt>25])>0) & (ak.num(fakeableelectron)==0)
         
         #EM SR (Tight gen-level prompt e + Tight gen-level nonprompt mu)
         test_em = ak.concatenate([tight_electron_gen_prompt, tight_muon_gen_nonprompt], axis=1)
