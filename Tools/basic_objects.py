@@ -36,8 +36,8 @@ def getFatJets(ev):
 def getHadronFlavour(jet, hadronFlavour=5):
     return jet[(abs(jet.hadronFlavour)==hadronFlavour)]
 
-def getJets(ev, maxEta=100, minPt=25, pt_var='pt'):
-    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>1)]
+def getJets(ev, maxEta=100, minPt=25, pt_var='pt', year=2018):
+    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>(1 if year>2016 else 0))]
 
 def getBTagsDeepB(jet, year=2016, invert=False):
     if year == 2016:
