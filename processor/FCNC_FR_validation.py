@@ -32,6 +32,55 @@ class nano_analysis(processor.ProcessorABC):
     @property
     def accumulator(self):
         return self._accumulator
+    
+    def SS_fill_weighted(self, output, mumu_sel, ee_sel, mue_sel, emu_sel, mu_weights=None, e_weights=None, **kwargs):
+        if len(kwargs.keys())==3: #dataset, axis_1, axis_2
+            vals_1 = np.array([])
+            vals_2 = np.array([])
+            weights = np.array([])
+            for sel in [mumu_sel, emu_sel]:
+                vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
+                vals_2 = np.concatenate((vals_2, list(kwargs.values())[2][sel]))
+                if type(mu_weights) != ak.highlevel.Array:
+                    tmp_mu_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
+                    weights = np.concatenate((weights, tmp_mu_weights))
+                else:
+                    weights = np.concatenate((weights, mu_weights[sel]))
+            for sel in [ee_sel, mue_sel]:
+                vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
+                vals_2 = np.concatenate((vals_2, list(kwargs.values())[2][sel]))
+                if type(e_weights) != ak.highlevel.Array:
+                    tmp_e_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
+                    weights = np.concatenate((weights, tmp_e_weights))
+                else:
+                    weights = np.concatenate((weights, e_weights[sel]))
+            return_dict = kwargs
+            return_dict[list(kwargs.keys())[1]] = vals_1
+            return_dict[list(kwargs.keys())[2]] = vals_2
+            
+        elif len(kwargs.keys())==2: #dataset, axis_1
+            vals_1 = np.array([])
+            weights = np.array([])
+            for sel in [mumu_sel, emu_sel]:
+                vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
+                if type(mu_weights) != ak.highlevel.Array:
+                    tmp_mu_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
+                    weights = np.concatenate((weights, tmp_mu_weights))
+                else:
+                    weights = np.concatenate((weights, mu_weights[sel]))
+            for sel in [ee_sel, mue_sel]:
+                vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
+                if type(e_weights) != ak.highlevel.Array:
+                    tmp_e_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
+                    weights = np.concatenate((weights, tmp_e_weights))
+                else:
+                    weights = np.concatenate((weights, e_weights[sel]))
+            return_dict = kwargs
+            return_dict[list(kwargs.keys())[1]] = vals_1
+        
+        #fill the histogram
+        output.fill(**return_dict, weight=weights)
+
 
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
@@ -45,27 +94,8 @@ class nano_analysis(processor.ProcessorABC):
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-        # load the config - probably not needed anymore
-        # cfg = loadConfig()
-        
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
-        
-        ### For FCNC, we want electron -> tightTTH
-        electron         = Collections(ev, "Electron", "tightFCNC").get()
-        fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
-        
-        muon         = Collections(ev, "Muon", "tightFCNC").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()
-        
-        #validation cuts are split up based on gen-level information
-        tight_muon_gen_prompt        = Collections(ev, "Muon", "tightFCNCGenPrompt", year=self.year).get()
-        tight_muon_gen_nonprompt     = Collections(ev, "Muon", "tightFCNCGenNonprompt", year=self.year).get()
-        tight_electron_gen_prompt    = Collections(ev, "Electron", "tightFCNCGenPrompt", year=self.year).get()
-        tight_electron_gen_nonprompt = Collections(ev, "Electron", "tightFCNCGenNonprompt", year=self.year).get()
-
-        loose_muon_gen_nonprompt     = Collections(ev, "Muon", "fakeableFCNCGenNonprompt", year=self.year).get()
-        loose_electron_gen_nonprompt = Collections(ev, "Electron", "fakeableFCNCGenNonprompt", year=self.year).get()
         
         ##Jets
         Jets = events.Jet
@@ -74,89 +104,66 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
     
-        lepton   = fakeablemuon   #ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
-        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
-        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+         ### For FCNC, we want electron -> tightTTH
+        ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
+        ele_t_p = ele_t[((ele_t.genPartFlav==1) | (ele_t.genPartFlav==15))]
+        ele_t_np = ele_t[((ele_t.genPartFlav!=1) & (ele_t.genPartFlav!=15))]
+
+        ele_l = Collections(ev, "Electron", "fakeableFCNC", year=self.year).get()
+        ele_l_p = ele_l[((ele_l.genPartFlav==1) | (ele_l.genPartFlav==15))]
+        ele_l_np = ele_l[((ele_l.genPartFlav!=1) & (ele_l.genPartFlav!=15))]
         
-        selection = PackedSelection()
-        selection.add('MET<20',   (ev.MET.pt < 20))
-        selection.add('mt<20',     min_mt_lep_met < 20)
-        selection_reqs = ['MET<20', 'mt<20'] 
-        fcnc_reqs_d = { sel: True for sel in selection_reqs}
-        fcnc_selection = selection.require(**fcnc_reqs_d)
+        mu_t         = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        mu_t_p = mu_t[((mu_t.genPartFlav==1) | (mu_t.genPartFlav==15))]
+        mu_t_np = mu_t[((mu_t.genPartFlav!=1) & (mu_t.genPartFlav!=15))]
+
+        mu_l = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
+        mu_l_p = mu_l[((mu_l.genPartFlav==1) | (mu_l.genPartFlav==15))]
+        mu_l_np = mu_l[((mu_l.genPartFlav!=1) & (mu_l.genPartFlav!=15))]
         
-        # define the weight
-        #weight = Weights( len(ev) )
-
-        jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
-        #get loose leptons that are explicitly not tight
-        muon_orthogonality_param = ((ak.num(loose_muon_gen_nonprompt)==1) & (ak.num(tight_muon_gen_nonprompt)==0) | 
-                                    (ak.num(loose_muon_gen_nonprompt)==2) & (ak.num(tight_muon_gen_nonprompt)==1) )
-
-        electron_orthogonality_param = ((ak.num(loose_electron_gen_nonprompt)==1) & (ak.num(tight_electron_gen_nonprompt)==0) | 
-                                        (ak.num(loose_electron_gen_nonprompt)==2) & (ak.num(tight_electron_gen_nonprompt)==1) )
-
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
-        jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt')
-        jet_sel = (ak.num(jets[~( match(jets, tight_muon_gen_prompt       , deltaRCut=0.4) | 
-                                  match(jets, tight_muon_gen_nonprompt    , deltaRCut=0.4) | 
-                                  match(jets, tight_electron_gen_prompt   , deltaRCut=0.4) | 
-                                  match(jets, tight_electron_gen_nonprompt, deltaRCut=0.4) | 
-                                 (match(jets, loose_muon_gen_nonprompt       , deltaRCut=0.4) & muon_orthogonality_param) | 
-                                 (match(jets, loose_electron_gen_nonprompt   , deltaRCut=0.4) & electron_orthogonality_param))])>=2)
+        jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
+        jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
 
-        dilepton = cross(muon, electron)
-        SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
-
-        two_lepton_sel = ( ak.num(tight_muon_gen_prompt)     + ak.num(tight_electron_gen_prompt)    + 
-                           ak.num(tight_muon_gen_nonprompt)  + ak.num(tight_electron_gen_nonprompt) + 
-                          (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))       +    #muon L!T counts
-                          (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt)))  == 2 #electron L!T counts
-        
-        num_leptons = ( ak.num(tight_muon_gen_prompt)        + ak.num(tight_electron_gen_prompt)     + 
-                        ak.num(tight_muon_gen_nonprompt)     + ak.num(tight_electron_gen_nonprompt)  + 
-                       (ak.num(loose_muon_gen_nonprompt)     - ak.num(tight_muon_gen_nonprompt))     +
-                       (ak.num(loose_electron_gen_nonprompt) - ak.num(tight_electron_gen_nonprompt))) 
-
-        #TT selection is two tight leptons, where one is a gen-level prompt, and the other is a gen-level nonprompt, so we should
-        #account for all of the possible lepton combinations below:
-        TT_selection = (SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)     |
-                        SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt)     |
-                        SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) | 
-                        SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)         ) & two_lepton_sel & jet_sel
-        #SS_selection gives us all events that have a same sign pair of leptons coming from the provided two object collections
-
-        #TL selection is one tight lepton that is a gen-level prompt, and one loose (and NOT tight) lepton that is a gen-level nonprompt.
-        #The orthogonality_param is a hacky way to ensure that we are only looking at 2 lepton events that have a tight not loose lepton in the event
-        TL_selection = ((SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt)     & muon_orthogonality_param)     |
-                        (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt)         & muon_orthogonality_param)     |
-                        (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) |
-                        (SS_selection(tight_muon_gen_prompt, loose_electron_gen_nonprompt)     & electron_orthogonality_param) ) & two_lepton_sel & jet_sel
-        
         """Now We are making the different selections for the different regions. As a reminder, our SR is one tight gen-level prompt and one tight gen-level nonprompt, and our CR is
         one tight gen-level prompt and one loose NOT tight gen-level nonprompt"""
-        #EE SR (Tight gen-level prompt e + Tight gen-level nonprompt e)
-        EE_SR_sel = SS_selection(tight_electron_gen_prompt, tight_electron_gen_nonprompt) & two_lepton_sel & jet_sel
-        #EE CR (Tight gen-level prompt e + L!T gen-level nonprompt e)
-        EE_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) & two_lepton_sel & jet_sel
+
+        mumu_SR = ak.concatenate([mu_t_p, mu_t_np], axis=1)
+        mumu_SR_SS = (ak.sum(mumu_SR.charge, axis=1)!=0)
+        mumu_SR_sel = (ak.num(mu_t_p)==1) & (ak.num(mu_t_np)==1) & (ak.num(mu_l)==2) & jet_sel & mumu_SR_SS & (ak.num(mumu_SR[mumu_SR.pt>20])>1) & (ak.num(ele_l)==0)
+
+        mumu_CR = ak.concatenate([mu_t_p, mu_l_np], axis=1)
+        mumu_CR_SS = (ak.sum(mumu_CR.charge, axis=1)!=0)
+        mumu_CR_sel = (ak.num(mu_t_p)==1) & (ak.num(mu_l_np)==1) & (ak.num(mu_l)==2) & jet_sel & mumu_CR_SS & (ak.num(mumu_CR[mumu_CR.pt>20])>1) & (ak.num(ele_l)==0)
         
-        #MM SR (Tight gen-level prompt mu + Tight gen-level nonprompt mu)
-        MM_SR_sel = SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt)  & two_lepton_sel & jet_sel
-        #MM CR (Tight gen-level prompt mu + L!T gen-level nonprompt mu)
-        MM_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
+        ee_SR = ak.concatenate([ele_t_p, ele_t_np], axis=1)
+        ee_SR_SS = (ak.sum(ee_SR.charge, axis=1)!=0)
+        ee_SR_sel = (ak.num(ele_t_p)==1) & (ak.num(ele_t_np)==1) & (ak.num(ele_l)==2) & jet_sel & ee_SR_SS & (ak.num(ee_SR[ee_SR.pt>20])>1) & (ak.num(mu_l)==0)
+
+        ee_CR = ak.concatenate([ele_t_p, ele_l_np], axis=1)
+        ee_CR_SS = (ak.sum(ee_CR.charge, axis=1)!=0)
+        ee_CR_sel = (ak.num(ele_t_p)==1) & (ak.num(ele_l_np)==1) & (ak.num(ele_l)==2) & jet_sel & ee_CR_SS & (ak.num(ee_CR[ee_CR.pt>20])>1) & (ak.num(mu_l)==0)
         
-        #EM SR (Tight gen-level prompt e + Tight gen-level nonprompt mu)
-        EM_SR_sel = SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt) & two_lepton_sel & jet_sel
-        #EM_CR (Tight gen-level prompt e + L!T gen-level nonprompt mu)
-        EM_CR_sel = (SS_selection(tight_electron_gen_prompt, loose_muon_gen_nonprompt) & muon_orthogonality_param) & two_lepton_sel & jet_sel
+        mue_SR = ak.concatenate([mu_t_p, ele_t_np], axis=1)
+        mue_SR_SS = (ak.sum(mue_SR.charge, axis=1)!=0)
+        mue_SR_sel = (ak.num(mu_t_p)==1) & (ak.num(ele_t_np)==1) & (ak.num(ele_l)==1) & jet_sel & mue_SR_SS & (ak.num(mue_SR[mue_SR.pt>20])>1) & (ak.num(mu_l)==1)
+
+        mue_CR = ak.concatenate([mu_t_p, ele_l_np], axis=1)
+        mue_CR_SS = (ak.sum(mue_CR.charge, axis=1)!=0)
+        mue_CR_sel = (ak.num(mu_t_p)==1) & (ak.num(ele_l_np)==1) & (ak.num(ele_l)==1) & jet_sel & mue_CR_SS & (ak.num(mue_CR[mue_CR.pt>20])>1) & (ak.num(mu_l)==1)
         
-        #ME SR (Tight gen-level prompt mu + Tight gen-level nonprompt e)
-        ME_SR_sel = SS_selection(tight_electron_gen_nonprompt, tight_muon_gen_prompt) & two_lepton_sel & jet_sel
-        #ME CR (Tight gen-level prompt mu + L!T gen-level nonprompt e)
-        ME_CR_sel = (SS_selection(tight_muon_gen_prompt, loose_electron_gen_nonprompt) & electron_orthogonality_param) & two_lepton_sel & jet_sel
+        emu_SR = ak.concatenate([ele_t_p, mu_t_np], axis=1)
+        emu_SR_SS = (ak.sum(emu_SR.charge, axis=1)!=0)
+        emu_SR_sel = (ak.num(ele_t_p)==1) & (ak.num(mu_t_np)==1) & (ak.num(mu_l)==1) & jet_sel & emu_SR_SS & (ak.num(emu_SR[emu_SR.pt>20])>1) & (ak.num(ele_l)==1)
+
+        emu_CR = ak.concatenate([ele_t_p, mu_l_np], axis=1)
+        emu_CR_SS = (ak.sum(emu_CR.charge, axis=1)!=0)
+        emu_CR_sel = (ak.num(ele_t_p)==1) & (ak.num(mu_l_np)==1) & (ak.num(mu_l)==1) & jet_sel & emu_CR_SS & (ak.num(emu_CR[emu_CR.pt>20])>1) & (ak.num(ele_l)==1)
         
-        debug_sel = (SS_selection(tight_muon_gen_nonprompt, tight_muon_gen_prompt) | SS_selection(tight_electron_gen_prompt, tight_muon_gen_nonprompt)) & two_lepton_sel & jet_sel
+        #combine all selections for generic CR and SR
+        CR_sel = mumu_CR_sel | ee_CR_sel | mue_CR_sel | emu_CR_sel
+        SR_sel = mumu_SR_sel | ee_SR_sel | mue_SR_sel | emu_SR_sel
 
         electron_2018 = fake_rate("../data/fake_rate/FR_electron_2018.p")
         electron_2017 = fake_rate("../data/fake_rate/FR_electron_2017.p")
@@ -166,33 +173,51 @@ class nano_analysis(processor.ProcessorABC):
         muon_2016 = fake_rate("../data/fake_rate/FR_muon_2016.p")
         
         if self.year==2018:
-            weight_muon = muon_2018.FR_weight(loose_muon_gen_nonprompt)
-            weight_electron = electron_2018.FR_weight(loose_electron_gen_nonprompt)
+            weight_muon = muon_2018.FR_weight(mu_l_np)
+            weight_electron = electron_2018.FR_weight(ele_l_np)
             
         elif self.year==2017:
-            weight_muon = muon_2017.FR_weight(loose_muon_gen_nonprompt)
-            weight_electron = electron_2017.FR_weight(loose_electron_gen_nonprompt)
+            weight_muon = muon_2017.FR_weight(mu_l_np)
+            weight_electron = electron_2017.FR_weight(ele_l_np)
             
         elif self.year==2016:
-            weight_muon = muon_2016.FR_weight(loose_muon_gen_nonprompt)
-            weight_electron = electron_2016.FR_weight(loose_electron_gen_nonprompt)
+            weight_muon = muon_2016.FR_weight(mu_l_np)
+            weight_electron = electron_2016.FR_weight(ele_l_np)
+            
+        #separate by different combinations of two-lepton events
+#         output['EE_CR'].fill(dataset = dataset, weight = np.sum(ee_CR_sel[ee_CR_sel]))
+#         output['EE_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ee_CR_sel]))) 
+#         output['EE_SR'].fill(dataset = dataset, weight = np.sum(ee_SR_sel[ee_SR_sel]))
+
+#         output['MM_CR'].fill(dataset = dataset, weight = np.sum(mumu_CR_sel[mumu_CR_sel])) 
+#         output['MM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[mumu_CR_sel]))) 
+#         output['MM_SR'].fill(dataset = dataset, weight = np.sum(mumu_SR_sel[mumu_SR_sel]))
+
+#         output['EM_CR'].fill(dataset = dataset, weight = np.sum(emu_CR_sel[emu_CR_sel])) 
+#         output['EM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[emu_CR_sel]))) 
+#         output['EM_SR'].fill(dataset = dataset, weight = np.sum(emu_SR_sel[emu_SR_sel]))
         
-        output['EE_CR'].fill(dataset = dataset, weight = np.sum(EE_CR_sel[EE_CR_sel])) #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))))
-        output['EE_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[EE_CR_sel]))) #np.sum(np.ones_like(ak.to_numpy(ak.flatten(loose_electron_gen_nonprompt[EE_CR_sel]))) * ak.to_numpy(weight_electron[EE_CR_sel]))
-        output['EE_SR'].fill(dataset = dataset, weight = np.sum(EE_SR_sel[EE_SR_sel]))
-
-        output['MM_CR'].fill(dataset = dataset, weight = np.sum(MM_CR_sel[MM_CR_sel])) 
-        output['MM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[MM_CR_sel]))) 
-        output['MM_SR'].fill(dataset = dataset, weight = np.sum(MM_SR_sel[MM_SR_sel]))
-
-        output['EM_CR'].fill(dataset = dataset, weight = np.sum(EM_CR_sel[EM_CR_sel])) 
-        output['EM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[EM_CR_sel]))) 
-        output['EM_SR'].fill(dataset = dataset, weight = np.sum(EM_SR_sel[EM_SR_sel]))
+#         output['ME_CR'].fill(dataset = dataset, weight = np.sum(mue_CR_sel[mue_CR_sel])) 
+#         output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[mue_CR_sel]))) 
+#         output['ME_SR'].fill(dataset = dataset, weight = np.sum(mue_SR_sel[mue_SR_sel]))
         
-        output['ME_CR'].fill(dataset = dataset, weight = np.sum(ME_CR_sel[ME_CR_sel])) 
-        output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ME_CR_sel]))) 
-        output['ME_SR'].fill(dataset = dataset, weight = np.sum(ME_SR_sel[ME_SR_sel]))
-
+        #fill combined histograms now (basic definitions are in default_accumulators.py)
+        self.SS_fill_weighted(output["MET_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
+        self.SS_fill_weighted(output["MET_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
+        self.SS_fill_weighted(output["MET_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
+        
+        #leading lepton pt
+        LeadLep_pt = ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=1), axis=1)
+        self.SS_fill_weighted(output["pt_LeadLep_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=LeadLep_pt)
+        self.SS_fill_weighted(output["pt_LeadLep_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=LeadLep_pt)
+        self.SS_fill_weighted(output["pt_LeadLep_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=LeadLep_pt)
+        
+        #njets
+        njets = ak.num(jets, axis=1)
+        self.SS_fill_weighted(output["njets_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, multiplicity=njets)
+        self.SS_fill_weighted(output["njets_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, multiplicity=njets)
+        self.SS_fill_weighted(output["njets_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, multiplicity=njets)
+        
         return output
 
     def postprocess(self, accumulator):

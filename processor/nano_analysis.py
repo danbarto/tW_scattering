@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     from processor.meta_processor import get_sample_meta
 
-    overwrite = False
+    overwrite = True
     
     # load the config and the cache
     cfg = loadConfig()
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     #fileset = make_fileset(['TTW', 'TTZ'], samples, redirector=redirector_ucsd, small=True, n_max=5)  # small, max 5 files per sample
     #fileset = make_fileset(['DY'], samples, redirector=redirector_ucsd, small=True, n_max=10)
-    fileset = make_fileset(['top'], samples, redirector=redirector_fnal, small=False)
+    fileset = make_fileset(['top', 'DY', 'TTZ'], samples, redirector=redirector_fnal, small=True)
 
     add_processes_to_output(fileset, desired_output)
 

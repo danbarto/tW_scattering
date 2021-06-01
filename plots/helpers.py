@@ -327,16 +327,18 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     lumi -- integrated luminosity in 1/fb
     """
     temp = histogram.copy()
-    
+
+    # scale according to cross sections    
     scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
-    # print (scales)
     temp.scale(scales, axis='dataset')
-    for cat in nano_mapping:
-        # print (cat)
-        if len(nano_mapping[cat])>1:
-            for sample in nano_mapping[cat][1:]:
-                # print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
-                temp[nano_mapping[cat][0]].add(temp[sample])
-                temp = temp.remove([sample], 'dataset')
+
+    
+    # merge according to categories:
+    # merge categorical axes (example from coffea tutorial)
+    #mapping = {
+    #    'all samples': ['sample 1', 'sample 2'],
+    #    'just sample 1': ['sample 1'],
+    #}
+    temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
                 
     return temp

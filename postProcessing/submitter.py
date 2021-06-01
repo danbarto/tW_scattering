@@ -33,7 +33,8 @@ def getYearFromDAS(DASname):
         ### our private samples right now are all Autumn18 but have no identifier.
         return 2018, 'X', False, False
 
-samples = get_samples()  # loads the nanoAOD samples
+#samples = get_samples()  # loads the nanoAOD samples
+samples = get_samples("samples_UL18.yaml")  # loads the nanoAOD samples
 
 # load config
 cfg = loadConfig()

@@ -242,11 +242,25 @@ class SS_analysis(processor.ProcessorABC):
             output['node3_score'].fill(dataset=dataset, score=NN_pred[best_score==3][:,3] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==3])
             output['node4_score'].fill(dataset=dataset, score=NN_pred[best_score==4][:,4] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==4])
 
+            SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
+            SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
+            leading_lepton_BL = leading_lepton[BL]
+
+            output['lead_lep_SR_pp'].fill(
+                dataset = dataset,
+                pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
+                weight = weight_BL[SR_sel_pp]
+            )
+
+            output['lead_lep_SR_mm'].fill(
+                dataset = dataset,
+                pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
+                weight = weight_BL[SR_sel_mm]
+            )
+
             del model
             del scaler
             del NN_inputs, NN_inputs_scaled, NN_pred
-
-
 
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
@@ -359,8 +373,8 @@ if __name__ == '__main__':
     from processor.default_accumulators import *
 
     overwrite = True
-    small = True
-    save = False
+    small = False
+    save = True
 
     # load the config and the cache
     cfg = loadConfig()
@@ -379,12 +393,15 @@ if __name__ == '__main__':
         'TTZ': fileset_2018['TTZ'],
         'TTH': fileset_2018['TTH'],
         'diboson': fileset_2018['diboson'],
+        'triboson': fileset_2018['triboson'],
         #'wpwp': fileset_2018['wpwp'],
         'TTTT': fileset_2018['TTTT'],
         'ttbar': fileset_2018['ttbar'],
         'MuonEG': fileset_2018['MuonEG'],
         'DoubleMuon': fileset_2018['DoubleMuon'],
         'EGamma': fileset_2018['EGamma'],
+        #'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        #'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
     
     fileset = make_small(fileset, small)
@@ -404,6 +421,8 @@ if __name__ == '__main__':
     desired_output.update({
         "ST": hist.Hist("Counts", dataset_axis, pt_axis),
         "HT": hist.Hist("Counts", dataset_axis, pt_axis),
+        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pt_axis),
+        "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
         "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
         "node0_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node0_score": hist.Hist("Counts", dataset_axis, score_axis),
