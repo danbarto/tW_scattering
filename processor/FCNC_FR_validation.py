@@ -207,7 +207,7 @@ class nano_analysis(processor.ProcessorABC):
         self.SS_fill_weighted(output["MET_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
         
         #leading lepton pt
-        LeadLep_pt = ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=1), axis=1)
+        LeadLep_pt = ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=1), axis=1) #maybe need to fix this? Should lead lep be highest TOTAL momentum?
         self.SS_fill_weighted(output["pt_LeadLep_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=LeadLep_pt)
         self.SS_fill_weighted(output["pt_LeadLep_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=LeadLep_pt)
         self.SS_fill_weighted(output["pt_LeadLep_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=LeadLep_pt)
@@ -218,6 +218,17 @@ class nano_analysis(processor.ProcessorABC):
         self.SS_fill_weighted(output["njets_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, multiplicity=njets)
         self.SS_fill_weighted(output["njets_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, multiplicity=njets)
         
+        #btags
+        btag = ak.num(getBTagsDeepFlavB(jets, year=self.year))
+        self.SS_fill_weighted(output["N_b_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, multiplicity=btag)
+        self.SS_fill_weighted(output["N_b_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, multiplicity=btag)
+        self.SS_fill_weighted(output["N_b_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, multiplicity=btag)
+        
+        #HT
+        ht = ak.sum(jets.pt, axis=1)
+        self.SS_fill_weighted(output["HT_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, ht=ht)
+        self.SS_fill_weighted(output["HT_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, ht=ht)
+        self.SS_fill_weighted(output["HT_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, ht=ht)
         return output
 
     def postprocess(self, accumulator):
