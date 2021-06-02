@@ -26,7 +26,6 @@ from processor.default_accumulators import desired_output, add_processes_to_outp
 
 ## now do whatever you would have done in the processor
 
-
 def SS_fill_weighted(output, mumu_sel, ee_sel, mue_sel, emu_sel, mu_weights=None, e_weights=None, **kwargs):
     if len(kwargs.keys())==3: #dataset, axis_1, axis_2
         vals_1 = np.array([])

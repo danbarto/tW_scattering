@@ -81,6 +81,36 @@ class nano_analysis(processor.ProcessorABC):
         #fill the histogram
         output.fill(**return_dict, weight=weights)
 
+    def fill_pt_individual(self, output, dataset, pt, tag, dilep_selections, weight_muon, weight_electron):
+        output["MM_{}_CR_weighted".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["mumu_CR"]], weight = weight_muon[dilep_selections["mumu_CR"]])
+        output["MM_{}_SR".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["mumu_SR"]])
+        output["EE_{}_CR_weighted".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["ee_CR"]], weight = weight_electron[dilep_selections["ee_CR"]])
+        output["EE_{}_SR".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["ee_SR"]])
+        output["EM_{}_CR_weighted".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["emu_CR"]], weight = weight_muon[dilep_selections["emu_CR"]])
+        output["EM_{}_SR".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["emu_SR"]])
+        output["ME_{}_CR_weighted".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["mue_CR"]], weight = weight_electron[dilep_selections["mue_CR"]])
+        output["ME_{}_SR".format(tag)].fill(dataset=dataset, pt=pt[dilep_selections["mue_SR"]])
+        
+    def fill_ht_individual(self, output, dataset, ht, tag, dilep_selections, weight_muon, weight_electron):
+        output["MM_{}_CR_weighted".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["mumu_CR"]], weight = weight_muon[dilep_selections["mumu_CR"]])
+        output["MM_{}_SR".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["mumu_SR"]])
+        output["EE_{}_CR_weighted".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["ee_CR"]], weight = weight_electron[dilep_selections["ee_CR"]])
+        output["EE_{}_SR".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["ee_SR"]])
+        output["EM_{}_CR_weighted".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["emu_CR"]], weight = weight_muon[dilep_selections["emu_CR"]])
+        output["EM_{}_SR".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["emu_SR"]])
+        output["ME_{}_CR_weighted".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["mue_CR"]], weight = weight_electron[dilep_selections["mue_CR"]])
+        output["ME_{}_SR".format(tag)].fill(dataset=dataset, ht=ht[dilep_selections["mue_SR"]])
+
+    def fill_multiplicity_individual(self, output, dataset, mult, tag, dilep_selections, weight_muon, weight_electron):
+        output["MM_{}_CR_weighted".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["mumu_CR"]], weight = weight_muon[dilep_selections["mumu_CR"]])
+        output["MM_{}_SR".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["mumu_SR"]])
+        output["EE_{}_CR_weighted".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["ee_CR"]], weight = weight_electron[dilep_selections["ee_CR"]])
+        output["EE_{}_SR".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["ee_SR"]])
+        output["EM_{}_CR_weighted".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["emu_CR"]], weight = weight_muon[dilep_selections["emu_CR"]])
+        output["EM_{}_SR".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["emu_SR"]])
+        output["ME_{}_CR_weighted".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["mue_CR"]], weight = weight_electron[dilep_selections["mue_CR"]])
+        output["ME_{}_SR".format(tag)].fill(dataset=dataset, multiplicity=mult[dilep_selections["mue_SR"]])
+        
 
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
@@ -161,6 +191,8 @@ class nano_analysis(processor.ProcessorABC):
         emu_CR_SS = (ak.sum(emu_CR.charge, axis=1)!=0)
         emu_CR_sel = (ak.num(ele_t_p)==1) & (ak.num(mu_l_np)==1) & (ak.num(mu_l)==1) & jet_sel & emu_CR_SS & (ak.num(emu_CR[emu_CR.pt>20])>1) & (ak.num(ele_l)==1)
         
+        dilep_selections = {"mumu_SR":mumu_SR_sel, "mumu_CR": mumu_CR_sel, "ee_SR":ee_SR_sel, "ee_CR":ee_CR_sel, "mue_SR":mue_SR_sel, "mue_CR": mue_CR_sel, "emu_SR":emu_SR_sel, "emu_CR":emu_CR_sel}
+        
         #combine all selections for generic CR and SR
         CR_sel = mumu_CR_sel | ee_CR_sel | mue_CR_sel | emu_CR_sel
         SR_sel = mumu_SR_sel | ee_SR_sel | mue_SR_sel | emu_SR_sel
@@ -185,50 +217,55 @@ class nano_analysis(processor.ProcessorABC):
             weight_electron = electron_2016.FR_weight(ele_l_np)
             
         #separate by different combinations of two-lepton events
-#         output['EE_CR'].fill(dataset = dataset, weight = np.sum(ee_CR_sel[ee_CR_sel]))
-#         output['EE_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ee_CR_sel]))) 
-#         output['EE_SR'].fill(dataset = dataset, weight = np.sum(ee_SR_sel[ee_SR_sel]))
+        output['EE_CR'].fill(dataset = dataset, weight = np.sum(ee_CR_sel[ee_CR_sel]))
+        output['EE_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[ee_CR_sel]))) 
+        output['EE_SR'].fill(dataset = dataset, weight = np.sum(ee_SR_sel[ee_SR_sel]))
 
-#         output['MM_CR'].fill(dataset = dataset, weight = np.sum(mumu_CR_sel[mumu_CR_sel])) 
-#         output['MM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[mumu_CR_sel]))) 
-#         output['MM_SR'].fill(dataset = dataset, weight = np.sum(mumu_SR_sel[mumu_SR_sel]))
+        output['MM_CR'].fill(dataset = dataset, weight = np.sum(mumu_CR_sel[mumu_CR_sel])) 
+        output['MM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[mumu_CR_sel]))) 
+        output['MM_SR'].fill(dataset = dataset, weight = np.sum(mumu_SR_sel[mumu_SR_sel]))
 
-#         output['EM_CR'].fill(dataset = dataset, weight = np.sum(emu_CR_sel[emu_CR_sel])) 
-#         output['EM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[emu_CR_sel]))) 
-#         output['EM_SR'].fill(dataset = dataset, weight = np.sum(emu_SR_sel[emu_SR_sel]))
+        output['EM_CR'].fill(dataset = dataset, weight = np.sum(emu_CR_sel[emu_CR_sel])) 
+        output['EM_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_muon[emu_CR_sel]))) 
+        output['EM_SR'].fill(dataset = dataset, weight = np.sum(emu_SR_sel[emu_SR_sel]))
         
-#         output['ME_CR'].fill(dataset = dataset, weight = np.sum(mue_CR_sel[mue_CR_sel])) 
-#         output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[mue_CR_sel]))) 
-#         output['ME_SR'].fill(dataset = dataset, weight = np.sum(mue_SR_sel[mue_SR_sel]))
+        output['ME_CR'].fill(dataset = dataset, weight = np.sum(mue_CR_sel[mue_CR_sel])) 
+        output['ME_CR_weighted'].fill(dataset = dataset, weight = np.sum(ak.to_numpy(weight_electron[mue_CR_sel]))) 
+        output['ME_SR'].fill(dataset = dataset, weight = np.sum(mue_SR_sel[mue_SR_sel]))
         
         #fill combined histograms now (basic definitions are in default_accumulators.py)
-        self.SS_fill_weighted(output["MET_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
-        self.SS_fill_weighted(output["MET_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
-        self.SS_fill_weighted(output["MET_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=ev.MET.pt, phi=np.abs(ev.MET.phi))
-        
+        self.SS_fill_weighted(output["MET_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=ev.MET.pt)
+        self.SS_fill_weighted(output["MET_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=ev.MET.pt)
+        self.SS_fill_weighted(output["MET_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=ev.MET.pt)
+        self.fill_pt_individual(output, dataset, ev.MET.pt, "MET", dilep_selections, weight_muon, weight_electron)
         #leading lepton pt
-        LeadLep_pt = ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=1), axis=1) #maybe need to fix this? Should lead lep be highest TOTAL momentum?
+        LeadLep_pt = ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=1), axis=1) 
+        #sum of all regions
         self.SS_fill_weighted(output["pt_LeadLep_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, pt=LeadLep_pt)
         self.SS_fill_weighted(output["pt_LeadLep_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, pt=LeadLep_pt)
         self.SS_fill_weighted(output["pt_LeadLep_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, pt=LeadLep_pt)
+        self.fill_pt_individual(output, dataset, LeadLep_pt, "pt_LeadLep", dilep_selections, weight_muon, weight_electron)
         
         #njets
         njets = ak.num(jets, axis=1)
         self.SS_fill_weighted(output["njets_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, multiplicity=njets)
         self.SS_fill_weighted(output["njets_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, multiplicity=njets)
         self.SS_fill_weighted(output["njets_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, multiplicity=njets)
+        self.fill_multiplicity_individual(output, dataset, njets, "njets", dilep_selections, weight_muon, weight_electron)
         
         #btags
         btag = ak.num(getBTagsDeepFlavB(jets, year=self.year))
         self.SS_fill_weighted(output["N_b_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, multiplicity=btag)
         self.SS_fill_weighted(output["N_b_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, multiplicity=btag)
         self.SS_fill_weighted(output["N_b_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, multiplicity=btag)
+        self.fill_multiplicity_individual(output, dataset, btag, "N_b", dilep_selections, weight_muon, weight_electron)
         
         #HT
         ht = ak.sum(jets.pt, axis=1)
         self.SS_fill_weighted(output["HT_CR"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, dataset=dataset, ht=ht)
         self.SS_fill_weighted(output["HT_CR_weighted"], mumu_CR_sel, ee_CR_sel, mue_CR_sel, emu_CR_sel, mu_weights = weight_muon, e_weights = weight_electron, dataset=dataset, ht=ht)
         self.SS_fill_weighted(output["HT_SR"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset=dataset, ht=ht)
+        self.fill_ht_individual(output, dataset, ht, "HT", dilep_selections, weight_muon, weight_electron)
         return output
 
     def postprocess(self, accumulator):
