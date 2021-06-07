@@ -301,7 +301,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
 
                 met = ev.MET
-                met['pt'] = getattr(met, var)
+                #met['pt'] = getattr(met, var)
 
                 sel = Selection(
                     dataset = dataset,
@@ -370,7 +370,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 BL_minusMET = sel.dilep_baseline(SS=False, omit=['MET>50'])        
                 output['MET_'+var].fill(
                     dataset = dataset,
-                    pt  = getattr(ev.MET, var)[BL_minusMET],
+                    #pt  = getattr(ev.MET, var)[BL_minusMET],
+                    pt  = ev.MET[BL_minusMET].pt,
                     phi  = ev.MET[BL_minusMET].phi,
                     weight = weight.weight()[BL_minusMET]
                 )
@@ -391,7 +392,7 @@ if __name__ == '__main__':
     overwrite = True
     year = 2018
     local = True
-    small = False
+    small = True
 
     # load the config and the cache
     cfg = loadConfig()
@@ -400,19 +401,22 @@ if __name__ == '__main__':
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.0/', year='UL2018')
     
     fileset = {
-        #'tW_scattering': fileset_2018['tW_scattering'],
-        'topW_v3': fileset_2018['topW_v3'],
-        'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
-        'MuonEG': fileset_2018['MuonEG'],
-        'DoubleMuon': fileset_2018['DoubleMuon'],
-        'EGamma': fileset_2018['EGamma'],
-        'diboson': fileset_2018['diboson'],
-        'TTXnoW': fileset_2018['TTXnoW'],
-        'TTW': fileset_2018['TTW'],
-        #'WZ': fileset_2018['WZ'],
-        'DY': fileset_2018['DY'],
+        #'tW_scattering': fileset_all['tW_scattering'],
+        'topW_v3': fileset_all['topW_NLO'],
+        #'topW_v3': fileset_all['topW_v3'],
+        #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
+        'ttbar': fileset_all['top2l'], # dilepton ttbar should be enough for this study.
+        'MuonEG': fileset_all['MuonEG_Run2018'],
+        'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
+        'EGamma': fileset_all['EGamma_Run2018'],
+        'diboson': fileset_all['diboson'],
+        'TTXnoW': fileset_all['TTXnoW'],
+        'TTW': fileset_all['TTW'],
+        #'WZ': fileset_all['WZ'],
+        'DY': fileset_all['DY'],
     }
 
     fileset = make_small(fileset, small, 1)
@@ -496,3 +500,5 @@ if __name__ == '__main__':
     em_e = np.intersect1d(em, e)
     print ("Overlap MuonEG/EGamma:", len(em_e))
     # print (em_e)
+
+

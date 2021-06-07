@@ -150,8 +150,8 @@ if not args.dryRun:
         # parse the total summary and write out the dashboard
         StatsParser(data=total_summary, webdir="~/public_html/dump/metis_tW_scattering/").do()
     
-        # 15 min power nap
-        time.sleep(15.*60)
+        # 60 min power nap
+        time.sleep(60.*60)
 
 
 

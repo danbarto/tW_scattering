@@ -65,6 +65,32 @@ groups_2018 = {
     'DoubleMuon':       ['/DoubleMuon_Run2018[ABCD]'],
 }
 
+groups_UL = {
+    'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/'],
+    'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/'],
+    # careful - TTX is a sum of all TTX but TTW
+    'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
+    'TTW':           ['/TTWJets'],
+    'TTH':           ['/TH[W,Q][-_]', '/ttHToNonbb[-_]'],
+    'TTZ':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
+    'TTTT':          ['/TTTT[-_]'],
+    'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
+    'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
+    'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
+    'wjets':         ['/W[1-4]JetsToLNu[-_]'],
+    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'], # there's also a powheg sample
+    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
+    'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
+    'WW':            ['/WWTo'], 
+    'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
+    'DY':            ['/DYJetsToLL'],
+
+    'MuonEG_Run2018':       ['/MuonEG'],
+    'EGamma_Run2018':       ['/EGamma'],
+    'DoubleMuon_Run2018':   ['/DoubleMuon'],
+}
+
+
 #samples_2016 = glob.glob(data_path_2016 + '/*')
 #fileset_2016 = { group: [] for group in groups_2016.keys() }
 #
@@ -97,4 +123,28 @@ for sample in samples_2018:
                 fileset_2018[group] += glob.glob(sample+'/*.root')
 
 fileset_2018_small = { sample: fileset_2018[sample][:2] for sample in fileset_2018.keys() }
+
+def get_babies(data_path, small=False, year=2018):
+    year = str(year)
+
+    samples = glob.glob(data_path + '/*')
+    groups = groups_UL if not year == '2018' else groups_2018
+    fileset = { group: [] for group in groups.keys() }
+
+    if year=='2018':
+        campaign = '.*'
+    elif year=='UL2018':
+        campaign = '.*(Summer20UL18|Run2018)'
+    
+    for sample in samples:
+        for group in groups.keys():
+            for process in groups[group]:
+                if re.search( (process+campaign if not sample[-1] == '/' else process), sample):
+                    fileset[group] += glob.glob(sample+'/*.root')
+    
+    if small:
+        return { sample: fileset[sample][:2] for sample in fileset.keys() }
+    else:
+        return fileset
+
 

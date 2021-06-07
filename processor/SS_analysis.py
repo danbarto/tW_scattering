@@ -1,4 +1,5 @@
 import os
+import re
 try:
     import awkward1 as ak
 except ImportError:
@@ -369,11 +370,11 @@ class SS_analysis(processor.ProcessorABC):
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from Tools.samples import * # fileset_2018 #, fileset_2018_small
+    from Tools.samples import get_babies
     from processor.default_accumulators import *
 
     overwrite = True
-    small = False
+    small = True
     save = True
 
     # load the config and the cache
@@ -384,22 +385,31 @@ if __name__ == '__main__':
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
     year = 2018
+
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
+    #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.0/', year='UL2018')
     
     fileset = {
-        'topW_v3': fileset_2018['topW_v3'],
-        'topW_EFT_cp8': fileset_2018['topW_EFT_cp8'],
-        'topW_EFT_mix': fileset_2018['topW_EFT_mix'],
-        'TTW': fileset_2018['TTW'],
-        'TTZ': fileset_2018['TTZ'],
-        'TTH': fileset_2018['TTH'],
-        'diboson': fileset_2018['diboson'],
-        'triboson': fileset_2018['triboson'],
-        #'wpwp': fileset_2018['wpwp'],
-        'TTTT': fileset_2018['TTTT'],
-        'ttbar': fileset_2018['ttbar'],
-        'MuonEG': fileset_2018['MuonEG'],
-        'DoubleMuon': fileset_2018['DoubleMuon'],
-        'EGamma': fileset_2018['EGamma'],
+        #'topW_v3': fileset_all['topW_NLO'],
+        'topW_v3': fileset_all['topW_v3'],
+        #'topW_EFT_mix': fileset_all['topW_EFT'],
+        'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+        'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+        'TTW': fileset_all['TTW'],
+        'TTZ': fileset_all['TTZ'],
+        'TTH': fileset_all['TTH'],
+        'diboson': fileset_all['diboson'],
+        'triboson': fileset_all['triboson'],
+        #'wpwp': fileset_all['wpwp'],
+        'TTTT': fileset_all['TTTT'],
+        #'ttbar': fileset_all['top'],
+        'ttbar': fileset_all['ttbar'],
+        #'MuonEG': fileset_all['MuonEG_Run2018'],
+        #'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
+        #'EGamma': fileset_all['EGamma_Run2018'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'],
         #'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         #'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }

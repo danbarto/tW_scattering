@@ -342,3 +342,51 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
                 
     return temp
+
+def compute_darkness(r, g, b, a=1.0):
+    """Compute the 'darkness' value from RGBA (darkness = 1 - luminance)
+       stolen from Nick Amin: https://github.com/aminnj/yahist
+       Version from Jonathan Guiang: https://gist.github.com/jkguiang/279cb4d2e68e64148afc62274df09f18
+    """
+    return a * (1.0 - (0.299 * r + 0.587 * g + 0.114 * b))
+
+def bin_text(counts, x_edges, y_edges, axes, cbar, errors=None, size=10, fmt=":0.2e"):
+    """Write bin population on top of 2D histogram bins,
+       stolen from Nick Amin: https://github.com/aminnj/yahist
+       Version from Jonathan Guiang: https://gist.github.com/jkguiang/279cb4d2e68e64148afc62274df09f18
+    """
+    show_errors = (type(errors) != type(None))
+    x_centers = x_edges[1:]-(x_edges[1:]-x_edges[:-1])/2
+    y_centers = y_edges[1:]-(y_edges[1:]-y_edges[:-1])/2
+    
+    if show_errors:
+        label_template = r"{0"+fmt+"}\n$\pm{1:0.2f}\%$"
+    else:
+        errors = np.zeros(counts.shape)
+        label_template = r"{0"+fmt+"}"
+        
+    xyz = np.c_[        
+        np.tile(x_centers, len(y_centers)),
+        np.repeat(y_centers, len(x_centers)),
+        counts.flatten(),
+        errors.flatten()
+    ][counts.flatten() != 0]
+
+    r, g, b, a = cbar.mappable.to_rgba(xyz[:, 2]).T
+    colors = np.zeros((len(xyz), 3))
+    colors[compute_darkness(r, g, b, a) > 0.45] = 1
+
+    for (x, y, count, err), color in zip(xyz, colors):
+        axes.text(
+            x,
+            y,
+            label_template.format(count, err),
+            color=color,
+            ha="center",
+            va="center",
+            fontsize=size,
+            wrap=True,
+        )
+
+    return
+
