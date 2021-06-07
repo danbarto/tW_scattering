@@ -184,7 +184,7 @@ class Selection:
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
-        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 )
+        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )

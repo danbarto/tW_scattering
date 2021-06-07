@@ -58,7 +58,7 @@ def mask_and(ev, collection, masks):
 
 def getFilters(ev, year=2018, dataset='None'):
     #filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-    if year == 2018:
+    if year == 'UL2018':
         filters_MC = [\
             "goodVertices",
             "globalSuperTightHalo2016Filter",
@@ -66,7 +66,20 @@ def getFilters(ev, year=2018, dataset='None'):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2"
+            #"ecalBadCalibFilterV2"
+        ]
+        
+        filters_data = filters_MC + ["eeBadScFilter"]
+
+    elif year == 2018:
+        filters_MC = [\
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "HBHENoiseFilter",
+            "HBHENoiseIsoFilter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            #"ecalBadCalibFilterV2"
         ]
         
         filters_data = filters_MC + ["eeBadScFilter"]

@@ -71,7 +71,7 @@ groups_UL = {
     # careful - TTX is a sum of all TTX but TTW
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
-    'TTH':           ['/TH[W,Q][-_]', '/ttHToNonbb[-_]'],
+    'TTH':           ['/TH[W,Q][-_]', '/ttHJetToNonbb[-_]'],
     'TTZ':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
     'TTTT':          ['/TTTT[-_]'],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
@@ -139,7 +139,7 @@ def get_babies(data_path, small=False, year=2018):
     for sample in samples:
         for group in groups.keys():
             for process in groups[group]:
-                if re.search( (process+campaign if not sample[-1] == '/' else process), sample):
+                if re.search( (process.strip('/') if process[-1] == '/' else (process+campaign)), sample):
                     fileset[group] += glob.glob(sample+'/*.root')
     
     if small:
