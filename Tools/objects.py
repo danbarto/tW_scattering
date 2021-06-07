@@ -51,6 +51,14 @@ def choose(first, n=2):
     combs['1'] = tmp['1']
     return combs
 
+def choose3(first, n=3):
+    tmp = ak.combinations(first, n)
+    combs = (tmp['0'] + tmp['1'] + tmp['2'])
+    combs['0'] = tmp['0']
+    combs['1'] = tmp['1']
+    combs['2'] = tmp['2']
+    return combs    
+
 def cross(first, second):
     tmp = ak.cartesian([first, second])
     combs = (tmp['0'] + tmp['1'])
