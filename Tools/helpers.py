@@ -52,6 +52,14 @@ def getName( DAS ):
         return '_'.join(DAS.split('/')[-3:-1])
         #return'dummy'
 
+def dasWrapper(DASname, query='file'):
+    sampleName = DASname.rstrip('/')
+
+    dbs='dasgoclient -query="%s dataset=%s"'%(query, sampleName)
+    dbsOut = os.popen(dbs).readlines()
+    dbsOut = [ l.replace('\n','') for l in dbsOut ]
+    return dbsOut
+
 def finalizePlotDir( path ):
     path = os.path.expandvars(path)
     if not os.path.isdir(path):

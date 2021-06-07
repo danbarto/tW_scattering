@@ -1,0 +1,77 @@
+'''
+Get x-secs. Needs a working cmsenv, like:
+cd /home/users/dspitzba/TTW/CMSSW_10_6_19/src/; cmsenv; cd -;
+
+'''
+
+
+import imp, os, sys
+import subprocess, shutil
+
+## default cmsRun cfg file
+defaultCFG = """
+import FWCore.ParameterSet.Config as cms
+process = cms.Process("GenXSec")
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring('{FILEPATH}') )
+process.dummy = cms.EDAnalyzer("GenXSecAnalyzer", genFilterInfoTag = cms.InputTag("genFilterEfficiencyProducer") )
+process.p = cms.Path(process.dummy)"""
+
+cfgFile     = 'xsecCfg.py'
+identifier  = "After filter: final cross section ="
+
+
+from Tools.helpers import dasWrapper
+
+def get_mini_file(nano):
+    try:
+        mini = dasWrapper(nano, 'parent')[0]
+    except IndexError:
+        print ("No parent found")
+        return None
+    mini_file = dasWrapper(mini, 'file')[0]
+    return mini_file
+
+samples = [
+    '/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
+    '/ttHJetTobb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
+    #'/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
+    #'/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
+    #'/SSWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
+    ]
+    
+print ("## Will process the following samples: %s"%(",".join( f for f in samples ) ))
+
+results = []
+
+for nano in samples:
+    print (nano)
+    f_in = get_mini_file(nano)
+    if f_in is None: continue
+    replaceString = {'FILEPATH': f_in}
+    cmsCfgString = defaultCFG.format( **replaceString )
+    
+    cmsRunCfg = open(cfgFile, 'w')
+    cmsRunCfg.write(cmsCfgString)
+    cmsRunCfg.close()
+
+    print ("Working on Dataset:", nano)
+
+    
+    p = subprocess.Popen(['cmsRun', cfgFile], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output = p.stderr.readlines()
+    for line in output:
+        #print line
+        if line.startswith(identifier): result = line
+
+    xsec, unc = float(result.split(identifier)[1].split('+-')[0]), float(result.split(identifier)[1].split('+-')[1].replace('pb',''))
+    
+    results.append((nano.strip('/').split('/')[0], xsec))
+
+    #os.remove(cfgFile)
+    
+print ("Found the following x-secs:")
+print ("{:80}{:10}".format("Name", "x-sec (pb)"))
+for res in results:
+    print ("{:80}{:10}".format(res[0], res[1]))
