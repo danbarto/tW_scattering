@@ -151,6 +151,8 @@ class trilep_analysis(processor.ProcessorABC):
         BL = sel.trilep_baseline(cutflow=cutflow)
         
         # first, make a few super inclusive plots
+        output['ST'].fill(dataset=dataset, ht=st[BL], weight=weight.weight()[BL])
+        
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
@@ -299,6 +301,7 @@ if __name__ == '__main__':
     desired_output.update({
         "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
         "m3l": hist.Hist("Counts", dataset_axis, mass_axis),
+        "ST": hist.Hist("Counts", dataset_axis, ht_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))
