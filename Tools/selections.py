@@ -1,16 +1,11 @@
 '''
 Maybe standard selections should go in here?
-
 '''
-try:
-    import awkward1 as ak
-except ImportError:
-    import awkward as ak
-
+import awkward as ak
 
 from coffea.analysis_tools import Weights, PackedSelection
 from Tools.triggers import getTriggers, getFilters
-from Tools.objects import choose, cross
+from Tools.objects import choose, cross, choose3
 
 class Selection:
     def __init__(self, **kwargs):
@@ -25,8 +20,8 @@ class Selection:
         self.__dict__.update(kwargs)
 
 
-        ## not yet sure whether this should go here, or later
-        #self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
+        # not yet sure whether this should go here, or later
+        self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
     def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True):
@@ -71,7 +66,7 @@ class Selection:
 
         self.selection.add('lepveto',       lepveto)
         self.selection.add('dilep',         is_dilep)
-        #self.selection.add('filter',        self.filters)
+        self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
@@ -90,7 +85,7 @@ class Selection:
         self.selection.add('ST>600',        (st>600) )
 
         ss_reqs = [
-        #    'filter',
+            'filter',
             'lepveto',
             'dilep',
             'p_T(lep0)>25',
@@ -134,6 +129,7 @@ class Selection:
         self.selection = PackedSelection()
 
         is_trilep  = ((ak.num(self.ele) + ak.num(self.mu))==3)
+        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))>=2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
         lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
@@ -142,39 +138,60 @@ class Selection:
 
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
-        dilep   = cross(self.mu, self.ele)
+        dimu_veto = choose(self.mu_veto,2)
+        diele_veto = choose(self.ele_veto,2)
+        #dilep   = cross(self.mu, self.ele)
 
         OS_dimu = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele = diele[(diele['0'].charge*diele['1'].charge < 0)]
+        OS_dimu_veto = dimu_veto[(dimu_veto['0'].charge*dimu_veto['1'].charge < 0)]
+        OS_diele_veto = diele_veto[(diele_veto['0'].charge*diele_veto['1'].charge < 0)]
+        
+        SFOS = ak.concatenate([OS_diele_veto, OS_dimu_veto], axis=1)
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
+        offZ_veto = (ak.all(abs(OS_dimu_veto.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele_veto.mass-91.2)>10, axis=1))
 
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
+        dilep = choose(lepton,2)
+        SS_dilep = (dilep['0'].charge*dilep['1'].charge > 0)
+        los_trilep_SS = (ak.any(SS_dilep, axis=1))
 
+        vetolepton   = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)    
+        vetotrilep = choose3(vetolepton, 3)
+        pos_trilep = ak.any((vetotrilep['0'].charge+vetotrilep['1'].charge+vetotrilep['2'].charge > 0),axis=1)
+        neg_trilep = ak.any((vetotrilep['0'].charge+vetotrilep['1'].charge+vetotrilep['2'].charge < 0),axis=1)
+        
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
             ak.flatten(lepton_pdgId_pt_ordered[:,1:2]), year=self.year, dataset=self.dataset)
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
+        st_veto = self.met.pt + ht + ak.sum(self.mu_veto.pt, axis=1) + ak.sum(self.ele_veto.pt, axis=1)
+
+        lep0pt_veto     = ((ak.num(self.ele_veto[(self.ele_veto.pt>25)]) + ak.num(self.mu_veto[(self.mu_veto.pt>25)]))>0)
+        lep1pt_veto     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
 
         self.selection.add('lepveto',       lepveto)
-        self.selection.add('trilep',        is_trilep)
+        self.selection.add('trilep',        los_trilep_SS)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
-        self.selection.add('p_T(lep0)>25',  lep0pt)
-        self.selection.add('p_T(lep1)>20',  lep1pt)
+        self.selection.add('p_T(lep0)>25',  lep0pt_veto)
+        self.selection.add('p_T(lep1)>20',  lep1pt_veto)
         self.selection.add('N_jet>2',       (ak.num(self.jet_all)>2) )
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
-        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
+        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
-        self.selection.add('ST>600',        (st>600) )
-        self.selection.add('offZ',          offZ )
-
+        self.selection.add('ST>600',        (st_veto>600) )
+        self.selection.add('offZ',          offZ_veto )
+        #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
+        #self.selection.add('charge_sum',          neg_trilep)
+        
         reqs = [
             'filter',
             'lepveto',
@@ -188,6 +205,8 @@ class Selection:
             'N_central>1',
             'N_btag>0',
             'N_fwd>0',
+            #'SFOS>=1',
+            #'charge_sum'
         ]
         
         if tight:
