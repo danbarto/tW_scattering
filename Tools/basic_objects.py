@@ -36,8 +36,8 @@ def getFatJets(ev):
 def getHadronFlavour(jet, hadronFlavour=5):
     return jet[(abs(jet.hadronFlavour)==hadronFlavour)]
 
-def getJets(ev, maxEta=100, minPt=25, pt_var='pt', year=2018):
-    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>(1 if year>2016 else 0))]
+def getJets(ev, maxEta=100, minPt=25, pt_var='pt', year=2018, UL=False):
+    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>(1 if (year>2016 or UL) else 0))]
 
 def getBTagsDeepB(jet, year=2016, invert=False):
     if year == 2016:
@@ -49,19 +49,27 @@ def getBTagsDeepB(jet, year=2016, invert=False):
     if invert: sel = ~sel
     return jet[sel]
 
-def getBTagsDeepFlavB(jet, year=2016, invert=False):
-    if year == 2016:
-        sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
-    elif year == 2017:
-        sel = ((jet.btagDeepFlavB>0.3033) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
-    elif year == 2018:
-        sel = ((jet.btagDeepFlavB>0.2770) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
+def getBTagsDeepFlavB(jet, year=2016, invert=False, UL=False):
+    if UL:
+        if year == 2016:
+            sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.5)) #FIXME
+        elif year == 2017:
+            sel = ((jet.btagDeepFlavB>0.3040) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL17
+        elif year == 2018:
+            sel = ((jet.btagDeepFlavB>0.2783) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL18
+    else:
+        if year == 2016:
+            sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+        elif year == 2017:
+            sel = ((jet.btagDeepFlavB>0.3033) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
+        elif year == 2018:
+            sel = ((jet.btagDeepFlavB>0.2770) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
     if invert: sel = ~sel
     return jet[sel]
 
 def getFwdJet(jet, minPt=40, puId=True):
     minId = 7 if puId else 0
-    return jet[(abs(jet.eta)>1.7) & (abs(jet.eta)<4.7) & (jet.pt>minPt) & ( ((jet.puId>=minId) & (jet.pt<50)) | (jet.pt>=50))]
+    return jet[(abs(jet.eta)>1.7) & (abs(jet.eta)<4.7) & (jet.pt>minPt) & ( ((jet.puId>=minId) & (jet.pt<50)) | (jet.pt>=50))] # PU jet Id just for jets below 50 GeV
 
 def getHTags(fatjet, year=2016):
     # 2.5% WP

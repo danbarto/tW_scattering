@@ -19,27 +19,6 @@ from yaml import Loader, Dumper
 import os
 from github import Github
 
-def getYearFromDAS(DASname):
-    isData = True if DASname.count('Run20') else False
-    isFastSim = False if not DASname.count('Fast') else True
-    era = DASname[DASname.find("Run")+len('Run2000'):DASname.find("Run")+len('Run2000A')]
-    if DASname.count('Autumn18') or DASname.count('Run2018'):
-        return 2018, era, isData, isFastSim
-    elif DASname.count('Fall17') or DASname.count('Run2017'):
-        return 2017, era, isData, isFastSim
-    elif DASname.count('Summer16') or DASname.count('Run2016'):
-        return 2016, era, isData, isFastSim
-    else:
-        ### our private samples right now are all Autumn18 but have no identifier.
-        return 2018, 'X', False, False
-
-#samples = get_samples()  # loads the nanoAOD samples
-samples = get_samples("samples_UL18.yaml")  # loads the nanoAOD samples
-
-# load config
-cfg = loadConfig()
-
-print ("Loaded version %s from config."%cfg['meta']['version'])
 
 import argparse
 
@@ -50,10 +29,38 @@ argParser.add_argument('--skim', action='store', default="dilep", choices=["dile
 argParser.add_argument('--dryRun', action='store_true', default=None, help="Don't submit?")
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
+argParser.add_argument('--input', action='store', default='', help="Which set of input samples?")
 args = argParser.parse_args()
 
 tag = str(args.tag)
 skim = str(args.skim)
+
+tag_skim = "%s_%s"%(tag, skim)
+
+def getYearFromDAS(DASname):
+    isData = True if DASname.count('Run20') else False
+    isUL = True if (DASname.count('UL1') or DASname.count('UL2')) else False
+    isFastSim = False if not DASname.count('Fast') else True
+    era = DASname[DASname.find("Run")+len('Run2000'):DASname.find("Run")+len('Run2000A')]
+    if DASname.count('Autumn18') or DASname.count('Summer20UL18') or DASname.count('Run2018'):
+        return 2018, era, isData, isFastSim, isUL
+    elif DASname.count('Fall17') or DASname.count('Summer20UL17') or DASname.count('Run2017'):
+        return 2017, era, isData, isFastSim, isUL
+    elif DASname.count('Summer16') or DASname.count('Summer20UL16') or DASname.count('Run2016'):
+        return 2016, era, isData, isFastSim, isUL
+    else:
+        ### our private samples right now are all Autumn18 but have no identifier.
+        return 2018, 'X', False, False, False
+
+#samples = get_samples()  # loads the nanoAOD samples
+samples = get_samples("%s.yaml"%args.input)  # loads the nanoAOD samples
+
+# load config
+cfg = loadConfig()
+
+print ("Loaded version %s from config."%cfg['meta']['version'])
+
+
 
 ### Read github credentials
 with open('github_credentials.txt', 'r') as f:
@@ -78,7 +85,7 @@ else:
 # example
 sample = DirectorySample(dataset='TTWJetsToLNu_Autumn18v4', location='/hadoop/cms/store/user/dspitzba/nanoAOD/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8__RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/')
 
-outDir = os.path.join(os.path.expandvars(cfg['meta']['localSkim']), tag+'_'+skim if skim=='trilep' else tag)
+outDir = os.path.join(os.path.expandvars(cfg['meta']['localSkim']), tag_skim)
 
 print ("Output will be here: %s"%outDir)
 
@@ -101,7 +108,7 @@ for s in sample_list:
     else:
         sample = DBSSample(dataset = s) # should we make use of the files??
 
-    year, era, isData, isFastSim = getYearFromDAS(s)
+    year, era, isData, isFastSim, isUL = getYearFromDAS(s)
 
     print ("Now working on sample: %s"%s)
     print ("- has %s files"%len(sample.get_files()))
@@ -117,6 +124,10 @@ for s in sample_list:
     lumiWeightString = 1 if (isData or samples[s]['name'].count('TChiWH')) else 1000*samples[s]['xsec']/samples[s]['sumWeight']
     print ("- found sumWeight %s and x-sec %s"%(samples[s]['sumWeight'], samples[s]['xsec']) )
 
+    if isUL:
+        year = "UL%s"%year
+        print ("- samples are UL, this is the used year: %s"%year)
+
     maker_task = CondorTask(
         sample = sample,
         executable = "executable.sh",
@@ -125,7 +136,7 @@ for s in sample_list:
         output_dir = os.path.join(outDir, samples[s]['name']),
         output_name = "nanoSkim.root",
         output_is_tree = True,
-        tag = tag,
+        tag = tag_skim,
         condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
         cmssw_version = "CMSSW_10_2_9",
         scram_arch = "slc6_amd64_gcc700",

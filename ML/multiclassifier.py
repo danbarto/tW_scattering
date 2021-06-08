@@ -378,21 +378,21 @@ if __name__ == '__main__':
     }
 
     print ("## Real baseline selection (as in selections.py)")
-    sel_BL = ((df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['met']>30))
-    signal_BL = sum(df[(sel_BL & (df['label']==0))]['weight']) * 137
-    bkg_BL = sum(df[(sel_BL & (df['label']!=0))]['weight']) * 137
+    sel_BL      = ((df['n_lep_tight']==2) & (df['n_fwd']>0) & (df['met']>30))
+    signal_BL   = sum(df[(sel_BL & (df['label']==0))]['weight']) * 137
+    bkg_BL      = sum(df[(sel_BL & (df['label']!=0))]['weight']) * 137
 
-    prompt_BL = sum(df[(sel_BL & (df['label_cat']==1))]['weight']) * 137
-    LL_BL = sum(df[(sel_BL & (df['label_cat']==2))]['weight']) * 137
+    prompt_BL    = sum(df[(sel_BL & (df['label_cat']==1))]['weight']) * 137
+    LL_BL        = sum(df[(sel_BL & (df['label_cat']==2))]['weight']) * 137
     nonprompt_BL = sum(df[(sel_BL & (df['label_cat']==3))]['weight']) * 137
-    flip_BL = sum(df[(sel_BL & (df['label_cat']==4))]['weight']) * 137
+    flip_BL      = sum(df[(sel_BL & (df['label_cat']==4))]['weight']) * 137
 
-    TTW_BL = sum(df[(sel_BL & (df['label']==1))]['weight']) * 137
-    TTZ_BL = sum(df[(sel_BL & (df['label']==2))]['weight']) * 137
-    TTH_BL = sum(df[(sel_BL & (df['label']==3))]['weight']) * 137
-    tt_BL = sum(df[(sel_BL & (df['label']==4))]['weight']) * 137
-    rare_BL = sum(df[(sel_BL & (df['label']==5))]['weight']) * 137
-    DY_BL = sum(df[(sel_BL & (df['label']==6))]['weight']) * 137
+    TTW_BL      = sum(df[(sel_BL & (df['label']==1))]['weight']) * 137
+    TTZ_BL      = sum(df[(sel_BL & (df['label']==2))]['weight']) * 137
+    TTH_BL      = sum(df[(sel_BL & (df['label']==3))]['weight']) * 137
+    tt_BL       = sum(df[(sel_BL & (df['label']==4))]['weight']) * 137
+    rare_BL     = sum(df[(sel_BL & (df['label']==5))]['weight']) * 137
+    DY_BL       = sum(df[(sel_BL & (df['label']==6))]['weight']) * 137
 
 
     print (" - signal: %.2f"%signal_BL)
@@ -421,15 +421,15 @@ if __name__ == '__main__':
     #sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) & (df['n_fwd']>0) )
     #sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) & (df_bsm['n_fwd']>0) )
 
-    sel_topW = ((df['score_best']==0) & (df['n_lep_tight']==2) )
-    sel_topW_bsm = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) )
+    sel_topW        = ((df['score_best']==0) & (df['n_lep_tight']==2) )
+    sel_topW_bsm    = ((df_bsm['score_best']==0) & (df_bsm['n_lep_tight']==2) )
 
-    signal_NN_baseline = sum(df[(sel_topW & (df['label']==0))]['weight']) * 137
-    bkg_NN_baseline = sum(df[(sel_topW & (df['label']!=0))]['weight']) * 137
-    prompt_NN_baseline = sum(df[(sel_topW & (df['label_cat']==1))]['weight']) * 137
-    LL_NN_baseline = sum(df[(sel_topW & (df['label_cat']==2))]['weight']) * 137
-    nonprompt_NN_baseline = sum(df[(sel_topW & (df['label_cat']==3))]['weight']) * 137
-    flip_NN_baseline = sum(df[(sel_topW & (df['label_cat']==4))]['weight']) * 137
+    signal_NN_baseline      = sum(df[(sel_topW & (df['label']==0))]['weight']) * 137
+    bkg_NN_baseline         = sum(df[(sel_topW & (df['label']!=0))]['weight']) * 137
+    prompt_NN_baseline      = sum(df[(sel_topW & (df['label_cat']==1))]['weight']) * 137
+    LL_NN_baseline          = sum(df[(sel_topW & (df['label_cat']==2))]['weight']) * 137
+    nonprompt_NN_baseline   = sum(df[(sel_topW & (df['label_cat']==3))]['weight']) * 137
+    flip_NN_baseline        = sum(df[(sel_topW & (df['label_cat']==4))]['weight']) * 137
 
     print ("w/ NN, baseline expectations are:")
     print (" - signal: %.2f"%signal_NN_baseline)

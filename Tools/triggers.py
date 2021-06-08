@@ -56,9 +56,10 @@ def mask_and(ev, collection, masks):
     return decision
 
 
-def getFilters(ev, year=2018, dataset='None'):
-    #filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-    if year == 'UL2018':
+def getFilters(ev, year=2018, dataset='None', UL=False):
+    # filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
+    #FIXME Flag_BadPFMuonDzFilter missing in EOY UL?? Should be added.
+    if year == 2018:
         filters_MC = [\
             "goodVertices",
             "globalSuperTightHalo2016Filter",
@@ -66,20 +67,7 @@ def getFilters(ev, year=2018, dataset='None'):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            #"ecalBadCalibFilterV2"
-        ]
-        
-        filters_data = filters_MC + ["eeBadScFilter"]
-
-    elif year == 2018:
-        filters_MC = [\
-            "goodVertices",
-            "globalSuperTightHalo2016Filter",
-            "HBHENoiseFilter",
-            "HBHENoiseIsoFilter",
-            "EcalDeadCellTriggerPrimitiveFilter",
-            "BadPFMuonFilter",
-            #"ecalBadCalibFilterV2"
+            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
         ]
         
         filters_data = filters_MC + ["eeBadScFilter"]
@@ -92,7 +80,7 @@ def getFilters(ev, year=2018, dataset='None'):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2"
+            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
         ]
         
         filters_data = filters_MC + ["eeBadScFilter"]
