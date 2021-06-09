@@ -56,7 +56,7 @@ def mask_and(ev, collection, masks):
     return decision
 
 
-def getFilters(ev, year=2018, dataset='None', UL=False):
+def getFilters(ev, year=2018, dataset='None', UL=True):
     # filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
     #FIXME Flag_BadPFMuonDzFilter missing in EOY UL?? Should be added.
     if year == 2018:
