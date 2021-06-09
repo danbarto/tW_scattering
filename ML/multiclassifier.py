@@ -75,11 +75,11 @@ def test_train(test, train, y_test, y_train, labels=[], bins=25, node=0, plot_di
     h = {}
     for i, label in enumerate(labels):
         
-        #_ks, _p = scipy.stats.kstest(
-        #    train[:,node][(y_train==i)],
-        #    test[:,node][(y_test==i)]
-        #)
-        _ks, _p = -1, -1
+        _ks, _p = scipy.stats.kstest(
+            train[:,node][(y_train==i)],
+            test[:,node][(y_test==i)]
+        )
+        #_ks, _p = -1, -1
         
         ks[label] = (_p, _ks)
 
@@ -107,11 +107,11 @@ def test_train_cat(test, train, y_test, y_train, labels=[], n_cat=5, plot_dir=No
     h = {}
     for i, label in enumerate(labels):
         
-        #_ks, _p = scipy.stats.kstest(
-        #    train.argmax(axis=1)[(y_train==i)],
-        #    test.argmax(axis=1)[(y_test==i)]
-        #)
-        _ks, _p = -1, -1
+        _ks, _p = scipy.stats.kstest(
+            train.argmax(axis=1)[(y_train==i)],
+            test.argmax(axis=1)[(y_test==i)]
+        )
+        #_ks, _p = -1, -1
 
         ks[label] = (_p, _ks)
         
@@ -306,7 +306,7 @@ if __name__ == '__main__':
 
     # prepare the data
     if not args.load:
-        df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split_%s.h5'%args.version, label_ID='label_cat' if args.cat else 'label')
+        df_train, df_test, y_train_int, y_test_int = prepare_data('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split_%s.h5'%args.version, label_ID='label_cat' if args.cat else 'label')
     else:
         df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split_%s.h5'%args.version, preselection, reuse=True, label_ID='label_cat' if args.cat else 'label')
     
@@ -646,9 +646,9 @@ if __name__ == '__main__':
         weight_train = df_train['weight'].values,
     )
 
-    #for label in ks:
-    #    if ks[label][0]<0.05:
-    #        print ("- !! Found small p-value for process %s: %.2f"%(label, ks[label][0]))
+    for label in ks:
+        if ks[label][0]<0.05:
+            print ("- !! Found small p-value for process %s: %.2f"%(label, ks[label][0]))
 
     print ("Checking for overtraining in the different nodes...")
 
@@ -667,9 +667,9 @@ if __name__ == '__main__':
             weight_test = df_test['weight'].values,
             weight_train = df_train['weight'].values,
         )
-        #for label in ks:
-        #    if ks[label][0]<0.05:
-        #        print ("- !! Found small p-value for process %s in node %s: %.2f"%(label, node, ks[label][0]))
+        for label in ks:
+            if ks[label][0]<0.05:
+                print ("- !! Found small p-value for process %s in node %s: %.2f"%(label, node, ks[label][0]))
 
 
     # Correlations
