@@ -511,14 +511,24 @@ if __name__ == '__main__':
 
     }
 
-    my_labels = {
-        'topW_v2': 'top-W scat.',
-        'TTW': 'prompt',
-        'TTZ': 'lost lepton',
-        'TTH': 'nonprompt',
-        'ttbar': 'charge flip',
-        'rare': 'rare',
-    }
+    if args.cat:
+        my_labels = {
+            'topW_v2': 'top-W scat.',
+            'TTW': 'prompt',
+            'TTZ': 'lost lepton',
+            'TTH': 'nonprompt',
+            'ttbar': 'charge flip',
+            'rare': 'rare',
+        }
+    else:
+        my_labels = {
+            'topW_v2': 'top-W scat.',
+            'TTW': 'ttW',
+            'TTZ': 'ttZ',
+            'TTH': 'ttH',
+            'ttbar': 'nonprompt',
+            'rare': 'rare',
+        }
     
     my_colors = {
         'topW_v2': '#FF595E',
