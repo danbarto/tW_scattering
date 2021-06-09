@@ -237,9 +237,20 @@ def get_class_weight(df):
 
 if __name__ == '__main__':
 
-    load_weights = False
-    version = 'v13'
-    is_cat = True
+
+    import argparse
+
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--load', action='store_true', default=None, help="Load weights?")
+    argParser.add_argument('--cat', action='store_true', default=None, help="Use categories?")
+    argParser.add_argument('--fit', action='store_true', default=None, help="Do combine fit?")
+    argParser.add_argument('--version', action='store', default='v13', help="Version number")
+    args = argParser.parse_args()
+
+
+    load_weights = args.load
+    version = args.version
+    is_cat = args.cat
 
     plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ML/%s/"%version
 
@@ -580,51 +591,52 @@ if __name__ == '__main__':
          lumi=137,
         )
 
-    #raise NotImplementedError
 
-    # cards with NN    
-    SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='', systematics=True, categories=is_cat)
-    SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='', systematics=True, categories=is_cat)
+    if args.fit:
 
-    # as a comparison, cut based cards
-    SR_card_pos = makeCardFromHist(output, 'p_topW_pos', overflow='all', ext='', systematics=True)
-    SR_card_neg = makeCardFromHist(output, 'p_topW_neg', overflow='all', ext='', systematics=True)
+        # cards with NN    
+        SR_NN_card_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='', systematics=True, categories=is_cat)
+        SR_NN_card_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='', systematics=True, categories=is_cat)
+
+        # as a comparison, cut based cards
+        SR_card_pos = makeCardFromHist(output, 'p_topW_pos', overflow='all', ext='', systematics=True)
+        SR_card_neg = makeCardFromHist(output, 'p_topW_neg', overflow='all', ext='', systematics=True)
+            
+        SR_NN_card_bsm_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_pos)
+        SR_NN_card_bsm_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_neg)
+
+        card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
         
-    SR_NN_card_bsm_pos = makeCardFromHist(output, 'score_topW_pos', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_pos)
-    SR_NN_card_bsm_neg = makeCardFromHist(output, 'score_topW_neg', overflow='all', ext='_bsm', systematics=True, categories=is_cat, bsm_hist=h_score_topW_bsm_neg)
+        SR_NN_card = card.combineCards({'pos': SR_NN_card_pos, 'neg':SR_NN_card_neg})
+        results_NN = card.nllScan(SR_NN_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
+        
+        SR_card = card.combineCards({'pos': SR_card_pos, 'neg':SR_card_neg})
+        results = card.nllScan(SR_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
 
-    card = dataCard(releaseLocation='/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
-    
-    SR_NN_card = card.combineCards({'pos': SR_NN_card_pos, 'neg':SR_NN_card_neg})
-    results_NN = card.nllScan(SR_NN_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
-    
-    SR_card = card.combineCards({'pos': SR_card_pos, 'neg':SR_card_neg})
-    results = card.nllScan(SR_card, rmin=0, rmax=3, npoints=61, options=' -v -1')
+        #SR_NN_card_bsm = card.combineCards({'pos': SR_NN_card_bsm_pos, 'neg':SR_NN_card_bsm_neg})
+        #results_bsm_nll = card.calcNLL(SR_NN_card_bsm)
+        #results_sm_nll = card.calcNLL(SR_NN_card)
 
-    #SR_NN_card_bsm = card.combineCards({'pos': SR_NN_card_bsm_pos, 'neg':SR_NN_card_bsm_neg})
-    #results_bsm_nll = card.calcNLL(SR_NN_card_bsm)
-    #results_sm_nll = card.calcNLL(SR_NN_card)
+        card.cleanUp()
+        
+        print ("NN: NLL for r=0: %.2f"%(results_NN[results_NN['r']==0]['deltaNLL']*2)[0])
+        print ("cut: NLL for r=0: %.2f"%(results[results['r']==0]['deltaNLL']*2)[0])
 
-    card.cleanUp()
-    
-    print ("NN: NLL for r=0: %.2f"%(results_NN[results_NN['r']==0]['deltaNLL']*2)[0])
-    print ("cut: NLL for r=0: %.2f"%(results[results['r']==0]['deltaNLL']*2)[0])
+        fig, ax = plt.subplots(1,1,figsize=(10,10))
+        #plt.figure()
 
-    fig, ax = plt.subplots(1,1,figsize=(10,10))
-    #plt.figure()
+        ax.plot(results['r'][1:], results['deltaNLL'][1:]*2, label=r'Expected baseline SR', c='green')
+        ax.plot(results_NN['r'][1:], results_NN['deltaNLL'][1:]*2, label=r'Expected NN SR', c='black')
+        #plt.plot(results_opt['r'][1:], results_opt['deltaNLL'][1:]*2, label=r'Expected NN SR, +/- charge', c='orange')
+        #plt.plot(results_stat['r'][1:], results_stat['deltaNLL'][1:]*2, label=r'Expected NN SR, stat only', c='red')
+        #plt.plot(results_Run3['r'][1:], results_Run3['deltaNLL'][1:]*2, label=r'Expected NN SR, Run3', c='blue')
+        
+        ax.set_xlabel(r'$r$')
+        ax.set_ylabel(r'$-2\Delta  ln L$')
+        ax.legend()
 
-    ax.plot(results['r'][1:], results['deltaNLL'][1:]*2, label=r'Expected baseline SR', c='green')
-    ax.plot(results_NN['r'][1:], results_NN['deltaNLL'][1:]*2, label=r'Expected NN SR', c='black')
-    #plt.plot(results_opt['r'][1:], results_opt['deltaNLL'][1:]*2, label=r'Expected NN SR, +/- charge', c='orange')
-    #plt.plot(results_stat['r'][1:], results_stat['deltaNLL'][1:]*2, label=r'Expected NN SR, stat only', c='red')
-    #plt.plot(results_Run3['r'][1:], results_Run3['deltaNLL'][1:]*2, label=r'Expected NN SR, Run3', c='blue')
-    
-    ax.set_xlabel(r'$r$')
-    ax.set_ylabel(r'$-2\Delta  ln L$')
-    ax.legend()
-
-    fig.savefig(plot_dir+'/delta_NLL.pdf')
-    fig.savefig(plot_dir+'/delta_NLL.png')
+        fig.savefig(plot_dir+'/delta_NLL.pdf')
+        fig.savefig(plot_dir+'/delta_NLL.png')
 
     print ("Checking for overtraining in max node asignment...")
 

@@ -88,6 +88,10 @@ groups_UL = {
     'MuonEG_Run2018':       ['/MuonEG'],
     'EGamma_Run2018':       ['/EGamma'],
     'DoubleMuon_Run2018':   ['/DoubleMuon'],
+
+    'MuonEG':       ['/MuonEG'],
+    'DoubleEG':     ['/DoubleEG'],
+    'DoubleMuon':   ['/DoubleMuon'],
 }
 
 
@@ -135,6 +139,8 @@ def get_babies(data_path, small=False, year=2018):
         campaign = '.*'
     elif year=='UL2018':
         campaign = '.*(Summer20UL18|Run2018)'
+    elif year=='UL2017':
+        campaign = '.*(Summer20UL17|Run2017)'
     
     for sample in samples:
         for group in groups.keys():
