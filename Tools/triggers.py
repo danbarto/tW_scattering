@@ -113,23 +113,26 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
 
 
     # lepton triggers from here: https://indico.cern.ch/event/718554/contributions/3027981/attachments/1667626/2674497/leptontriggerreview.pdf
+    # TOP triggers are here: https://indico.cern.ch/event/995560/contributions/4189577/attachments/2174069/3671077/Dilepton_TriggerSF_TOPPAG.pdf
+    #FIXME how to include single lepton triggers / PDs without introducing overlap?
     if year == 2018:
         triggers['MuonEG'] = [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
-            "Mu27_Ele37_CaloIdL_MW",
-            "Mu37_Ele27_CaloIdL_MW",
+            "Mu27_Ele37_CaloIdL_MW",  #FIXME this is not in the TOP list
+            "Mu37_Ele27_CaloIdL_MW",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleMuon'] = [\
             "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
-            "Mu37_TkMu27",
+            "Mu37_TkMu27",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",  #FIXME not in the TOP list
             "DoubleEle25_CaloIdL_MW",
+            "Ele32_WPTight_Gsf",  # NEW!
         ]
 
         triggers['MET'] = [\
@@ -140,12 +143,46 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ]
         
     elif year == 2017:
+        triggers['MuonEG'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+        ]
+
+        triggers['DoubleMuon'] = [\
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8",
+        ]
+
+        triggers['DoubleEG'] = [\
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "DoubleEle33_CaloIdL_MW",
+        ]
+
         triggers['MET'] = [\
             "PFMET120_PFMHT120_IDTight",
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
         ]
         
     elif year == 2016:
+        triggers['MuonEG'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",  
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL",
+        ]
+
+        triggers['DoubleMuon'] = [\
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",
+            "Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL",
+            "Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ",
+        ]
+
+        triggers['DoubleEG'] = [\
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "DoubleEle33_CaloIdL_MW",
+            "DoubleEle33_CaloIdL_GsfTrkIdVL",
+        ]
+
         triggers['MET'] = [\
             "PFMET120_PFMHT120_IDTight",
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
@@ -156,21 +193,21 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         #print ("In MuonEG branch")
         trigger = mask_or(ev, "HLT", triggers["MuonEG"])
         #print (sum(trigger & ~same_flavor))
-        return (trigger & ~same_flavor)
+        return (trigger & ~same_flavor)  # effectively: mue, or muee, emue, muemu, emumu
         #return trigger
 
     elif re.search(re.compile("DoubleMuon"), dataset):
         #print ("In DoubleMuon branch")
         trigger = mask_or(ev, "HLT", triggers["DoubleMuon"])
         #print (sum(trigger & same_flavor & leading_mu))
-        return (trigger & same_flavor & leading_mu)
+        return (trigger & same_flavor & leading_mu)  # effectively: mumu, or mumue, mumumu
         #return trigger
 
     elif re.search(re.compile("DoubleEG|EGamma"), dataset):
         #print ("In EGamma branch")
         trigger = mask_or(ev, "HLT", triggers["DoubleEG"])
         #print (sum(trigger & same_flavor & leading_ele))
-        return (trigger & same_flavor & leading_ele)
+        return (trigger & same_flavor & leading_ele)  # effectively: ee, or eemu, eee
 
     else:
         #print ("In MC branch")
