@@ -305,8 +305,10 @@ if __name__ == '__main__':
     bins = [x/20 for x in range(21)]
 
     # prepare the data
-    df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split_v13.h5', label_ID='label_cat' if args.cat else 'label')
-    #df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split.h5', preselection, reuse=True)
+    if not args.load:
+        df_train, df_test, y_train_int, y_test_int = prepare_data('data/multiclass_input_v2.h5', preselection, reuse=False, fout='data/multiclass_input_v2_split_%s.h5'%args.version, label_ID='label_cat' if args.cat else 'label')
+    else:
+        df_train, df_test, y_train_int, y_test_int  = prepare_data('data/multiclass_input_v2_split_%s.h5'%args.version, preselection, reuse=True, label_ID='label_cat' if args.cat else 'label')
     
     X_train = df_train[variables].values
     X_test  = df_test[variables].values
