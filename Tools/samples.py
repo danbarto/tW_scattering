@@ -72,7 +72,7 @@ groups_UL = {
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
     'TTH':           ['/TH[W,Q][-_]', '/ttHJetToNonbb[-_]'],
-    'TTZ':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
+    'TTZ':           ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
     'TTTT':          ['/TTTT[-_]'],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],

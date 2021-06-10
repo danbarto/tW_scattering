@@ -12,14 +12,32 @@ from Tools.helpers import yahist_1D_lookup
 
 
 class btag_scalefactor:
-    def __init__(self, year):
+    def __init__(self, year, UL=True):
         self.year = year
 
         if self.year == 2016:
             pass
         elif self.year == 2017:
-            pass
-        elif self.year == 2018:
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_V2.csv')
+            self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
+
+            # and load the efficiencies
+            self.effs = {
+                'b':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL17_b_eff_deepJet.json")),
+                'c':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL17_c_eff_deepJet.json")),
+                'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL17_light_eff_deepJet.json")),
+            }
+        elif self.year == 2018 and UL:
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL18SF.csv')
+            self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
+
+            # and load the efficiencies
+            self.effs = {
+                'b':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL18_b_eff_deepJet.json")),
+                'c':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL18_c_eff_deepJet.json")),
+                'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL18_light_eff_deepJet.json")),
+            }
+        elif self.year == 2018 and not UL:
             SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_102XSF_V2.csv')
             self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
 
