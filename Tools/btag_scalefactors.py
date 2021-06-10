@@ -18,7 +18,7 @@ class btag_scalefactor:
         if self.year == 2016:
             pass
         elif self.year == 2017:
-            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_V2.csv')
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_WPonly_V2.csv')
             self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
 
             # and load the efficiencies
@@ -28,7 +28,7 @@ class btag_scalefactor:
                 'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL17_light_eff_deepJet.json")),
             }
         elif self.year == 2018 and UL:
-            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL18SF.csv')
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL18SF_WPonly.csv')
             self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
 
             # and load the efficiencies
