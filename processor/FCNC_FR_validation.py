@@ -143,8 +143,8 @@ class nano_analysis(processor.ProcessorABC):
         ele_l_p = ele_l[((ele_l.genPartFlav==1) | (ele_l.genPartFlav==15))]
         ele_l_np = ele_l[((ele_l.genPartFlav!=1) & (ele_l.genPartFlav!=15))]
         
-        mu_t         = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
-        mu_t_p = mu_t[((mu_t.genPartFlav==1) | (mu_t.genPartFlav==15))]
+        mu_t    = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        mu_t_p  = mu_t[((mu_t.genPartFlav==1) | (mu_t.genPartFlav==15))]
         mu_t_np = mu_t[((mu_t.genPartFlav!=1) & (mu_t.genPartFlav!=15))]
 
         mu_l = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
