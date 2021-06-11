@@ -413,7 +413,7 @@ Muon:
      
   fakeableFCNC:
     pt:
-      min: 10
+      min: 20
     eta:
       max: 2.4
       extra: abs

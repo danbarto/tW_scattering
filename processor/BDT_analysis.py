@@ -66,11 +66,11 @@ class nano_analysis(processor.ProcessorABC):
         btag = getBTagsDeepFlavB(jets, year=self.year)
         
         selection = PackedSelection()
-        selection.add("MET<20",   (ev.MET.pt < 20))
+        #selection.add("MET<20",   (ev.MET.pt < 20))
         selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
         selection.add("nlep", (ak.num(lepton, axis=1) >= 2))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-        selection_reqs = ["MET<20", "njets", "nbtag", "nlep"]
+        selection_reqs = ["njets", "nbtag", "nlep"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
                             
