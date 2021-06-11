@@ -8,7 +8,7 @@ import numpy as np
 # events = NanoEventsFactory.from_root('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v2/nanoSkim_1.root', schemaclass=NanoAODSchema).events()
 
 # events = NanoEventsFactory.from_root('root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/QCD_Pt-120to170_MuEnrichedPt5_TuneCP5_13TeV_pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/70000/DE335891-829A-B943-99BE-E5A179F5F3EB.root', schemaclass=NanoAODSchema).events()
-events = NanoEventsFactory.from_root('/hadoop/cms/store/user/ksalyer/FCNC_NanoSkim/fcnc_v3/TTJets_TuneCUETP8M2T4_13TeV-amcatnloFXFX-pythia8_RunIISummer16NanoAODv7-PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1_NANOAODSIM_fcnc_v3/output_40.root', schemaclass=NanoAODSchema).events()
+events = NanoEventsFactory.from_root('/nfs-7/userdata/ksalyer/fcnc/fcnc_v6_SRonly_5may2021/2018/signal_hct_atop.root', schemaclass=NanoAODSchema).events()
 #
 from Tools.objects import *
 from Tools.basic_objects import *
@@ -25,60 +25,15 @@ from processor.default_accumulators import desired_output, add_processes_to_outp
 #electron     = Collections(events, "Electron", "tightSSTTH").get()
 
 ## now do whatever you would have done in the processor
+year=2018
 
-def SS_fill_weighted(output, mumu_sel, ee_sel, mue_sel, emu_sel, mu_weights=None, e_weights=None, **kwargs):
-    if len(kwargs.keys())==3: #dataset, axis_1, axis_2
-        vals_1 = np.array([])
-        vals_2 = np.array([])
-        weights = np.array([])
-        for sel in [mumu_sel, emu_sel]:
-            vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
-            vals_2 = np.concatenate((vals_2, list(kwargs.values())[2][sel]))
-            if mu_weights == None:
-                tmp_mu_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
-                weights = np.concatenate((weights, tmp_mu_weights))
-            else:
-                weights = np.concatenate((weights, mu_weights[sel]))
-        for sel in [ee_sel, mue_sel]:
-            vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
-            vals_2 = np.concatenate((vals_2, list(kwargs.values())[2][sel]))
-            if e_weights == None:
-                tmp_e_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
-                weights = np.concatenate((weights, tmp_e_weights))
-            else:
-                weights = np.concatenate((weights, e_weights[sel]))
-        return_dict = kwargs
-        return_dict[list(kwargs.keys())[1]] = vals_1
-        return_dict[list(kwargs.keys())[2]] = vals_2
+events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
 
-    elif len(kwargs.keys())==2: #dataset, axis_1
-        vals_1 = np.array([])
-        weights = np.array([])
-        for sel in [mumu_sel, emu_sel]:
-            vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
-            if mu_weights == None:
-                tmp_mu_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
-                weights = np.concatenate((weights, tmp_mu_weights))
-            else:
-                weights = np.concatenate((weights, mu_weights[sel]))
-        for sel in [ee_sel, mue_sel]:
-            vals_1 = np.concatenate((vals_1, list(kwargs.values())[1][sel]))
-            if e_weights == None:
-                tmp_e_weights = np.ones_like(kwargs[list(kwargs.keys())[1]][sel])
-                weights = np.concatenate((weights, tmp_e_weights))
-            else:
-                weights = np.concatenate((weights, e_weights[sel]))
-        return_dict = kwargs
-        return_dict[list(kwargs.keys())[1]] = vals_1
-
-    #fill the histogram
-    output.fill(**return_dict, weight=weights)
-
-
-presel = ak.num(events.Jet)>=0
+# we can use a very loose preselection to filter the events. nothing is done with this presel, though
+presel = ak.num(events.Jet)>=2
 
 ev = events[presel]
-output = processor.dict_accumulator(desired_output).identity()
+
 ##Jets
 Jets = events.Jet
 
@@ -87,76 +42,96 @@ met_pt  = ev.MET.pt
 met_phi = ev.MET.phi
 
  ### For FCNC, we want electron -> tightTTH
-ele_t = Collections(ev, "Electron", "tightFCNC", year=2016).get()
-ele_t_p = ele_t[((ele_t.genPartFlav==1) | (ele_t.genPartFlav==15))]
-ele_t_np = ele_t[((ele_t.genPartFlav!=1) & (ele_t.genPartFlav!=15))]
+ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
+ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()    
+mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
+mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
 
-ele_l = Collections(ev, "Electron", "fakeableFCNC", year=2016).get()
-ele_l_p = ele_l[((ele_l.genPartFlav==1) | (ele_l.genPartFlav==15))]
-ele_l_np = ele_l[((ele_l.genPartFlav!=1) & (ele_l.genPartFlav!=15))]
-
-mu_t         = Collections(ev, "Muon", "tightFCNC", year=2016).get()
-mu_t_p = mu_t[((mu_t.genPartFlav==1) | (mu_t.genPartFlav==15))]
-mu_t_np = mu_t[((mu_t.genPartFlav!=1) & (mu_t.genPartFlav!=15))]
-
-mu_l = Collections(ev, "Muon", "fakeableFCNC", year=2016).get()
-mu_l_p = mu_l[((mu_l.genPartFlav==1) | (mu_l.genPartFlav==15))]
-mu_l_np = mu_l[((mu_l.genPartFlav!=1) & (mu_l.genPartFlav!=15))]
+lepton  = ak.concatenate([mu_l, ele_l], axis=1)
 
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
 jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
 jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
+btag = getBTagsDeepFlavB(jets, year=year)
 
-"""Now We are making the different selections for the different regions. As a reminder, our SR is one tight gen-level prompt and one tight gen-level nonprompt, and our CR is
-one tight gen-level prompt and one loose NOT tight gen-level nonprompt"""
+selection = PackedSelection()
+selection.add("MET<20",   (ev.MET.pt < 20))
+selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
+selection.add("btag", (ak.num(btag, axis=1) >= 0))
+selection.add("nlep", (ak.num(lepton, axis=1) >= 2))
+selection_reqs = ["MET<20", "njets", "btag", "nlep"]
+fcnc_reqs_d = { sel: True for sel in selection_reqs}
+FCNC_sel = selection.require(**fcnc_reqs_d)
+#sorting
+sorted_index = ak.argsort(lepton[FCNC_sel].pt, axis=-1, ascending=False)
+sorted_lep = lepton[FCNC_sel]
+sorted_lep = sorted_lep[sorted_index]
+sorted_pt = lepton[FCNC_sel].pt[sorted_index]
+sorted_eta = lepton[FCNC_sel].eta[sorted_index]
+sorted_phi = lepton[FCNC_sel].phi[sorted_index]
+sorted_dxy = lepton[FCNC_sel].dxy[sorted_index]
+sorted_dz = lepton[FCNC_sel].dz[sorted_index]
+sorted_jet_index = ak.argsort(jets[FCNC_sel].pt, axis=-1, ascending=False)
+sorted_jet_pt = jets[FCNC_sel].pt[sorted_jet_index]
+sorted_btag_index = ak.argsort(btag[FCNC_sel].pt, axis=-1, ascending=False)
+sorted_btag_pt = btag[FCNC_sel].pt[sorted_btag_index]
 
-mumu_SR = ak.concatenate([mu_t_p, mu_t_np], axis=1)
-mumu_SR_SS = (ak.sum(mumu_SR.charge, axis=1)!=0)
-mumu_SR_sel = (ak.num(mu_t_p)==1) & (ak.num(mu_t_np)==1) & (ak.num(mu_l)==2) & jet_sel & mumu_SR_SS & (ak.num(mumu_SR[mumu_SR.pt>20])>1) & (ak.num(ele_l)==0)
+leadlep_pt = ak.flatten(sorted_pt[:,0:1])
+subleadlep_pt = ak.flatten(sorted_pt[:,1:2])
+leadlep_eta = ak.flatten(sorted_eta[:,0:1])
+subleadlep_eta = ak.flatten(sorted_eta[:,1:2])
+leadlep_phi = ak.flatten(sorted_phi[:,0:1])
+subleadlep_phi = ak.flatten(sorted_phi[:,1:2])
+leadlep_dxy = ak.flatten(sorted_dxy[:,0:1])
+subleadlep_dxy = ak.flatten(sorted_dxy[:,1:2])    
+leadlep_dz = ak.flatten(sorted_dz[:,0:1])
+subleadlep_dz = ak.flatten(sorted_dz[:,1:2])
 
-mumu_CR = ak.concatenate([mu_t_p, mu_l_np], axis=1)
-mumu_CR_SS = (ak.sum(mumu_CR.charge, axis=1)!=0)
-mumu_CR_sel = (ak.num(mu_t_p)==1) & (ak.num(mu_l_np)==1) & (ak.num(mu_l)==2) & jet_sel & mumu_CR_SS & (ak.num(mumu_CR[mumu_CR.pt>20])>1) & (ak.num(ele_l)==0)
+leadlep = ak.flatten(sorted_lep[:,0:1])
+subleadlep = ak.flatten(sorted_lep[:,1:2])
+leadlep_subleadlep_mass = (leadlep + subleadlep).mass
+nelectron = ak.num(ele_l[FCNC_sel], axis=1)
+MET_pt = ev[FCNC_sel].MET.pt
+MET_phi = ev[FCNC_sel].MET.phi
+#njets
+njets = ak.num(jets, axis=1)[FCNC_sel]
+most_forward_pt = ak.flatten(jets[FCNC_sel].pt[ak.singletons(ak.argmax(abs(jets[FCNC_sel].eta), axis=1))])
+leadjet_pt = ak.flatten(sorted_jet_pt[:,0:1])
+subleadjet_pt = ak.flatten(sorted_jet_pt[:,1:2])
+#this sometimes is not defined, so ak.firsts relpaces the empty arrays with None, then we can set all None to zero
+subsubleadjet_pt = ak.fill_none(ak.firsts(sorted_jet_pt[:,2:3]), 0)
 
-ee_SR = ak.concatenate([ele_t_p, ele_t_np], axis=1)
-ee_SR_SS = (ak.sum(ee_SR.charge, axis=1)!=0)
-ee_SR_sel = (ak.num(ele_t_p)==1) & (ak.num(ele_t_np)==1) & (ak.num(ele_l)==2) & jet_sel & ee_SR_SS & (ak.num(ee_SR[ee_SR.pt>20])>1) & (ak.num(mu_l)==0)
+#btags
+nbtag = ak.num(btag)[FCNC_sel]
+leadbtag_pt = sorted_btag_pt[:,0:1] #this sometimes is not defined (some of the arrays are empty)
+# ak.firsts() relpaces the empty arrays with None, then we can set all None to zero
+leadbtag_pt = ak.fill_none(ak.firsts(leadbtag_pt), 0)    
+#HT
+ht = ak.sum(jets.pt, axis=1)[FCNC_sel]
+#MT of lead and subleading lepton with ptmiss (MET)
+mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
+mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
 
-ee_CR = ak.concatenate([ele_t_p, ele_l_np], axis=1)
-ee_CR_SS = (ak.sum(ee_CR.charge, axis=1)!=0)
-ee_CR_sel = (ak.num(ele_t_p)==1) & (ak.num(ele_l_np)==1) & (ak.num(ele_l)==2) & jet_sel & ee_CR_SS & (ak.num(ee_CR[ee_CR.pt>20])>1) & (ak.num(mu_l)==0)
+BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
+                  "HT":ht,
+                  "LeadLep_eta":leadlep_eta,
+                  "MET_pt":ev.MET.pt,
+                  "LeadLep_pt":leadlep_pt,
+                  "LeadLep_dxy":leadlep_dxy,
+                  "LeadLep_dz":leadlep_dz,
+                  "SubLeadLep_pt":subleadlep_pt,
+                  "SubLeadLep_eta":subleadlep_eta,
+                  "SubLeadLep_dxy":subleadlep_dxy,
+                  "SubLeadLep_dz":subleadlep_dz,
+                  "nJet":njets,
+                  "nbtag":nbtag,
+                  "LeadJet_pt":leadjet_pt,
+                  "SubLeadJet_pt":subleadjet_pt,
+                  "SubSubLeadJet_pt":subsubleadjet_pt,
+                  "nElectron":nelectron,
+                  "MET_pt":MET_pt,
+                  "LeadBtag_pt":leadbtag_pt,
+                  "MT_LeadLep_MET":mt_leadlep_met,
+                  "MT_SubLeadLep_MET":mt_leadlep_met}
 
-mue_SR = ak.concatenate([mu_t_p, ele_t_np], axis=1)
-mue_SR_SS = (ak.sum(mue_SR.charge, axis=1)!=0)
-mue_SR_sel = (ak.num(mu_t_p)==1) & (ak.num(ele_t_np)==1) & (ak.num(ele_l)==1) & jet_sel & mue_SR_SS & (ak.num(mue_SR[mue_SR.pt>20])>1) & (ak.num(mu_l)==1)
-
-mue_CR = ak.concatenate([mu_t_p, ele_l_np], axis=1)
-mue_CR_SS = (ak.sum(mue_CR.charge, axis=1)!=0)
-mue_CR_sel = (ak.num(mu_t_p)==1) & (ak.num(ele_l_np)==1) & (ak.num(ele_l)==1) & jet_sel & mue_CR_SS & (ak.num(mue_CR[mue_CR.pt>20])>1) & (ak.num(mu_l)==1)
-
-emu_SR = ak.concatenate([ele_t_p, mu_t_np], axis=1)
-emu_SR_SS = (ak.sum(emu_SR.charge, axis=1)!=0)
-emu_SR_sel = (ak.num(ele_t_p)==1) & (ak.num(mu_t_np)==1) & (ak.num(mu_l)==1) & jet_sel & emu_SR_SS & (ak.num(emu_SR[emu_SR.pt>20])>1) & (ak.num(ele_l)==1)
-
-emu_CR = ak.concatenate([ele_t_p, mu_l_np], axis=1)
-emu_CR_SS = (ak.sum(emu_CR.charge, axis=1)!=0)
-emu_CR_sel = (ak.num(ele_t_p)==1) & (ak.num(mu_l_np)==1) & (ak.num(mu_l)==1) & jet_sel & emu_CR_SS & (ak.num(emu_CR[emu_CR.pt>20])>1) & (ak.num(ele_l)==1)
-
-#combine all selections for generic CR and SR
-CR_sel = mumu_CR_sel | ee_CR_sel | mue_CR_sel | emu_CR_sel
-SR_sel = mumu_SR_sel | ee_SR_sel | mue_SR_sel | emu_SR_sel
-
-electron_2018 = fake_rate("../data/fake_rate/FR_electron_2018.p")
-electron_2017 = fake_rate("../data/fake_rate/FR_electron_2017.p")
-electron_2016 = fake_rate("../data/fake_rate/FR_electron_2016.p")
-muon_2018 = fake_rate("../data/fake_rate/FR_muon_2018.p")
-muon_2017 = fake_rate("../data/fake_rate/FR_muon_2017.p")
-muon_2016 = fake_rate("../data/fake_rate/FR_muon_2016.p")
-
-weight_muon = muon_2016.FR_weight(mu_l_np)
-weight_electron = electron_2016.FR_weight(ele_l_np)
-breakpoint()
-#fill combined histograms now (basic definitions are in default_accumulators.py)
-SS_fill_weighted(output["MET"], mumu_SR_sel, ee_SR_sel, mue_SR_sel, emu_SR_sel, dataset="debug",  pt=ev.MET.pt, phi=ev.MET.phi)
-print(ak.max(ak.concatenate([ev.Muon.pt, ev.Electron.pt], axis=2), axis=2))

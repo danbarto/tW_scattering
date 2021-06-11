@@ -17,44 +17,32 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
+from Tools.fake_rate import fake_rate
+from Tools.SS_selection import SS_selection
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, debug=False):
+    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[]):
         self.variations = variations
         self.year = year
         self.debug = debug
         self.btagSF = btag_scalefactor(year)
-        
-        self._accumulator = processor.dict_accumulator( accumulator )
+        self._accumulator = processor.dict_accumulator(accumulator)
+        self.BDT_params = BDT_params
 
     @property
     def accumulator(self):
-        return self._accumulator
-
+        return self._accumulator  
+  
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
-        
-        events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet in event
+
+        events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
         output = self.accumulator.identity()
         
         # we can use a very loose preselection to filter the events. nothing is done with this presel, though
-        presel = ak.num(events.Jet)>=0
+        presel = ak.num(events.Jet)>=2
         
         ev = events[presel]
-        dataset = ev.metadata['dataset']
-        
-        # load the config - probably not needed anymore
-        # cfg = loadConfig()
-        
-        output['totalEvents']['all'] += len(events)
-        output['skimmedEvents']['all'] += len(ev)
-        
-        ### For FCNC, we want electron -> tightTTH
-        electron         = Collections(ev, "Electron", "tightFCNC").get()
-        fakeableelectron = Collections(ev, "Electron", "fakeableFCNC").get()
-        
-        muon         = Collections(ev, "Muon", "tightFCNC").get()
-        fakeablemuon = Collections(ev, "Muon", "fakeableFCNC").get()
         
         ##Jets
         Jets = events.Jet
@@ -63,71 +51,108 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
     
-        lepton   = fakeablemuon   #ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
-        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
-        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+         ### For FCNC, we want electron -> tightTTH
+        ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
+        ele_l = Collections(ev, "Electron", "fakeableFCNC", year=self.year).get()    
+        mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
+        
+        lepton  = ak.concatenate([mu_l, ele_l], axis=1)
+        
+        #clean jets :
+        # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
+        jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
+        jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
+        btag = getBTagsDeepFlavB(jets, year=self.year)
         
         selection = PackedSelection()
-        selection.add('MET<20',   (ev.MET.pt < 20))
-        selection.add('mt<20',     min_mt_lep_met < 20)
-        #selection.add('MET<19',        (ev.MET.pt<19) )
-        selection_reqs = ['MET<20', 'mt<20']#, 'MET<19']
+        selection.add("MET<20",   (ev.MET.pt < 20))
+        selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
+        selection.add("nlep", (ak.num(lepton, axis=1) >= 2))
+        selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
+        selection_reqs = ["MET<20", "njets", "nbtag", "nlep"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
-        fcnc_selection = selection.require(**fcnc_reqs_d)
+        FCNC_sel = selection.require(**fcnc_reqs_d)
+                            
+        #sorting
+        sorted_index = ak.argsort(lepton[FCNC_sel].pt, axis=-1, ascending=False)
+        sorted_lep = lepton[FCNC_sel][sorted_index]
+        sorted_pt = lepton[FCNC_sel].pt[sorted_index]
+        sorted_eta = lepton[FCNC_sel].eta[sorted_index]
+        sorted_phi = lepton[FCNC_sel].phi[sorted_index]
+        sorted_dxy = lepton[FCNC_sel].dxy[sorted_index]
+        sorted_dz = lepton[FCNC_sel].dz[sorted_index]
+        sorted_jet_index = ak.argsort(jets[FCNC_sel].pt, axis=-1, ascending=False)
+        sorted_jet_pt = jets[FCNC_sel].pt[sorted_jet_index]
+        sorted_btag_index = ak.argsort(btag[FCNC_sel].pt, axis=-1, ascending=False)
+        sorted_btag_pt = btag[FCNC_sel].pt[sorted_btag_index]
         
-        # define the weight
-        weight = Weights( len(ev) )
+        leadlep_pt = ak.flatten(sorted_pt[:,0:1])
+        subleadlep_pt = ak.flatten(sorted_pt[:,1:2])
+        leadlep_eta = ak.flatten(sorted_eta[:,0:1])
+        subleadlep_eta = ak.flatten(sorted_eta[:,1:2])
+        leadlep_phi = ak.flatten(sorted_phi[:,0:1])
+        subleadlep_phi = ak.flatten(sorted_phi[:,1:2])
+        leadlep_dxy = ak.flatten(sorted_dxy[:,0:1])
+        subleadlep_dxy = ak.flatten(sorted_dxy[:,1:2])    
+        leadlep_dz = ak.flatten(sorted_dz[:,0:1])
+        subleadlep_dz = ak.flatten(sorted_dz[:,1:2])
         
-        if not dataset=='MuonEG':
-            # generator weight
-            weight.add("weight", ev.genWeight)
+        leadlep = ak.flatten(sorted_lep[:,0:1])
+        subleadlep = ak.flatten(sorted_lep[:,1:2])
+        leadlep_subleadlep_mass = (leadlep + subleadlep).mass
+        nelectron = ak.num(ele_l[FCNC_sel], axis=1)
+        MET_pt = ev[FCNC_sel].MET.pt
+        MET_phi = ev[FCNC_sel].MET.phi
+        #njets
+        njets = ak.num(jets, axis=1)[FCNC_sel]
+        most_forward_pt = ak.flatten(jets[FCNC_sel].pt[ak.singletons(ak.argmax(abs(jets[FCNC_sel].eta), axis=1))])
+        leadjet_pt = ak.flatten(sorted_jet_pt[:,0:1])
+        subleadjet_pt = ak.flatten(sorted_jet_pt[:,1:2])
+        #this sometimes is not defined, so ak.firsts relpaces the empty arrays with None, then we can set all None to zero
+        subsubleadjet_pt = ak.fill_none(ak.firsts(sorted_jet_pt[:,2:3]), 0)
 
-        jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
-        single_muon_sel = (ak.num(muon)==1) & (ak.num(fakeablemuon)==1) | (ak.num(muon)==0) & (ak.num(fakeablemuon)==1)
-        single_electron_sel = (ak.num(electron)==1) & (ak.num(fakeableelectron)==1) | (ak.num(electron)==0) & (ak.num(fakeableelectron)==1)
-        fcnc_muon_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
-        fcnc_electron_sel = (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection & single_electron_sel
-        tight_muon_sel     = (ak.num(muon)==1)             & fcnc_muon_sel
-        loose_muon_sel     = (ak.num(fakeablemuon)==1)     & fcnc_muon_sel
-        tight_electron_sel = (ak.num(electron)==1)         & fcnc_electron_sel
-        loose_electron_sel = (ak.num(fakeableelectron)==1) & fcnc_electron_sel
-        
-        output['single_mu_fakeable'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeablemuon[loose_muon_sel].eta)))
-        )
-        output['single_mu'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(muon[tight_muon_sel].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(muon[tight_muon_sel].eta)))
-        )
-        output['single_e_fakeable'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(fakeableelectron[loose_electron_sel].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(fakeableelectron[loose_electron_sel].eta)))
-        )
-        output['single_e'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(electron[tight_electron_sel].conePt)),
-            eta = np.abs(ak.to_numpy(ak.flatten(electron[tight_electron_sel].eta)))
-        )
-        
-        if self.debug:
-            #create pandas dataframe for debugging
-            passed_events = ev[tight_muon_sel]
-            passed_muons = muon[tight_muon_sel]
-            event_p = ak.to_pandas(passed_events[["event"]])
-            event_p["MET_PT"] = passed_events["MET"]["pt"]
-            event_p["mt"] = min_mt_lep_met[tight_muon_sel]
-            event_p["num_tight_mu"] = ak.to_numpy(ak.num(muon)[tight_muon_sel])
-            event_p["num_loose_mu"] = ak.num(fakeablemuon)[tight_muon_sel]
-            muon_p = ak.to_pandas(ak.flatten(passed_muons)[["pt", "conePt", "eta", "dz", "dxy", "ptErrRel", "miniPFRelIso_all", "jetRelIsoV2", "jetRelIso", "jetPtRelv2"]])
-            #convert to numpy array for the output
-            events_array = pd.concat([muon_p, event_p], axis=1)
+        #btags
+        nbtag = ak.num(btag)[FCNC_sel]
+        leadbtag_pt = sorted_btag_pt[:,0:1] #this sometimes is not defined (some of the arrays are empty)
+        # ak.firsts() relpaces the empty arrays with None, then we can set all None to zero
+        leadbtag_pt = ak.fill_none(ak.firsts(leadbtag_pt), 0)    
+        #HT
+        ht = ak.sum(jets.pt, axis=1)[FCNC_sel]
+        #MT of lead and subleading lepton with ptmiss (MET)
+        mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
+        mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
 
-            output['muons_df'] += processor.column_accumulator(events_array.to_numpy())
+        BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
+                          "HT":ht,
+                          "LeadLep_eta":leadlep_eta,
+                          "MET_pt":MET_pt,
+                          "LeadLep_pt":leadlep_pt,
+                          "LeadLep_dxy":leadlep_dxy,
+                          "LeadLep_dz":leadlep_dz,
+                          "SubLeadLep_pt":subleadlep_pt,
+                          "SubLeadLep_eta":subleadlep_eta,
+                          "SubLeadLep_dxy":subleadlep_dxy,
+                          "SubLeadLep_dz":subleadlep_dz,
+                          "nJet":njets,
+                          "nbtag":nbtag,
+                          "LeadJet_pt":leadjet_pt,
+                          "SubLeadJet_pt":subleadjet_pt,
+                          "SubSubLeadJet_pt":subsubleadjet_pt,
+                          "nElectron":nelectron,
+                          "MET_pt":MET_pt,
+                          "LeadBtag_pt":leadbtag_pt,
+                          "MT_LeadLep_MET":mt_leadlep_met,
+                          "MT_SubLeadLep_MET":mt_leadlep_met,
+                          "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass
+                          }
         
+        #create pandas dataframe
+        passed_events = ev[FCNC_sel]
+        event_p = ak.to_pandas(passed_events[["event"]])
+        for param in self.BDT_params:
+            event_p[param] = BDT_param_dict[param]
+        output['BDT_df'] += processor.column_accumulator(event_p.to_numpy())
         return output
 
     def postprocess(self, accumulator):
