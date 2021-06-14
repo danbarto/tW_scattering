@@ -25,7 +25,7 @@ from klepto.archives import dir_archive
 if __name__ == '__main__':
 
 
-    small = True
+    small = False
     cfg = loadConfig()
 
     plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/UL/'

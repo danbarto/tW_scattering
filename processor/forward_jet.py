@@ -392,7 +392,7 @@ if __name__ == '__main__':
     overwrite = True
     year = 2018
     local = True
-    small = True
+    small = False
 
     # load the config and the cache
     cfg = loadConfig()
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.0/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.2_dilep/', year='UL2018')
     
     fileset = {
         #'tW_scattering': fileset_all['tW_scattering'],
