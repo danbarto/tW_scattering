@@ -1,30 +1,22 @@
 import uproot
+import glob
 from Tools.helpers import get_samples
 from Tools.config_helpers import redirector_ucsd, redirector_fnal
 from Tools.nano_mapping import make_fileset, nano_mapping
 
 
-samples = get_samples(f_in='samples_QCD.yaml')
+base_dir = "/nfs-7/userdata/ksalyer/fcnc/fcnc_v6_SRonly_5may2021/2018/"
+background_files = glob.glob(base_dir + "*.root")
+fileset = {"background": background_files}
 
-fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=False)
 print(fileset)
-
-<<<<<<< HEAD
 
 good = []
 bad = []
 #breakpoint()
 for n in range(len(list(fileset.keys()))):
     for f_in in fileset[list(fileset.keys())[n]]:
-=======
-fileset = make_fileset(['TTW'], samples, redirector=redirector_ucsd, small=False)
 
-good = []
-bad = []
-
-for sample in list(fileset.keys()):
-    for f_in in fileset[sample]:
->>>>>>> 6987d93c61482b8369a70afe8a3071d806185974
         print (f_in)
         try:
             tree = uproot.open(f_in)["Events"]

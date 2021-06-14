@@ -126,7 +126,7 @@ class Collections:
             ev['Muon', 'jetRelIso'] = ev.Muon.jetRelIso
             ev['Muon', 'jetPtRelv2'] = ev.Muon.jetPtRelv2
             ev['Muon', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Muon.jetRelIso, ev.Muon.jetPtRelv2, I_2, I_3) & (ev.Muon.miniPFRelIso_all < I_1)
-            ev['Muon', 'boolFCNCfake'] = (ev.Muon.genPartFlav != 1) & (ev.Muon.genPartFlav != 15)
+            #ev['Muon', 'boolFCNCfake'] = (ev.Muon.genPartFlav != 1) & (ev.Muon.genPartFlav != 15)
 
             self.cand = ev.Muon
             
@@ -172,7 +172,7 @@ class Collections:
             ev['Electron', 'jetRelIso'] = ev.Electron.jetRelIso
             ev['Electron', 'jetPtRelv2'] = ev.Electron.jetPtRelv2
             ev['Electron', 'boolFCNCIso'] = self.getFCNCIsolation(ev.Electron.jetRelIso, ev.Electron.jetPtRelv2, I_2, I_3) & (ev.Electron.miniPFRelIso_all < I_1)
-            ev['Electron', 'boolFCNCfake'] = (ev.Electron.genPartFlav != 1) & (ev.Electron.genPartFlav != 15)
+            #ev['Electron', 'boolFCNCfake'] = (ev.Electron.genPartFlav != 1) & (ev.Electron.genPartFlav != 15)
             
             self.cand = ev.Electron
             
