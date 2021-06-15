@@ -6,7 +6,7 @@ from Tools.nano_mapping import make_fileset, nano_mapping
 
 samples = get_samples()
 
-fileset = make_fileset(['TTW'], samples, redirector=redirector_ucsd, small=False)
+fileset = make_fileset(['QCD'], samples, redirector=redirector_ucsd, small=False, year='UL2018')
 
 good = []
 bad = []
