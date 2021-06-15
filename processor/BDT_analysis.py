@@ -61,8 +61,8 @@ class nano_analysis(processor.ProcessorABC):
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
         sorted_index_nofilter = ak.argsort(lepton.pt, axis=-1, ascending=False)
         sorted_lep_nofilter = lepton[sorted_index_nofilter]
-        leadlep_nofilter = ak.flatten(sorted_lep_nofilter[:,0:1])
-        subleadlep_nofilter = ak.flatten(sorted_lep_nofilter[:,1:2])
+        leadlep_nofilter = sorted_lep_nofilter[:,0:1]
+        subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
         
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
@@ -71,28 +71,16 @@ class nano_analysis(processor.ProcessorABC):
         btag = getBTagsDeepFlavB(jets, year=self.year)
         
         selection = PackedSelection()
-        #selection.add("MET<20",   (ev.MET.pt < 20))
         selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
         selection.add("nlep", (ak.num(lepton, axis=1) == 2))
-        #selection.add("SS", (leadlep_nofilter.charge + subleadlep_nofilter.charge != 0))
-        #the above doesn't work because (I think) some events do not have 2 leptons that pass the loose cuts, and so leadlep + subleadlep
-        #indexes different sized arrays
+        selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-        selection_reqs = ["njets", "nbtag", "nlep"]
+        selection_reqs = ["njets", "nbtag", "nlep", "SS"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
-        
-        # attempt #2 at making SS selection (after we require nlep==2)
-        # this is sloppier
-        # "operands could not be broadcast together with shapes (1,51037) (1,23905)"
-        sorted_index_preSS = ak.argsort(lepton[FCNC_sel].pt, axis=-1, ascending=False)
-        sorted_lep_preSS = lepton[FCNC_sel][sorted_index_preSS]
-        leadlep_preSS = ak.flatten(sorted_lep_preSS[:,0:1])
-        subleadlep_preSS = ak.flatten(sorted_lep_preSS[:,1:2])
-        SS_selection = (leadlep_preSS.charge + subleadlep_preSS.charge != 0)
-        FCNC_sel = FCNC_sel & SS_selection
-        
+
         #sorting
+        sorted_index = ak.argsort(lepton[FCNC_sel].pt, axis=-1, ascending=False)
         sorted_pt = lepton[FCNC_sel].pt[sorted_index]
         sorted_eta = lepton[FCNC_sel].eta[sorted_index]
         sorted_phi = lepton[FCNC_sel].phi[sorted_index]
@@ -114,7 +102,10 @@ class nano_analysis(processor.ProcessorABC):
         leadlep_dz = ak.flatten(sorted_dz[:,0:1])
         subleadlep_dz = ak.flatten(sorted_dz[:,1:2])
         
-        leadlep_subleadlep_mass = (leadlep + subleadlep).mass
+        sorted_lep = lepton[FCNC_sel][sorted_index]
+        leadlep = sorted_lep[:,0:1]
+        subleadlep = sorted_lep[:,1:2]
+        leadlep_subleadlep_mass = ak.flatten((leadlep + subleadlep).mass)
         nelectron = ak.num(ele_l[FCNC_sel], axis=1)
         MET_pt = ev[FCNC_sel].MET.pt
         MET_phi = ev[FCNC_sel].MET.phi

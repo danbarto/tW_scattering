@@ -46,8 +46,12 @@ ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
 ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()    
 mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
 mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
-
+breakpoint()
 lepton  = ak.concatenate([mu_l, ele_l], axis=1)
+sorted_index_nofilter = ak.argsort(lepton.pt, axis=-1, ascending=False)
+sorted_lep_nofilter = lepton[sorted_index_nofilter]
+leadlep_nofilter = sorted_lep_nofilter[:,0:1]
+subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
 
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
@@ -56,17 +60,16 @@ jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, d
 btag = getBTagsDeepFlavB(jets, year=year)
 
 selection = PackedSelection()
-selection.add("MET<20",   (ev.MET.pt < 20))
 selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
-selection.add("btag", (ak.num(btag, axis=1) >= 0))
-selection.add("nlep", (ak.num(lepton, axis=1) >= 2))
-selection_reqs = ["MET<20", "njets", "btag", "nlep"]
+selection.add("nlep", (ak.num(lepton, axis=1) == 2))
+selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
+selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
+selection_reqs = ["njets", "nbtag", "nlep", "SS"]
 fcnc_reqs_d = { sel: True for sel in selection_reqs}
 FCNC_sel = selection.require(**fcnc_reqs_d)
+
 #sorting
 sorted_index = ak.argsort(lepton[FCNC_sel].pt, axis=-1, ascending=False)
-sorted_lep = lepton[FCNC_sel]
-sorted_lep = sorted_lep[sorted_index]
 sorted_pt = lepton[FCNC_sel].pt[sorted_index]
 sorted_eta = lepton[FCNC_sel].eta[sorted_index]
 sorted_phi = lepton[FCNC_sel].phi[sorted_index]
@@ -88,8 +91,9 @@ subleadlep_dxy = ak.flatten(sorted_dxy[:,1:2])
 leadlep_dz = ak.flatten(sorted_dz[:,0:1])
 subleadlep_dz = ak.flatten(sorted_dz[:,1:2])
 
-leadlep = ak.flatten(sorted_lep[:,0:1])
-subleadlep = ak.flatten(sorted_lep[:,1:2])
+sorted_lep = lepton[FCNC_sel][sorted_index]
+leadlep = sorted_lep[:,0:1]
+subleadlep = sorted_lep[:,1:2]
 leadlep_subleadlep_mass = (leadlep + subleadlep).mass
 nelectron = ak.num(ele_l[FCNC_sel], axis=1)
 MET_pt = ev[FCNC_sel].MET.pt
