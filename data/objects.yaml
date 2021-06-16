@@ -294,6 +294,31 @@ Muon:
       max: 0.85
     ptErrRel:
       max: 0.2
+    jetRelIsoV2:
+      max: 0.5
+
+  fakeableTest:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.10
+      extra: abs
+    sip3d:
+      max: 8
+      extra: abs
+    miniPFRelIso_all:
+      max: 0.4
+    mvaTTH:
+      max: 0.85
+    ptErrRel:
+      max: 0.2
     jetRelIso:
       max: 0.5
 
