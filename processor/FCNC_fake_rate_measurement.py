@@ -63,7 +63,7 @@ class nano_analysis(processor.ProcessorABC):
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
     
-        lepton   = fakeablemuon   #ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
+        lepton   = ak.concatenate([fakeablemuon, fakeableelectron], axis=1)
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
         
@@ -83,8 +83,8 @@ class nano_analysis(processor.ProcessorABC):
             weight.add("weight", ev.genWeight)
 
         jets = getJets(ev, maxEta=2.4, minPt=25, pt_var='pt') #& (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1)
-        single_muon_sel = (ak.num(muon)==1) & (ak.num(fakeablemuon)==1) | (ak.num(muon)==0) & (ak.num(fakeablemuon)==1)
-        single_electron_sel = (ak.num(electron)==1) & (ak.num(fakeableelectron)==1) | (ak.num(electron)==0) & (ak.num(fakeableelectron)==1)
+        single_muon_sel = ((ak.num(muon)==1) & (ak.num(fakeablemuon)==1)) | ((ak.num(muon)==0) & (ak.num(fakeablemuon)==1))
+        single_electron_sel = ((ak.num(electron)==1) & (ak.num(fakeableelectron)==1)) | ((ak.num(electron)==0) & (ak.num(fakeableelectron)==1))
         fcnc_muon_sel = (ak.num(jets[~match(jets, fakeablemuon, deltaRCut=1.0)])>=1) & fcnc_selection & single_muon_sel
         fcnc_electron_sel = (ak.num(jets[~match(jets, fakeableelectron, deltaRCut=1.0)])>=1) & fcnc_selection & single_electron_sel
         tight_muon_sel     = (ak.num(muon)==1)             & fcnc_muon_sel

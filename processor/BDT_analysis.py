@@ -19,15 +19,17 @@ from Tools.lepton_scalefactors import *
 from Tools.helpers import mt
 from Tools.fake_rate import fake_rate
 from Tools.SS_selection import SS_selection
+import production.weights
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[]):
+    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021"):
         self.variations = variations
         self.year = year
         self.debug = debug
         self.btagSF = btag_scalefactor(year)
         self._accumulator = processor.dict_accumulator(accumulator)
         self.BDT_params = BDT_params
+        self.version=version
 
     @property
     def accumulator(self):
@@ -43,7 +45,6 @@ class nano_analysis(processor.ProcessorABC):
         presel = ak.num(events.Jet)>=2
         
         ev = events[presel]
-        
         ##Jets
         Jets = events.Jet
         
@@ -127,6 +128,8 @@ class nano_analysis(processor.ProcessorABC):
         #MT of lead and subleading lepton with ptmiss (MET)
         mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
         mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
+        
+        weight = production.weights.get_weight(ev.metadata["dataset"], self.year, self.version)
 
         BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                           "HT":ht,
@@ -149,7 +152,8 @@ class nano_analysis(processor.ProcessorABC):
                           "LeadBtag_pt":leadbtag_pt,
                           "MT_LeadLep_MET":mt_leadlep_met,
                           "MT_SubLeadLep_MET":mt_leadlep_met,
-                          "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass
+                          "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
+                          "weight":1.0
                           }
         
         #create pandas dataframe

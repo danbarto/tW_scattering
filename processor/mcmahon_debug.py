@@ -21,11 +21,8 @@ from Tools.helpers import mt
 from Tools.SS_selection import SS_selection
 from Tools.fake_rate import fake_rate
 from processor.default_accumulators import desired_output, add_processes_to_output, dataset_axis, pt_axis, eta_axis
-
-#electron     = Collections(events, "Electron", "tightSSTTH").get()
-
 ## now do whatever you would have done in the processor
-year=2018
+  
 
 events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
 
@@ -33,7 +30,7 @@ events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't 
 presel = ak.num(events.Jet)>=2
 
 ev = events[presel]
-
+breakpoint()
 ##Jets
 Jets = events.Jet
 
@@ -46,7 +43,8 @@ ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
 ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()    
 mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
 mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
-breakpoint()
+
+#attempt #1 at applying a SS preselection 
 lepton  = ak.concatenate([mu_l, ele_l], axis=1)
 sorted_index_nofilter = ak.argsort(lepton.pt, axis=-1, ascending=False)
 sorted_lep_nofilter = lepton[sorted_index_nofilter]
@@ -94,7 +92,7 @@ subleadlep_dz = ak.flatten(sorted_dz[:,1:2])
 sorted_lep = lepton[FCNC_sel][sorted_index]
 leadlep = sorted_lep[:,0:1]
 subleadlep = sorted_lep[:,1:2]
-leadlep_subleadlep_mass = (leadlep + subleadlep).mass
+leadlep_subleadlep_mass = ak.flatten((leadlep + subleadlep).mass)
 nelectron = ak.num(ele_l[FCNC_sel], axis=1)
 MET_pt = ev[FCNC_sel].MET.pt
 MET_phi = ev[FCNC_sel].MET.phi
@@ -120,7 +118,7 @@ mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
 BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "HT":ht,
                   "LeadLep_eta":leadlep_eta,
-                  "MET_pt":ev.MET.pt,
+                  "MET_pt":MET_pt,
                   "LeadLep_pt":leadlep_pt,
                   "LeadLep_dxy":leadlep_dxy,
                   "LeadLep_dz":leadlep_dz,
@@ -137,5 +135,6 @@ BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "MET_pt":MET_pt,
                   "LeadBtag_pt":leadbtag_pt,
                   "MT_LeadLep_MET":mt_leadlep_met,
-                  "MT_SubLeadLep_MET":mt_leadlep_met}
-
+                  "MT_SubLeadLep_MET":mt_leadlep_met,
+                  "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass
+                  }
