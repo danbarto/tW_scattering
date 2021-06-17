@@ -319,8 +319,6 @@ Muon:
       max: 0.85
     ptErrRel:
       max: 0.2
-    jetRelIso:
-      max: 0.5
 
   tightTTH:
     pt:
