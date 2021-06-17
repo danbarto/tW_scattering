@@ -22,7 +22,7 @@ from Tools.SS_selection import SS_selection
 import production.weights
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021"):
+    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
         self.variations = variations
         self.year = year
         self.debug = debug
@@ -30,6 +30,7 @@ class nano_analysis(processor.ProcessorABC):
         self._accumulator = processor.dict_accumulator(accumulator)
         self.BDT_params = BDT_params
         self.version=version
+        self.SS_region=SS_region
 
     @property
     def accumulator(self):
@@ -133,15 +134,15 @@ class nano_analysis(processor.ProcessorABC):
 
         BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                           "HT":ht,
-                          "LeadLep_eta":leadlep_eta,
+                          "LeadLep_eta":np.abs(leadlep_eta),
                           "MET_pt":MET_pt,
                           "LeadLep_pt":leadlep_pt,
-                          "LeadLep_dxy":leadlep_dxy,
-                          "LeadLep_dz":leadlep_dz,
+                          "LeadLep_dxy":np.abs(leadlep_dxy),
+                          "LeadLep_dz":np.abs(leadlep_dz),
                           "SubLeadLep_pt":subleadlep_pt,
-                          "SubLeadLep_eta":subleadlep_eta,
-                          "SubLeadLep_dxy":subleadlep_dxy,
-                          "SubLeadLep_dz":subleadlep_dz,
+                          "SubLeadLep_eta":np.abs(subleadlep_eta),
+                          "SubLeadLep_dxy":np.abs(subleadlep_dxy),
+                          "SubLeadLep_dz":np.abs(subleadlep_dz),
                           "nJet":njets,
                           "nbtag":nbtag,
                           "LeadJet_pt":leadjet_pt,
