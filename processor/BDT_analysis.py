@@ -154,7 +154,7 @@ class nano_analysis(processor.ProcessorABC):
                           "MT_LeadLep_MET":mt_leadlep_met,
                           "MT_SubLeadLep_MET":mt_leadlep_met,
                           "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
-                          "weight":1.0#weight
+                          "weight":weight
                           }
         
         #create pandas dataframe
