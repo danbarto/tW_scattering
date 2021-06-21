@@ -13,8 +13,56 @@ def make_BDT_datacard(outdir, BDT_bins, yield_dict):
     return
 
 #hardcoded variables other users should customize
-outdir = "/home/users/cmcmahon/public_html/BDT/"
+outdir = "/home/users/cmcmahon/public_html/BDT/datacards/debug"
 BDT_bins = np.linspace(0.4, 1.0, 6)
+yield_dict = {
+    "score_[0.4, 0.52]_signal": 1.,
+    "score_[0.52, 0.64]_signal": 1.,
+    "score_[0.64, 0.76]_signal": 1.,
+    "score_[0.76, 0.88]_signal":1.,
+    "score_[0.88, 1.0]_signal":1.,
+    "score_[0.4, 0.52]_fakes": 1.,
+    "score_[0.52, 0.64]_fakes": 1.,
+    "score_[0.64, 0.76]_fakes": 1.,
+    "score_[0.76, 0.88]_fakes":1.,
+    "score_[0.88, 1.0]_fakes":1.,
+    "score_[0.4, 0.52]_flips": 1.,
+    "score_[0.52, 0.64]_flips": 1.,
+    "score_[0.64, 0.76]_flips": 1.,
+    "score_[0.76, 0.88]_flips":1.,
+    "score_[0.88, 1.0]_flips":1.,
+    "score_[0.4, 0.52]_rares": 1.,
+    "score_[0.52, 0.64]_rares": 1.,
+    "score_[0.64, 0.76]_rares": 1.,
+    "score_[0.76, 0.88]_rares":1.,
+    "score_[0.88, 1.0]_rares":1.,
+    "score_[0.4, 0.52]_signal_error": 1.,
+    "score_[0.52, 0.64]_signal_error": 1.,
+    "score_[0.64, 0.76]_signal_error": 1.,
+    "score_[0.76, 0.88]_signal_error":1.,
+    "score_[0.88, 1.0]_signal_error":1.,
+    "score_[0.4, 0.52]_fakes_error": 1.,
+    "score_[0.52, 0.64]_fakes_error": 1.,
+    "score_[0.64, 0.76]_fakes_error": 1.,
+    "score_[0.76, 0.88]_fakes_error":1.,
+    "score_[0.88, 1.0]_fakes_error":1.,
+    "score_[0.4, 0.52]_flips_error": 1.,
+    "score_[0.52, 0.64]_flips_error": 1.,
+    "score_[0.64, 0.76]_flips_error": 1.,
+    "score_[0.76, 0.88]_flips_error":1.,
+    "score_[0.88, 1.0]_flips_error":1.,
+    "score_[0.4, 0.52]_rares_error": 1.,
+    "score_[0.52, 0.64]_rares_error": 1.,
+    "score_[0.64, 0.76]_rares_error": 1.,
+    "score_[0.76, 0.88]_rares_error":1.,
+    "score_[0.88, 1.0]_rares_error":1.,
+    "score_[0.4, 0.52]_Total_Background": 1.,
+    "score_[0.52, 0.64]_Total_Background": 1.,
+    "score_[0.64, 0.76]_Total_Background": 1.,
+    "score_[0.76, 0.88]_Total_Background":1.,
+    "score_[0.88, 1.0]_Total_Background":1.
+    
+}
 #for b in range(1, len(BDT_bins)):
 BDT_bin_names = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
 #first, we load the txt output from the tableMaker.py script into a dataframe
@@ -33,7 +81,7 @@ outfileName = "datacard_{0}_{1}.txt".format(signal, year)
 # nJets = [2,3,4]
 # nBtags = [0,1,2]
 numBins = len(BDT_bin_names)
-nProc = ["signal", "rares", "fakes_mc", "flips_mc"]
+nProc = ["signal", "rares", "fakes", "flips"]
 numBackgrounds = len(nProc)-1
 
 #make some headers for my dataframe columns
@@ -48,7 +96,6 @@ for bdt_bin in BDT_bin_names:
     binName = "score_{0}".format(bdt_bin).ljust(20)
     binNamesObs.append(binName)
     for p in nProc:
-        srName = srName_base+"_"+p
         srName = "score_{0}_{1}".format(bdt_bin, p).ljust(20)
         binNames.append(binName)
         dcColumns.append(srName)
@@ -74,89 +121,52 @@ for p in nProc:
 #dataframe I will print to datacard file
 dcard_df = pd.DataFrame(index = rowTitles, columns = dcColumns)
 print("defined output dataframe")
-
-
-#ok, now I want to know the stat uncertainty as a percentage of the yield
+#now I want to know the stat uncertainty as a percentage of the yield
 for p in nProc:
-#     if p == "signal":
-#         proc = s
-#     else:
-#         proc = p
-    statUnc = []
-    for bdt_bin in BDT_bin_names:
-        #calculate signal percentage for statistical unc.
-        row = df.loc[(df["nBtags"]==b)]
-        yld = row[proc].values[0]
-        err = row[proc+" error"].values[0]
-
-        if yld != 0:
-            dcPercentage = round(err/yld,3)
-        else:
-            dcPercentage = 1
-
-        statUnc.append([l,j,b,1+dcPercentage])
-    #print(statUnc)
-    for i in range(len(statUnc)):
-        lep = statUnc[i][0]
-        jet = statUnc[i][1]
-        btag = statUnc[i][2]
-        unc = statUnc[i][3]
-
-        cTitle = str(lep)+"_"+str(jet)+"_"+str(btag)+"_"+p
+    for i in range(len(BDT_bin_names)):
+        bdt_bin = BDT_bin_names[i]
+        err = yield_dict["score_{0}_{1}_error".format(bdt_bin, p)]
+        unc = err / (round(yield_dict["score_{0}_{1}".format(bdt_bin, p)], 3) + 1)
+        cTitle = "score_{0}_{1}".format(bdt_bin, p).ljust(20)
+        rTitle = "{0}_stat_{1}".format(p, i).ljust(17) + "lnN"
         rTitle = p+"_stat_"+str(i)
-        while len(cTitle) < 20:
-            cTitle+=" "
-        while len(rTitle) < 17:
-            rTitle+=" "
-        rTitle+="lnN"
 
-        #print(cTitle)
-        #print(rTitle)
-        #print(unc)
-
-
-        for column in dcard_df:
+        for column in yield_dict.keys():
             if column==cTitle:
-                filler = str(unc)
-                while len(filler)<20:
-                    filler+=" "
-                dcard_df.at[rTitle,column] = filler
+                filler = str(unc).ljust(20)
             else:
-                filler = "-"
-                while len(filler) < 20:
-                    filler += " "
-                dcard_df.at[rTitle,column] = filler
+                filler = "-".ljust(20)
+            dcard_df.at[rTitle,column] = filler
+            
 print("filled stat uncertainties")
-#print(dcard_df)
-
+print(dcard_df)
+outfile = open(outdir+outfileName,"w")
+outfile.write(dcard_df.to_csv(sep="\t", index=True, header=False))
+outfile.close()
 #get MC yields in correct order of bins/processes
 rates = []
 observation = []
-for l in nLeps:
-    for j in nJets:
-        for b in nBtags:
-            row = df.loc[ (df["nLeptons"]==l) & (df["nJets"]==j) & (df["nBtags"]==b) ]
-            obsYld = row["Total Background"].values[0]
-            obsYld = round(obsYld,0)
-            obsString = str(obsYld)
-            while len(obsString)<20:
-                obsString+=" "
-            observation.append(obsString)
+for bdt_bin in BDT_bin_names:
+    row = bdt_bin
+    obsYld = yield_dict["score_{0}_Total_Background".format(bdt_bin)]
+    obsYld = round(obsYld,0)
+    obsString = str(obsYld).ljust(20)
+    observation.append(obsString)
 
-            for p in nProc:
-                if p == "signal":
-                    p = s
-                    yld = row[p].values[0]
-                else:
-                    yld = row[p].values[0]
+    for p in nProc:
+        if p == "signal":
+            p = s
+            yld = row[p].values[0]
+        else:
+            yld = row[p].values[0]
 
-                if yld<0:
-                    yld = 0.01
+        if yld<0:
+            yld = 0.01
 
-                yldString = str(yld)
-                while len(yldString)<20:
-                    yldString+=" "
-                rates.append(yldString)
+        yldString = str(yld)
+        while len(yldString)<20:
+            yldString+=" "
+        rates.append(yldString)
 
 
 
@@ -173,23 +183,14 @@ for p in nProc:
 
     while len(unc)<20:
         unc+=" "
-
-    rTitle = p+"_syst"
-    while len(rTitle)<17:
-        rTitle+=" "
-    rTitle+="lnN"
-
+    unc = str(yield_dict[p + "_error"]).ljust(20)
+    rTitle = "{0}_syst".format(p).ljust(17) + "lnN"
     for column in dcard_df:
         if p in column:
-            filler = unc
-            while len(filler)<20:
-                filler+=" "
-            dcard_df.at[rTitle,column] = filler
+            filler = unc.ljust(20)
         else:
-            filler = "-"
-            while len(filler) < 20:
-                filler += " "
-            dcard_df.at[rTitle,column] = filler
+            filler = "-".ljust(20)
+        dcard_df.at[rTitle,column] = filler
 print("filled syst uncertainties")
 
 
