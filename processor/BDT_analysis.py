@@ -54,10 +54,10 @@ class nano_analysis(processor.ProcessorABC):
         met_phi = ev.MET.phi
     
          ### For FCNC, we want electron -> tightTTH
-        ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
-        ele_l = Collections(ev, "Electron", "fakeableFCNC", year=self.year).get()    
-        mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
-        mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
+        #ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
+        ele_l = Collections(ev, "Electron", "tightFCNC", year=self.year).get()    
+        #mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        mu_l  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
         
         #attempt #1 at applying a SS preselection 
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
@@ -69,8 +69,9 @@ class nano_analysis(processor.ProcessorABC):
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
         jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
+        jets_for_btag = getJets(ev, maxEta=2.5, minPt=25, pt_var='pt')
         jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
-        btag = getBTagsDeepFlavB(jets, year=self.year)
+        btag = getBTagsDeepFlavB(jets_for_btag, year=self.year)
         
         selection = PackedSelection()
         selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))

@@ -158,7 +158,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
     imaxHeader = "imax "+str(numBins)+" number of channels\n"
     jmaxHeader = "jmax "+str(numBackgrounds)+" number of backgrounds\n"
     kmaxHeader = "kmax "+str(numParameters)+" number of nuisance parameters\n"
-    comments = "#Combined HCT and HUT signal region data card\n#"
+    comments = "#{} signal region data card\n#".format(signal)
     for b in range(len(BDT_bin_names)): 
         comments += "bin_{0}={1}\t".format(BDT_bin_names[b], BDT_bin_comments[b])
     comments += "\n"
