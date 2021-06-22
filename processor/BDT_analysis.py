@@ -130,8 +130,13 @@ class nano_analysis(processor.ProcessorABC):
         mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
         mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
         
-        weight = production.weights.get_weight(ev.metadata["dataset"], self.year, self.version)
-
+        #get weights of events (scale1fb * generator_weights * lumi)
+        weight = production.weights.get_weight(ev.metadata["dataset"], self.year, self.version) #scale1fb
+        weight = weight * (ev.Generator.weight / abs(ev.Generator.weight)) #generator weights (can sometimes be negative)
+        lumi_dict = {2018:59.71, 2017:41.5, 2016:35.9} #lumi weights
+        weight = weight * lumi_dict[self.year]
+        weight = weight[FCNC_sel]
+        
         BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                           "HT":ht,
                           "LeadLep_eta":np.abs(leadlep_eta),

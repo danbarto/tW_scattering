@@ -70,9 +70,9 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
             if yld == 0:
-                unc = 0
+                unc = 1.0
             else:
-                unc = (err / round(yld, 3)) + 1
+                unc = (err / round(yld, 3)) + 1.0
             cTitle = "bin_{0}_{1}".format(bdt_bin, p)
             rTitle = "{0}_stat_{1}".format(p, i).ljust(17) + "lnN"
             for column in yield_dict.keys():
@@ -177,7 +177,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
     outfile.write(dcard_df.to_csv(sep="\t", index=True, header=False))
     outfile.close()
 
-flag_debug = True
+flag_debug = False
 if flag_debug:
     outdir = "/home/users/cmcmahon/public_html/BDT/datacards/debug/"
     BDT_bins = np.linspace(0.4, 1.0, 6)
