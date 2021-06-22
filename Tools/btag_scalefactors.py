@@ -73,3 +73,53 @@ class btag_scalefactor:
         denom = ak.prod(tagged_all, axis=1) * ak.prod((1-untagged_all), axis=1)
         num = ak.prod(tagged_all*tagged_SFs, axis=1) * ak.prod((1-untagged_all*untagged_SFs), axis=1)
         return num/denom
+    
+    
+    def testMethod1a(self, tagged, untagged, b_direction='central', c_direction='central'):
+        import numpy as np
+        '''
+        tagged: jet collection of tagged jets
+        untagged: jet collection untagged jets
+        effs: dictionary of the tagging efficiencies (1D yahist objects)
+        btag_sf: coffea b-tag SF object
+        '''
+        tagged_b = yahist_1D_lookup(self.effs['b'], tagged.pt)*(tagged.hadronFlavour==5)
+        tagged_c = yahist_1D_lookup(self.effs['c'], tagged.pt)*(tagged.hadronFlavour==4)
+        tagged_light = yahist_1D_lookup(self.effs['light'], tagged.pt)*(tagged.hadronFlavour==0)
+        
+        tagged_SFs_b = self.btag_sf.eval(b_direction, tagged.hadronFlavour, abs(tagged.eta), tagged.pt )
+        tagged_SFs_c = self.btag_sf.eval(c_direction, tagged.hadronFlavour, abs(tagged.eta), tagged.pt )
+        tagged_SFs_light = self.btag_sf.eval(c_direction, tagged.hadronFlavour, abs(tagged.eta), tagged.pt )
+        
+        SFs_c = ((tagged_c/tagged_c)*tagged_SFs_c)
+        SFs_b = ((tagged_b/tagged_b)*tagged_SFs_b)
+        SFs_light = ((tagged_light/tagged_light)*tagged_SFs_light)
+        SFs_c = np.where(np.isnan(SFs_c), 0, SFs_c)
+        SFs_b = np.where(np.isnan(SFs_b), 0, SFs_b)
+        SFs_light = np.where(np.isnan(SFs_light), 0, SFs_light)
+        
+        tagged_SFs = SFs_b+SFs_c+SFs_light
+        
+        untagged_b = yahist_1D_lookup(self.effs['b'], untagged.pt)*(untagged.hadronFlavour==5)
+        untagged_c = yahist_1D_lookup(self.effs['c'], untagged.pt)*(untagged.hadronFlavour==4)
+        untagged_light = yahist_1D_lookup(self.effs['light'], untagged.pt)*(untagged.hadronFlavour==0)
+        
+        untagged_SFs_b = self.btag_sf.eval(b_direction, untagged.hadronFlavour, abs(untagged.eta), untagged.pt )
+        untagged_SFs_c = self.btag_sf.eval(c_direction, untagged.hadronFlavour, abs(untagged.eta), untagged.pt )
+        untagged_SFs_light = self.btag_sf.eval(c_direction, untagged.hadronFlavour, abs(untagged.eta), untagged.pt )
+        
+        SFs_c = ((untagged_c/untagged_c)*untagged_SFs_c)
+        SFs_b = ((untagged_b/untagged_b)*untagged_SFs_b)
+        SFs_light = ((untagged_light/untagged_light)*untagged_SFs_light)
+        SFs_c = np.where(np.isnan(SFs_c), 0, SFs_c)
+        SFs_b = np.where(np.isnan(SFs_b), 0, SFs_b)
+        SFs_light = np.where(np.isnan(SFs_light), 0, SFs_light)
+        
+        untagged_SFs = SFs_b+SFs_c+SFs_light
+                                
+        tagged_all = (tagged_b+tagged_c+tagged_light)
+        untagged_all = (untagged_b+untagged_c+untagged_light)
+        
+        denom = ak.prod(tagged_all, axis=1) * ak.prod((1-untagged_all), axis=1)
+        num = ak.prod(tagged_all*tagged_SFs, axis=1) * ak.prod((1-untagged_all*untagged_SFs), axis=1)
+        return num/denom
