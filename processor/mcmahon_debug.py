@@ -27,6 +27,7 @@ import production.weights
 # events = NanoEventsFactory.from_root('root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/QCD_Pt-120to170_MuEnrichedPt5_TuneCP5_13TeV_pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/70000/DE335891-829A-B943-99BE-E5A179F5F3EB.root', schemaclass=NanoAODSchema).events()
 events = NanoEventsFactory.from_root('/nfs-7/userdata/ksalyer/fcnc/fcnc_v6_SRonly_5may2021/2018/signal_hct_atop.root', schemaclass=NanoAODSchema).events()
 #
+
 events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
 
 # we can use a very loose preselection to filter the events. nothing is done with this presel, though
@@ -35,16 +36,16 @@ presel = ak.num(events.Jet)>=2
 ev = events[presel]
 ##Jets
 Jets = events.Jet
-year=2018
+
 ## MET -> can switch to puppi MET
 met_pt  = ev.MET.pt
 met_phi = ev.MET.phi
 
  ### For FCNC, we want electron -> tightTTH
-ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
-ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()    
-mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
-mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
+#ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
+ele_l = Collections(ev, "Electron", "tightFCNC", year=year).get()    
+#mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
+mu_l  = Collections(ev, "Muon", "tightFCNC", year=year).get()
 
 #attempt #1 at applying a SS preselection 
 lepton  = ak.concatenate([mu_l, ele_l], axis=1)
@@ -56,8 +57,9 @@ subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
 jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
+jets_for_btag = getJets(ev, maxEta=2.5, minPt=25, pt_var='pt')
 jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
-btag = getBTagsDeepFlavB(jets, year=year)
+btag = getBTagsDeepFlavB(jets_for_btag, year=year)
 
 selection = PackedSelection()
 selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
@@ -117,10 +119,12 @@ ht = ak.sum(jets.pt, axis=1)[FCNC_sel]
 mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
 mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
 
-breakpoint()
-weight = production.weights.get_weight("signal_hct_atop", year, "fcnc_v6_SRonly_5may2021")
-weight = weight * (ev.Generator.weight / abs(ev.Generator.weight))
-weight = weight * 60.0
+#get weights of events (scale1fb * generator_weights * lumi)
+weight = production.weights.get_weight("signal_hct_atop", year, ) #scale1fb
+weight = weight * (ev.Generator.weight / abs(ev.Generator.weight)) #generator weights (can sometimes be negative)
+lumi_dict = {2018:59.71, 2017:41.5, 2016:35.9} #lumi weights
+weight = weight * lumi_dict[year]
+weight = weight[FCNC_sel]
 
 BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "HT":ht,

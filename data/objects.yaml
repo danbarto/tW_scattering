@@ -101,7 +101,7 @@ Electron:
       
   fakeableFCNC:
     pt:
-      min: 25
+      min: 7
     eta:
       max: 2.4
       extra: abs
@@ -413,7 +413,7 @@ Muon:
      
   fakeableFCNC:
     pt:
-      min: 20
+      min: 5.
     eta:
       max: 2.4
       extra: abs

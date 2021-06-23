@@ -54,15 +54,16 @@ class nano_analysis(processor.ProcessorABC):
         met_phi = ev.MET.phi
     
          ### For FCNC, we want electron -> tightTTH
-        #ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
-        ele_l = Collections(ev, "Electron", "tightFCNC", year=self.year).get()    
-        #mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
-        mu_l  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        ele_t = Collections(ev, "Electron", "tightFCNC", year=self.year).get()
+        ele_l = Collections(ev, "Electron", "fakeableFCNC", year=self.year).get()    
+        mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
+        mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
         
         #attempt #1 at applying a SS preselection 
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
-        sorted_index_nofilter = ak.argsort(lepton.pt, axis=-1, ascending=False)
-        sorted_lep_nofilter = lepton[sorted_index_nofilter]
+        tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
+        sorted_index_nofilter = ak.argsort(tight_lepton.pt, axis=-1, ascending=False)
+        sorted_lep_nofilter = tight_lepton[sorted_index_nofilter]
         leadlep_nofilter = sorted_lep_nofilter[:,0:1]
         subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
         
@@ -74,11 +75,12 @@ class nano_analysis(processor.ProcessorABC):
         btag = getBTagsDeepFlavB(jets_for_btag, year=self.year)
         
         selection = PackedSelection()
-        selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
+        selection.add("njets", (ak.num(jets[~(match(jets, tight_lepton, deltaRCut=0.4))]) >= 2))
         selection.add("nlep", (ak.num(lepton, axis=1) == 2))
+        selection.add("nlep_tight", (ak.num(tight_lepton, axis=1) == 2))
         selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-        selection_reqs = ["njets", "nbtag", "nlep", "SS"]
+        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
 
