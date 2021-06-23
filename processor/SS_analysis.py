@@ -14,12 +14,13 @@ import numpy as np
 from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import Cutflow
-from Tools.helpers import pad_and_flatten, mt
+from Tools.helpers import pad_and_flatten, mt, fill_multiple
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
+from Tools.nonprompt_weight import NonpromptWeight
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -34,6 +35,8 @@ class SS_analysis(processor.ProcessorABC):
         self.btagSF = btag_scalefactor(year)
         
         self.leptonSF = LeptonSF(year=year)
+
+        self.nonpromptWeight = NonpromptWeight(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -65,21 +68,30 @@ class SS_analysis(processor.ProcessorABC):
             trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
 
         ## Muons
-        muon     = Collections(ev, "Muon", "tightSSTTH").get()
-        vetomuon = Collections(ev, "Muon", "vetoTTH").get()
-        dimuon   = choose(muon, 2)
-        SSmuon   = ak.any((dimuon['0'].charge * dimuon['1'].charge)>0, axis=1)
-        leading_muon_idx = ak.singletons(ak.argmax(muon.pt, axis=1))
-        leading_muon = muon[leading_muon_idx]
+        mu_v     = Collections(ev, "Muon", "vetoTTH").get()  # these include all muons, tight and fakeable
+        mu_t     = Collections(ev, "Muon", "tightSSTTH").get()
+        mu_f     = Collections(ev, "Muon", "fakeableSSTTH").get()
+        muon     = ak.concatenate([mu_t, mu_f], axis=1)
         
         ## Electrons
-        electron     = Collections(ev, "Electron", "tightSSTTH").get()
-        vetoelectron = Collections(ev, "Electron", "vetoTTH").get()
-        dielectron   = choose(electron, 2)
-        SSelectron   = ak.any((dielectron['0'].charge * dielectron['1'].charge)>0, axis=1)
-        leading_electron_idx = ak.singletons(ak.argmax(electron.pt, axis=1))
-        leading_electron = electron[leading_electron_idx]
+        el_v        = Collections(ev, "Electron", "vetoTTH").get()
+        el_t        = Collections(ev, "Electron", "tightSSTTH").get()
+        el_f        = Collections(ev, "Electron", "fakeableSSTTH").get()
+        electron    = ak.concatenate([el_t, el_f], axis=1)
         
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+            el_t_p  = prompt(el_t)
+            el_t_np = nonprompt(el_t)
+            el_f_p  = prompt(el_f)
+            el_f_np = nonprompt(el_f)
+            mu_t_p  = prompt(mu_t)
+            mu_t_np = nonprompt(mu_t)
+            mu_f_p  = prompt(mu_f)
+            mu_f_np = nonprompt(mu_f)
+            
+        dimuon     = choose(muon, 2)
+        dielectron = choose(electron, 2)
+
         ## Merge electrons and muons - this should work better now in ak1
         dilepton = cross(muon, electron)
         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
@@ -149,9 +161,8 @@ class SS_analysis(processor.ProcessorABC):
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
-            #weight.add("weight", ev.genWeight*cfg['lumi'][self.year]*mult)
             
-            # PU weight - not in the babies...
+            # PU weight
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
             
             # b-tag SFs
@@ -163,14 +174,18 @@ class SS_analysis(processor.ProcessorABC):
 
         cutflow     = Cutflow(output, ev, weight=weight)
 
+        # slightly restructured
+        # calculate everything from loose, require two tights on top
+        # since n_tight == n_loose == 2, the tight and loose leptons are the same in the end
+
         sel = Selection(
             dataset = dataset,
             events = ev,
             year = self.year,
             ele = electron,
-            ele_veto = vetoelectron,
+            ele_veto = el_v,
             mu = muon,
-            mu_veto = vetomuon,
+            mu_veto = mu_v,
             jet_all = jet,
             jet_central = central,
             jet_btag = btag,
@@ -178,11 +193,26 @@ class SS_analysis(processor.ProcessorABC):
             met = ev.MET,
         )
         
-        BL = sel.dilep_baseline(cutflow=cutflow, SS=True)
+        baseline = sel.dilep_baseline(cutflow=cutflow, SS=True)
+        
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+
+            BL = (baseline & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
+            BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
+            np_est_sel_mc = (baseline & \
+                ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+            np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
+            np_est_sel_data = (baseline & ~baseline)  # this has to be false
+
+        else:
+            BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
+            np_est_sel_mc = (baseline & ~baseline)
+            np_obs_sel_mc = (baseline & ~baseline)
+            np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
 
         weight_BL = weight.weight()[BL]        
 
-        if True:
+        if False:
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             NN_inputs = np.stack([
@@ -283,13 +313,47 @@ class SS_analysis(processor.ProcessorABC):
             output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight_BL)
             output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
+
+
+        # How to package filling hists like this into a function?
+        #output['MET'].fill(
+        #    dataset = dataset,
+        #    pt  = ev.MET[BL].pt,
+        #    phi  = ev.MET[BL].phi,
+        #    weight = weight_BL
+        #)
+
+        #if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        #    output['MET'].fill(
+        #        dataset="np_est",
+        #        pt  = ev.MET[np_est_sel].pt,
+        #        phi  = ev.MET[np_est_sel].phi,
+        #        weight = weight.weight()[np_est_sel]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel])
+        #    )
+        #    output['MET'].fill(
+        #        dataset="np_obs",
+        #        pt  = ev.MET[np_obs_sel].pt,
+        #        phi  = ev.MET[np_obs_sel].phi,
+        #        weight = weight.weight()[np_obs_sel]
+        #    )
         
-        output['MET'].fill(
-            dataset = dataset,
-            pt  = ev.MET[BL].pt,
-            phi  = ev.MET[BL].phi,
-            weight = weight_BL
+        fill_multiple(
+            output['MET'],
+            datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data"],
+            arrays={'pt':ev.MET.pt, 'phi':ev.MET.phi},
+            selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data],
+            weights=[
+                weight_BL,
+                #weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel_mc]),
+                #weight.weight()[np_obs_sel_mc],
+                weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np[np_est_sel_mc], mu_f_np[np_est_sel_mc], meas='TT')),
+                weight.weight()[np_obs_sel_mc],
+                weight.weight()[np_est_sel_data]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel_data]), ## will need to be replaced
+            ],
         )
+
+        output['N_ele'].fill(dataset="np_est_mc", multiplicity=ak.num(electron)[np_est_sel_mc], weight=weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np[np_est_sel_mc], mu_f_np[np_est_sel_mc], meas='TT')) )
+        output['N_ele'].fill(dataset="np_obs_mc", multiplicity=ak.num(electron)[np_obs_sel_mc], weight=weight.weight()[np_obs_sel_mc] )
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
@@ -386,35 +450,36 @@ if __name__ == '__main__':
     
     year = 2018
 
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
-    #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.0/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.2_dilep/', year='UL2018')
+    #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
-        #'topW_v3': fileset_all['topW_NLO'],
-        'topW_v3': fileset_all['topW_v3'],
-        #'topW_EFT_mix': fileset_all['topW_EFT'],
-        'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-        'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-        'TTW': fileset_all['TTW'],
-        'TTZ': fileset_all['TTZ'],
-        'TTH': fileset_all['TTH'],
-        'diboson': fileset_all['diboson'],
-        'triboson': fileset_all['triboson'],
-        #'wpwp': fileset_all['wpwp'],
-        'TTTT': fileset_all['TTTT'],
-        #'ttbar': fileset_all['top'],
-        'ttbar': fileset_all['ttbar'],
-        #'MuonEG': fileset_all['MuonEG_Run2018'],
-        #'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        #'EGamma': fileset_all['EGamma_Run2018'],
-        'MuonEG': fileset_all['MuonEG'],
-        'DoubleMuon': fileset_all['DoubleMuon'],
-        'EGamma': fileset_all['EGamma'],
-        #'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
-        #'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        ##'topW_v3': fileset_all['topW_NLO'],
+        #'topW_v3': fileset_all['topW_v3'],
+        ##'topW_EFT_mix': fileset_all['topW_EFT'],
+        #'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+        #'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+        #'TTW': fileset_all['TTW'],
+        #'TTZ': fileset_all['TTZ'],
+        #'TTH': fileset_all['TTH'],
+        #'diboson': fileset_all['diboson'],
+        #'triboson': fileset_all['triboson'],
+        ##'wpwp': fileset_all['wpwp'],
+        #'TTTT': fileset_all['TTTT'],
+        'ttbar': fileset_all['ttbar1l'],
+        #'ttbar': fileset_all['ttbar'],
+        ##'MuonEG': fileset_all['MuonEG_Run2018'],
+        ##'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
+        ##'EGamma': fileset_all['EGamma_Run2018'],
+        #'MuonEG': fileset_all['MuonEG'],
+        #'DoubleMuon': fileset_all['DoubleMuon'],
+        #'EGamma': fileset_all['EGamma'],
+        ##'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        ##'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
     
-    fileset = make_small(fileset, small)
+    fileset = make_small(fileset, small, n_max=10)
+    #fileset = make_small(fileset, small)
     
     add_processes_to_output(fileset, desired_output)
 

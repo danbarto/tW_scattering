@@ -13,7 +13,7 @@ from Tools.config_helpers import *
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.lepton_scalefactors import *
-from Tools.helpers import mt
+from Tools.helpers import mt, get_four_vec
 
 import sys
 import warnings
@@ -52,32 +52,60 @@ variables = [
     'fwd_jet_pt',
     'fwd_jet_eta',
     'fwd_jet_phi',
+    'fwd_jet_energy',
+    'fwd_jet_px',
+    'fwd_jet_py',
+    'fwd_jet_pz',
 
     'lead_jet_pt',
     'lead_jet_eta',
     'lead_jet_phi',
+    'lead_jet_energy',
+    'lead_jet_px',
+    'lead_jet_py',
+    'lead_jet_pz',
 
     'sublead_jet_pt',
     'sublead_jet_eta',
     'sublead_jet_phi',
+    'sublead_jet_energy',
+    'sublead_jet_px',
+    'sublead_jet_py',
+    'sublead_jet_pz',
 
     'lead_btag_pt',
     'lead_btag_eta',
     'lead_btag_phi',
+    'lead_btag_energy',
+    'lead_btag_px',
+    'lead_btag_py',
+    'lead_btag_pz',
 
     'sublead_btag_pt',
     'sublead_btag_eta',
     'sublead_btag_phi',
+    'sublead_btag_energy',
+    'sublead_btag_px',
+    'sublead_btag_py',
+    'sublead_btag_pz',
 
     'lead_lep_pt',
     'lead_lep_eta',
     'lead_lep_phi',
     'lead_lep_charge',
+    'lead_lep_energy',
+    'lead_lep_px',
+    'lead_lep_py',
+    'lead_lep_pz',
 
     'sublead_lep_pt',
     'sublead_lep_eta',
     'sublead_lep_phi',
     'sublead_lep_charge',
+    'sublead_lep_energy',
+    'sublead_lep_px',
+    'sublead_lep_py',
+    'sublead_lep_pz',
 
     'dilepton_mass',
     'dilepton_pt',
@@ -149,10 +177,11 @@ class ML_preprocessor(processor.ProcessorABC):
         SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
 
         lepton   = ak.concatenate([muon, electron], axis=1)
+        lepton   = get_four_vec(lepton)
         leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
-        leading_lepton = lepton[leading_lepton_idx]
+        leading_lepton = get_four_vec(lepton[leading_lepton_idx])
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
-        trailing_lepton = lepton[trailing_lepton_idx]
+        trailing_lepton = get_four_vec(lepton[trailing_lepton_idx])
         
         dilepton_mass = (leading_lepton+trailing_lepton).mass
         dilepton_pt = (leading_lepton+trailing_lepton).pt
@@ -272,36 +301,66 @@ class ML_preprocessor(processor.ProcessorABC):
         output["n_lep"] += processor.column_accumulator(ak.to_numpy( (ak.num(electron) + ak.num(muon))[BL] ))
         output["n_lep_tight"] += processor.column_accumulator(ak.to_numpy( (ak.num(tightelectron) + ak.num(tightmuon))[BL] ))
 
-        output["lead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].pt, axis=1)))
-        output["lead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].eta, axis=1)))
-        output["lead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].phi, axis=1)))
-        output["lead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(leading_lepton[BL].charge, axis=1)))
+        o_leading_lepton = get_four_vec(leading_lepton[BL])
+        output["lead_lep_pt"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.pt, axis=1)))
+        output["lead_lep_eta"]    += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.eta, axis=1)))
+        output["lead_lep_phi"]    += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.phi, axis=1)))
+        output["lead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.charge, axis=1)))
+        output["lead_lep_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.energy, axis=1)))
+        output["lead_lep_px"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.px, axis=1)))
+        output["lead_lep_py"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.py, axis=1)))
+        output["lead_lep_pz"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_leading_lepton.pz, axis=1)))
 
-        output["sublead_lep_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].pt, axis=1)))
-        output["sublead_lep_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].eta, axis=1)))
-        output["sublead_lep_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].phi, axis=1)))
-        output["sublead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(trailing_lepton[BL].charge, axis=1)))
+        o_trailing_lepton = get_four_vec(trailing_lepton[BL])
+        output["sublead_lep_pt"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.pt, axis=1)))
+        output["sublead_lep_eta"]    += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.eta, axis=1)))
+        output["sublead_lep_phi"]    += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.phi, axis=1)))
+        output["sublead_lep_charge"] += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.charge, axis=1)))
+        output["sublead_lep_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.energy, axis=1)))
+        output["sublead_lep_px"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.px, axis=1)))
+        output["sublead_lep_py"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.py, axis=1)))
+        output["sublead_lep_pz"]     += processor.column_accumulator(ak.to_numpy(ak.flatten(o_trailing_lepton.pz, axis=1)))
 
         output["lead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pt, axis=1)))
         output["lead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].eta, axis=1)))
         output["lead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].phi, axis=1)))
+        output["lead_jet_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].energy, axis=1)))
+        output["lead_jet_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].px, axis=1)))
+        output["lead_jet_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].py, axis=1)))
+        output["lead_jet_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pz, axis=1)))
 
         output["sublead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].pt, axis=1)))
         output["sublead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].eta, axis=1)))
         output["sublead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].phi, axis=1)))
+        output["sublead_jet_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].energy, axis=1)))
+        output["sublead_jet_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].px, axis=1)))
+        output["sublead_jet_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].py, axis=1)))
+        output["sublead_jet_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].pz, axis=1)))
 
         output["lead_btag_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].pt, axis=1)))
         output["lead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].eta, axis=1)))
         output["lead_btag_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].phi, axis=1)))
+        output["lead_btag_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].energy, axis=1)))
+        output["lead_btag_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].px, axis=1)))
+        output["lead_btag_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].py, axis=1)))
+        output["lead_btag_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].pz, axis=1)))
 
         output["sublead_btag_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].pt, axis=1)))
         output["sublead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].eta, axis=1)))
         output["sublead_btag_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].phi, axis=1)))
+        output["sublead_btag_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].energy, axis=1)))
+        output["sublead_btag_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].px, axis=1)))
+        output["sublead_btag_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].py, axis=1)))
+        output["sublead_btag_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 1:2][BL].pz, axis=1)))
 
         output["fwd_jet_p"]   += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].p, 1, clip=True), 0), axis=1)))
         output["fwd_jet_pt"]  += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].pt, 1, clip=True), 0), axis=1)))
         output["fwd_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].eta,1, clip=True), 0), axis=1)))
         output["fwd_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].phi,1, clip=True), 0), axis=1)))
+        output["fwd_jet_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].energy,1, clip=True), 0), axis=1)))
+        output["fwd_jet_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].px,1, clip=True), 0), axis=1)))
+        output["fwd_jet_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].py,1, clip=True), 0), axis=1)))
+        output["fwd_jet_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(ak.fill_none(ak.pad_none(j_fwd[BL].pz,1, clip=True), 0), axis=1)))
 
         output["mjj_max"] += processor.column_accumulator(ak.to_numpy(ak.fill_none(ak.max(mjf[BL], axis=1),0)))
         output["delta_eta_jj"] += processor.column_accumulator(ak.to_numpy(ak.flatten(delta_eta[BL], axis=1)))
@@ -351,15 +410,15 @@ if __name__ == '__main__':
     
     fileset = {
         ##'topW_v2': fileset_2018['topW_v2'],
-        #'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
-        'topW_EFT_cp8': fileset_2018['topW_EFT_cp8']
+        'topW_v3': fileset_2018['topW_v3'], # 6x larger stats
+        #'topW_EFT_cp8': fileset_2018['topW_EFT_cp8']
         ##'topW_v3': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/ProjectMetis_TTWplusJetsToLNuEWK_5f_NLO_v2_RunIIAutumn18_NANO_v4/*_1.root'), # 6x larger stats
-        #'TTW': fileset_2018['TTW'],
-        #'TTZ': fileset_2018['TTZ'],
-        #'TTH': fileset_2018['TTH'],
-        #'ttbar': fileset_2018['ttbar'],
-        #'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
-        #'DY': fileset_2018['DY'],
+        'TTW': fileset_2018['TTW'],
+        'TTZ': fileset_2018['TTZ'],
+        'TTH': fileset_2018['TTH'],
+        'ttbar': fileset_2018['ttbar'],
+        'rare': fileset_2018['TTTT'] + fileset_2018['diboson'], # also contains triboson
+        'DY': fileset_2018['DY'],
         ##'ttbar1l_MG': fileset_2018['ttbar1l_MG'],
     }
     
@@ -390,4 +449,4 @@ if __name__ == '__main__':
 
     df_out = pd.DataFrame( df_dict )
 
-    df_out.to_hdf('data/multiclass_input_v2_EFT.h5', key='df', format='table', mode='w')#, append=True)
+    df_out.to_hdf('data/multiclass_input_v3.h5', key='df', format='table', mode='w')#, append=True)

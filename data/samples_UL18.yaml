@@ -1,3 +1,11 @@
+? /DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
+: files: 46
+  nEvents: 53198134
+  name: DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 46
+  sumWeight: 53198134.0
+  xsec: 18610.0
 ? /DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
 : files: 53
   nEvents: 98433266
@@ -5,7 +13,7 @@
   path: null
   split: 2
   sumWeight: 98433266.0
-  xsec: 6021.0
+  xsec: 6077.0
 /DoubleMuon/Run2018A-UL2018_MiniAODv1_NanoAODv2-v1/NANOAOD:
   files: 64
   nEvents: 75491789

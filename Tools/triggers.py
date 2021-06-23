@@ -135,6 +135,12 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
             "Ele32_WPTight_Gsf",  # NEW!
         ]
 
+        triggers['SingleMuon'] = [\
+            #"IsoMu24",  #FIXME this is not in v0.2.3 or v0.3.X
+            "Mu27",  #FIXME this only works in MC
+            "Mu50",  #FIXME not in the TOP list
+        ]
+
         triggers['MET'] = [\
             "PFMET120_PFMHT120_IDTight",
             "PFMET120_PFMHT120_IDTight_PFHT60",
@@ -155,6 +161,10 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
             "DoubleEle33_CaloIdL_MW",
+        ]
+
+        triggers['SingleMuon'] = [\
+            "IsoMu27",
         ]
 
         triggers['MET'] = [\
@@ -181,6 +191,11 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
             "DoubleEle33_CaloIdL_MW",
             "DoubleEle33_CaloIdL_GsfTrkIdVL",
+        ]
+
+        triggers['SingleMuon'] = [\
+            "IsoMu24",
+            "IsoTkMu24",
         ]
 
         triggers['MET'] = [\
@@ -211,11 +226,18 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
 
     else:
         #print ("In MC branch")
+        
         # these triggers aren't fully efficient yet. check if we're missing something.
-        mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) & same_flavor & leading_mu)
+        mm = ((mask_or(ev, "HLT", triggers['DoubleMuon']) | (mask_or(ev, "HLT", triggers['SingleMuon']))) & same_flavor & leading_mu)
         ee = (mask_or(ev, "HLT", triggers['DoubleEG']) & same_flavor & leading_ele)
-        em = (mask_or(ev, "HLT", triggers['MuonEG']) & ~same_flavor)
-        return (mm | ee | em)
+        em = ((mask_or(ev, "HLT", triggers['MuonEG']) | (mask_or(ev, "HLT", triggers['SingleMuon']))) & ~same_flavor)
+        trig = (mm | ee | em)
+        #mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) )
+        #ee = (mask_or(ev, "HLT", triggers['DoubleEG']) )
+        #em = (mask_or(ev, "HLT", triggers['MuonEG']) )
+        #m = (mask_or(ev, "HLT", triggers['SingleMuon']) )
+        #trig = (mm | ee | em | m)
+        return trig
 
 
     #if re.search(re.compile("MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleElectron"), dataset):  #  dataset.lower().count('muon') or dataset.lower().count('electron'):

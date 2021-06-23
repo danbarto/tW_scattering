@@ -7,6 +7,15 @@ from coffea.analysis_tools import Weights, PackedSelection
 from Tools.triggers import getTriggers, getFilters
 from Tools.objects import choose, cross, choose3
 
+def get_pt(lep):
+    mask_tight    = (lep.id>1)*1
+    mask_fakeable = (lep.id<2)*1
+
+    return lep.pt*mask_tight + lep.conePt*mask_fakeable
+
+#def get_pt(lep):
+#    return lep.pt
+
 class Selection:
     def __init__(self, **kwargs):
         '''
@@ -31,27 +40,24 @@ class Selection:
         '''
         self.selection = PackedSelection()
 
-        is_dilep   = ((ak.num(self.ele) + ak.num(self.mu))==2)
+        lepton = ak.concatenate([self.ele, self.mu], axis=1)
+
+        is_dilep   = ( ((ak.num(self.ele) + ak.num(self.mu))==2) & ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==2) )
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
-        lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
-        lep1pt     = ((ak.num(self.ele[(self.ele.pt>20)]) + ak.num(self.mu[(self.mu.pt>20)]))>1)
-        lepveto    = ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==2)
+        lep0pt     = ((ak.num(self.ele[(get_pt(self.ele)>25)]) + ak.num(self.mu[(get_pt(self.mu)>25)]))>0)
+        lep1pt     = ((ak.num(self.ele[(get_pt(self.ele)>20)]) + ak.num(self.mu[(get_pt(self.mu)>20)]))>1)
+        #lepsel     = ((ak.num(self.ele_tight) + ak.num(self.mu_tight))==2)
 
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
         dilep   = cross(self.mu, self.ele)
 
         if SS:
-            is_SS = ( ak.any((dimu['0'].charge * dimu['1'].charge)>0, axis=1) | \
-                      ak.any((diele['0'].charge * diele['1'].charge)>0, axis=1) | \
-                      ak.any((dilep['0'].charge * dilep['1'].charge)>0, axis=1) )
+            is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
         else:
-            is_OS = ( ak.any((dimu['0'].charge * dimu['1'].charge)<0, axis=1) | \
-                      ak.any((diele['0'].charge * diele['1'].charge)<0, axis=1) | \
-                      ak.any((dilep['0'].charge * dilep['1'].charge)<0, axis=1) )
+            is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
 
-        lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(
             ak.pad_none(
                 lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True),
@@ -64,7 +70,7 @@ class Selection:
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
 
-        self.selection.add('lepveto',       lepveto)
+        #self.selection.add('lepsel',        lepsel)
         self.selection.add('dilep',         is_dilep)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
@@ -86,7 +92,7 @@ class Selection:
 
         ss_reqs = [
             'filter',
-            'lepveto',
+         #   'lepsel',
             'dilep',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
