@@ -164,7 +164,7 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ]
 
         triggers['SingleMuon'] = [\
-            "IsoMu27",
+            #"IsoMu27",
         ]
 
         triggers['MET'] = [\

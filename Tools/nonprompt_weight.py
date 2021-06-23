@@ -13,20 +13,17 @@ class NonpromptWeight:
         self.year = year
 
         self.ext = extractor()
-        if self.year == 2016:
-            fr = os.path.expandvars("$TWHOME/data/fakerate/fr_2016.root")
 
-        elif self.year == 2017:
-            fr = os.path.expandvars("$TWHOME/data/fakerate/fr_2017.root")
-
-        elif self.year == 2018:
-            fr = os.path.expandvars("$TWHOME/data/fakerate/fr_2018.root")
+        fr = os.path.expandvars("$TWHOME/data/fakerate/fr_%s.root"%self.year)
+        fr_data = os.path.expandvars("$TWHOME/data/fakerate/fr_%s_recorrected.root"%self.year)
 
         self.ext.add_weight_sets(["el_QCD FR_mva080_el_QCD %s"%fr])
         self.ext.add_weight_sets(["el_QCD_NC FR_mva080_el_QCD_NC %s"%fr])
         self.ext.add_weight_sets(["el_TT FR_mva080_el_TT %s"%fr])
+        self.ext.add_weight_sets(["el_data FR_mva080_el_data_comb_NC_recorrected %s"%fr_data])
         self.ext.add_weight_sets(["mu_QCD FR_mva085_mu_QCD %s"%fr])
         self.ext.add_weight_sets(["mu_TT FR_mva085_mu_TT %s"%fr])
+        self.ext.add_weight_sets(["mu_data FR_mva085_mu_data_comb_recorrected %s"%fr_data])
 
         self.ext.finalize()
         
@@ -38,6 +35,8 @@ class NonpromptWeight:
             el_key, mu_key = 'el_QCD_NC', 'mu_QCD'
         elif meas == 'TT':
             el_key, mu_key = 'el_TT', 'mu_TT'
+        elif meas == 'data':
+            el_key, mu_key = 'el_data', 'mu_data'
 
         n_lep   = ak.num(el) + ak.num(mu)
         sign    = (-1)**(n_lep+1)

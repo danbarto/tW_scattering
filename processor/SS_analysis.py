@@ -67,6 +67,7 @@ class SS_analysis(processor.ProcessorABC):
             leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
             trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
 
+        ## Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
         ## Muons
         mu_v     = Collections(ev, "Muon", "vetoTTH").get()  # these include all muons, tight and fakeable
         mu_t     = Collections(ev, "Muon", "tightSSTTH").get()
@@ -89,12 +90,7 @@ class SS_analysis(processor.ProcessorABC):
             mu_f_p  = prompt(mu_f)
             mu_f_np = nonprompt(mu_f)
             
-        dimuon     = choose(muon, 2)
-        dielectron = choose(electron, 2)
-
-        ## Merge electrons and muons - this should work better now in ak1
-        dilepton = cross(muon, electron)
-        SSlepton = ak.any((dilepton['0'].charge * dilepton['1'].charge)>0, axis=1)
+        ## Merge electrons and muons. These are fakeable leptons now
 
         lepton   = ak.concatenate([muon, electron], axis=1)
         leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
@@ -153,10 +149,8 @@ class SS_analysis(processor.ProcessorABC):
         ht = ak.sum(jet.pt, axis=1)
         st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         
-        
         # define the weight
         weight = Weights( len(ev) )
-        
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             # lumi weight
@@ -178,6 +172,7 @@ class SS_analysis(processor.ProcessorABC):
         # calculate everything from loose, require two tights on top
         # since n_tight == n_loose == 2, the tight and loose leptons are the same in the end
 
+        # in this selection we'll get events with exactly two fakeable+tight and two loose leptons.
         sel = Selection(
             dataset = dataset,
             events = ev,
@@ -198,50 +193,53 @@ class SS_analysis(processor.ProcessorABC):
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
 
             BL = (baseline & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
-            BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
+            BL_incl = (baseline) # this is the MC baseline for events with two fakeable+tight leptons
             np_est_sel_mc = (baseline & \
                 ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
             np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
             np_est_sel_data = (baseline & ~baseline)  # this has to be false
+            weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
 
         else:
             BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
             np_est_sel_mc = (baseline & ~baseline)
             np_obs_sel_mc = (baseline & ~baseline)
             np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
+            weight_np_mc = np.ones(len(ev))
 
-        weight_BL = weight.weight()[BL]        
+        weight_BL = weight.weight()[BL]  # this is just a shortened weight list for the two prompt selection
+        weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
 
-        if False:
+        if True:
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             NN_inputs = np.stack([
-                ak.to_numpy(ak.num(jet[BL])),
-                ak.to_numpy(ak.num(tau[BL])),
-                ak.to_numpy(ak.num(track[BL])),
-                ak.to_numpy(st[BL]),
-                ak.to_numpy(ev.MET[BL].pt),
-                ak.to_numpy(ak.max(mjf[BL], axis=1)),
-                ak.to_numpy(pad_and_flatten(delta_eta[BL])),
-                ak.to_numpy(pad_and_flatten(leading_lepton[BL].pt)),
-                ak.to_numpy(pad_and_flatten(leading_lepton[BL].eta)),
-                ak.to_numpy(pad_and_flatten(trailing_lepton[BL].pt)),
-                ak.to_numpy(pad_and_flatten(trailing_lepton[BL].eta)),
-                ak.to_numpy(pad_and_flatten(dilepton_mass[BL])),
-                ak.to_numpy(pad_and_flatten(dilepton_pt[BL])),
-                ak.to_numpy(pad_and_flatten(j_fwd[BL].pt)),
-                ak.to_numpy(pad_and_flatten(j_fwd[BL].p)),
-                ak.to_numpy(pad_and_flatten(j_fwd[BL].eta)),
-                ak.to_numpy(pad_and_flatten(jet[:, 0:1][BL].pt)),
-                ak.to_numpy(pad_and_flatten(jet[:, 1:2][BL].pt)),
-                ak.to_numpy(pad_and_flatten(jet[:, 0:1][BL].eta)),
-                ak.to_numpy(pad_and_flatten(jet[:, 1:2][BL].eta)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1][BL].pt)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2][BL].pt)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1][BL].eta)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2][BL].eta)),
-                ak.to_numpy(min_bl_dR[BL]),
-                ak.to_numpy(min_mt_lep_met[BL]),
+                ak.to_numpy(ak.num(jet)),
+                ak.to_numpy(ak.num(tau)),
+                ak.to_numpy(ak.num(track)),
+                ak.to_numpy(st),
+                ak.to_numpy(ev.MET.pt),
+                ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
+                ak.to_numpy(pad_and_flatten(delta_eta)),
+                ak.to_numpy(pad_and_flatten(leading_lepton.pt)),
+                ak.to_numpy(pad_and_flatten(leading_lepton.eta)),
+                ak.to_numpy(pad_and_flatten(trailing_lepton.pt)),
+                ak.to_numpy(pad_and_flatten(trailing_lepton.eta)),
+                ak.to_numpy(pad_and_flatten(dilepton_mass)),
+                ak.to_numpy(pad_and_flatten(dilepton_pt)),
+                ak.to_numpy(pad_and_flatten(j_fwd.pt)),
+                ak.to_numpy(pad_and_flatten(j_fwd.p)),
+                ak.to_numpy(pad_and_flatten(j_fwd.eta)),
+                ak.to_numpy(pad_and_flatten(jet[:, 0:1].pt)),
+                ak.to_numpy(pad_and_flatten(jet[:, 1:2].pt)),
+                ak.to_numpy(pad_and_flatten(jet[:, 0:1].eta)),
+                ak.to_numpy(pad_and_flatten(jet[:, 1:2].eta)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].pt)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].pt)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].eta)),
+                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].eta)),
+                ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
+                ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
             ])
 
             NN_inputs = np.moveaxis(NN_inputs, 0, 1)
@@ -262,36 +260,51 @@ class SS_analysis(processor.ProcessorABC):
                 best_score = np.array([])
                 NN_inputs_scaled = NN_inputs
 
-            #k.clear_session()
+            ##k.clear_session()
 
-            output['node'].fill(dataset=dataset, multiplicity=best_score, weight=weight_BL)
+            #FIXME below needs to be fixed again with changed NN evaluation
+            output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
 
-            output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
-            output['node0_score'].fill(dataset=dataset, score=NN_pred[best_score==0][:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==0])
-            output['node1_score'].fill(dataset=dataset, score=NN_pred[best_score==1][:,1] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==1])
-            output['node2_score'].fill(dataset=dataset, score=NN_pred[best_score==2][:,2] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==2])
-            output['node3_score'].fill(dataset=dataset, score=NN_pred[best_score==3][:,3] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==3])
-            output['node4_score'].fill(dataset=dataset, score=NN_pred[best_score==4][:,4] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==4])
+            output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
+            #output['node0_score'].fill(dataset=dataset, score=NN_pred[best_score==0][:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==0])
+            #output['node1_score'].fill(dataset=dataset, score=NN_pred[best_score==1][:,1] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==1])
+            #output['node2_score'].fill(dataset=dataset, score=NN_pred[best_score==2][:,2] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==2])
+            #output['node3_score'].fill(dataset=dataset, score=NN_pred[best_score==3][:,3] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==3])
+            #output['node4_score'].fill(dataset=dataset, score=NN_pred[best_score==4][:,4] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==4])
 
-            SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
-            SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
-            leading_lepton_BL = leading_lepton[BL]
+            #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
+            #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
+            #leading_lepton_BL = leading_lepton[BL]
 
-            output['lead_lep_SR_pp'].fill(
-                dataset = dataset,
-                pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
-                weight = weight_BL[SR_sel_pp]
-            )
+            #output['lead_lep_SR_pp'].fill(
+            #    dataset = dataset,
+            #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
+            #    weight = weight_BL[SR_sel_pp]
+            #)
 
-            output['lead_lep_SR_mm'].fill(
-                dataset = dataset,
-                pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
-                weight = weight_BL[SR_sel_mm]
-            )
+            #output['lead_lep_SR_mm'].fill(
+            #    dataset = dataset,
+            #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
+            #    weight = weight_BL[SR_sel_mm]
+            #)
 
             del model
             del scaler
             del NN_inputs, NN_inputs_scaled, NN_pred
+
+        def fill_multiple_np(hist, arrays):
+            fill_multiple(
+                hist,
+                datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data"],
+                arrays=arrays,
+                selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data],
+                weights=[
+                    weight_BL,
+                    weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
+                    weight.weight()[np_obs_sel_mc],
+                    weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
+                ],
+            )
 
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
@@ -299,9 +312,9 @@ class SS_analysis(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight_BL)
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight_BL)
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight_BL)
-        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight_BL)
-        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight_BL)
-        output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight_BL)
+        fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
+        fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
+        fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
         output['ST'].fill(dataset=dataset, pt=st[BL], weight=weight_BL)
         output['HT'].fill(dataset=dataset, pt=ht[BL], weight=weight_BL)
 
@@ -315,28 +328,7 @@ class SS_analysis(processor.ProcessorABC):
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
 
 
-        # How to package filling hists like this into a function?
-        #output['MET'].fill(
-        #    dataset = dataset,
-        #    pt  = ev.MET[BL].pt,
-        #    phi  = ev.MET[BL].phi,
-        #    weight = weight_BL
-        #)
-
-        #if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
-        #    output['MET'].fill(
-        #        dataset="np_est",
-        #        pt  = ev.MET[np_est_sel].pt,
-        #        phi  = ev.MET[np_est_sel].phi,
-        #        weight = weight.weight()[np_est_sel]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel])
-        #    )
-        #    output['MET'].fill(
-        #        dataset="np_obs",
-        #        pt  = ev.MET[np_obs_sel].pt,
-        #        phi  = ev.MET[np_obs_sel].phi,
-        #        weight = weight.weight()[np_obs_sel]
-        #    )
-        
+        # I'll keep this here as an example
         fill_multiple(
             output['MET'],
             datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data"],
@@ -344,16 +336,12 @@ class SS_analysis(processor.ProcessorABC):
             selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data],
             weights=[
                 weight_BL,
-                #weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel_mc]),
-                #weight.weight()[np_obs_sel_mc],
-                weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np[np_est_sel_mc], mu_f_np[np_est_sel_mc], meas='TT')),
+                weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
                 weight.weight()[np_obs_sel_mc],
-                weight.weight()[np_est_sel_data]*(self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')[np_est_sel_data]), ## will need to be replaced
+                weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
             ],
         )
 
-        output['N_ele'].fill(dataset="np_est_mc", multiplicity=ak.num(electron)[np_est_sel_mc], weight=weight.weight()[np_est_sel_mc]*(self.nonpromptWeight.get(el_f_np[np_est_sel_mc], mu_f_np[np_est_sel_mc], meas='TT')) )
-        output['N_ele'].fill(dataset="np_obs_mc", multiplicity=ak.num(electron)[np_obs_sel_mc], weight=weight.weight()[np_obs_sel_mc] )
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
@@ -372,14 +360,15 @@ class SS_analysis(processor.ProcessorABC):
                 weight = weight_BL
             )
         
-        output['lead_lep'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
-            eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
-            phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
-            weight = weight_BL
+        fill_multiple_np(
+            output['lead_lep'],
+            {
+                'pt':  pad_and_flatten(leading_lepton.pt),
+                'eta': pad_and_flatten(leading_lepton.eta),
+                'phi': pad_and_flatten(leading_lepton.phi),
+            },
         )
-        
+
         output['trail_lep'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
@@ -412,14 +401,22 @@ class SS_analysis(processor.ProcessorABC):
             weight = weight_BL
         )
         
-        
-        output['fwd_jet'].fill(
-            dataset = dataset,
-            pt  = ak.flatten(j_fwd[BL].pt),
-            eta = ak.flatten(j_fwd[BL].eta),
-            phi = ak.flatten(j_fwd[BL].phi),
-            weight = weight_BL
+        fill_multiple_np(
+            output['fwd_jet'],
+            {
+                'pt':  pad_and_flatten(j_fwd.pt),
+                'eta': pad_and_flatten(j_fwd.eta),
+                'phi': pad_and_flatten(j_fwd.phi),
+            },
         )
+        
+        #output['fwd_jet'].fill(
+        #    dataset = dataset,
+        #    pt  = ak.flatten(j_fwd[BL].pt),
+        #    eta = ak.flatten(j_fwd[BL].eta),
+        #    phi = ak.flatten(j_fwd[BL].phi),
+        #    weight = weight_BL
+        #)
             
         output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(j_fwd[BL].p), weight = weight_BL)
         
@@ -440,40 +437,41 @@ if __name__ == '__main__':
     overwrite = True
     small = True
     save = True
+    year = 2017
 
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'SS_analysis'
+    cacheName = 'SS_analysis_%s'%year
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    year = 2018
 
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.2_dilep/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL%s'%year)
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
-        ##'topW_v3': fileset_all['topW_NLO'],
+        'topW_v3': fileset_all['topW_NLO'],
         #'topW_v3': fileset_all['topW_v3'],
         ##'topW_EFT_mix': fileset_all['topW_EFT'],
         #'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
         #'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-        #'TTW': fileset_all['TTW'],
-        #'TTZ': fileset_all['TTZ'],
-        #'TTH': fileset_all['TTH'],
-        #'diboson': fileset_all['diboson'],
+        'TTW': fileset_all['TTW'],
+        'TTZ': fileset_all['TTZ'],
+        'TTH': fileset_all['TTH'],
+        'diboson': fileset_all['diboson'],
         #'triboson': fileset_all['triboson'],
         ##'wpwp': fileset_all['wpwp'],
         #'TTTT': fileset_all['TTTT'],
-        'ttbar': fileset_all['ttbar1l'],
-        #'ttbar': fileset_all['ttbar'],
+        'rare': fileset_all['TTTT']+fileset_all['triboson'],
+        #'ttbar': fileset_all['ttbar1l'],
+        'ttbar': fileset_all['top'],
         ##'MuonEG': fileset_all['MuonEG_Run2018'],
         ##'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
         ##'EGamma': fileset_all['EGamma_Run2018'],
-        #'MuonEG': fileset_all['MuonEG'],
-        #'DoubleMuon': fileset_all['DoubleMuon'],
-        #'EGamma': fileset_all['EGamma'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'],
         ##'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         ##'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }

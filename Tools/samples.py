@@ -86,12 +86,9 @@ groups_UL = {
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
     'DY':            ['/DYJetsToLL'],
 
-    'MuonEG_Run2018':       ['/MuonEG'],
-    'EGamma_Run2018':       ['/EGamma'],
-    'DoubleMuon_Run2018':   ['/DoubleMuon'],
-
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],
+    'EGamma':       ['/EGamma'],
     'DoubleMuon':   ['/DoubleMuon'],
 }
 
