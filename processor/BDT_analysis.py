@@ -59,7 +59,7 @@ class nano_analysis(processor.ProcessorABC):
         mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
         mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
         
-        #attempt #1 at applying a SS preselection 
+        #SS preselection 
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
         tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
         sorted_index_nofilter = ak.argsort(tight_lepton.pt, axis=-1, ascending=False)
@@ -67,11 +67,14 @@ class nano_analysis(processor.ProcessorABC):
         leadlep_nofilter = sorted_lep_nofilter[:,0:1]
         subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
         
+        #M(ee) > 12
+        dilepton_mass_nofilter = ak.flatten((leadlep_nofilter + subleadlep_nofilter).mass)
+        
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
         jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
         jets_for_btag = getJets(ev, maxEta=2.5, minPt=25, pt_var='pt')
-        jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
+        #jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
         btag = getBTagsDeepFlavB(jets_for_btag, year=self.year)
         
         selection = PackedSelection()
@@ -80,7 +83,8 @@ class nano_analysis(processor.ProcessorABC):
         selection.add("nlep_tight", (ak.num(tight_lepton, axis=1) == 2))
         selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight"]
+        selection.add("M(ee)>12", (ak.num(ele_t < 2) | dilepton_mass_nofilter > 12))
+        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
 

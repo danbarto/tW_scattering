@@ -28,6 +28,7 @@ import production.weights
 events = NanoEventsFactory.from_root('/nfs-7/userdata/ksalyer/fcnc/fcnc_v6_SRonly_5may2021/2018/signal_hct_atop.root', schemaclass=NanoAODSchema).events()
 #
 
+year=2018
 events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
 
 # we can use a very loose preselection to filter the events. nothing is done with this presel, though
@@ -42,31 +43,38 @@ met_pt  = ev.MET.pt
 met_phi = ev.MET.phi
 
  ### For FCNC, we want electron -> tightTTH
-#ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
-ele_l = Collections(ev, "Electron", "tightFCNC", year=year).get()    
-#mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
-mu_l  = Collections(ev, "Muon", "tightFCNC", year=year).get()
+ele_t = Collections(ev, "Electron", "tightFCNC", year=year).get()
+ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()    
+mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
+mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
 
-#attempt #1 at applying a SS preselection 
+#SS preselection 
 lepton  = ak.concatenate([mu_l, ele_l], axis=1)
-sorted_index_nofilter = ak.argsort(lepton.pt, axis=-1, ascending=False)
-sorted_lep_nofilter = lepton[sorted_index_nofilter]
+tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
+sorted_index_nofilter = ak.argsort(tight_lepton.pt, axis=-1, ascending=False)
+sorted_lep_nofilter = tight_lepton[sorted_index_nofilter]
 leadlep_nofilter = sorted_lep_nofilter[:,0:1]
 subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
+
+breakpoint()
+#M(ee) > 12
+dilepton_mass_nofilter = ak.flatten((leadlep_nofilter + subleadlep_nofilter).mass)
 
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
 jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
 jets_for_btag = getJets(ev, maxEta=2.5, minPt=25, pt_var='pt')
-jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
+#jet_sel = (ak.num(jets[~(match(jets, ele_l, deltaRCut=0.4) | match(jets, mu_l, deltaRCut=0.4))])>=2)
 btag = getBTagsDeepFlavB(jets_for_btag, year=year)
 
 selection = PackedSelection()
-selection.add("njets", (ak.num(jets[~(match(jets, lepton, deltaRCut=0.4))]) >= 2))
+selection.add("njets", (ak.num(jets[~(match(jets, tight_lepton, deltaRCut=0.4))]) >= 2))
 selection.add("nlep", (ak.num(lepton, axis=1) == 2))
+selection.add("nlep_tight", (ak.num(tight_lepton, axis=1) == 2))
 selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
 selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-selection_reqs = ["njets", "nbtag", "nlep", "SS"]
+selection.add("M(ee)>12", (ak.num(ele_t < 2) | dilepton_mass_nofilter > 12))
+selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
 fcnc_reqs_d = { sel: True for sel in selection_reqs}
 FCNC_sel = selection.require(**fcnc_reqs_d)
 
@@ -118,13 +126,6 @@ ht = ak.sum(jets.pt, axis=1)[FCNC_sel]
 #MT of lead and subleading lepton with ptmiss (MET)
 mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
 mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
-
-#get weights of events (scale1fb * generator_weights * lumi)
-weight = production.weights.get_weight("signal_hct_atop", year, ) #scale1fb
-weight = weight * (ev.Generator.weight / abs(ev.Generator.weight)) #generator weights (can sometimes be negative)
-lumi_dict = {2018:59.71, 2017:41.5, 2016:35.9} #lumi weights
-weight = weight * lumi_dict[year]
-weight = weight[FCNC_sel]
 
 BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "HT":ht,
