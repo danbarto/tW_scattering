@@ -6,6 +6,70 @@
   split: 3
   sumWeight: 93007332.0
   xsec: 6021.0
+/DoubleEG/Run2016B-02Apr2020_ver1-v1/NANOAOD:
+  files: 5
+  nEvents: 5686987
+  name: DoubleEG_Run2016B-02Apr2020_ver1-v1
+  path: null
+  split: 5
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016B-02Apr2020_ver2-v1/NANOAOD:
+  files: 82
+  nEvents: 143073268
+  name: DoubleEG_Run2016B-02Apr2020_ver2-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016C-02Apr2020-v1/NANOAOD:
+  files: 41
+  nEvents: 47677856
+  name: DoubleEG_Run2016C-02Apr2020-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016D-02Apr2020-v1/NANOAOD:
+  files: 42
+  nEvents: 53324960
+  name: DoubleEG_Run2016D-02Apr2020-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016E-02Apr2020-v1/NANOAOD:
+  files: 41
+  nEvents: 49877710
+  name: DoubleEG_Run2016E-02Apr2020-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016F-02Apr2020-v1/NANOAOD:
+  files: 29
+  nEvents: 34577629
+  name: DoubleEG_Run2016F-02Apr2020-v1
+  path: null
+  split: 3
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016G-02Apr2020-v1/NANOAOD:
+  files: 62
+  nEvents: 78797031
+  name: DoubleEG_Run2016G-02Apr2020-v1
+  path: null
+  split: 3
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016H-02Apr2020-v1/NANOAOD:
+  files: 82
+  nEvents: 85388734
+  name: DoubleEG_Run2016H-02Apr2020-v1
+  path: null
+  split: 3
+  sumWeight: 0.0
+  xsec: 1.0
 ? /ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_PSweights_13TeV-powheg-pythia8/RunIISummer16NanoAODv7-Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1/NANOAODSIM
 : files: 11
   nEvents: 10240710
