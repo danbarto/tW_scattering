@@ -1,3 +1,4 @@
+import awkward as ak
 from coffea import processor, hist
 
 
@@ -6,18 +7,13 @@ def add_processes_to_output(fileset, output):
         if sample not in output:
             output.update({sample: processor.defaultdict_accumulator(int)})
 
-def add_files_to_output(fileset, output):
-    for sample in fileset:
-        for f in fileset[sample]:
-            output.update({f: processor.defaultdict_accumulator(int)})
-
 
 dataset_axis            = hist.Cat("dataset",       "Primary dataset")
 pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)", int(1000/5), 0, 1000) # 5 GeV is fine enough
 p_axis                  = hist.Bin("p",             r"$p$ (GeV)", int(2500/5), 0, 2500) # 5 GeV is fine enough
 ht_axis                 = hist.Bin("ht",            r"$H_{T}$ (GeV)", 500, 0, 5000)
 mass_axis               = hist.Bin("mass",          r"M (GeV)", 1000, 0, 2000)
-eta_axis                = hist.Bin("eta",           r"$\eta$", 100, -5.0, 5.0)
+eta_axis                = hist.Bin("eta",           r"$\eta$", 150, -5.0, 10.0)
 phi_axis                = hist.Bin("phi",           r"$\phi$", 64, -3.2, 3.2)
 delta_axis              = hist.Bin("delta",         r"$\delta$", 100,0,10 )
 multiplicity_axis       = hist.Bin("multiplicity",  r"N", 20, -0.5, 19.5)
@@ -29,6 +25,7 @@ norm_axis               = hist.Bin("norm",          r"N", 25, 0, 1)
 score_axis              = hist.Bin("score",          r"N", 100, 0, 1)
 
 variations = ['pt_jesTotalUp', 'pt_jesTotalDown']
+nb_variations = ['centralUp', 'centralDown', 'upCentral', 'downCentral']
 
 desired_output = {
             "PV_npvs" :         hist.Hist("PV_npvs", dataset_axis, ext_multiplicity_axis),
@@ -78,4 +75,7 @@ desired_output = {
 outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N_fwd', 'N_central', 'MET']
 for out in outputs_with_vars:
     desired_output.update( { out+'_'+var: desired_output[out].copy() for var in variations } )
-
+    
+outputs_with_nb_vars = ['N_b']
+for out in outputs_with_nb_vars:
+    desired_output.update( { out+'_'+var: desired_output[out].copy() for var in nb_variations } )
