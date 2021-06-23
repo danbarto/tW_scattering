@@ -262,8 +262,8 @@ class SS_analysis(processor.ProcessorABC):
 
             ##k.clear_session()
 
-            #FIXME below needs to be fixed again with changed NN evaluation
-            output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
+            #FIXME below needs to be fixed again with changed NN evaluation. Should work now
+            output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
 
             output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
             #output['node0_score'].fill(dataset=dataset, score=NN_pred[best_score==0][:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==0])
@@ -451,29 +451,29 @@ if __name__ == '__main__':
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
-        'topW_v3': fileset_all['topW_NLO'],
-        #'topW_v3': fileset_all['topW_v3'],
-        ##'topW_EFT_mix': fileset_all['topW_EFT'],
-        #'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-        #'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-        'TTW': fileset_all['TTW'],
-        'TTZ': fileset_all['TTZ'],
-        'TTH': fileset_all['TTH'],
+        #'topW_v3': fileset_all['topW_NLO'],
+        ##'topW_v3': fileset_all['topW_v3'],
+        ###'topW_EFT_mix': fileset_all['topW_EFT'],
+        ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+        ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+        #'TTW': fileset_all['TTW'],
+        #'TTZ': fileset_all['TTZ'],
+        #'TTH': fileset_all['TTH'],
         'diboson': fileset_all['diboson'],
-        #'triboson': fileset_all['triboson'],
-        ##'wpwp': fileset_all['wpwp'],
-        #'TTTT': fileset_all['TTTT'],
-        'rare': fileset_all['TTTT']+fileset_all['triboson'],
-        #'ttbar': fileset_all['ttbar1l'],
-        'ttbar': fileset_all['top'],
-        ##'MuonEG': fileset_all['MuonEG_Run2018'],
-        ##'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        ##'EGamma': fileset_all['EGamma_Run2018'],
-        'MuonEG': fileset_all['MuonEG'],
-        'DoubleMuon': fileset_all['DoubleMuon'],
-        'EGamma': fileset_all['EGamma'],
-        ##'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
-        ##'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        ##'triboson': fileset_all['triboson'],
+        ###'wpwp': fileset_all['wpwp'],
+        ##'TTTT': fileset_all['TTTT'],
+        #'rare': fileset_all['TTTT']+fileset_all['triboson'],
+        ##'ttbar': fileset_all['ttbar1l'],
+        #'ttbar': fileset_all['top'],
+        ###'MuonEG': fileset_all['MuonEG_Run2018'],
+        ###'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
+        ###'EGamma': fileset_all['EGamma_Run2018'],
+        #'MuonEG': fileset_all['MuonEG'],
+        #'DoubleMuon': fileset_all['DoubleMuon'],
+        #'EGamma': fileset_all['EGamma'],
+        ###'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        ###'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
     
     fileset = make_small(fileset, small, n_max=10)
