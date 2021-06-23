@@ -76,6 +76,7 @@ groups_UL = {
     'TTTT':          ['/TTTT[-_]'],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
+    'ttbar1l':       ['/TTToSemiLeptonic'],
     'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
     'diboson':       ['/WZTo', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'],

@@ -83,6 +83,10 @@ def getChargeFlips(obj, gen=0):
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
+prompt    = lambda x: x[((x.genPartFlav==1)|(x.genPartFlav==15))]
+
+nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15))]
+
 class Collections:
 
     def __init__(self, ev, obj, wp, verbose=0):
@@ -96,6 +100,14 @@ class Collections:
         self.v = verbose
         #self.year = df['year'][0] ## to be implemented in next verison of babies
         self.year = 2018
+
+        id_level = None
+        if wp.lower().count('veto'):
+            id_level = 0
+        elif wp.lower().count('fake'):
+            id_level = 1
+        elif wp.lower().count('tight'):
+            id_level = 2
         
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
@@ -113,10 +125,12 @@ class Collections:
             deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close + 0*mask_far
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
             conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + (ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all))*mask_far
+            #conePt = 0.8 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + (ev.Muon.pt/(1 + ev.Muon.miniPFRelIso_all))*mask_far
 
             ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
+            ev['Muon', 'id'] = ak.ones_like(conePt)*id_level
 
             self.cand = ev.Muon
             
@@ -140,10 +154,12 @@ class Collections:
             deepJet = ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
             conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + (ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all))*mask_far
+            #conePt = 0.8 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + (ev.Electron.pt/(1 + ev.Electron.miniPFRelIso_all))*mask_far
 
             ev['Electron', 'deepJet'] = ak.copy(deepJet)
             ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Electron', 'conePt'] = conePt
+            ev['Electron', 'id'] = ak.ones_like(conePt)*id_level
             
             self.cand = ev.Electron
             

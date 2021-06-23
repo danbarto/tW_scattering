@@ -230,3 +230,25 @@ def yahist_2D_lookup(h, ar1, ar2):
 
 def build_weight_like(weight, selection, like):
     return ak.flatten(weight[selection] * ak.ones_like(like[selection]))
+
+def fill_multiple(hist, datasets=[], arrays={}, selections=[], weights=[]):
+    for i, dataset in enumerate(datasets):
+        kw_dict = {'dataset': dataset, 'weight':weights[i]}
+        kw_dict.update({x:arrays[x][selections[i]] for x in arrays.keys()})
+        hist.fill(**kw_dict)
+
+def get_four_vec(cand):
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": cand.pt,
+            "eta": cand.eta,
+            "phi": cand.phi,
+            "mass": cand.mass,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    vec4.__dict__.update(cand.__dict__)
+    return vec4

@@ -1,5 +1,5 @@
-
 import os
+import numpy as np
 try:
     import awkward1 as ak
 except ImportError:
@@ -41,8 +41,8 @@ class NonpromptWeight:
 
         n_lep   = ak.num(el) + ak.num(mu)
         sign    = (-1)**(n_lep+1)
-        el_fr   = evaluator[el_key](el.conePt, np.abs(el.etaSC))
-        mu_fr   = evaluator[mu_key](mu.conePt, np.abs(mu.eta))
+        el_fr   = self.evaluator[el_key](el.conePt, np.abs(el.etaSC))
+        mu_fr   = self.evaluator[mu_key](mu.conePt, np.abs(mu.eta))
         fr      = ak.concatenate([el_fr, mu_fr], axis=1)
         return ak.prod(fr, axis=1)*sign
 
