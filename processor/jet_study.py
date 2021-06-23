@@ -144,7 +144,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             
             
             # b-tag SFs
-            weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='central'))
+            weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='central'))
 
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
@@ -192,13 +192,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight.add("weight", ev.weight*cfg['lumi'][self.year])
                 weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
                 if var=='centralUp':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='up'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='up'))
                 elif var=='centralDown':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='down'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='down'))
                 elif var=='upCentral':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='up', c_direction='central'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='up', c_direction='central'))
                 elif var=='downCentral':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='down', c_direction='central'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='down', c_direction='central'))
                     
                 weight.add("lepton", self.leptonSF.get(electron, muon))
                 met = ev.MET

@@ -48,34 +48,8 @@ class btag_scalefactor:
                 'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Autumn18_light_eff_deepJet.json")),
             }
             
-    def Method1a(self, tagged, untagged):
-        '''
-        tagged: jet collection of tagged jets
-        untagged: jet collection untagged jets
-        effs: dictionary of the tagging efficiencies (1D yahist objects)
-        btag_sf: coffea b-tag SF object
-        '''
-        tagged_b = yahist_1D_lookup(self.effs['b'], tagged.pt)*(tagged.hadronFlavour==5)
-        tagged_c = yahist_1D_lookup(self.effs['c'], tagged.pt)*(tagged.hadronFlavour==4)
-        tagged_light = yahist_1D_lookup(self.effs['light'], tagged.pt)*(tagged.hadronFlavour==0)
-        
-        tagged_SFs = self.btag_sf.eval('central', tagged.hadronFlavour, abs(tagged.eta), tagged.pt )
-        
-        untagged_b = yahist_1D_lookup(self.effs['b'], untagged.pt)*(untagged.hadronFlavour==5)
-        untagged_c = yahist_1D_lookup(self.effs['c'], untagged.pt)*(untagged.hadronFlavour==4)
-        untagged_light = yahist_1D_lookup(self.effs['light'], untagged.pt)*(untagged.hadronFlavour==0)
-        
-        untagged_SFs = self.btag_sf.eval('central', untagged.hadronFlavour, abs(untagged.eta), untagged.pt )
-        
-        tagged_all = (tagged_b+tagged_c+tagged_light)
-        untagged_all = (untagged_b+untagged_c+untagged_light)
-        
-        denom = ak.prod(tagged_all, axis=1) * ak.prod((1-untagged_all), axis=1)
-        num = ak.prod(tagged_all*tagged_SFs, axis=1) * ak.prod((1-untagged_all*untagged_SFs), axis=1)
-        return num/denom
-    
-    
-    def testMethod1a(self, tagged, untagged, b_direction='central', c_direction='central'):
+   
+    def Method1a(self, tagged, untagged, b_direction='central', c_direction='central'):
         import numpy as np
         '''
         tagged: jet collection of tagged jets
