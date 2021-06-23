@@ -68,8 +68,13 @@ class nano_analysis(processor.ProcessorABC):
         subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
         
         #M(ee) > 12
-        dilepton_mass_nofilter = ak.flatten((leadlep_nofilter + subleadlep_nofilter).mass)
+        diele_mass = choose(ele_t, 2).mass
         
+        #prompt leptons (genPartFlav)
+        leadlep_genPartFlav = ak.sum(leadlep_nofilter.genPartFlav, axis=1)
+        subleadlep_genPartFlav = ak.sum(subleadlep_nofilter.genPartFlav, axis=1)
+        prompt_selection = ((    (leadlep_genPartFlav==1)|   (leadlep_genPartFlav==15)) & 
+                             ((subleadlep_genPartFlav==1)|(subleadlep_genPartFlav==15)) )
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
         jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
@@ -83,8 +88,9 @@ class nano_analysis(processor.ProcessorABC):
         selection.add("nlep_tight", (ak.num(tight_lepton, axis=1) == 2))
         selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
-        selection.add("M(ee)>12", (ak.num(ele_t < 2) | dilepton_mass_nofilter > 12))
-        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
+        selection.add("M(ee)>12", ((ak.num(ele_t) < 2) | (ak.sum(diele_mass, axis=1) > 12.0))) #ak.sum here to flatten the diele_mass array
+        selection.add("prompt", prompt_selection)
+        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12", "prompt"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
 
