@@ -52,7 +52,8 @@ conda run --name coffeadev pip install jupyter-server-proxy coffea autopep8 jupy
 
 ```
 conda deactivate
-conda create --name workerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr -y
+conda create --name workerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime -y
+conda run --name workerenv pip install coffea yahist
 conda activate workerenv
 ```
 
