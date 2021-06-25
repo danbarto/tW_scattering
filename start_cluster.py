@@ -1,8 +1,5 @@
 import os
 
-from dask.distributed import Client
-import distributed
-
 from Tools.condor_utils import make_htcondor_cluster
 
 from dask.distributed import Client, progress
@@ -35,13 +32,47 @@ def getFilesNotFound( client ):
 
     return allFiles
 
-cluster = make_htcondor_cluster(local=False, dashboard_address=13349, disk = "10GB", memory = "5GB",)
-
-print ("Scaling cluster at address %s now."%cluster.scheduler_address)
-
-cluster.scale(25)
-
-with open('scheduler_address.txt', 'w') as f:
-    f.write(str(cluster.scheduler_address))
-
-c = Client(cluster)
+if __name__ == "__main__":
+    
+    import argparse
+    
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--local', action='store_true', default=None, help="Overwrite existing results??")
+    argParser.add_argument('--scale', action='store', default=5, help="How many workers?")
+    argParser.add_argument('--memory', action='store', default=4, help="How much memory?")
+    args = argParser.parse_args()
+    
+    scale  = int(args.scale)
+    memory = int(args.memory)
+    
+    #c = Client(memory_limit='4GB', n_workers=4, threads_per_worker=1)
+    
+    if args.local:
+    
+        c = Client(
+            memory_limit='%sGB'%memory,
+            n_workers=scale,
+            threads_per_worker=1,
+        )
+    
+        #c = Client("tcp://127.0.0.1:18124")
+        with open('scheduler_address.txt', 'w') as f:
+            f.write(str(c.cluster.scheduler_address))
+    
+    else:
+        
+        cluster = make_htcondor_cluster(
+            local=False,
+            dashboard_address=13349,
+            disk = "8GB",
+            memory = "%sGB"%memory,
+        )
+        
+        print ("Scaling cluster at address %s now."%cluster.scheduler_address)
+        
+        cluster.scale(scale)
+        
+        with open('scheduler_address.txt', 'w') as f:
+            f.write(str(cluster.scheduler_address))
+        
+        c = Client(cluster)

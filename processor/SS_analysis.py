@@ -21,6 +21,7 @@ from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
 from Tools.nonprompt_weight import NonpromptWeight
+from Tools.chargeFlip import charge_flip
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -37,6 +38,7 @@ class SS_analysis(processor.ProcessorABC):
         self.leptonSF = LeptonSF(year=year)
 
         self.nonpromptWeight = NonpromptWeight(year=year)
+        self.chargeflipWeight = charge_flip(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -89,9 +91,12 @@ class SS_analysis(processor.ProcessorABC):
             mu_t_np = nonprompt(mu_t)
             mu_f_p  = prompt(mu_f)
             mu_f_np = nonprompt(mu_f)
-            
-        ## Merge electrons and muons. These are fakeable leptons now
 
+            is_flipped = ( (el_t_p.matched_gen.pdgId*(-1) == el_t_p.pdgId) & (abs(el_t_p.pdgId) == 11) )
+            el_t_p_cc  = el_t_p[~is_flipped]  # this is tight, prompt, and charge consistent
+            el_t_p_cf  = el_t_p[is_flipped]  # this is tight, prompt, and charge flipped
+
+        ## Merge electrons and muons. These are fakeable leptons now
         lepton   = ak.concatenate([muon, electron], axis=1)
         leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
         leading_lepton = lepton[leading_lepton_idx]
@@ -189,26 +194,58 @@ class SS_analysis(processor.ProcessorABC):
         )
         
         baseline = sel.dilep_baseline(cutflow=cutflow, SS=True)
+        baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False)  # this is for charge flip estimation
         
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
 
-            BL = (baseline & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
+            BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
             BL_incl = (baseline) # this is the MC baseline for events with two fakeable+tight leptons
             np_est_sel_mc = (baseline & \
-                ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+                ((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
             np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
             np_est_sel_data = (baseline & ~baseline)  # this has to be false
+
+            cf_est_sel_mc = (baseline_OS & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))
+            cf_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_p_cf))>=1) )  # two tight leptons, at least one electron charge flip
+            cf_est_sel_data = (baseline & ~baseline)  # this has to be false
+
             weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
+            weight_cf_mc = self.chargeflipWeight.flip_weight(el_t_p)
 
         else:
             BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
+
             np_est_sel_mc = (baseline & ~baseline)
             np_obs_sel_mc = (baseline & ~baseline)
             np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
+
+            cf_est_sel_mc = (baseline & ~baseline)
+            cf_obs_sel_mc = (baseline & ~baseline)
+            cf_est_sel_data = (baseline_OS & ((ak.num(el_t)+ak.num(mu_t))==2) )
+
             weight_np_mc = np.ones(len(ev))
+            weight_cf_mc = np.ones(len(ev))
 
         weight_BL = weight.weight()[BL]  # this is just a shortened weight list for the two prompt selection
         weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
+        weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
+
+        def fill_multiple_np(hist, arrays):
+            fill_multiple(
+                hist,
+                datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data", "cf_est_mc", "cf_obs_mc", "cf_est_data"],
+                arrays=arrays,
+                selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
+                weights=[
+                    weight_BL,
+                    weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
+                    weight.weight()[np_obs_sel_mc],
+                    weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
+                    weight.weight()[cf_est_sel_mc]*weight_cf_mc[cf_est_sel_mc],
+                    weight.weight()[cf_obs_sel_mc],
+                    weight.weight()[cf_est_sel_data]*weight_cf_data[cf_est_sel_data],
+                ],
+            )
 
         if True:
             # define the inputs to the NN
@@ -242,6 +279,8 @@ class SS_analysis(processor.ProcessorABC):
                 ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
             ])
 
+            NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+
             NN_inputs = np.moveaxis(NN_inputs, 0, 1)
 
             model, scaler = load_onnx_model('v8')
@@ -255,22 +294,28 @@ class SS_analysis(processor.ProcessorABC):
 
 
             except ValueError:
-                #print ("Empty NN_inputs")
+                print ("Problem with prediction. Showing the shapes here:")
+                print (np.shape(NN_inputs))
+                print (np.shape(weight_BL))
                 NN_pred = np.array([])
                 best_score = np.array([])
                 NN_inputs_scaled = NN_inputs
+                raise
 
             ##k.clear_session()
 
             #FIXME below needs to be fixed again with changed NN evaluation. Should work now
-            output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
+            #output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
+            #output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
 
-            output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
-            #output['node0_score'].fill(dataset=dataset, score=NN_pred[best_score==0][:,0] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==0])
-            #output['node1_score'].fill(dataset=dataset, score=NN_pred[best_score==1][:,1] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==1])
-            #output['node2_score'].fill(dataset=dataset, score=NN_pred[best_score==2][:,2] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==2])
-            #output['node3_score'].fill(dataset=dataset, score=NN_pred[best_score==3][:,3] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==3])
-            #output['node4_score'].fill(dataset=dataset, score=NN_pred[best_score==4][:,4] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL[best_score==4])
+            fill_multiple_np(output['node'], {'multiplicity':best_score})
+            fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
+            #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
+            output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
+            output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
+            output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
+            output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
+            output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
 
             #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
             #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
@@ -292,19 +337,6 @@ class SS_analysis(processor.ProcessorABC):
             del scaler
             del NN_inputs, NN_inputs_scaled, NN_pred
 
-        def fill_multiple_np(hist, arrays):
-            fill_multiple(
-                hist,
-                datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data"],
-                arrays=arrays,
-                selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data],
-                weights=[
-                    weight_BL,
-                    weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
-                    weight.weight()[np_obs_sel_mc],
-                    weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
-                ],
-            )
 
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
@@ -327,21 +359,7 @@ class SS_analysis(processor.ProcessorABC):
             output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
 
-
-        # I'll keep this here as an example
-        fill_multiple(
-            output['MET'],
-            datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data"],
-            arrays={'pt':ev.MET.pt, 'phi':ev.MET.phi},
-            selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data],
-            weights=[
-                weight_BL,
-                weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
-                weight.weight()[np_obs_sel_mc],
-                weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
-            ],
-        )
-
+        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
@@ -434,10 +452,20 @@ if __name__ == '__main__':
     from Tools.samples import get_babies
     from processor.default_accumulators import *
 
-    overwrite = True
-    small = True
-    save = True
-    year = 2017
+    import argparse
+
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
+    argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
+    argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
+    args = argParser.parse_args()
+
+    overwrite   = not args.keep
+    small       = args.small
+    year        = int(args.year)
+    local       = not args.dask
+    save        = True
 
     # load the config and the cache
     cfg = loadConfig()
@@ -451,29 +479,24 @@ if __name__ == '__main__':
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
-        #'topW_v3': fileset_all['topW_NLO'],
-        ##'topW_v3': fileset_all['topW_v3'],
-        ###'topW_EFT_mix': fileset_all['topW_EFT'],
-        ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-        ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+        'topW_v3': fileset_all['topW_NLO'],
+        ###'topW_v3': fileset_all['topW_v3'],
+        ####'topW_EFT_mix': fileset_all['topW_EFT'],
+        ###'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+        ###'topW_EFT_mix': fileset_all['topW_EFT_mix'],
         #'TTW': fileset_all['TTW'],
         #'TTZ': fileset_all['TTZ'],
         #'TTH': fileset_all['TTH'],
-        'diboson': fileset_all['diboson'],
-        ##'triboson': fileset_all['triboson'],
-        ###'wpwp': fileset_all['wpwp'],
-        ##'TTTT': fileset_all['TTTT'],
+        #'diboson': fileset_all['diboson'],
         #'rare': fileset_all['TTTT']+fileset_all['triboson'],
         ##'ttbar': fileset_all['ttbar1l'],
+        ##'ttbar': fileset_all['ttbar2l'],
         #'ttbar': fileset_all['top'],
-        ###'MuonEG': fileset_all['MuonEG_Run2018'],
-        ###'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        ###'EGamma': fileset_all['EGamma_Run2018'],
         #'MuonEG': fileset_all['MuonEG'],
         #'DoubleMuon': fileset_all['DoubleMuon'],
-        #'EGamma': fileset_all['EGamma'],
-        ###'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
-        ###'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        'EGamma': fileset_all['EGamma'],
+        ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+        ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
     
     fileset = make_small(fileset, small, n_max=10)
@@ -481,12 +504,31 @@ if __name__ == '__main__':
     
     add_processes_to_output(fileset, desired_output)
 
-    exe_args = {
-        'workers': 12,
-        'function_args': {'flatten': False},
-        "schema": NanoAODSchema,
-    }
-    exe = processor.futures_executor
+
+    if local:
+        exe_args = {
+            'workers': 12,
+            'function_args': {'flatten': False},
+            "schema": NanoAODSchema,
+        }
+        exe = processor.futures_executor
+
+    else:
+        from Tools.helpers import get_scheduler_address
+        from dask.distributed import Client, progress
+
+        scheduler_address = get_scheduler_address()
+        c = Client(scheduler_address)
+
+        exe_args = {
+            'client': c,
+            'function_args': {'flatten': False},
+            "schema": NanoAODSchema,
+            "tailtimeout": 300,
+            "retries": 3,
+            "skipbadfiles": True
+        }
+        exe = processor.dask_executor
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
