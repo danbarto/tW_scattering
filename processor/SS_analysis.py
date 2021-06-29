@@ -10,15 +10,16 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
 import numpy as np
+import pandas as pd
 
-from Tools.objects import *
-from Tools.basic_objects import *
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match
+from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import getFilters, getTriggers
-from Tools.btag_scalefactors import *
-from Tools.ttH_lepton_scalefactors import *
+from Tools.btag_scalefactors import btag_scalefactor
+from Tools.ttH_lepton_scalefactors import LeptonSF
 from Tools.selections import Selection
 from Tools.nonprompt_weight import NonpromptWeight
 from Tools.chargeFlip import charge_flip
@@ -27,6 +28,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from ML.multiclassifier_tools import load_onnx_model, predict_onnx
+
 
 class SS_analysis(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -247,41 +249,44 @@ class SS_analysis(processor.ProcessorABC):
                 ],
             )
 
-        if True:
+        if False:
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
-            NN_inputs = np.stack([
-                ak.to_numpy(ak.num(jet)),
-                ak.to_numpy(ak.num(tau)),
-                ak.to_numpy(ak.num(track)),
-                ak.to_numpy(st),
-                ak.to_numpy(ev.MET.pt),
-                ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
-                ak.to_numpy(pad_and_flatten(delta_eta)),
-                ak.to_numpy(pad_and_flatten(leading_lepton.pt)),
-                ak.to_numpy(pad_and_flatten(leading_lepton.eta)),
-                ak.to_numpy(pad_and_flatten(trailing_lepton.pt)),
-                ak.to_numpy(pad_and_flatten(trailing_lepton.eta)),
-                ak.to_numpy(pad_and_flatten(dilepton_mass)),
-                ak.to_numpy(pad_and_flatten(dilepton_pt)),
-                ak.to_numpy(pad_and_flatten(j_fwd.pt)),
-                ak.to_numpy(pad_and_flatten(j_fwd.p)),
-                ak.to_numpy(pad_and_flatten(j_fwd.eta)),
-                ak.to_numpy(pad_and_flatten(jet[:, 0:1].pt)),
-                ak.to_numpy(pad_and_flatten(jet[:, 1:2].pt)),
-                ak.to_numpy(pad_and_flatten(jet[:, 0:1].eta)),
-                ak.to_numpy(pad_and_flatten(jet[:, 1:2].eta)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].pt)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].pt)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].eta)),
-                ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].eta)),
-                ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
-                ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
-            ])
+            # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
+            NN_inputs_df = pd.DataFrame({
+                'n_jet':            ak.to_numpy(ak.num(jet)),
+                'n_tau':            ak.to_numpy(ak.num(tau)),
+                'n_track':          ak.to_numpy(ak.num(track)),
+                'st':               ak.to_numpy(st),
+                'met':              ak.to_numpy(ev.MET.pt),
+                'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
+                'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
+                'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.pt)),
+                'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.eta)),
+                'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.pt)),
+                'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.eta)),
+                'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
+                'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
+                'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(j_fwd.pt)),
+                'fwd_jet_p':        ak.to_numpy(pad_and_flatten(j_fwd.p)),
+                'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(j_fwd.eta)),
+                'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].pt)),
+                'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].pt)),
+                'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].eta)),
+                'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].eta)),
+                'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].pt)),
+                'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].pt)),
+                'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].eta)),
+                'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].eta)),
+                'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
+                'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
+            })
+
+            NN_inputs = NN_inputs_df.values
 
             NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
 
-            NN_inputs = np.moveaxis(NN_inputs, 0, 1)
+            #NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
             model, scaler = load_onnx_model('v8')
 
@@ -344,11 +349,11 @@ class SS_analysis(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight_BL)
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight_BL)
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight_BL)
-        fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
-        fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
-        fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
-        output['ST'].fill(dataset=dataset, pt=st[BL], weight=weight_BL)
-        output['HT'].fill(dataset=dataset, pt=ht[BL], weight=weight_BL)
+        #fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
+        #fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
+        #fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
+        output['ST'].fill(dataset=dataset, ht=st[BL], weight=weight_BL)
+        output['HT'].fill(dataset=dataset, ht=ht[BL], weight=weight_BL)
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
@@ -359,7 +364,7 @@ class SS_analysis(processor.ProcessorABC):
             output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
 
-        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+        #fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
@@ -378,14 +383,14 @@ class SS_analysis(processor.ProcessorABC):
                 weight = weight_BL
             )
         
-        fill_multiple_np(
-            output['lead_lep'],
-            {
-                'pt':  pad_and_flatten(leading_lepton.pt),
-                'eta': pad_and_flatten(leading_lepton.eta),
-                'phi': pad_and_flatten(leading_lepton.phi),
-            },
-        )
+        #fill_multiple_np(
+        #    output['lead_lep'],
+        #    {
+        #        'pt':  pad_and_flatten(leading_lepton.pt),
+        #        'eta': pad_and_flatten(leading_lepton.eta),
+        #        'phi': pad_and_flatten(leading_lepton.phi),
+        #    },
+        #)
 
         output['trail_lep'].fill(
             dataset = dataset,
@@ -419,14 +424,14 @@ class SS_analysis(processor.ProcessorABC):
             weight = weight_BL
         )
         
-        fill_multiple_np(
-            output['fwd_jet'],
-            {
-                'pt':  pad_and_flatten(j_fwd.pt),
-                'eta': pad_and_flatten(j_fwd.eta),
-                'phi': pad_and_flatten(j_fwd.phi),
-            },
-        )
+        #fill_multiple_np(
+        #    output['fwd_jet'],
+        #    {
+        #        'pt':  pad_and_flatten(j_fwd.pt),
+        #        'eta': pad_and_flatten(j_fwd.eta),
+        #        'phi': pad_and_flatten(j_fwd.phi),
+        #    },
+        #)
         
         #output['fwd_jet'].fill(
         #    dataset = dataset,
@@ -457,15 +462,22 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
+    argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
+    argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     args = argParser.parse_args()
 
+    profile     = args.profile
+    iterative   = args.iterative
     overwrite   = not args.keep
     small       = args.small
     year        = int(args.year)
     local       = not args.dask
     save        = True
+
+    if profile:
+        from pympler import muppy, summary
 
     # load the config and the cache
     cfg = loadConfig()
@@ -484,16 +496,16 @@ if __name__ == '__main__':
         ####'topW_EFT_mix': fileset_all['topW_EFT'],
         ###'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
         ###'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-        #'TTW': fileset_all['TTW'],
-        #'TTZ': fileset_all['TTZ'],
-        #'TTH': fileset_all['TTH'],
-        #'diboson': fileset_all['diboson'],
-        #'rare': fileset_all['TTTT']+fileset_all['triboson'],
-        ##'ttbar': fileset_all['ttbar1l'],
-        ##'ttbar': fileset_all['ttbar2l'],
-        #'ttbar': fileset_all['top'],
-        #'MuonEG': fileset_all['MuonEG'],
-        #'DoubleMuon': fileset_all['DoubleMuon'],
+        'TTW': fileset_all['TTW'],
+        'TTZ': fileset_all['TTZ'],
+        'TTH': fileset_all['TTH'],
+        'diboson': fileset_all['diboson'],
+        'rare': fileset_all['TTTT']+fileset_all['triboson'],
+        #'ttbar': fileset_all['ttbar1l'],
+        #'ttbar': fileset_all['ttbar2l'],
+        'ttbar': fileset_all['top'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
         'EGamma': fileset_all['EGamma'],
         ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
@@ -505,13 +517,20 @@ if __name__ == '__main__':
     add_processes_to_output(fileset, desired_output)
 
 
-    if local:
+    if local:# and not profile:
         exe_args = {
             'workers': 12,
             'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
         exe = processor.futures_executor
+
+    elif iterative:
+        exe_args = {
+            'function_args': {'flatten': False},
+            "schema": NanoAODSchema,
+        }
+        exe = processor.iterative_executor
 
     else:
         from Tools.helpers import get_scheduler_address
@@ -532,10 +551,10 @@ if __name__ == '__main__':
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
-    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis
+    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis
     desired_output.update({
-        "ST": hist.Hist("Counts", dataset_axis, pt_axis),
-        "HT": hist.Hist("Counts", dataset_axis, pt_axis),
+        "ST": hist.Hist("Counts", dataset_axis, ht_axis),
+        "HT": hist.Hist("Counts", dataset_axis, ht_axis),
         "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pt_axis),
         "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
         "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
@@ -564,7 +583,7 @@ if __name__ == '__main__':
             SS_analysis(year=year, variations=variations, accumulator=desired_output),
             exe,
             exe_args,
-            chunksize=100000,
+            chunksize=250000,  # I guess that's already running into the max events/file
             #chunksize=250000,
         )
         
