@@ -249,7 +249,7 @@ class SS_analysis(processor.ProcessorABC):
                 ],
             )
 
-        if False:
+        if True:
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
