@@ -253,7 +253,10 @@ class SS_analysis(processor.ProcessorABC):
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
-            NN_inputs_df = pd.DataFrame({
+            
+
+
+            NN_inputs_d = {
                 'n_jet':            ak.to_numpy(ak.num(jet)),
                 'n_tau':            ak.to_numpy(ak.num(tau)),
                 'n_track':          ak.to_numpy(ak.num(track)),
@@ -280,13 +283,13 @@ class SS_analysis(processor.ProcessorABC):
                 'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].eta)),
                 'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
                 'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
-            })
+            }
 
-            NN_inputs = NN_inputs_df.values
+            NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
 
             NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
 
-            #NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
+            NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
             model, scaler = load_onnx_model('v8')
 
