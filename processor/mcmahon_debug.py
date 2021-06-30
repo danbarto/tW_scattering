@@ -28,6 +28,7 @@ import production.weights
 events = NanoEventsFactory.from_root('/nfs-7/userdata/ksalyer/fcnc/fcnc_v6_SRonly_5may2021/2018/signal_hct_atop.root', schemaclass=NanoAODSchema).events()
 #
 year = 2018
+
 events = events[ak.num(events.Jet)>0] #corrects for rare case where there isn't a single jet 
 
 # we can use a very loose preselection to filter the events. nothing is done with this presel, though
@@ -47,8 +48,17 @@ ele_l = Collections(ev, "Electron", "fakeableFCNC", year=year).get()
 mu_t  = Collections(ev, "Muon", "tightFCNC", year=year).get()
 mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=year).get()
 
-#SS preselection 
+dataset = "signal_hct_atop"
 breakpoint()
+rares_dataset = ['ttw', 'www', 'wzz', 'wz', 'tg', 'wzg', 'tth_nobb', 'ttg_dilep', 'tttj', 'tttt', 'tttw', 
+                 'tthh', 'vh_nobb', 'tzq', 'ttwh', 'ttg_1lep', 'wwz', 'wwg', 'ttwz', 'zz', 'ttww', 'wg', 
+                 'ttz_m10', 'qqww', 'zzz', 'ggh', 'ttzh', 'ttz_m1-10', 'tw_dilep', 'ttzz']
+if dataset in rares_dataset:
+    ele_t = ele_t[((ele_t.genPartFlav==1)|(ele_t.genPartFlav==15))]
+    ele_l = ele_l[((ele_l.genPartFlav==1)|(ele_l.genPartFlav==15))]
+    mu_t = mu_t[((mu_t.genPartFlav==1)|(mu_t.genPartFlav==15))]
+    mu_l = mu_l[((mu_l.genPartFlav==1)|(mu_l.genPartFlav==15))]
+#SS preselection 
 lepton  = ak.concatenate([mu_l, ele_l], axis=1)
 tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
 sorted_index_nofilter = ak.argsort(tight_lepton.pt, axis=-1, ascending=False)
@@ -59,11 +69,6 @@ subleadlep_nofilter = sorted_lep_nofilter[:,1:2]
 #M(ee) > 12
 diele_mass = choose(ele_t, 2).mass
 
-#genPartFlav (prompt leptons)
-leadlep_genPartFlav = ak.sum(leadlep_nofilter.genPartFlav, axis=1)
-subleadlep_genPartFlav = ak.sum(subleadlep_nofilter.genPartFlav, axis=1)
-prompt_selelction = ((   (leadlep_genPartFlav==1)|   (leadlep_genPartFlav==15)) & 
-                     ((subleadlep_genPartFlav==1)|(subleadlep_genPartFlav==15)) )
 #clean jets :
 # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
 jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
@@ -132,11 +137,11 @@ mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
 mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
 
 #get weights of events (scale1fb * generator_weights * lumi)
-# weight = production.weights.get_weight(ev.metadata["dataset"], year, version) #scale1fb
-# weight = weight * (ev.Generator.weight / abs(ev.Generator.weight)) #generator weights (can sometimes be negative)
-# lumi_dict = {2018:59.71, 2017:41.5, 2016:35.9} #lumi weights
-# weight = weight * lumi_dict[year]
-# weight = weight[FCNC_sel]
+weight = production.weights.get_weight("signal_hct_atop", year, "fcnc_v6_SRonly_5may2021") #scale1fb
+weight = weight * (ev.Generator.weight / abs(ev.Generator.weight)) #generator weights (can sometimes be negative)
+lumi_dict = {2018:59.71, 2017:41.5, 2016:35.9} #lumi weights
+weight = weight * lumi_dict[year]
+weight = weight[FCNC_sel]
 
 BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "HT":ht,
@@ -160,5 +165,5 @@ BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
                   "MT_LeadLep_MET":mt_leadlep_met,
                   "MT_SubLeadLep_MET":mt_leadlep_met,
                   "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
-                  "weight":1.0
+                  "weight":weight
                   }

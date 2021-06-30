@@ -59,6 +59,15 @@ class nano_analysis(processor.ProcessorABC):
         mu_t  = Collections(ev, "Muon", "tightFCNC", year=self.year).get()
         mu_l  = Collections(ev, "Muon", "fakeableFCNC", year=self.year).get()
         
+        dataset = ev.metadata["dataset"]
+        rares_dataset = ['ttw', 'www', 'wzz', 'wz', 'tg', 'wzg', 'tth_nobb', 'ttg_dilep', 'tttj', 'tttt', 'tttw', 
+                         'tthh', 'vh_nobb', 'tzq', 'ttwh', 'ttg_1lep', 'wwz', 'wwg', 'ttwz', 'zz', 'ttww', 'wg', 
+                         'ttz_m10', 'qqww', 'zzz', 'ggh', 'ttzh', 'ttz_m1-10', 'tw_dilep', 'ttzz']
+        if dataset in rares_dataset:
+            ele_t = ele_t[((ele_t.genPartFlav==1)|(ele_t.genPartFlav==15))]
+            ele_l = ele_l[((ele_l.genPartFlav==1)|(ele_l.genPartFlav==15))]
+            mu_t = mu_t[((mu_t.genPartFlav==1)|(mu_t.genPartFlav==15))]
+            mu_l = mu_l[((mu_l.genPartFlav==1)|(mu_l.genPartFlav==15))]
         #SS preselection 
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
         tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
@@ -69,12 +78,7 @@ class nano_analysis(processor.ProcessorABC):
         
         #M(ee) > 12
         diele_mass = choose(ele_t, 2).mass
-        
-        #prompt leptons (genPartFlav)
-        leadlep_genPartFlav = ak.sum(leadlep_nofilter.genPartFlav, axis=1)
-        subleadlep_genPartFlav = ak.sum(subleadlep_nofilter.genPartFlav, axis=1)
-        prompt_selection = ((    (leadlep_genPartFlav==1)|   (leadlep_genPartFlav==15)) & 
-                             ((subleadlep_genPartFlav==1)|(subleadlep_genPartFlav==15)) )
+
         #clean jets :
         # we want at least two jets that are outside of the lepton jets by deltaR > 0.4
         jets = getJets(ev, maxEta=2.4, minPt=40, pt_var='pt')
@@ -89,8 +93,7 @@ class nano_analysis(processor.ProcessorABC):
         selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
         selection.add("M(ee)>12", ((ak.num(ele_t) < 2) | (ak.sum(diele_mass, axis=1) > 12.0))) #ak.sum here to flatten the diele_mass array
-        selection.add("prompt", prompt_selection)
-        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12", "prompt"]
+        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
 
