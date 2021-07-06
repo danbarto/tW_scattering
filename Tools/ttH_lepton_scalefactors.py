@@ -192,6 +192,9 @@ if __name__ == '__main__':
     sel = ((ak.num(el)==1)&(ak.num(mu)==1))
 
     sf_central  = sf18.get(el[sel], mu[sel], variation='central')
+    print ("Mean value of SF (central): %.3f"%ak.mean(sf_central))
     sf_up       = sf18.get(el[sel], mu[sel], variation='up')
+    print ("Mean value of SF (up): %.3f"%ak.mean(sf_up))
     sf_down     = sf18.get(el[sel], mu[sel], variation='down')
+    print ("Mean value of SF (down): %.3f"%ak.mean(sf_down))
 
