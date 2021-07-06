@@ -8,14 +8,33 @@ from dask_jobqueue.htcondor import HTCondorJob, HTCondorCluster, quote_environme
 
 BASEDIR = os.path.dirname(os.path.realpath(__file__))
 
-def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=[
-            "sdsc-49.t2.ucsd.edu",
-            "sdsc-50.t2.ucsd.edu",
-            "sdsc-68.t2.ucsd.edu",
-            "cabinet-7-7-36.t2.ucsd.edu",
-            "cabinet-8-8-1.t2.ucsd.edu",
-            "cabinet-4-4-18.t2.ucsd.edu",
-    ], memory=4000, disk=20000, whitelisted_machines=[]):
+blacklisted_machines = [
+        "sdsc-1.t2.ucsd.edu",
+        "sdsc-37.t2.ucsd.edu",
+        "sdsc-49.t2.ucsd.edu",
+        "sdsc-50.t2.ucsd.edu",
+        "sdsc-68.t2.ucsd.edu",
+        "cabinet-0-0-20.t2.ucsd.edu",
+        "cabinet-0-0-21.t2.ucsd.edu",
+        "cabinet-0-0-22.t2.ucsd.edu",
+        "cabinet-0-0-23.t2.ucsd.edu",
+        "cabinet-0-0-28.t2.ucsd.edu",
+        "cabinet-0-0-29.t2.ucsd.edu",
+        "cabinet-0-0-30.t2.ucsd.edu",
+        "cabinet-0-0-31.t2.ucsd.edu",
+        "cabinet-3-3-2.t2.ucsd.edu",
+        "cabinet-4-4-16.t2.ucsd.edu"
+        "cabinet-4-4-18.t2.ucsd.edu",
+        "cabinet-7-7-36.t2.ucsd.edu",
+        "cabinet-8-8-1.t2.ucsd.edu",
+        "cabinet-11-11-0.t2.ucsd.edu",
+        "cabinet-11-11-3.t2.ucsd.edu",
+        "cabinet-11-11-2.t2.ucsd.edu",
+        "cabinet-11-11-6.t2.ucsd.edu",
+        "cabinet-11-11-9.t2.ucsd.edu",
+]
+
+def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=blacklisted_machines, memory=4000, disk=20000, whitelisted_machines=[]):
 
     template = """
 universe                = vanilla
@@ -111,6 +130,7 @@ def make_htcondor_cluster(
         cores = 1,
         local=False,
         dashboard_address=8787,
+        blacklisted_machines = blacklisted_machines,
         ):
 
     input_files = [os.path.join(BASEDIR, x) for x in ["utils.py","cachepreload.py","workerenv.tar.gz","analysis.tar.gz"]]
@@ -120,22 +140,6 @@ def make_htcondor_cluster(
     [make_sure_exists(p) for p in input_files + [proxy_file]]
     make_sure_exists(log_directory, make=True)
 
-    blacklisted_machines = [
-            "cabinet-11-11-2.t2.ucsd.edu",
-            "cabinet-11-11-6.t2.ucsd.edu",
-            "cabinet-0-0-23.t2.ucsd.edu",
-            "cabinet-0-0-30.t2.ucsd.edu",
-            "cabinet-11-11-0.t2.ucsd.edu",
-            "cabinet-0-0-20.t2.ucsd.edu",
-            "cabinet-0-0-22.t2.ucsd.edu",
-            "cabinet-0-0-21.t2.ucsd.edu",
-            "cabinet-0-0-29.t2.ucsd.edu",
-            "cabinet-11-11-9.t2.ucsd.edu",
-            "cabinet-11-11-3.t2.ucsd.edu",
-            "cabinet-0-0-31.t2.ucsd.edu",
-            "cabinet-0-0-28.t2.ucsd.edu",
-            "cabinet-3-3-2.t2.ucsd.edu",
-    ]
     whitelisted_machines = []
 
     extra_requirements = "True"

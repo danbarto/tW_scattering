@@ -31,9 +31,12 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False):
         self.variations = variations
         self.year = year
+        self.evaluate = evaluate
+        self.training = training
+        self.dump = dump
         
         self.btagSF = btag_scalefactor(year)
         
@@ -225,12 +228,14 @@ class SS_analysis(processor.ProcessorABC):
             cf_obs_sel_mc = (baseline & ~baseline)
             cf_est_sel_data = (baseline_OS & ((ak.num(el_t)+ak.num(mu_t))==2) )
 
-            weight_np_mc = np.ones(len(ev))
-            weight_cf_mc = np.ones(len(ev))
+            weight_np_mc = np.zeros(len(ev))
+            weight_cf_mc = np.zeros(len(ev))
 
         weight_BL = weight.weight()[BL]  # this is just a shortened weight list for the two prompt selection
         weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
         weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
+
+        out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
         def fill_multiple_np(hist, arrays):
             fill_multiple(
@@ -249,13 +254,11 @@ class SS_analysis(processor.ProcessorABC):
                 ],
             )
 
-        if True:
+        if self.evaluate or self.dump:
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
             
-
-
             NN_inputs_d = {
                 'n_jet':            ak.to_numpy(ak.num(jet)),
                 'n_tau':            ak.to_numpy(ak.num(tau)),
@@ -285,66 +288,86 @@ class SS_analysis(processor.ProcessorABC):
                 'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
             }
 
-            NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
+            if self.dump:
+                for k in NN_inputs_d.keys():
+                    output[k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
 
-            NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+            if self.evaluate:
+            
+                NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
 
-            NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
+                NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
 
-            model, scaler = load_onnx_model('v8')
+                NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
-            try:
-                NN_inputs_scaled = scaler.transform(NN_inputs)
+                model, scaler = load_onnx_model(self.training)
 
-                NN_pred    = predict_onnx(model, NN_inputs_scaled)
+                try:
+                    NN_inputs_scaled = scaler.transform(NN_inputs)
 
-                best_score = np.argmax(NN_pred, axis=1)
+                    NN_pred    = predict_onnx(model, NN_inputs_scaled)
+
+                    best_score = np.argmax(NN_pred, axis=1)
 
 
-            except ValueError:
-                print ("Problem with prediction. Showing the shapes here:")
-                print (np.shape(NN_inputs))
-                print (np.shape(weight_BL))
-                NN_pred = np.array([])
-                best_score = np.array([])
-                NN_inputs_scaled = NN_inputs
-                raise
+                except ValueError:
+                    print ("Problem with prediction. Showing the shapes here:")
+                    print (np.shape(NN_inputs))
+                    print (np.shape(weight_BL))
+                    NN_pred = np.array([])
+                    best_score = np.array([])
+                    NN_inputs_scaled = NN_inputs
+                    raise
 
-            ##k.clear_session()
+                ##k.clear_session()
 
-            #FIXME below needs to be fixed again with changed NN evaluation. Should work now
-            #output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
-            #output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
+                #FIXME below needs to be fixed again with changed NN evaluation. Should work now
+                #output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
+                #output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
 
-            fill_multiple_np(output['node'], {'multiplicity':best_score})
-            fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
-            #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
-            output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
-            output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
-            output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
-            output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
-            output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
+                fill_multiple_np(output['node'], {'multiplicity':best_score})
+                fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
+                #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
+                output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
+                output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
+                output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
+                output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
+                output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
 
-            #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
-            #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
-            #leading_lepton_BL = leading_lepton[BL]
+                #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
+                #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
+                #leading_lepton_BL = leading_lepton[BL]
 
-            #output['lead_lep_SR_pp'].fill(
-            #    dataset = dataset,
-            #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
-            #    weight = weight_BL[SR_sel_pp]
-            #)
+                #output['lead_lep_SR_pp'].fill(
+                #    dataset = dataset,
+                #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
+                #    weight = weight_BL[SR_sel_pp]
+                #)
 
-            #output['lead_lep_SR_mm'].fill(
-            #    dataset = dataset,
-            #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
-            #    weight = weight_BL[SR_sel_mm]
-            #)
+                #output['lead_lep_SR_mm'].fill(
+                #    dataset = dataset,
+                #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
+                #    weight = weight_BL[SR_sel_mm]
+                #)
 
-            del model
-            del scaler
-            del NN_inputs, NN_inputs_scaled, NN_pred
+                del model
+                del scaler
+                del NN_inputs, NN_inputs_scaled, NN_pred
 
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5}
+        if dataset in labels:
+            label_mult = labels[dataset]
+        else:
+            label_mult = 6  # data or anything else
+
+        if self.dump:
+            output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
+            output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
+            output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
+            output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
+            output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
+            output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
+            output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
 
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
@@ -352,9 +375,9 @@ class SS_analysis(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight_BL)
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight_BL)
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight_BL)
-        #fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
-        #fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
-        #fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
+        fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
+        fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
+        fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
         output['ST'].fill(dataset=dataset, ht=st[BL], weight=weight_BL)
         output['HT'].fill(dataset=dataset, ht=ht[BL], weight=weight_BL)
 
@@ -367,7 +390,7 @@ class SS_analysis(processor.ProcessorABC):
             output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
 
-        #fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
@@ -386,14 +409,14 @@ class SS_analysis(processor.ProcessorABC):
                 weight = weight_BL
             )
         
-        #fill_multiple_np(
-        #    output['lead_lep'],
-        #    {
-        #        'pt':  pad_and_flatten(leading_lepton.pt),
-        #        'eta': pad_and_flatten(leading_lepton.eta),
-        #        'phi': pad_and_flatten(leading_lepton.phi),
-        #    },
-        #)
+        fill_multiple_np(
+            output['lead_lep'],
+            {
+                'pt':  pad_and_flatten(leading_lepton.pt),
+                'eta': pad_and_flatten(leading_lepton.eta),
+                'phi': pad_and_flatten(leading_lepton.phi),
+            },
+        )
 
         output['trail_lep'].fill(
             dataset = dataset,
@@ -427,14 +450,14 @@ class SS_analysis(processor.ProcessorABC):
             weight = weight_BL
         )
         
-        #fill_multiple_np(
-        #    output['fwd_jet'],
-        #    {
-        #        'pt':  pad_and_flatten(j_fwd.pt),
-        #        'eta': pad_and_flatten(j_fwd.eta),
-        #        'phi': pad_and_flatten(j_fwd.phi),
-        #    },
-        #)
+        fill_multiple_np(
+            output['fwd_jet'],
+            {
+                'pt':  pad_and_flatten(j_fwd.pt),
+                'eta': pad_and_flatten(j_fwd.eta),
+                'phi': pad_and_flatten(j_fwd.phi),
+            },
+        )
         
         #output['fwd_jet'].fill(
         #    dataset = dataset,
@@ -469,6 +492,9 @@ if __name__ == '__main__':
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
+    argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
+    argParser.add_argument('--training', action='store', default='v8', help="Which training to use?")
+    argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -495,10 +521,10 @@ if __name__ == '__main__':
     
     fileset = {
         'topW_v3': fileset_all['topW_NLO'],
-        ###'topW_v3': fileset_all['topW_v3'],
-        ####'topW_EFT_mix': fileset_all['topW_EFT'],
-        ###'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-        ###'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+        ##'topW_v3': fileset_all['topW_v3'],
+        ###'topW_EFT_mix': fileset_all['topW_EFT'],
+        ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+        ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
         'TTW': fileset_all['TTW'],
         'TTZ': fileset_all['TTZ'],
         'TTH': fileset_all['TTH'],
@@ -519,10 +545,49 @@ if __name__ == '__main__':
     
     add_processes_to_output(fileset, desired_output)
 
+    if args.dump:
+        variables = [
+            'n_jet',
+            'n_tau',
+            'n_track',
+            'st',
+            'met',
+            'mjj_max',
+            'delta_eta_jj',
+            'lead_lep_pt',
+            'lead_lep_eta',
+            'sublead_lep_pt',
+            'sublead_lep_eta',
+            'dilepton_mass',
+            'dilepton_pt',
+            'fwd_jet_pt',
+            'fwd_jet_p',
+            'fwd_jet_eta',
+            'lead_jet_pt',
+            'sublead_jet_pt',
+            'lead_jet_eta',
+            'sublead_jet_eta',
+            'lead_btag_pt',
+            'sublead_btag_pt',
+            'lead_btag_eta',
+            'sublead_btag_eta',
+            'min_bl_dR',
+            'min_mt_lep_met',
+            'weight',
+            'weight_np',
+            'weight_cf',
+            'SS',
+            'OS',
+            'AR',
+            'label',
+        ]
+
+        for var in variables:
+            desired_output.update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
 
     if local:# and not profile:
         exe_args = {
-            'workers': 12,
+            'workers': 16,
             'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
@@ -583,7 +648,7 @@ if __name__ == '__main__':
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            SS_analysis(year=year, variations=variations, accumulator=desired_output),
+            SS_analysis(year=year, variations=variations, accumulator=desired_output, evaluate=args.evaluate, training=args.training, dump=args.dump),
             exe,
             exe_args,
             chunksize=250000,  # I guess that's already running into the max events/file
@@ -597,6 +662,21 @@ if __name__ == '__main__':
             cache['simple_output']  = output
             cache.dump()
 
+    ## output for DNN training
+    if args.dump:
+        if overwrite:
+            df_dict = {}
+            for var in variables:
+                df_dict.update({var: output[var].value})
+
+            df_out = pd.DataFrame( df_dict )
+            df_out.to_hdf('multiclass_input_%s_v1.h5'%year, key='df', format='table', mode='w')
+        else:
+            print ("Loading DF")
+            df_out = pd.read_hdf('multiclass_input_%s_v1.h5'%year)
+
+    
+    ## some plots
     import matplotlib.pyplot as plt
     import mplhep as hep
     plt.style.use(hep.style.CMS)

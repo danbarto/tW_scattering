@@ -1,16 +1,32 @@
+'''
+
+
+c.scheduler_info()['workers']['tcp://169.228.131.90:45413']
+
+c.retire_workers(workers=['tcp://169.228.131.90:45413'])
+
+'''
+
+
 import os
+import socket
 
 from Tools.condor_utils import make_htcondor_cluster
 
 from dask.distributed import Client, progress
 
-def getWorkers( client ):
+def get_workers( client ):
     logs = client.get_worker_logs()
     return list(logs.keys())
 
-def getAllWarnings( client ):
+def get_hosts( workers, hostname=True ):
+    index = 0 if hostname else 2
+    hosts = list(set([ socket.gethostbyaddr(w.replace('tcp://','').split(':')[0])[index] for w in workers ]))
+    return hosts
+
+def get_all_warnings( client ):
     logs = client.get_worker_logs()
-    workers = getWorkers( client )
+    workers = get_workers( client )
     for worker in workers:
         for log in logs[worker]:
             if log[0] == 'WARNING' or log[0] == 'ERROR':
@@ -18,10 +34,10 @@ def getAllWarnings( client ):
                 print (" ### Found warning for worker:", worker)
                 print (log[1])
 
-def getFilesNotFound( client ):
+def get_files_not_found( client ):
     allFiles = []
     logs = client.get_worker_logs()
-    workers = getWorkers( client )
+    workers = get_workers( client )
     for worker in workers:
         for log in logs[worker]:
             if log[0] == 'WARNING':
@@ -34,8 +50,10 @@ def getFilesNotFound( client ):
 
 if __name__ == "__main__":
     
+    import time
     import argparse
-    
+    from tqdm import tqdm
+
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--local', action='store_true', default=None, help="Overwrite existing results??")
     argParser.add_argument('--scale', action='store', default=5, help="How many workers?")
@@ -76,3 +94,34 @@ if __name__ == "__main__":
             f.write(str(cluster.scheduler_address))
         
         c = Client(cluster)
+
+    notified = False
+    running = []
+    retired = []
+
+    with tqdm(total=int(args.scale)) as pbar:
+        while True:
+            try:
+                workers_tmp = get_workers(c)
+            except OSError:
+                print ("Error getting the workers")
+            if len(workers_tmp) > 0.9*int(args.scale) and not notified:
+                print ("Cluster ready.")
+                notified = True
+
+            delta = len(workers_tmp)-len(running)
+            diff  = list(set(running) - set(workers_tmp))
+            if delta<0:
+                print ("Retired %s workers since I last checked.")
+                for d in diff:
+                    print (d)
+                retired += diff
+
+            running = workers_tmp
+
+            pbar.update(delta)
+
+            time.sleep(10)
+            #break
+
+

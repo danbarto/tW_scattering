@@ -37,7 +37,8 @@ infiles   = [
   #'root://xrootd.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv6/W1JetsToLNu_NuPt-200_TuneCP5_13TeV-madgraphMLM-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/250000/3917F723-A4EF-AF42-9CA9-D5358FF660CB.root'
   #'root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIISummer16NanoAODv7/TT_FCNC-TtoHJ_aTleptonic_HToWWZZtautau_eta_hut-MadGraph5-pythia8/NANOAODSIM/PUMoriond17_Nano02Apr2020_102X_mcRun2_asymptotic_v8-v1/120000/658DC188-65AB-7E4D-871B-5B2F2B951539.root'
   #'root://xcache-redirector.t2.ucsd.edu:2040//store/mc/RunIIAutumn18NanoAODv7/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/122F21B5-5A0D-D842-9636-27D1CF6547D1.root'
-  'root://xcache-redirector.t2.ucsd.edu:2042//store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root'
+  #'root://xcache-redirector.t2.ucsd.edu:2042//store/mc/RunIIAutumn18NanoAODv7/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/60000/022107FA-F567-1B44-B139-A18ADC996FCF.root'
+  'root://xcache-redirector.t2.ucsd.edu:2042//store/mc/RunIIFall17NanoAODv7/TT_FCNC-aTtoHJ_Tleptonic_HToWWZZtautau_eta_hct-MadGraph5-pythia8/NANOAODSIM/PU2017_12Apr2018_Nano02Apr2020_102X_mc2017_realistic_v8-v1/260000/71AA6C79-0F68-6548-8EF6-561FC6F041DD.root',
   #'/hadoop/cms/store/user/dspitzba/tW_scattering/tW_scattering/nanoAOD/tW_scattering_nanoAOD_500.root'
 ]
 if args.infiles:
@@ -120,7 +121,7 @@ class LHEDumper(Module):
   
 # PROCESS NANOAOD
 #filterEvent = 'event==606||event==352'
-filterEvent = 'event==6853556'
-#filterEvent = '(1)'
+#filterEvent = 'event==6853556'
+filterEvent = '(1)'
 processor = PostProcessor(outdir,infiles,noOut=True,cut=filterEvent,modules=[LHEDumper()],maxEntries=maxEvts)
 processor.run()
