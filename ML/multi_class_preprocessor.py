@@ -12,8 +12,8 @@ from Tools.cutflow import *
 from Tools.config_helpers import *
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
-from Tools.lepton_scalefactors import *
-from Tools.helpers import mt, get_four_vec
+from Tools.ttH_lepton_scalefactors import *
+from Tools.helpers import mt, get_four_vec, pad_and_flatten
 
 import sys
 import warnings
@@ -60,18 +60,10 @@ variables = [
     'lead_jet_pt',
     'lead_jet_eta',
     'lead_jet_phi',
-    'lead_jet_energy',
-    'lead_jet_px',
-    'lead_jet_py',
-    'lead_jet_pz',
 
     'sublead_jet_pt',
     'sublead_jet_eta',
     'sublead_jet_phi',
-    'sublead_jet_energy',
-    'sublead_jet_px',
-    'sublead_jet_py',
-    'sublead_jet_pz',
 
     'lead_btag_pt',
     'lead_btag_eta',
@@ -115,6 +107,10 @@ variables = [
     'label_cat',
     'weight',
 ]
+
+for i in range(6):
+    for j in ['pt', 'eta', 'phi', 'energy', 'px', 'py', 'pz']:
+        variables.append('j%s_%s'%(i, j))
 
 for var in variables:
     out_dict.update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
@@ -201,6 +197,7 @@ class ML_preprocessor(processor.ProcessorABC):
         light     = getBTagsDeepFlavB(jet, year=self.year, invert=True)
         fwd       = getFwdJet(light)
         fwd_noPU  = getFwdJet(light, puId=False)
+        fwd_cleaned = fwd[~match(fwd, getFwdJet(jet[:,0:5]), deltaRCut=0.1)]  # the leading forward jets that are not in the 5 leading jets overall
         
         tau       = getTaus(ev)
         track     = getIsoTracks(ev)
@@ -324,18 +321,27 @@ class ML_preprocessor(processor.ProcessorABC):
         output["lead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pt, axis=1)))
         output["lead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].eta, axis=1)))
         output["lead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].phi, axis=1)))
-        output["lead_jet_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].energy, axis=1)))
-        output["lead_jet_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].px, axis=1)))
-        output["lead_jet_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].py, axis=1)))
-        output["lead_jet_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 0:1][BL].pz, axis=1)))
 
         output["sublead_jet_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].pt, axis=1)))
         output["sublead_jet_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].eta, axis=1)))
         output["sublead_jet_phi"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].phi, axis=1)))
-        output["sublead_jet_energy"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].energy, axis=1)))
-        output["sublead_jet_px"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].px, axis=1)))
-        output["sublead_jet_py"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].py, axis=1)))
-        output["sublead_jet_pz"] += processor.column_accumulator(ak.to_numpy(ak.flatten(jet[:, 1:2][BL].pz, axis=1)))
+
+        for i in range(5):
+            output["j%s_pt"%i]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].pt)))
+            output["j%s_eta"%i]     += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].eta)))
+            output["j%s_phi"%i]     += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].phi)))
+            output["j%s_energy"%i]  += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].energy)))
+            output["j%s_px"%i]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].px)))
+            output["j%s_py"%i]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].py)))
+            output["j%s_pz"%i]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(jet[:,i:i+1][BL].pz)))
+
+        output["j5_pt"]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].pt)))
+        output["j5_eta"]     += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].eta)))
+        output["j5_phi"]     += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].phi)))
+        output["j5_energy"]  += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].energy)))
+        output["j5_px"]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].px)))
+        output["j5_py"]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].py)))
+        output["j5_pz"]      += processor.column_accumulator(ak.to_numpy(pad_and_flatten(fwd_cleaned[:,0:1][BL].pz)))
 
         output["lead_btag_pt"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].pt, axis=1)))
         output["lead_btag_eta"] += processor.column_accumulator(ak.to_numpy(ak.flatten(high_score_btag[:, 0:1][BL].eta, axis=1)))
@@ -449,4 +455,4 @@ if __name__ == '__main__':
 
     df_out = pd.DataFrame( df_dict )
 
-    df_out.to_hdf('data/multiclass_input_v3.h5', key='df', format='table', mode='w')#, append=True)
+    df_out.to_hdf('data/multiclass_input_v4.h5', key='df', format='table', mode='w')#, append=True)

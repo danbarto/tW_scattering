@@ -9,7 +9,8 @@ from coffea.analysis_tools import Weights, PackedSelection
 
 import numpy as np
 
-
+from start_cluster import *
+from Tools.condor_utils import blacklisted_machines
 
 if __name__ == '__main__':
 
@@ -30,6 +31,9 @@ if __name__ == '__main__':
     def test(x):
         import yahist
         import coffea
+        import awkward
+        import sklearn
+        import onnxruntime
         from Tools.cutflow import Cutflow
         return x**2
 

@@ -32,8 +32,8 @@ echo "finished extracting at $(date +%s)"
 
 source workerenv/bin/activate
 
-pip install coffea
-pip install yahist
+#pip install coffea
+#pip install yahist
 
 ls -lrth
 export PYTHONPATH=`pwd`:$PYTHONPATH
