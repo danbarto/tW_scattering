@@ -15,6 +15,7 @@ from Tools.cutflow import *
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
+from Tools.trigger_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
 
@@ -37,6 +38,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         self.btagSF = btag_scalefactor(year)
         
         self.leptonSF = LeptonSF(year=year)
+        
+        self.triggerSF = triggerSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -89,6 +92,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
         
+        
+        dilepton_mass = (leading_lepton+trailing_lepton).mass
+        dilepton_pt = (leading_lepton+trailing_lepton).pt
+        dilepton_dR = delta_r(leading_lepton, trailing_lepton)
+        
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
         jet       = jet[ak.argsort(jet.pt_nom, ascending=False)] # need to sort wrt smeared and recorrected jet pt
@@ -127,6 +135,16 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         ht_central = ak.sum(central.pt, axis=1)
         
+        tau       = getTaus(ev)
+        track     = getIsoTracks(ev)
+        
+        bl          = cross(lepton, high_score_btag)
+        bl_dR       = delta_r(bl['0'], bl['1'])
+        min_bl_dR   = ak.min(bl_dR, axis=1)
+
+        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+        
         # define the weight
         weight = Weights( len(ev) )
         
@@ -142,7 +160,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
-        
+            
+            #weight.add("trigger", self.triggerSF.get(electron, muon))
+            
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -167,6 +187,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
+        output['N_tau'].fill(dataset=dataset, multiplicity=ak.num(tau)[BL], weight=weight.weight()[BL])
+        
+        output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
 
         BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0'])
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL_minusNb], weight=weight.weight()[BL_minusNb])
@@ -177,6 +200,24 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
         BL_minusFwd = sel.dilep_baseline(SS=False, omit=['N_fwd>0'])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
+        
+        output['dilep_pt'].fill(dataset=dataset, pt=ak.flatten(dilepton_pt[BL]), weight=weight.weight()[BL])
+        output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(dilepton_mass[BL]), weight=weight.weight()[BL])
+        output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL], weight=weight.weight()[BL])
+        output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
+        output['min_bl_dR'].fill(dataset=dataset, eta=min_bl_dR[BL], weight=weight.weight()[BL])
+        output['min_mt_lep_met'].fill(dataset=dataset, pt=min_mt_lep_met[BL], weight=weight.weight()[BL])
+        
+        output['leading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 0:1][BL].pt), weight=weight.weight()[BL])
+        output['subleading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 1:2][BL].pt), weight=weight.weight()[BL])
+        output['leading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 0:1][BL].eta), weight=weight.weight()[BL])
+        output['subleading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 1:2][BL].eta), weight=weight.weight()[BL])
+        
+        output['leading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 0:1][BL].pt), weight=weight.weight()[BL])
+        output['subleading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 1:2][BL].pt), weight=weight.weight()[BL])
+        output['leading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 0:1][BL].eta), weight=weight.weight()[BL])
+        output['subleading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 1:2][BL].eta), weight=weight.weight()[BL])
+        
         
         BL_minusMET = sel.dilep_baseline(SS=False, omit=['MET>50'])
         output['MET'].fill(
@@ -388,30 +429,31 @@ if __name__ == '__main__':
     from klepto.archives import dir_archive
     from Tools.samples import * # fileset_2018 #, fileset_2018_small
     from processor.default_accumulators import *
+    from Tools.helpers import mt
 
     overwrite = True
-    year = 2018
+    year = 2017
     local = True
-    small = True
-
+    small = False
+        
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward'
+    cacheName = 'forward_2017'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2017')
     
     fileset = {
         #'tW_scattering': fileset_all['tW_scattering'],
         'topW_v3': fileset_all['topW_NLO'],
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
-        'ttbar': fileset_all['top2l'], # dilepton ttbar should be enough for this study.
+        'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
-        'EGamma': fileset_all['EGamma'],
+        'EGamma': fileset_all['DoubleEG'],
         'diboson': fileset_all['diboson'],
         'TTXnoW': fileset_all['TTXnoW'],
         'TTW': fileset_all['TTW'],
@@ -427,6 +469,24 @@ if __name__ == '__main__':
                 'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                "N_tau": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "N_track": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "dilep_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
+                "deltaEta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "mjf_max": hist.Hist("Counts", dataset_axis, mass_axis),
+                "min_bl_dR": hist.Hist("Counts", dataset_axis, eta_axis),
+                "min_mt_lep_met": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+            
+                "leading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+            
              })
 
     histograms = sorted(list(desired_output.keys()))
@@ -500,5 +560,4 @@ if __name__ == '__main__':
     em_e = np.intersect1d(em, e)
     print ("Overlap MuonEG/EGamma:", len(em_e))
     # print (em_e)
-
 
