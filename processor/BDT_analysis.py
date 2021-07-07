@@ -63,11 +63,14 @@ class nano_analysis(processor.ProcessorABC):
         rares_dataset = ['ttw', 'www', 'wzz', 'wz', 'tg', 'wzg', 'tth_nobb', 'ttg_dilep', 'tttj', 'tttt', 'tttw', 
                          'tthh', 'vh_nobb', 'tzq', 'ttwh', 'ttg_1lep', 'wwz', 'wwg', 'ttwz', 'zz', 'ttww', 'wg', 
                          'ttz_m10', 'qqww', 'zzz', 'ggh', 'ttzh', 'ttz_m1-10', 'tw_dilep', 'ttzz']
+        
+        flips_dataset = ["dyjets_m10-50", "dyjets_m50", "zg", "tw_dilep"]#, "ww"]
         if dataset in rares_dataset:
             ele_t = ele_t[((ele_t.genPartFlav==1)|(ele_t.genPartFlav==15))]
             ele_l = ele_l[((ele_l.genPartFlav==1)|(ele_l.genPartFlav==15))]
             mu_t = mu_t[((mu_t.genPartFlav==1)|(mu_t.genPartFlav==15))]
             mu_l = mu_l[((mu_l.genPartFlav==1)|(mu_l.genPartFlav==15))]
+        
         #SS preselection 
         lepton  = ak.concatenate([mu_l, ele_l], axis=1)
         tight_lepton  = ak.concatenate([mu_t, ele_t], axis=1)
@@ -94,6 +97,12 @@ class nano_analysis(processor.ProcessorABC):
         selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
         selection.add("M(ee)>12", ((ak.num(ele_t) < 2) | (ak.sum(diele_mass, axis=1) > 12.0))) #ak.sum here to flatten the diele_mass array
         selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
+        
+        if dataset in flips_dataset:
+            flip_evts = ((ak.sum(ev.GenPart.pdgId[ele_t.genPartIdx]==((-1)*ele_t.pdgId), axis=1) == 1))
+            selection.add("flip", flip_evts)
+            selection_reqs += ["flip"]
+        
         fcnc_reqs_d = { sel: True for sel in selection_reqs}
         FCNC_sel = selection.require(**fcnc_reqs_d)
 
@@ -104,10 +113,35 @@ class nano_analysis(processor.ProcessorABC):
         sorted_phi = lepton[FCNC_sel].phi[sorted_index]
         sorted_dxy = lepton[FCNC_sel].dxy[sorted_index]
         sorted_dz = lepton[FCNC_sel].dz[sorted_index]
-        sorted_jet_index = ak.argsort(jets[FCNC_sel].pt, axis=-1, ascending=False)
-        sorted_jet_pt = jets[FCNC_sel].pt[sorted_jet_index]
-        sorted_btag_index = ak.argsort(btag[FCNC_sel].pt, axis=-1, ascending=False)
-        sorted_btag_pt = btag[FCNC_sel].pt[sorted_btag_index]
+
+        if (np.array(ak.num(jets[FCNC_sel])).any()==1): #if there is at least one event with a jet
+            sorted_jet_index = ak.argsort(jets[FCNC_sel].pt, axis=-1, ascending=False)
+            sorted_jet_pt = jets[FCNC_sel].pt[sorted_jet_index]
+            #njets
+            njets = ak.num(jets, axis=1)[FCNC_sel]
+            most_forward_pt = ak.flatten(jets[FCNC_sel].pt[ak.singletons(ak.argmax(abs(jets[FCNC_sel].eta), axis=1))])
+            leadjet_pt = ak.flatten(sorted_jet_pt[:,0:1])
+            subleadjet_pt = ak.flatten(sorted_jet_pt[:,1:2])
+            #this sometimes is not defined, so ak.firsts relpaces the empty arrays with None, then we can set all None to zero
+            subsubleadjet_pt = ak.fill_none(ak.firsts(sorted_jet_pt[:,2:3]), 0)
+        else: #if there are no events with jets
+            njets = np.zeros_like(FCNC_sel[FCNC_sel])
+            most_forward_pt = np.zeros_like(FCNC_sel[FCNC_sel])
+            leadjet_pt = np.zeros_like(FCNC_sel[FCNC_sel])
+            subleadjet_pt = np.zeros_like(FCNC_sel[FCNC_sel])
+            subsubleadjet_pt = np.zeros_like(FCNC_sel[FCNC_sel])
+
+        if (np.array(ak.num(btag[FCNC_sel])).any()==1): #if there is at least one event with a btag
+            sorted_btag_index = ak.argsort(btag[FCNC_sel].pt, axis=-1, ascending=False)
+            sorted_btag_pt = btag[FCNC_sel].pt[sorted_btag_index]
+            #btags
+            nbtag = ak.num(btag)[FCNC_sel]
+            leadbtag_pt = sorted_btag_pt[:,0:1] #this sometimes is not defined (some of the arrays are empty)
+            # ak.firsts() relpaces the empty arrays with None, then we can set all None to zero
+            leadbtag_pt = ak.fill_none(ak.firsts(leadbtag_pt), 0)    
+        else:
+            nbtag = np.zeros_like(FCNC_sel[FCNC_sel])
+            leadbtag_pt = np.zeros_like(FCNC_sel[FCNC_sel])
         
         leadlep_pt = ak.flatten(sorted_pt[:,0:1])
         subleadlep_pt = ak.flatten(sorted_pt[:,1:2])
@@ -123,28 +157,21 @@ class nano_analysis(processor.ProcessorABC):
         sorted_lep = lepton[FCNC_sel][sorted_index]
         leadlep = sorted_lep[:,0:1]
         subleadlep = sorted_lep[:,1:2]
-        leadlep_subleadlep_mass = ak.flatten((leadlep + subleadlep).mass)
         nelectron = ak.num(ele_l[FCNC_sel], axis=1)
         MET_pt = ev[FCNC_sel].MET.pt
         MET_phi = ev[FCNC_sel].MET.phi
-        #njets
-        njets = ak.num(jets, axis=1)[FCNC_sel]
-        most_forward_pt = ak.flatten(jets[FCNC_sel].pt[ak.singletons(ak.argmax(abs(jets[FCNC_sel].eta), axis=1))])
-        leadjet_pt = ak.flatten(sorted_jet_pt[:,0:1])
-        subleadjet_pt = ak.flatten(sorted_jet_pt[:,1:2])
-        #this sometimes is not defined, so ak.firsts relpaces the empty arrays with None, then we can set all None to zero
-        subsubleadjet_pt = ak.fill_none(ak.firsts(sorted_jet_pt[:,2:3]), 0)
-
-        #btags
-        nbtag = ak.num(btag)[FCNC_sel]
-        leadbtag_pt = sorted_btag_pt[:,0:1] #this sometimes is not defined (some of the arrays are empty)
-        # ak.firsts() relpaces the empty arrays with None, then we can set all None to zero
-        leadbtag_pt = ak.fill_none(ak.firsts(leadbtag_pt), 0)    
         #HT
         ht = ak.sum(jets.pt, axis=1)[FCNC_sel]
-        #MT of lead and subleading lepton with ptmiss (MET)
-        mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
-        mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
+        
+        if (np.array(ak.num(leadlep)).any()==1) and (np.array(ak.num(subleadlep)).any()==1):
+            leadlep_subleadlep_mass = ak.flatten((leadlep + subleadlep).mass)
+            #MT of lead and subleading lepton with ptmiss (MET)
+            mt_leadlep_met = mt(leadlep_pt, leadlep_phi, MET_pt, MET_phi)
+            mt_subleadlep_met = mt(subleadlep_pt, subleadlep_phi, MET_pt, MET_phi)
+        else:
+            leadlep_subleadlep_mass = np.zeros_like(FCNC_sel[FCNC_sel])
+            mt_leadlep_met = np.zeros_like(FCNC_sel[FCNC_sel])
+            mt_subleadlep_met = np.zeros_like(FCNC_sel[FCNC_sel])
         
         #get weights of events (scale1fb * generator_weights * lumi)
         weight = production.weights.get_weight(ev.metadata["dataset"], self.year, self.version) #scale1fb
@@ -153,37 +180,37 @@ class nano_analysis(processor.ProcessorABC):
         weight = weight * lumi_dict[self.year]
         weight = weight[FCNC_sel]
         
-        BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
-                          "HT":ht,
-                          "LeadLep_eta":np.abs(leadlep_eta),
-                          "MET_pt":MET_pt,
-                          "LeadLep_pt":leadlep_pt,
-                          "LeadLep_dxy":np.abs(leadlep_dxy),
-                          "LeadLep_dz":np.abs(leadlep_dz),
-                          "SubLeadLep_pt":subleadlep_pt,
-                          "SubLeadLep_eta":np.abs(subleadlep_eta),
-                          "SubLeadLep_dxy":np.abs(subleadlep_dxy),
-                          "SubLeadLep_dz":np.abs(subleadlep_dz),
-                          "nJet":njets,
-                          "nbtag":nbtag,
-                          "LeadJet_pt":leadjet_pt,
-                          "SubLeadJet_pt":subleadjet_pt,
-                          "SubSubLeadJet_pt":subsubleadjet_pt,
-                          "nElectron":nelectron,
-                          "MET_pt":MET_pt,
-                          "LeadBtag_pt":leadbtag_pt,
-                          "MT_LeadLep_MET":mt_leadlep_met,
-                          "MT_SubLeadLep_MET":mt_leadlep_met,
-                          "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
-                          "weight":weight
-                          }
-        
-        #create pandas dataframe
-        passed_events = ev[FCNC_sel]
-        event_p = ak.to_pandas(passed_events[["event"]])
-        for param in self.BDT_params:
-            event_p[param] = BDT_param_dict[param]
-        output['BDT_df'] += processor.column_accumulator(event_p.to_numpy())
+        if len(FCNC_sel[FCNC_sel]) > 0:
+            BDT_param_dict = {"Most_Forward_pt":most_forward_pt,
+                              "HT":ht,
+                              "LeadLep_eta":np.abs(leadlep_eta),
+                              "MET_pt":MET_pt,
+                              "LeadLep_pt":leadlep_pt,
+                              "LeadLep_dxy":np.abs(leadlep_dxy),
+                              "LeadLep_dz":np.abs(leadlep_dz),
+                              "SubLeadLep_pt":subleadlep_pt,
+                              "SubLeadLep_eta":np.abs(subleadlep_eta),
+                              "SubLeadLep_dxy":np.abs(subleadlep_dxy),
+                              "SubLeadLep_dz":np.abs(subleadlep_dz),
+                              "nJet":njets,
+                              "nbtag":nbtag,
+                              "LeadJet_pt":leadjet_pt,
+                              "SubLeadJet_pt":subleadjet_pt,
+                              "SubSubLeadJet_pt":subsubleadjet_pt,
+                              "nElectron":nelectron,
+                              "MET_pt":MET_pt,
+                              "LeadBtag_pt":leadbtag_pt,
+                              "MT_LeadLep_MET":mt_leadlep_met,
+                              "MT_SubLeadLep_MET":mt_leadlep_met,
+                              "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
+                              "weight":weight
+                              }
+            #create pandas dataframe
+            passed_events = ev[FCNC_sel]
+            event_p = ak.to_pandas(passed_events[["event"]])
+            for param in self.BDT_params:
+                event_p[param] = BDT_param_dict[param]
+            output['BDT_df'] += processor.column_accumulator(event_p.to_numpy())
         return output
 
     def postprocess(self, accumulator):

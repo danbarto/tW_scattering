@@ -1,9 +1,10 @@
 import glob
 import tqdm
 
-VERSION = "fcnc_v6_SRonly_5may2021"
-BABY_DIR = "/hadoop/cms/store/user/ksalyer/FCNC_NanoSkim/{}".format(VERSION)
-#BABY_DIR = "/hadoop/cms/store/user/dspitzba/FCNC_NanoSkim/{}".format(VERSION)
+#VERSION = "fcnc_v6_SRonly_5may2021"
+VERSION = "fcnc_v10_SRonly_11june2021"
+#BABY_DIR = "/hadoop/cms/store/user/ksalyer/FCNC_NanoSkim/{}".format(VERSION)
+BABY_DIR = "/hadoop/cms/store/user/dspitzba/FCNC_NanoSkim/{}".format(VERSION)
 N_EVENTS_DIR = "./n_events"
 
 sample_dirs = glob.glob(BABY_DIR+"/*")
