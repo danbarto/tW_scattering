@@ -21,6 +21,141 @@ from Tools.fake_rate import fake_rate
 from Tools.SS_selection import SS_selection
 import production.weights
 
+import uproot
+import glob
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+import xgboost as xgb
+import time
+
+def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/"):
+    file_name = baby_dir + "{}.root".format(category)
+    try:
+        tree = uproot.open(file_name)['Events']
+    except:
+        tree = uproot.open(file_name)['T']
+    process_name = file_name[(file_name.rfind('/')+1):(file_name.rfind('.'))]
+    tmp_df = pd.DataFrame()
+    df_values = tree.arrays()
+    tmp_df["Most_Forward_pt"] = np.array(df_values["Most_Forward_pt"])
+    tmp_df["HT"] = np.array(df_values["HT"])
+    tmp_df["LeadLep_eta"] = np.array(df_values["LeadLep_eta"])
+    tmp_df["LeadLep_pt"] = np.array(df_values["LeadLep_pt"])
+    tmp_df["LeadLep_dxy"] = np.array(df_values["LeadLep_dxy"])
+    tmp_df["LeadLep_dz"] = np.array(df_values["LeadLep_dz"])
+    tmp_df["SubLeadLep_pt"] = np.array(df_values["SubLeadLep_pt"])
+    tmp_df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
+    tmp_df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
+    tmp_df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
+    tmp_df["nJet"] = np.array(df_values["nJets"])
+    tmp_df["nbtag"] = np.array(df_values["nBtag"])
+    tmp_df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
+    tmp_df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
+    tmp_df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
+    tmp_df["nElectron"] = np.array(df_values["nElectron"])
+    tmp_df["MET_pt"] = np.array(df_values["MET_pt"])
+    tmp_df["LeadBtag_pt"] = np.array(df_values["LeadBtag_pt"])
+    tmp_df["MT_LeadLep_MET"] = np.array(df_values["MT_LeadLep_MET"])
+    tmp_df["MT_SubLeadLep_MET"] = np.array(df_values["MT_SubLeadLep_MET"])
+    tmp_df["LeadLep_SubLeadLep_Mass"] = np.array(df_values["LeadLep_SubLeadLep_Mass"])
+    tmp_df["weight"] = np.array(df_values["Weight"])
+    if "signal" in process_name:
+        tmp_df["Label"] = "s"
+    else:
+        tmp_df["Label"] = "b"
+    return tmp_df
+
+def BDT_train_test_split(full_data, verbose=True):
+    if verbose:
+        print('Size of data: {}'.format(full_data.shape))
+        print('Number of events: {}'.format(full_data.shape[0]))
+        print('Number of columns: {}'.format(full_data.shape[1]))
+
+        print ('\nList of features in dataset:')
+        for col in full_data.columns:
+            print(col)
+        # look at column labels --- notice last one is "Label" and first is "EventId" also "Weight"
+        print('Number of signal events: {}'.format(len(full_data[full_data.Label == 's'])))
+        print('Number of background events: {}'.format(len(full_data[full_data.Label == 'b'])))
+        print('Fraction signal: {}'.format(len(full_data[full_data.Label == 's'])/(float)(len(full_data[full_data.Label == 's']) + len(full_data[full_data.Label == 'b']))))
+
+    full_data['Label'] = full_data.Label.astype('category')
+    (data_train, data_test) = train_test_split(full_data, train_size=0.5)
+    if verbose:
+        print('Number of training samples: {}'.format(len(data_train)))
+        print('Number of testing samples: {}'.format(len(data_test)))
+
+        print('\nNumber of signal events in training set: {}'.format(len(data_train[data_train.Label == 's'])))
+        print('Number of background events in training set: {}'.format(len(data_train[data_train.Label == 'b'])))
+        print('Fraction signal: {}'.format(len(data_train[data_train.Label == 's'])/(float)(len(data_train[data_train.Label == 's']) + len(data_train[data_train.Label == 'b']))))
+        
+    return data_train, data_test
+
+def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True):
+    feature_names = data_train.columns[1:-2]  #full_data
+    train_weights = data_train.weight
+    test_weights = data_test.weight
+    # we skip the first and last two columns because they are the ID, weight, and label
+    train = xgb.DMatrix(data=data_train[feature_names],label=data_train.Label.cat.codes,
+                        missing=-999.0,feature_names=feature_names, weight=np.abs(train_weights))
+    test = xgb.DMatrix(data=data_test[feature_names],label=data_test.Label.cat.codes,
+                       missing=-999.0,feature_names=feature_names, weight=np.abs(test_weights))
+    if booster_name == "":
+        booster_path = output_dir + "booster_{}.model".format(signal_name)
+    else:
+        booster_path = output_dir + "booster_{}.model".format(booster_name)
+    #breakpoint()
+    if verbose:
+        print(feature_names)
+        print(data_test.Label.cat.codes)
+        print("weights:\n")
+        print(train_weights)
+    if flag_load:
+        print("Loading saved model...")
+        booster = xgb.Booster({"nthread": 4})  # init model
+        booster.load_model(booster_name)  # load data
+
+    else:
+        print("Training new model...")
+        booster = xgb.train(param,train,num_boost_round=num_trees)
+        print(booster.eval(test))
+
+    #if the tree is of interest, we can save it
+    if not flag_load:
+        booster.save_model(booster_name)
+
+    return booster, train, test
+
+def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
+    y_train = data_train.Label.cat.codes
+    feature_names = data_train.columns[1:-2] 
+    x_train = data_train[feature_names]
+    clf_xgb = xgb.XGBClassifier(objective = 'binary:logistic', eval_metric="logloss", use_label_encoder=False)
+    if len(param_grid.keys())==0:
+        param_grid = {
+                      'max_depth': [2, 3, 4],
+                      'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7],
+                      'subsample': [0.7, 0.8, 0.9, 1.0],
+                      'colsample_bytree': [0.7, 0.8, 0.9, 1.0],
+                      'colsample_bylevel': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                      'min_child_weight': [0.5, 1.0, 3.0, 5.0, 7.0, 10.0],
+                      'gamma': [0, 0.25, 0.5, 1.0],
+                      'reg_lambda': [0.1, 1.0, 5.0, 10.0, 50.0, 100.0],
+                      'n_estimators': [20, 30, 40, 50, 60, 100]
+                     }
+    fit_params = {'eval_metric': 'mlogloss',
+                  'early_stopping_rounds': 3}
+    rs_clf = RandomizedSearchCV(clf_xgb, param_grid, n_iter=n_iter,
+                                n_jobs=1, verbose=2, cv=num_folds,
+                                refit=False)
+    print("Randomized search..")
+    search_time_start = time.time()
+    rs_clf.fit(x_train, y_train)
+    print("Randomized search time:", time.time() - search_time_start)
+
+    best_score = rs_clf.best_score_
+    best_params = rs_clf.best_params_
+    return best_params
+
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
         self.variations = variations
