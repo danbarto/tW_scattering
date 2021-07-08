@@ -15,20 +15,31 @@ class triggerSF:
         self.ext = extractor()
         # several histograms can be imported at once using wildcards (*)
         if self.year == 2016:
-            self.ext.add_weight_sets(["mumu_2016 h2D_SF_mumu_lepABpt_FullError %s"%triggerSF_2016])
-            
-            self.ext.add_weight_sets(["emu_2016 h2D_SF_emu_lepABpt_FullError %s"%triggerSF_2016])
-            
-            self.ext.add_weight_sets(["ee_2016 h2D_SF_ee_lepABpt_FullError %s"%triggerSF_2016])
+            self.ext.add_weight_sets([
+                "mumu_2016 h2D_SF_mumu_lepABpt_FullError %s"%triggerSF_2016,
+                "mumu_2016_error h2D_SF_mumu_lepABpt_FullError_error %s"%triggerSF_2016,
+
+                "emu_2016 h2D_SF_emu_lepABpt_FullError %s"%triggerSF_2016,
+                "emu_2016_error h2D_SF_emu_lepABpt_FullError_error %s"%triggerSF_2016,
+
+                "ee_2016 h2D_SF_ee_lepABpt_FullError %s"%triggerSF_2016,
+                "ee_2016_error h2D_SF_ee_lepABpt_FullError_error %s"%triggerSF_2016,
+
+            ])
             
 
         elif self.year == 2017:
-            self.ext.add_weight_sets(["mumu_2017 h2D_SF_mumu_lepABpt_FullError %s"%triggerSF_2017])
-            
-            self.ext.add_weight_sets(["emu_2017 h2D_SF_emu_lepABpt_FullError %s"%triggerSF_2017])
-            
-            self.ext.add_weight_sets(["ee_2017 h2D_SF_ee_lepABpt_FullError %s"%triggerSF_2017])
+            self.ext.add_weight_sets([
+                "mumu_2017 h2D_SF_mumu_lepABpt_FullError %s"%triggerSF_2017,
+                "mumu_2017_error h2D_SF_mumu_lepABpt_FullError_error %s"%triggerSF_2017,
 
+                "emu_2017 h2D_SF_emu_lepABpt_FullError %s"%triggerSF_2017,
+                "emu_2017_error h2D_SF_emu_lepABpt_FullError_error %s"%triggerSF_2017,
+
+                "ee_2017 h2D_SF_ee_lepABpt_FullError %s"%triggerSF_2017,
+                "ee_2017_error h2D_SF_ee_lepABpt_FullError_error %s"%triggerSF_2017,
+
+            ])
         elif self.year == 2018:
             self.ext.add_weight_sets([
                 "mumu_2018 h2D_SF_mumu_lepABpt_FullError %s"%triggerSF_2018,
@@ -63,14 +74,24 @@ class triggerSF:
         if self.year == 2016:
             
             ee_sf = self.evaluator["ee_2016"](pad_and_flatten(ele[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+            ee_sf = ee_sf + multiplier[variation]*self.evaluator["ee_2016_error"](pad_and_flatten(ele[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+
             emu_sf = self.evaluator["emu_2016"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
-            mumu_sf = self.evaluator["mumu_2016"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))
+            emu_sf = emu_sf + multiplier[variation]*self.evaluator["emu_2016_error"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+
+            mumu_sf = self.evaluator["mumu_2016"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))            
+            mumu_sf = mumu_sf + multiplier[variation]*self.evaluator["mumu_2016_error"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))
             
         elif self.year == 2017:
                                           
             ee_sf = self.evaluator["ee_2017"](pad_and_flatten(ele[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+            ee_sf = ee_sf + multiplier[variation]*self.evaluator["ee_2017_error"](pad_and_flatten(ele[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+
             emu_sf = self.evaluator["emu_2017"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
-            mumu_sf = self.evaluator["mumu_2017"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))
+            emu_sf = emu_sf + multiplier[variation]*self.evaluator["emu_2017_error"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(ele[:,1:2].pt))
+
+            mumu_sf = self.evaluator["mumu_2017"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))            
+            mumu_sf = mumu_sf + multiplier[variation]*self.evaluator["mumu_2017_error"](pad_and_flatten(mu[:,0:1].pt), pad_and_flatten(mu[:,1:2].pt))
             
         elif self.year == 2018:
             
