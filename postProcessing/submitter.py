@@ -47,7 +47,7 @@ def getYearFromDAS(DASname):
     elif DASname.count('Fall17') or DASname.count('Summer20UL17') or DASname.count('Run2017'):
         return 2017, era, isData, isFastSim, isUL
     elif DASname.count('Summer16') or DASname.count('Summer20UL16') or DASname.count('Run2016'):
-        return 2016, era, isData, isFastSim, isUL
+        return 2016, era, isData, isFastSim, False #FIXME no UL JECs available yet.
     else:
         ### our private samples right now are all Autumn18 but have no identifier.
         return 2018, 'X', False, False, False

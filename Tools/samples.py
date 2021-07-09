@@ -85,7 +85,8 @@ groups_UL = {
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
-    'DY':            ['/DYJetsToLL'],
+    'DY':            ['/DYJetsToLL.*madgraphMLM'], # LO samples
+    'DY_NLO':        ['/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX', '/DYJetsToLL_M-10to50'], # NLO samples
 
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],

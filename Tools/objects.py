@@ -89,7 +89,7 @@ nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15))]
 
 class Collections:
 
-    def __init__(self, ev, obj, wp, verbose=0):
+    def __init__(self, ev, obj, wp, year=2018, verbose=0):
         self.obj = obj
         self.wp = wp
         if self.wp == None:
@@ -98,8 +98,7 @@ class Collections:
             self.selection_dict = obj_def[self.obj][self.wp]
 
         self.v = verbose
-        #self.year = df['year'][0] ## to be implemented in next verison of babies
-        self.year = 2018
+        self.year = year
 
         id_level = None
         if wp.lower().count('veto'):
@@ -186,7 +185,7 @@ class Collections:
 
         if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
             #self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
-            self.selection = self.selection & (ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB,0) < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
+            self.selection = self.selection & (ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB,0) < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45))
             if self.v>0: print (" - interpolated deepJet")
         
     def getValue(self, var):
@@ -320,10 +319,16 @@ class Collections:
         if self.v>0: print (" - custom multi isolation")
         return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
 
-    def getThreshold(self, pt, min_pt=20, max_pt=45, low=0.2770, high=0.0494):
+    def getThreshold(self, pt, min_pt=20, max_pt=45, low=None, high=None):
         '''
         get the deepJet threshold for ttH FO muons. default values are for 2018.
+        UL values from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL18
         '''
+        b_low = {2016: 0.3093, 2017: 0.3040, 2018: 0.2783,}
+        b_high = {2016: 0.0614, 2017: 0.0532, 2018: 0.0490,}
+        if low is None: low = b_low[self.year]
+        if high is None: high = b_high[self.year]
+
         k = (low-high)/(min_pt-max_pt)
         d = low - k*min_pt
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high

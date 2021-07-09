@@ -85,6 +85,7 @@ class Selection:
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
+        self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
@@ -101,6 +102,7 @@ class Selection:
             'N_jet>3',
             'N_central>2',
             'N_btag>0',
+            'N_light>0',
             'MET>30',
             'N_fwd>0',
         ]

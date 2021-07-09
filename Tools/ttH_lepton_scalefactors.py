@@ -32,14 +32,16 @@ class LeptonSF:
         ele_2018_reco       = os.path.expandvars("$TWHOME/data/leptons/2018_egammaEffi_txt_EGM2D_updatedAll.root")
 
 
-        muon_2016_loose = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2016.root")
-        muon_2016_tight = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2016_2lss/passttH/egammaEffi_txt_EGM2D.root")
+        muon_2016_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2016.root")
+        muon_2016_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2016_2lss/passttH/egammaEffi_txt_EGM2D.root")
 
-        muon_2017_loose = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2017.root")
-        muon_2017_tight = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2017_2lss/passttH/egammaEffi_txt_EGM2D.root")
+        muon_2017_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2017.root")
+        muon_2017_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2017_2lss/passttH/egammaEffi_txt_EGM2D.root")
 
-        muon_2018_loose = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2018.root")
-        muon_2018_tight = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2018_2lss/passttH/egammaEffi_txt_EGM2D.root")
+        muon_2018_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2018.root")
+        muon_2018_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2018_2lss/passttH/egammaEffi_txt_EGM2D.root")
+        muon_2018_tight_pt  = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_muon_pt.root")
+        muon_2018_tight_eta = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_muon_eta.root")
 
         
         self.ext = extractor()
@@ -81,6 +83,9 @@ class LeptonSF:
 
                 "ele_2018_tight_pt histo_eff_data %s"%ele_2018_tight_pt,
                 "ele_2018_tight_eta histo_eff_data %s"%ele_2018_tight_eta,
+
+                "mu_2018_tight_pt histo_eff_data %s"%muon_2018_tight_pt,
+                "mu_2018_tight_eta histo_eff_data %s"%muon_2018_tight_eta,
             ])
         
         
@@ -120,6 +125,9 @@ class LeptonSF:
             ele_sf_looseTTH = self.evaluator["ele_2018_looseTTH"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
             ele_sf_tight    = self.evaluator["ele_2018_tight"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
 
+            mu_sf_loose     = self.evaluator["mu_2018_loose"](abs(mu.eta), mu.pt)
+            mu_sf_tight     = self.evaluator["mu_2018_tight"](abs(mu.eta), mu.pt)
+
             if not variation=='central':
 
                 ele_sf_tight_err1 = self.evaluator["ele_2018_tight_eta"](abs(ele.eta + ele.deltaEtaSC))
@@ -129,13 +137,20 @@ class LeptonSF:
                 ele_sf_tight_err2 = ak.from_regular(ele_sf_tight_err2[:,:,np.newaxis])
                 ele_sf_tight_err  = ak.max(ak.concatenate([ele_sf_tight_err1, ele_sf_tight_err2], axis=2), axis=2)
 
+                mu_sf_tight_err1 = self.evaluator["mu_2018_tight_eta"](abs(mu.eta))
+                mu_sf_tight_err2 = self.evaluator["mu_2018_tight_pt"](mu.pt)
+
+                mu_sf_tight_err1 = ak.from_regular(mu_sf_tight_err1[:,:,np.newaxis])
+                mu_sf_tight_err2 = ak.from_regular(mu_sf_tight_err2[:,:,np.newaxis])
+                mu_sf_tight_err  = ak.max(ak.concatenate([mu_sf_tight_err1, mu_sf_tight_err2], axis=2), axis=2)
+
                 if variation=='up':
                     ele_sf_tight = ele_sf_tight*ele_sf_tight_err
+                    mu_sf_tight = mu_sf_tight*mu_sf_tight_err
                 if variation=='down':
                     ele_sf_tight = ele_sf_tight/ele_sf_tight_err
+                    mu_sf_tight = mu_sf_tight/mu_sf_tight_err
 
-            mu_sf_loose     = self.evaluator["mu_2018_loose"](abs(mu.eta), mu.pt)
-            mu_sf_tight     = self.evaluator["mu_2018_tight"](abs(mu.eta), mu.pt)
 
             sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_loose, axis=1) * ak.prod(ele_sf_looseTTH, axis=1) * ak.prod(ele_sf_tight, axis=1) * ak.prod(mu_sf_loose, axis=1) * ak.prod(mu_sf_tight, axis=1)
 

@@ -76,15 +76,15 @@ class SS_analysis(processor.ProcessorABC):
 
         ## Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
         ## Muons
-        mu_v     = Collections(ev, "Muon", "vetoTTH").get()  # these include all muons, tight and fakeable
-        mu_t     = Collections(ev, "Muon", "tightSSTTH").get()
-        mu_f     = Collections(ev, "Muon", "fakeableSSTTH").get()
+        mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
+        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=year).get()
+        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
         
         ## Electrons
-        el_v        = Collections(ev, "Electron", "vetoTTH").get()
-        el_t        = Collections(ev, "Electron", "tightSSTTH").get()
-        el_f        = Collections(ev, "Electron", "fakeableSSTTH").get()
+        el_v        = Collections(ev, "Electron", "vetoTTH", year=year).get()
+        el_t        = Collections(ev, "Electron", "tightSSTTH", year=year).get()
+        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
@@ -117,6 +117,14 @@ class SS_analysis(processor.ProcessorABC):
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
             n_chargeflip = getChargeFlips(electron, ev.GenPart) + getChargeFlips(muon, ev.GenPart)
+            gp = ev.GenPart
+            gp_e = gp[((abs(gp.pdgId)==11)&(gp.status==1)&((gp.statusFlags&(1<<0))==1)&(gp.statusFlags&(1<<8)==256))]
+            gp_m = gp[((abs(gp.pdgId)==13)&(gp.status==1)&((gp.statusFlags&(1<<0))==1)&(gp.statusFlags&(1<<8)==256))]
+            n_gen_lep = ak.num(gp_e) + ak.num(gp_m)
+        else:
+            n_gen_lep = np.zeros(len(ev))
+
+        LL = (n_gen_lep > 2)  # this is the classifier for LL events (should mainly be ttZ/tZ/WZ...)
 
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
@@ -145,6 +153,11 @@ class SS_analysis(processor.ProcessorABC):
 
         ## forward jets
         j_fwd = fwd[ak.singletons(ak.argmax(fwd.p, axis=1))] # highest momentum spectator
+
+        # try to get either the most forward light jet, or if there's more than one with eta>1.7, the highest pt one
+        most_fwd = light[ak.argsort(abs(light.eta))][:,0:1]
+        #most_fwd = light[ak.singletons(ak.argmax(abs(light.eta)))]
+        best_fwd = ak.concatenate([j_fwd, most_fwd], axis=1)[:,0:1]
         
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
@@ -195,11 +208,12 @@ class SS_analysis(processor.ProcessorABC):
             jet_central = central,
             jet_btag = btag,
             jet_fwd = fwd,
+            jet_light = light,
             met = ev.MET,
         )
         
-        baseline = sel.dilep_baseline(cutflow=cutflow, SS=True)
-        baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False)  # this is for charge flip estimation
+        baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
+        baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
         
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
 
@@ -258,9 +272,11 @@ class SS_analysis(processor.ProcessorABC):
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
-            
+            #FIXME add n_b, n_fwd back in
             NN_inputs_d = {
                 'n_jet':            ak.to_numpy(ak.num(jet)),
+                'n_b':              ak.to_numpy(ak.num(btag)),
+                'n_fwd':            ak.to_numpy(ak.num(fwd)),
                 'n_tau':            ak.to_numpy(ak.num(tau)),
                 'n_track':          ak.to_numpy(ak.num(track)),
                 'st':               ak.to_numpy(st),
@@ -273,9 +289,9 @@ class SS_analysis(processor.ProcessorABC):
                 'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.eta)),
                 'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
                 'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
-                'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(j_fwd.pt)),
-                'fwd_jet_p':        ak.to_numpy(pad_and_flatten(j_fwd.p)),
-                'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(j_fwd.eta)),
+                'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.pt)),
+                'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p)),
+                'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.eta)),
                 'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].pt)),
                 'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].pt)),
                 'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].eta)),
@@ -354,17 +370,18 @@ class SS_analysis(processor.ProcessorABC):
                 del scaler
                 del NN_inputs, NN_inputs_scaled, NN_pred
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5}
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6}
         if dataset in labels:
             label_mult = labels[dataset]
         else:
-            label_mult = 6  # data or anything else
+            label_mult = 7  # data or anything else
 
         if self.dump:
             output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
             output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
             output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
             output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
+            output['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
             output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
             output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
             output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
@@ -453,9 +470,9 @@ class SS_analysis(processor.ProcessorABC):
         fill_multiple_np(
             output['fwd_jet'],
             {
-                'pt':  pad_and_flatten(j_fwd.pt),
-                'eta': pad_and_flatten(j_fwd.eta),
-                'phi': pad_and_flatten(j_fwd.phi),
+                'pt':  pad_and_flatten(best_fwd.pt),
+                'eta': pad_and_flatten(best_fwd.eta),
+                'phi': pad_and_flatten(best_fwd.phi),
             },
         )
         
@@ -467,7 +484,7 @@ class SS_analysis(processor.ProcessorABC):
         #    weight = weight_BL
         #)
             
-        output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(j_fwd[BL].p), weight = weight_BL)
+        output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(best_fwd[BL].p), weight = weight_BL)
         
         return output
 
@@ -530,8 +547,8 @@ if __name__ == '__main__':
         'TTH': fileset_all['TTH'],
         'diboson': fileset_all['diboson'],
         'rare': fileset_all['TTTT']+fileset_all['triboson'],
-        #'ttbar': fileset_all['ttbar1l'],
-        #'ttbar': fileset_all['ttbar2l'],
+        ##'ttbar': fileset_all['ttbar1l'],
+        ##'ttbar': fileset_all['ttbar2l'],
         'ttbar': fileset_all['top'],
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
@@ -541,6 +558,10 @@ if __name__ == '__main__':
     }
     
     fileset = make_small(fileset, small, n_max=10)
+
+    if small:
+        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG']}
+
     #fileset = make_small(fileset, small)
     
     add_processes_to_output(fileset, desired_output)
@@ -548,6 +569,8 @@ if __name__ == '__main__':
     if args.dump:
         variables = [
             'n_jet',
+            'n_b',
+            'n_fwd',
             'n_tau',
             'n_track',
             'st',
@@ -579,6 +602,7 @@ if __name__ == '__main__':
             'SS',
             'OS',
             'AR',
+            'LL',
             'label',
         ]
 
@@ -670,10 +694,11 @@ if __name__ == '__main__':
                 df_dict.update({var: output[var].value})
 
             df_out = pd.DataFrame( df_dict )
-            df_out.to_hdf('multiclass_input_%s_v1.h5'%year, key='df', format='table', mode='w')
+            if not args.small:
+                df_out.to_hdf('multiclass_input_%s_v2.h5'%year, key='df', format='table', mode='w')
         else:
             print ("Loading DF")
-            df_out = pd.read_hdf('multiclass_input_%s_v1.h5'%year)
+            df_out = pd.read_hdf('multiclass_input_%s_v2.h5'%year)
 
     
     ## some plots

@@ -7,6 +7,10 @@ def add_processes_to_output(fileset, output):
         if sample not in output:
             output.update({sample: processor.defaultdict_accumulator(int)})
 
+def add_files_to_output(fileset, output):
+     for sample in fileset:
+         for f in fileset[sample]:
+             output.update({f: processor.defaultdict_accumulator(int)})
 
 dataset_axis            = hist.Cat("dataset",       "Primary dataset")
 pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)",   100, 0, 500)  # 5 GeV is fine enough
