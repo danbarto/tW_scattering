@@ -251,20 +251,42 @@ class SS_analysis(processor.ProcessorABC):
 
         out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-        def fill_multiple_np(hist, arrays):
+        #def fill_multiple_np(hist, arrays):
+        #    fill_multiple(
+        #        hist,
+        #        datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data", "cf_est_mc", "cf_obs_mc", "cf_est_data"],
+        #        arrays=arrays,
+        #        selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
+        #        weights=[
+        #            weight_BL,
+        #            weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
+        #            weight.weight()[np_obs_sel_mc],
+        #            weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
+        #            weight.weight()[cf_est_sel_mc]*weight_cf_mc[cf_est_sel_mc],
+        #            weight.weight()[cf_obs_sel_mc],
+        #            weight.weight()[cf_est_sel_data]*weight_cf_data[cf_est_sel_data],
+        #        ],
+        #    )
+        dummy = (np.ones(len(ev))==1)
+        def fill_multiple_np(hist, arrays, add_sel=dummy):
+            #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
+            #print ('len', len(reg_sel[0]))
+            #print ('sel', reg_sel[0])
+            reg_sel = [BL&add_sel, np_est_sel_mc&add_sel, np_obs_sel_mc&add_sel, np_est_sel_data&add_sel, cf_est_sel_mc&add_sel, cf_obs_sel_mc&add_sel, cf_est_sel_data&add_sel],
             fill_multiple(
                 hist,
                 datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data", "cf_est_mc", "cf_obs_mc", "cf_est_data"],
                 arrays=arrays,
-                selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
+                selections=reg_sel[0],  # no idea where the additional dimension is coming from...
                 weights=[
-                    weight_BL,
-                    weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
-                    weight.weight()[np_obs_sel_mc],
-                    weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
-                    weight.weight()[cf_est_sel_mc]*weight_cf_mc[cf_est_sel_mc],
-                    weight.weight()[cf_obs_sel_mc],
-                    weight.weight()[cf_est_sel_data]*weight_cf_data[cf_est_sel_data],
+                    weight.weight()[reg_sel[0][0]],
+                    #weight_BL,
+                    weight.weight()[reg_sel[0][1]]*weight_np_mc[reg_sel[0][1]],
+                    weight.weight()[reg_sel[0][2]],
+                    weight.weight()[reg_sel[0][3]]*weight_np_data[reg_sel[0][3]],
+                    weight.weight()[reg_sel[0][4]]*weight_cf_mc[reg_sel[0][4]],
+                    weight.weight()[reg_sel[0][5]],
+                    weight.weight()[reg_sel[0][6]]*weight_cf_data[reg_sel[0][6]],
                 ],
             )
 
@@ -272,7 +294,7 @@ class SS_analysis(processor.ProcessorABC):
             # define the inputs to the NN
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
-            #FIXME add n_b, n_fwd back in
+            #FIXME no n_b, n_fwd back in v13/v14 of the DNN
             NN_inputs_d = {
                 'n_jet':            ak.to_numpy(ak.num(jet)),
                 'n_b':              ak.to_numpy(ak.num(btag)),
@@ -344,6 +366,7 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node'], {'multiplicity':best_score})
                 fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
                 #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
+                
                 output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
                 output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
                 output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
@@ -370,7 +393,7 @@ class SS_analysis(processor.ProcessorABC):
                 del scaler
                 del NN_inputs, NN_inputs_scaled, NN_pred
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6}
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6}  # these should be all?
         if dataset in labels:
             label_mult = labels[dataset]
         else:

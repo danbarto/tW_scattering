@@ -21,10 +21,23 @@ def load_onnx_model(version='v8'):
     scaler = joblib.load(os.path.expandvars('$TWHOME/ML/networks/scaler_%s.joblib'%version))
     return model, scaler
 
+def dump_onnx_model(model, version='v8'):
+    '''
+    Takes keras model, dumps an onnx version
+    '''
+    import tf2onnx.convert
+    import onnx
+    onnx_model, _ = tf2onnx.convert.from_keras(model)
+    onnx.save(onnx_model, os.path.expandvars('$TWHOME/ML/networks/weights_%s.onnx'%version))
+    return True
+
+
 def predict_onnx(model, data):
     input_name = model.get_inputs()[0].name
     pred_onx = model.run(None, {input_name: data.astype(np.float32)})[0]
     return pred_onx
+
+
 
 def get_correlation_matrix(df, f_out='./correlation.pdf'):
     fig, ax = plt.subplots(1,1,figsize=(10,10))
