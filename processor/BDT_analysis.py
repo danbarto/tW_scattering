@@ -112,7 +112,7 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
     if flag_load:
         print("Loading saved model...")
         booster = xgb.Booster({"nthread": 4})  # init model
-        booster.load_model(booster_name)  # load data
+        booster.load_model(booster_path)  # load data
 
     else:
         print("Training new model...")
@@ -121,7 +121,7 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
 
     #if the tree is of interest, we can save it
     if not flag_load:
-        booster.save_model(booster_name)
+        booster.save_model(booster_path)
 
     return booster, train, test
 

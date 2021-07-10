@@ -17,7 +17,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
     #first, we load the txt output from the tableMaker.py script into a dataframe
     #we will manipulate these data, save it into a different dataframe, and print to an output file
     #df = pd.read_csv("/home/users/ksalyer/FranksFCNC/ana/analysis/outputs/tables/tableMaker_"+str(y)+".txt")
-    print("got yields and stat errors")
+    #print("got yields and stat errors")
 
     #now we have imported the data and manipulated it into the categories we want
     #we will do the rest in a loop over signals
@@ -62,7 +62,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
 
     #dataframe I will print to datacard file
     dcard_df = pd.DataFrame(index = rowTitles, columns = dcColumns)
-    print("defined output dataframe")
+    #print("defined output dataframe")
     #now I want to know the stat uncertainty as a percentage of the yield
     for p in nProc:
         for i in range(len(BDT_bin_names)):
@@ -83,7 +83,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
                 if ("error" not in column) and ("Total" not in column):
                     dcard_df.at[rTitle,column.ljust(20)] = filler
 
-    print("filled stat uncertainties")
+    #print("filled stat uncertainties")
     #get MC yields in correct order of bins/processes
     rates = []
     observation = []
@@ -119,7 +119,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
                 filler = "-".ljust(20)
             if ("error" not in column) and ("Total" not in column):
                 dcard_df.at[rTitle,column.ljust(20)] = filler
-    print("filled syst uncertainties")
+    #print("filled syst uncertainties")
     # outfile = open(outdir+outfileName,"w")
     # outfile.write(dcard_df.to_csv(sep="\t", index=True, header=False))
     # outfile.close()
