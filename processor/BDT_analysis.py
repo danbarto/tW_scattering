@@ -57,6 +57,12 @@ def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/hel
     tmp_df["MT_LeadLep_MET"] = np.array(df_values["MT_LeadLep_MET"])
     tmp_df["MT_SubLeadLep_MET"] = np.array(df_values["MT_SubLeadLep_MET"])
     tmp_df["LeadLep_SubLeadLep_Mass"] = np.array(df_values["LeadLep_SubLeadLep_Mass"])
+    tmp_df["SubSubLeadLep_pt"] = np.array(df_values["SubSubLeadLep_pt"])
+    tmp_df["SubSubLeadLep_eta"] = np.array(df_values["SubSubLeadLep_eta"])
+    tmp_df["SubSubLeadLep_dxy"] = np.array(df_values["SubSubLeadLep_dxy"])
+    tmp_df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
+    tmp_df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
+    tmp_df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
     tmp_df["weight"] = np.array(df_values["Weight"])
     if "signal" in process_name:
         tmp_df["Label"] = "s"
@@ -99,6 +105,7 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
                         missing=-999.0,feature_names=feature_names, weight=np.abs(train_weights))
     test = xgb.DMatrix(data=data_test[feature_names],label=data_test.Label.cat.codes,
                        missing=-999.0,feature_names=feature_names, weight=np.abs(test_weights))
+    evals_result = {}
     if booster_name == "":
         booster_path = output_dir + "booster_{}.model".format(signal_name)
     else:
@@ -116,14 +123,15 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
 
     else:
         print("Training new model...")
-        booster = xgb.train(param,train,num_boost_round=num_trees)
+        evals = [(train, "train"), (test,"test")]
+        booster = xgb.train(param,train,num_boost_round=num_trees, evals=evals, evals_result=evals_result)
         print(booster.eval(test))
 
     #if the tree is of interest, we can save it
     if not flag_load:
         booster.save_model(booster_path)
 
-    return booster, train, test
+    return booster, train, test, evals_result
 
 def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
     y_train = data_train.Label.cat.codes
@@ -132,18 +140,18 @@ def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
     clf_xgb = xgb.XGBClassifier(objective = 'binary:logistic', eval_metric="logloss", use_label_encoder=False)
     if len(param_grid.keys())==0:
         param_grid = {
-                      'max_depth': [2, 3, 4],
+                      'max_depth': [3, 4, 5, 6],
                       'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7],
                       'subsample': [0.7, 0.8, 0.9, 1.0],
                       'colsample_bytree': [0.7, 0.8, 0.9, 1.0],
-                      'colsample_bylevel': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                      'colsample_bylevel': [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
                       'min_child_weight': [0.5, 1.0, 3.0, 5.0, 7.0, 10.0],
                       'gamma': [0, 0.25, 0.5, 1.0],
-                      'reg_lambda': [0.1, 1.0, 5.0, 10.0, 50.0, 100.0],
-                      'n_estimators': [20, 30, 40, 50, 60, 100]
+                      'reg_lambda': [0.1, 1.0, 5.0, 10.0],
+                      'n_estimators': [20, 40, 50, 60, 100, 150, 200]
                      }
     fit_params = {'eval_metric': 'mlogloss',
-                  'early_stopping_rounds': 3}
+                  'early_stopping_rounds': 10}
     rs_clf = RandomizedSearchCV(clf_xgb, param_grid, n_iter=n_iter,
                                 n_jobs=1, verbose=2, cv=num_folds,
                                 refit=False)
