@@ -367,11 +367,16 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
                 #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
                 
-                output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
-                output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
-                output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
-                output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
-                output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
+                fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
+                fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
+                fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
+                fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
+                #output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
+                #output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
+                #output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
+                #output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
+                #output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
 
                 #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
                 #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
@@ -531,6 +536,7 @@ if __name__ == '__main__':
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v8', help="Which training to use?")
@@ -541,6 +547,7 @@ if __name__ == '__main__':
     iterative   = args.iterative
     overwrite   = not args.keep
     small       = args.small
+    verysmall   = args.verysmall
     year        = int(args.year)
     local       = not args.dask
     save        = True
@@ -582,7 +589,7 @@ if __name__ == '__main__':
     
     fileset = make_small(fileset, small, n_max=10)
 
-    if small:
+    if verysmall:
         fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG']}
 
     #fileset = make_small(fileset, small)
@@ -748,7 +755,14 @@ if __name__ == '__main__':
         'TTW': r'$t\bar{t}W$',
         'TTH': r'$t\bar{t}H$',
         'diboson': 'VV/VVV',
+        'rare': 'rare',
         'ttbar': r'$t\bar{t}$',
+        'np_obs_mc': 'nonprompt (MC true)',
+        'np_est_mc': 'nonprompt (MC est)',
+        'cf_obs_mc': 'charge flip (MC true)',
+        'cf_est_mc': 'charge flip (MC est)',
+        'np_est_data': 'nonprompt (est)',
+        'cf_est_data': 'charge flip (est)',
     }
     
     my_colors = {
@@ -759,7 +773,14 @@ if __name__ == '__main__':
         'TTW': '#8AC926',
         'TTH': '#34623F',
         'diboson': '#525B76',
+        'rare': '#525B76',
         'ttbar': '#1982C4',
+        'np_obs_mc': '#1982C4',
+        'np_est_mc': '#1982C4',
+        'np_est_data': '#1982C4',
+        'cf_obs_mc': '#0F7173',
+        'cf_est_mc': '#0F7173',
+        'cf_est_data': '#0F7173',
     }
 
     makePlot(output, 'node', 'multiplicity',
@@ -767,17 +788,16 @@ if __name__ == '__main__':
          bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
          new_colors=my_colors, new_labels=my_labels,
          order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-         signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
+         signals=['topW_v3'],
          save=os.path.expandvars('$TWHOME/dump/ML_node'),
         )
-
 
     makePlot(output, 'node0_score', 'score',
          data=[],
          bins=score_bins, log=False, normalize=False, axis_label=r'score',
          new_colors=my_colors, new_labels=my_labels,
          order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-         signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
+         signals=['topW_v3'],
          omit=['DoubleMuon', 'MuonEG', 'EGamma'],
          save=os.path.expandvars('$TWHOME/dump/ML_node0_score'),
         )
@@ -787,8 +807,8 @@ if __name__ == '__main__':
          bins=score_bins, log=False, normalize=False, axis_label=r'score', shape=True, ymax=0.35,
          new_colors=my_colors, new_labels=my_labels,
          order=['TTW'],
-         signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-         omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'ttbar', 'TTH', 'TTZ'],
+         signals=['topW_v3'],
+         omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'ttbar', 'TTH', 'TTZ', 'cf_est_data', 'cf_est_mc', 'cf_obs_mc', 'np_est_data', 'np_est_mc', 'np_obs_mc', 'rare'],
          save=os.path.expandvars('$TWHOME/dump/ML_node0_score_shape'),
         )
 
