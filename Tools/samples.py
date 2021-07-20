@@ -66,8 +66,8 @@ groups_2018 = {
 }
 
 groups_UL = {
-    'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/'],
-    'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/'],
+    'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO'],
+    'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO'],
     # careful - TTX is a sum of all TTX but TTW
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHJetToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
@@ -138,9 +138,13 @@ def get_babies(data_path, small=False, year=2018):
     if year=='2018':
         campaign = '.*'
     elif year=='UL2018':
-        campaign = '.*(Summer20UL18|Run2018)'
+        campaign = '.*(Summer20UL18|Run2018|UL18)'
     elif year=='UL2017':
-        campaign = '.*(Summer20UL17|Run2017)'
+        campaign = '.*(Summer20UL17|Run2017|UL17)'
+    elif year=='UL2016':
+        campaign = '.*(Summer20UL16NanoAODv|Run2016[GH]|Run2016F-UL|UL16_postVFP)'
+    elif year=='UL2016APV':
+        campaign = '.*(Summer20UL16NanoAODAPV|Run2016[BCDE]|Run2016F-HIPM|UL16_preVFP)'
     
     for sample in samples:
         for group in groups.keys():
