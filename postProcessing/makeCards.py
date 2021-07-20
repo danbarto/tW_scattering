@@ -10,7 +10,7 @@ import pandas as pd
 
 #hardcoded variables other users should customize
 
-def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
+def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"):
 
     BDT_bin_names = [str(b) for b in range(len(BDT_bins)-1)]
     BDT_bin_comments = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
@@ -21,7 +21,10 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
 
     #now we have imported the data and manipulated it into the categories we want
     #we will do the rest in a loop over signals
-    outfileName = "datacard_{0}_{1}.txt".format(signal, year)
+    outfileName = "datacard_{0}_{1}".format(signal, year)
+    if label != "":
+        outfileName += "_{0}".format(label)
+    outfileName += ".txt"
 
     numBins = len(BDT_bin_names)
     nProc = ["signal", "rares", "fakes", "flips"]
@@ -166,7 +169,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir):
     outfile.write(imaxHeader)
     outfile.write(jmaxHeader)
     outfile.write(kmaxHeader)
-    outfile.write("shape * * FAKE\n\n")
+    outfile.write("shapes * * FAKE\n\n")
     outfile.write(binHeadersObs)
     outfile.write(obsHeaders)
     outfile.write("\n")
@@ -231,5 +234,4 @@ if flag_debug:
     }
     #for b in range(1, len(BDT_bins)):
     signal = "signal_tuh_tch"
-    year = 2018
-    make_BDT_datacard(yield_dict, BDT_bins, signal, year, outdir)
+    make_BDT_datacard(yield_dict, BDT_bins, signal, outdir)

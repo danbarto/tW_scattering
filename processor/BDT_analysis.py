@@ -124,7 +124,7 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
     else:
         print("Training new model...")
         evals = [(train, "train"), (test,"test")]
-        booster = xgb.train(param,train,num_boost_round=num_trees, evals=evals, evals_result=evals_result)
+        booster = xgb.train(param,train,num_boost_round=num_trees, evals=evals, evals_result=evals_result, verbose_eval=False, early_stopping_rounds=min(3,(num_trees//10)))
         print(booster.eval(test))
 
     #if the tree is of interest, we can save it
