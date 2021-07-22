@@ -108,7 +108,9 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
         if "signal" in p:
             unc = "0.8/1.2"
         elif p == "flips":
-            unc = "0.8/1.2"
+            if year == 2016: unc = '1.1'
+            if year == 2017: unc = '1.4'
+            if year == 2018: unc = '1.3'
         elif p == "other":
             unc = "0.7/1.3"
         elif p == "fakes":

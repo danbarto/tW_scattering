@@ -27,12 +27,15 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import xgboost as xgb
 import time
 
-def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/"):
-    file_name = baby_dir + "{}.root".format(category)
+def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/", year=None):
+    file_name = baby_dir + "{}".format(category)
+    if year != None:
+        file_name += "_{}".format(year)
+    file_name += ".root"
     try:
-        tree = uproot.open(file_name)['Events']
-    except:
         tree = uproot.open(file_name)['T']
+    except:
+        tree = uproot.open(file_name)['Events']
     process_name = file_name[(file_name.rfind('/')+1):(file_name.rfind('.'))]
     tmp_df = pd.DataFrame()
     df_values = tree.arrays()
