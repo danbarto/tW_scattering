@@ -7,15 +7,6 @@ from coffea.analysis_tools import Weights, PackedSelection
 from Tools.triggers import getTriggers, getFilters
 from Tools.objects import choose, cross, choose3
 
-def get_pt(lep):
-    mask_tight    = (lep.id>1)*1
-    mask_fakeable = (lep.id<2)*1
-
-    return lep.pt*mask_tight + lep.conePt*mask_fakeable
-
-#def get_pt(lep):
-#    return lep.pt
-
 class Selection:
     def __init__(self, **kwargs):
         '''
@@ -40,28 +31,33 @@ class Selection:
         '''
         self.selection = PackedSelection()
 
-        lepton = ak.concatenate([self.ele, self.mu], axis=1)
-
-        is_dilep   = ( ((ak.num(self.ele) + ak.num(self.mu))==2) & ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==2) )
+        is_dilep   = ((ak.num(self.ele) + ak.num(self.mu))==2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
-        lep0pt     = ((ak.num(self.ele[(get_pt(self.ele)>25)]) + ak.num(self.mu[(get_pt(self.mu)>25)]))>0)
-        lep1pt     = ((ak.num(self.ele[(get_pt(self.ele)>20)]) + ak.num(self.mu[(get_pt(self.mu)>20)]))>1)
-        #lepsel     = ((ak.num(self.ele_tight) + ak.num(self.mu_tight))==2)
+        lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
+        lep1pt     = ((ak.num(self.ele[(self.ele.pt>20)]) + ak.num(self.mu[(self.mu.pt>20)]))>1)
+        lepveto    = ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==2)
 
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
         dilep   = cross(self.mu, self.ele)
+        
 
         if SS:
-            is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
+            is_SS = ( ak.any((dimu['0'].charge * dimu['1'].charge)>0, axis=1) | \
+                      ak.any((diele['0'].charge * diele['1'].charge)>0, axis=1) | \
+                      ak.any((dilep['0'].charge * dilep['1'].charge)>0, axis=1) )
         else:
-            is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
+            is_OS = ( ak.any((dimu['0'].charge * dimu['1'].charge)<0, axis=1) | \
+                      ak.any((diele['0'].charge * diele['1'].charge)<0, axis=1) | \
+                      ak.any((dilep['0'].charge * dilep['1'].charge)<0, axis=1) )
 
+        lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(
             ak.pad_none(
                 lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True),
         0)
+        
 
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
@@ -69,8 +65,10 @@ class Selection:
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
+        dilep = choose(lepton,2)
+        min_mll = ak.all(dilep.mass>12, axis=1)
 
-        #self.selection.add('lepsel',        lepsel)
+        self.selection.add('lepveto',       lepveto)
         self.selection.add('dilep',         is_dilep)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
@@ -85,15 +83,15 @@ class Selection:
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
-        self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
+        self.selection.add('min_mll',        (min_mll) )
 
         ss_reqs = [
             'filter',
-         #   'lepsel',
+            'lepveto',
             'dilep',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
@@ -102,9 +100,9 @@ class Selection:
             'N_jet>3',
             'N_central>2',
             'N_btag>0',
-            'N_light>0',
             'MET>30',
             'N_fwd>0',
+            'min_mll'
         ]
         
         if tight:
@@ -159,7 +157,9 @@ class Selection:
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
         offZ_veto = (ak.all(abs(OS_dimu_veto.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele_veto.mass-91.2)>10, axis=1))
-
+        onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))
+        onZ_veto = (ak.any(abs(OS_dimu_veto.mass-91.2)<10, axis=1) | ak.any(abs(OS_diele_veto.mass-91.2)<10, axis=1))
+        
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
         dilep = choose(lepton,2)
@@ -192,11 +192,12 @@ class Selection:
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
-        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 ))
+        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0  ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
         self.selection.add('offZ',          offZ_veto )
+        self.selection.add('onZ', onZ_veto)
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
         
@@ -207,7 +208,7 @@ class Selection:
             'p_T(lep0)>25',
             'p_T(lep1)>20',
             'trigger',
-            'offZ',
+            'onZ',
             'MET>50',
             'N_jet>2',
             'N_central>1',
