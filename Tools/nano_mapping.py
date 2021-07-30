@@ -16,6 +16,7 @@ nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
 def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018):
     fileset = {}
+    #print (nano_mapping[year])
     for dataset in datasets:
         for nano_sample in nano_mapping[year][dataset]:
             dbs_files = DBSSample(dataset=nano_sample).get_files()

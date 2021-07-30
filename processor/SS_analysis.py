@@ -15,12 +15,12 @@ import pandas as pd
 from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
-from Tools.helpers import pad_and_flatten, mt, fill_multiple
+from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
-from Tools.selections import Selection
+from Tools.selections import Selection, get_pt
 from Tools.nonprompt_weight import NonpromptWeight
 from Tools.chargeFlip import charge_flip
 
@@ -74,18 +74,22 @@ class SS_analysis(processor.ProcessorABC):
             leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
             trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
 
-        ## Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
+        # Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
+        # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
+        # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
         ## Muons
         mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
         mu_t     = Collections(ev, "Muon", "tightSSTTH", year=year).get()
         mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
+        muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False) #FIXME new
         
         ## Electrons
         el_v        = Collections(ev, "Electron", "vetoTTH", year=year).get()
         el_t        = Collections(ev, "Electron", "tightSSTTH", year=year).get()
         el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
+        electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False) #FIXME new
         
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             el_t_p  = prompt(el_t)
@@ -101,18 +105,20 @@ class SS_analysis(processor.ProcessorABC):
             el_t_p_cc  = el_t_p[~is_flipped]  # this is tight, prompt, and charge consistent
             el_t_p_cf  = el_t_p[is_flipped]  # this is tight, prompt, and charge flipped
 
+
         ## Merge electrons and muons. These are fakeable leptons now
         lepton   = ak.concatenate([muon, electron], axis=1)
-        leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
+        leading_lepton_idx = ak.singletons(ak.argmax(lepton.p4.pt, axis=1))
         leading_lepton = lepton[leading_lepton_idx]
-        trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
+        trailing_lepton_idx = ak.singletons(ak.argmin(lepton.p4.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
 
-        dilepton_mass = (leading_lepton+trailing_lepton).mass
-        dilepton_pt = (leading_lepton+trailing_lepton).pt
-        dilepton_dR = delta_r(leading_lepton, trailing_lepton)
+        dilepton_mass = (leading_lepton.p4 + trailing_lepton.p4).mass
+        dilepton_pt = (leading_lepton.p4 + trailing_lepton.p4).pt
+        #dilepton_dR = delta_r(leading_lepton, trailing_lepton)
+        dilepton_dR = leading_lepton.p4.delta_r(trailing_lepton.p4)
         
-        lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
+        lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.p4.pt, ascending=False)].pdgId, 2, clip=True), 0)
         
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
@@ -126,11 +132,14 @@ class SS_analysis(processor.ProcessorABC):
 
         LL = (n_gen_lep > 2)  # this is the classifier for LL events (should mainly be ttZ/tZ/WZ...)
 
-        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
 
         ## Tau and other stuff
         tau       = getTaus(ev)
+        tau       = tau[~match(tau, muon, deltaRCut=0.4)] 
+        tau       = tau[~match(tau, electron, deltaRCut=0.4)]
+
         track     = getIsoTracks(ev)
 
         ## Jets
@@ -170,7 +179,8 @@ class SS_analysis(processor.ProcessorABC):
 
         ## other variables
         ht = ak.sum(jet.pt, axis=1)
-        st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
+        #st = met_pt + ht + ak.sum(get_pt(muon), axis=1) + ak.sum(get_pt(electron), axis=1)
+        st = met_pt + ht + ak.sum(lepton.p4.pt, axis=1)
         
         # define the weight
         weight = Weights( len(ev) )
@@ -218,7 +228,8 @@ class SS_analysis(processor.ProcessorABC):
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
 
             BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
-            BL_incl = (baseline) # this is the MC baseline for events with two fakeable+tight leptons
+            BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
+
             np_est_sel_mc = (baseline & \
                 ((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
             np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
@@ -234,6 +245,8 @@ class SS_analysis(processor.ProcessorABC):
         else:
             BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
 
+            BL_incl = BL
+
             np_est_sel_mc = (baseline & ~baseline)
             np_obs_sel_mc = (baseline & ~baseline)
             np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
@@ -245,48 +258,51 @@ class SS_analysis(processor.ProcessorABC):
             weight_np_mc = np.zeros(len(ev))
             weight_cf_mc = np.zeros(len(ev))
 
+            #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
+            run_ = ak.to_numpy(ev.run)
+            lumi_ = ak.to_numpy(ev.luminosityBlock)
+            event_ = ak.to_numpy(ev.event)
+
+            if False:
+                output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
+                output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
+                output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
+
         weight_BL = weight.weight()[BL]  # this is just a shortened weight list for the two prompt selection
         weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
         weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
 
         out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-        #def fill_multiple_np(hist, arrays):
-        #    fill_multiple(
-        #        hist,
-        #        datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data", "cf_est_mc", "cf_obs_mc", "cf_est_data"],
-        #        arrays=arrays,
-        #        selections=[BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
-        #        weights=[
-        #            weight_BL,
-        #            weight.weight()[np_est_sel_mc]*weight_np_mc[np_est_sel_mc],
-        #            weight.weight()[np_obs_sel_mc],
-        #            weight.weight()[np_est_sel_data]*weight_np_data[np_est_sel_data],
-        #            weight.weight()[cf_est_sel_mc]*weight_cf_mc[cf_est_sel_mc],
-        #            weight.weight()[cf_obs_sel_mc],
-        #            weight.weight()[cf_est_sel_data]*weight_cf_data[cf_est_sel_data],
-        #        ],
-        #    )
         dummy = (np.ones(len(ev))==1)
         def fill_multiple_np(hist, arrays, add_sel=dummy):
             #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
             #print ('len', len(reg_sel[0]))
             #print ('sel', reg_sel[0])
-            reg_sel = [BL&add_sel, np_est_sel_mc&add_sel, np_obs_sel_mc&add_sel, np_est_sel_data&add_sel, cf_est_sel_mc&add_sel, cf_obs_sel_mc&add_sel, cf_est_sel_data&add_sel],
+            reg_sel = [BL&add_sel, BL_incl&add_sel, np_est_sel_mc&add_sel, np_obs_sel_mc&add_sel, np_est_sel_data&add_sel, cf_est_sel_mc&add_sel, cf_obs_sel_mc&add_sel, cf_est_sel_data&add_sel],
             fill_multiple(
                 hist,
-                datasets=[dataset, "np_est_mc", "np_obs_mc", "np_est_data", "cf_est_mc", "cf_obs_mc", "cf_est_data"],
+                datasets=[
+                    dataset, # only prompt contribution from process
+                    dataset+"_incl", # everything from process (inclusive MC truth)
+                    "np_est_mc", # MC based NP estimate
+                    "np_obs_mc", # MC based NP observation
+                    "np_est_data",
+                    "cf_est_mc",
+                    "cf_obs_mc",
+                    "cf_est_data",
+                ],
                 arrays=arrays,
                 selections=reg_sel[0],  # no idea where the additional dimension is coming from...
                 weights=[
                     weight.weight()[reg_sel[0][0]],
-                    #weight_BL,
-                    weight.weight()[reg_sel[0][1]]*weight_np_mc[reg_sel[0][1]],
-                    weight.weight()[reg_sel[0][2]],
-                    weight.weight()[reg_sel[0][3]]*weight_np_data[reg_sel[0][3]],
-                    weight.weight()[reg_sel[0][4]]*weight_cf_mc[reg_sel[0][4]],
-                    weight.weight()[reg_sel[0][5]],
-                    weight.weight()[reg_sel[0][6]]*weight_cf_data[reg_sel[0][6]],
+                    weight.weight()[reg_sel[0][1]],
+                    weight.weight()[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
+                    weight.weight()[reg_sel[0][3]],
+                    weight.weight()[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                    weight.weight()[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
+                    weight.weight()[reg_sel[0][6]],
+                    weight.weight()[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
                 ],
             )
 
@@ -295,20 +311,21 @@ class SS_analysis(processor.ProcessorABC):
             # this is super stupid. there must be a better way.
             # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
             #FIXME no n_b, n_fwd back in v13/v14 of the DNN
+
             NN_inputs_d = {
                 'n_jet':            ak.to_numpy(ak.num(jet)),
-                'n_b':              ak.to_numpy(ak.num(btag)),
                 'n_fwd':            ak.to_numpy(ak.num(fwd)),
+                'n_b':              ak.to_numpy(ak.num(btag)),
                 'n_tau':            ak.to_numpy(ak.num(tau)),
-                'n_track':          ak.to_numpy(ak.num(track)),
+                #'n_track':          ak.to_numpy(ak.num(track)),
                 'st':               ak.to_numpy(st),
                 'met':              ak.to_numpy(ev.MET.pt),
                 'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
                 'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
-                'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.pt)),
-                'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.eta)),
-                'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.pt)),
-                'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.eta)),
+                'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
+                'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
+                'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
+                'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
                 'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
                 'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
                 'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.pt)),
@@ -360,23 +377,19 @@ class SS_analysis(processor.ProcessorABC):
                 ##k.clear_session()
 
                 #FIXME below needs to be fixed again with changed NN evaluation. Should work now
-                #output['node'].fill(dataset=dataset, multiplicity=best_score[BL] if np.shape(NN_pred)[0]>0 else np.array([]), weight=weight_BL)
-                #output['node'].fill(dataset=dataset, multiplicity=best_score[BL], weight=weight_BL)
 
                 fill_multiple_np(output['node'], {'multiplicity':best_score})
                 fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
-                #output['node0_score_incl'].fill(dataset=dataset, score=NN_pred[:,0][BL], weight=weight_BL)
+                fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
+                fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
+                fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
+                fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
                 
                 fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
                 fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
                 fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
                 fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
                 fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
-                #output['node0_score'].fill(dataset=dataset, score=NN_pred[((best_score==0)&BL)][:,0], weight=weight.weight()[((best_score==0)&BL)])
-                #output['node1_score'].fill(dataset=dataset, score=NN_pred[((best_score==1)&BL)][:,1], weight=weight.weight()[((best_score==1)&BL)])
-                #output['node2_score'].fill(dataset=dataset, score=NN_pred[((best_score==2)&BL)][:,2], weight=weight.weight()[((best_score==2)&BL)])
-                #output['node3_score'].fill(dataset=dataset, score=NN_pred[((best_score==3)&BL)][:,3], weight=weight.weight()[((best_score==3)&BL)])
-                #output['node4_score'].fill(dataset=dataset, score=NN_pred[((best_score==4)&BL)][:,4], weight=weight.weight()[((best_score==4)&BL)])
 
                 #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
                 #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
@@ -417,14 +430,14 @@ class SS_analysis(processor.ProcessorABC):
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
-        output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight_BL)
-        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight_BL)
-        output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight_BL)
-        fill_multiple_np(output['N_ele'], {'multiplicity':ak.num(electron)})
-        fill_multiple_np(output['N_mu'],  {'multiplicity':ak.num(muon)})
-        fill_multiple_np(output['N_fwd'], {'multiplicity':ak.num(fwd)})
-        output['ST'].fill(dataset=dataset, ht=st[BL], weight=weight_BL)
-        output['HT'].fill(dataset=dataset, ht=ht[BL], weight=weight_BL)
+        fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
+        fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
+        fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
+        fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
+        fill_multiple_np(output['N_mu'],      {'multiplicity':ak.num(muon)})
+        fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
+        fill_multiple_np(output['ST'],        {'ht': st})
+        fill_multiple_np(output['HT'],        {'ht': ht})
 
         if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
@@ -457,18 +470,19 @@ class SS_analysis(processor.ProcessorABC):
         fill_multiple_np(
             output['lead_lep'],
             {
-                'pt':  pad_and_flatten(leading_lepton.pt),
+                'pt':  pad_and_flatten(leading_lepton.p4.pt),
                 'eta': pad_and_flatten(leading_lepton.eta),
                 'phi': pad_and_flatten(leading_lepton.phi),
             },
         )
 
-        output['trail_lep'].fill(
-            dataset = dataset,
-            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
-            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
-            phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
-            weight = weight_BL
+        fill_multiple_np(
+            output['trail_lep'],
+            {
+                'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                'eta': pad_and_flatten(trailing_lepton.eta),
+                'phi': pad_and_flatten(trailing_lepton.phi),
+            },
         )
         
         output['j1'].fill(
@@ -539,8 +553,9 @@ if __name__ == '__main__':
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
-    argParser.add_argument('--training', action='store', default='v8', help="Which training to use?")
+    argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
+    argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -548,6 +563,8 @@ if __name__ == '__main__':
     overwrite   = not args.keep
     small       = args.small
     verysmall   = args.verysmall
+    if verysmall:
+        small = True
     year        = int(args.year)
     local       = not args.dask
     save        = True
@@ -577,8 +594,8 @@ if __name__ == '__main__':
         'TTH': fileset_all['TTH'],
         'diboson': fileset_all['diboson'],
         'rare': fileset_all['TTTT']+fileset_all['triboson'],
-        ##'ttbar': fileset_all['ttbar1l'],
-        ##'ttbar': fileset_all['ttbar2l'],
+        #'ttbar': fileset_all['ttbar1l'],
+        #'ttbar': fileset_all['ttbar2l'],
         'ttbar': fileset_all['top'],
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
@@ -590,7 +607,7 @@ if __name__ == '__main__':
     fileset = make_small(fileset, small, n_max=10)
 
     if verysmall:
-        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG']}
+        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG'], 'ttbar': fileset['ttbar']}
 
     #fileset = make_small(fileset, small)
     
@@ -602,7 +619,7 @@ if __name__ == '__main__':
             'n_b',
             'n_fwd',
             'n_tau',
-            'n_track',
+            #'n_track',
             'st',
             'met',
             'mjj_max',
@@ -681,12 +698,23 @@ if __name__ == '__main__':
         "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
         "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
         "node0_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
+        "node1_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
+        "node2_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
+        "node3_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
+        "node4_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node0_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node1_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node2_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node3_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node4_score": hist.Hist("Counts", dataset_axis, score_axis),
     })
+
+    for rle in ['run', 'lumi', 'event']:
+        desired_output.update({
+                'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+        })
 
     histograms = sorted(list(desired_output.keys()))
     
@@ -729,6 +757,29 @@ if __name__ == '__main__':
         else:
             print ("Loading DF")
             df_out = pd.read_hdf('multiclass_input_%s_v2.h5'%year)
+
+    print ("\nNN debugging:")
+    print (output['node'].sum('multiplicity').values())
+
+
+    ## Data double counting checks
+    if args.check_double_counting:
+        em = zip_run_lumi_event(output, 'MuonEG')
+        e  = zip_run_lumi_event(output, 'EGamma')
+        mm = zip_run_lumi_event(output, 'DoubleMuon')
+
+        print ("Total events from MuonEG:", len(em))
+        print ("Total events from EGamma:", len(e))
+        print ("Total events from DoubleMuon:", len(mm))
+
+        em_mm = np.intersect1d(em, mm)
+        print ("Overlap MuonEG/DoubleMuon:", len(em_mm))
+
+        e_mm = np.intersect1d(e, mm)
+        print ("Overlap EGamma/DoubleMuon:", len(e_mm))
+
+        em_e = np.intersect1d(em, e)
+        print ("Overlap MuonEG/EGamma:", len(em_e))
 
     
     ## some plots

@@ -122,7 +122,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
     
     mc_sel   = re.compile('(?!(%s))'%('|'.join(data+omit))) if len(data+omit)>0 else re.compile('')
-    data_sel = re.compile('|'.join(data))
+    data_sel = re.compile('('+'|'.join(data)+')(?!.*incl)')
     bkg_sel  = re.compile('(?!(%s))'%('|'.join(data+signals+omit))) if len(data+signals+omit)>0 else re.compile('')
 
     if histo is None:

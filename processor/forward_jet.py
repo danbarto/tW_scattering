@@ -12,7 +12,7 @@ import numpy as np
 from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
-from Tools.config_helpers import loadConfig, make_small
+from Tools.config_helpers import loadConfig, make_small, zip_run_lumi_event
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.trigger_scalefactors import *
@@ -22,13 +22,6 @@ from Tools.selections import Selection
 import warnings
 warnings.filterwarnings("ignore")
 
-def zip_rle(output, dataset):
-    return ak.to_numpy(
-        ak.zip([
-            output['%s_run'%dataset].value.astype(int),
-            output['%s_lumi'%dataset].value.astype(int),
-            output['%s_event'%dataset].value.astype(int),
-            ]))
 
 class forwardJetAnalyzer(processor.ProcessorABC):
     def __init__(self, year=2016, variations=[], accumulator={}):
@@ -541,9 +534,9 @@ if __name__ == '__main__':
 
     # this is a check for double counting.
 
-    em = zip_rle(output, 'MuonEG')
-    e = zip_rle(output, 'EGamma')
-    mm = zip_rle(output, 'DoubleMuon')
+    em = zip_run_lumi_event(output, 'MuonEG')
+    e  = zip_run_lumi_event(output, 'EGamma')
+    mm = zip_run_lumi_event(output, 'DoubleMuon')
 
     print ("Total events from MuonEG:", len(em))
     print ("Total events from EGamma:", len(e))

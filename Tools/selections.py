@@ -13,9 +13,6 @@ def get_pt(lep):
 
     return lep.pt*mask_tight + lep.conePt*mask_fakeable
 
-#def get_pt(lep):
-#    return lep.pt
-
 class Selection:
     def __init__(self, **kwargs):
         '''

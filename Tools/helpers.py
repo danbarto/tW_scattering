@@ -252,3 +252,48 @@ def get_four_vec(cand):
     )
     vec4.__dict__.update(cand.__dict__)
     return vec4
+
+def get_four_vec_fromPtEtaPhiM(cand, pt, eta, phi, M, copy=True):
+    '''
+    Get a LorentzVector from a NanoAOD candidate with custom pt, eta, phi and mass
+    All other properties are copied over from the original candidate
+    '''
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": pt,
+            "eta": eta,
+            "phi": phi,
+            "mass": M,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    if copy:
+        vec4.__dict__.update(cand.__dict__)
+    return vec4
+
+def scale_four_vec(vec, pt=1, eta=1, phi=1, mass=1):
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": vec.pt*pt,
+            "eta": vec.eta*eta,
+            "phi": vec.phi*phi,
+            "mass": vec.mass*mass,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    vec4.__dict__.update(cand.__dict__)
+    return vec4
+
+def zip_run_lumi_event(output, dataset):
+    return ak.to_numpy(
+        ak.zip([
+            output['%s_run'%dataset].value.astype(int),
+            output['%s_lumi'%dataset].value.astype(int),
+            output['%s_event'%dataset].value.astype(int),
+            ]))

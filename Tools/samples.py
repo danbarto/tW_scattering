@@ -87,6 +87,7 @@ groups_UL = {
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
     'DY':            ['/DYJetsToLL.*madgraphMLM'], # LO samples
     'DY_NLO':        ['/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX', '/DYJetsToLL_M-10to50'], # NLO samples
+    'XG':            ['/TTGamma', '/WG', '/ZG', '/WZG'], # LO samples
 
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],

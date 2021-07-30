@@ -126,6 +126,22 @@
   split: 3
   sumWeight: 373722809.83200014
   xsec: 19.47
+? /TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
+: files: 51
+  nEvents: 14703000
+  name: TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 6
+  sumWeight: 14703000.0
+  xsec: 2.22
+? /TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
+: files: 90
+  nEvents: 20155999
+  name: TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 8
+  sumWeight: 20155999.0
+  xsec: 7.51
 /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM:
   files: 181
   nEvents: 148470000
@@ -198,6 +214,14 @@
   split: 19
   sumWeight: 1503.0791020630002
   xsec: 0.001501
+/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM:
+  files: 7
+  nEvents: 9850083
+  name: WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 7
+  sumWeight: 9850083.0
+  xsec: 600.75
 /WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM:
   files: 1
   nEvents: 240000
@@ -214,6 +238,14 @@
   split: 1
   sumWeight: 42310.51736088
   xsec: 0.1651
+/WZG_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM:
+  files: 4
+  nEvents: 2000000
+  name: WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 4
+  sumWeight: 157946.59326284795
+  xsec: 0.04345
 ? /WZTo3LNu_mllmin01_NNPDF31_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
 : files: 54
   nEvents: 89670000
@@ -222,6 +254,14 @@
   split: 3
   sumWeight: 418227106.17974
   xsec: 4.664
+? /ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
+: files: 22
+  nEvents: 29904768
+  name: ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1
+  path: null
+  split: 1
+  sumWeight: 2943764184.6524005
+  xsec: 105.4
 /ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM:
   files: 35
   nEvents: 56812000
@@ -238,6 +278,14 @@
   split: 10
   sumWeight: 3690.7843549760014
   xsec: 0.01398
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL18_v7/:
+  files: 3870
+  nEvents: 967500
+  name: ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL18_v7
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL18_v7/
+  split: 160
+  sumWeight: 15594.429092927629
+  xsec: 0.01624
 /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/:
   files: 3870
   nEvents: 967500

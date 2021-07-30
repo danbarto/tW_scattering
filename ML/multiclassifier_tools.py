@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 import onnxruntime as rt
+from keras.utils import np_utils
 
 from sklearn.metrics import roc_curve, roc_auc_score, auc
 from sklearn.model_selection import train_test_split
