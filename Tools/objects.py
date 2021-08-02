@@ -56,18 +56,22 @@ def match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
 
 def choose(first, n=2):
     tmp = ak.combinations(first, n)
-    combs = (tmp['0'] + tmp['1'])
-    combs['0'] = tmp['0']
-    combs['1'] = tmp['1']
+    combs = tmp['0']
+    for i in range(1,n):
+        combs = combs.__add__(tmp[str(i)])
+    for i in range(n):
+        combs[str(i)] = tmp[str(i)]
     return combs
 
 def choose3(first, n=3):
+    from warnings import warn
+    warn("Deprecation Warning: The choose3 function will be removed. Use choose(first, n=3) instead.")
     tmp = ak.combinations(first, n)
     combs = (tmp['0'] + tmp['1'] + tmp['2'])
     combs['0'] = tmp['0']
     combs['1'] = tmp['1']
     combs['2'] = tmp['2']
-    return combs    
+    return combs
 
 def cross(first, second):
     tmp = ak.cartesian([first, second])
