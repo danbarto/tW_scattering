@@ -54,6 +54,9 @@ def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/hel
     tmp_df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
     tmp_df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
     tmp_df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
+    tmp_df["LeadJet_BtagScore"] = np.array(df_values["LeadJet_BtagScore"])
+    tmp_df["SubLeadJet_BtagScore"] = np.array(df_values["SubLeadJet_BtagScore"])
+    tmp_df["SubSubLeadJet_BtagScore"] = np.array(df_values["SubSubLeadJet_BtagScore"])
     tmp_df["nElectron"] = np.array(df_values["nElectron"])
     tmp_df["MET_pt"] = np.array(df_values["MET_pt"])
     tmp_df["LeadBtag_pt"] = np.array(df_values["LeadBtag_pt"])
@@ -100,7 +103,7 @@ def BDT_train_test_split(full_data, verbose=True):
     return data_train, data_test
 
 def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True):
-    feature_names = data_train.columns[1:-2]  #full_data
+    feature_names = data_train.columns[:-2]  #full_data
     train_weights = data_train.weight
     test_weights = data_test.weight
     # we skip the first and last two columns because they are the ID, weight, and label
@@ -113,7 +116,6 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
         booster_path = output_dir + "booster_{}.model".format(signal_name)
     else:
         booster_path = output_dir + "booster_{}.model".format(booster_name)
-    #breakpoint()
     if verbose:
         print(feature_names)
         print(data_test.Label.cat.codes)
@@ -166,6 +168,696 @@ def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
     best_score = rs_clf.best_score_
     best_params = rs_clf.best_params_
     return best_params
+
+class BDT:
+    def __init__(self, in_base_dir, in_files, out_base_dir, label, year, booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None):
+        self.in_base_dir = in_base_dir #"/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018"
+        self.out_base_dir = out_base_dir #/home/users/cmcmahon/public_html/BDT
+        self.in_files = in_files
+        self.label = label
+        self.year = year
+        self.booster = booster
+        self.booster_label = booster_label
+        self.booster_params = booster_params
+        self.train_predictions = train_predictions
+        self.test_predictions = test_predictions
+        self.num_trees = 10
+        self.signal, self.background, self.full_data = self.__get_signal_background__()
+        self.train_data, self.test_data = self.__train_test_split__()
+        self.evals_result = None
+        self.train_predictions = None
+        self.test_predictions = None
+        self.category_dict = None
+        self.HCT_dict = None
+        self.HUT_dict = None
+        
+    def combine_BDTs(self, other_BDTs, new_label, year="combined"):
+        other = BDT(self.in_base_dir, self.in_files, self.out_base_dir, new_label, year=year)
+        other.category_dict = self.category_dict.copy()
+        other.HCT_dict = self.HCT_dict.copy()
+        other.HUT_dict = self.HUT_dict.copy()
+        for o in other_BDTs:
+            #self.category_dict
+            #self.HCT_dict
+            #self.HUT_dict
+            for cat_key in ["signal", "fakes", "flips", "rares"]:
+                other.category_dict[cat_key]["data"] = pd.concat([other.category_dict[cat_key]["data"], o.category_dict[cat_key]["data"]])
+                other.HCT_dict[cat_key]["data"] = pd.concat([other.HCT_dict[cat_key]["data"], o.HCT_dict[cat_key]["data"]])
+                other.HUT_dict[cat_key]["data"] = pd.concat([other.HUT_dict[cat_key]["data"], o.HUT_dict[cat_key]["data"]])
+                other.category_dict[cat_key]["prediction"] = np.concatenate([other.category_dict[cat_key]["prediction"], o.category_dict[cat_key]["prediction"]])
+                other.HCT_dict[cat_key]["prediction"] = np.concatenate([other.HCT_dict[cat_key]["prediction"], o.HCT_dict[cat_key]["prediction"]])
+                other.HUT_dict[cat_key]["prediction"] = np.concatenate([other.HUT_dict[cat_key]["prediction"], o.HUT_dict[cat_key]["prediction"]])
+        return other
+        
+    def load_SR_BR_from_babies(self, baby_files=glob.glob("/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/*.root")): 
+        signal_BDT_params = pd.DataFrame()
+        background_BDT_params = pd.DataFrame()
+        for file in baby_files:
+            tree = uproot.open(file)['T']
+            process_name = file[(file.rfind('/')+1):(file.rfind('.'))]
+            df = pd.DataFrame()
+            df_values = tree.arrays()
+            df["Most_Forward_pt"] = np.array(df_values["Most_Forward_pt"])
+            df["HT"] = np.array(df_values["HT"])
+            df["LeadLep_eta"] = np.array(df_values["LeadLep_eta"])
+            df["LeadLep_pt"] = np.array(df_values["LeadLep_pt"])
+            df["LeadLep_dxy"] = np.array(df_values["LeadLep_dxy"])
+            df["LeadLep_dz"] = np.array(df_values["LeadLep_dz"])
+            df["SubLeadLep_pt"] = np.array(df_values["SubLeadLep_pt"])
+            df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
+            df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
+            df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
+            df["nJet"] = np.array(df_values["nJets"])
+            df["nbtag"] = np.array(df_values["nBtag"])
+            df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
+            df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
+            df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
+            df["LeadJet_BtagScore"] = np.array(df_values["LeadJet_BtagScore"])
+            df["SubLeadJet_BtagScore"] = np.array(df_values["SubLeadJet_BtagScore"])
+            df["SubSubLeadJet_BtagScore"] = np.array(df_values["SubSubLeadJet_BtagScore"])
+            df["nElectron"] = np.array(df_values["nElectron"])
+            df["MET_pt"] = np.array(df_values["MET_pt"])
+            df["LeadBtag_pt"] = np.array(df_values["LeadBtag_pt"])
+            df["MT_LeadLep_MET"] = np.array(df_values["MT_LeadLep_MET"])
+            df["MT_SubLeadLep_MET"] = np.array(df_values["MT_SubLeadLep_MET"])
+            df["LeadLep_SubLeadLep_Mass"] = np.array(df_values["LeadLep_SubLeadLep_Mass"])
+            df["SubSubLeadLep_pt"] = np.array(df_values["SubSubLeadLep_pt"])
+            df["SubSubLeadLep_eta"] = np.array(df_values["SubSubLeadLep_eta"])
+            df["SubSubLeadLep_dxy"] = np.array(df_values["SubSubLeadLep_dxy"])
+            df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
+            df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
+            df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
+            df["weight"] = np.array(df_values["Weight"])
+            if "signal" in process_name:
+                signal_BDT_params = pd.concat([signal_BDT_params, df], axis=0)
+            else:
+                background_BDT_params = pd.concat([background_BDT_params, df], axis=0)
+        signal_BDT_params["Label"] = "s"
+        background_BDT_params["Label"] = "b"
+        full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
+        return signal_BDT_params, background_BDT_params, full_data
+    
+    def __get_signal_background__(self):
+        baby_dir = [self.in_base_dir + f for f in self.in_files]
+        return self.load_SR_BR_from_babies(baby_dir)
+    
+    def equalize_yields(self, sig, back, verbose=False):
+        sig_copy = sig.copy()
+        back_copy = back.copy()
+        signal_yield = sum(sig_copy.weight)
+        background_yield = sum(back_copy.weight)
+        SR_BR_ratio = signal_yield/background_yield
+        if verbose:
+            print("signal yield:{}".format(signal_yield))
+            print("background yield:{}".format(background_yield))
+            print("SR/BR yield ratio:{}".format(SR_BR_ratio))
+        sig_copy.weight = sig_copy.weight / SR_BR_ratio
+        if verbose:
+            print("new signal yield:{}".format(sum(sig_copy.weight)))
+            print("new SR/BR yield ratio:{}".format(sum(sig_copy.weight) / background_yield))
+        full_data = pd.concat([sig_copy, back_copy], axis=0)
+        return sig_copy, back_copy, full_data
+    
+    def __train_test_split__(self):
+        data_train, data_test = BDT_analysis.BDT_train_test_split(self.equalize_yields(self.signal, self.background)[2], verbose=False)
+        return data_train, data_test
+
+    def optimize_booster(self, label=None):
+        if label==None:
+            self.booster_label = "random_search_optimized_{}".format(self.year)
+        else:
+            self.booster_label = label
+        output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        self.booster_params = BDT_analysis.optimize_BDT_params(self.train_data)
+        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(output_dir + "histograms", exist_ok=True)
+        pickle.dump(self.booster_params, open(output_dir+"params.p", "wb"))
+        
+    def set_booster_label(self, label=None):
+        if label==None:
+            self.booster_label = "random_search_optimized_{}".format(self.year)
+        
+    def load_booster_params(self, label=None):
+        if label==None:
+            b_label = "random_search_optimized_{}".format(self.year)
+        output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, b_label)
+        self.booster_params = pickle.load(open(output_dir + "params.p", "rb"))
+    
+    def get_predictions(self):
+        self.test_predictions = self.booster.predict(self.test_Dmatrix)
+        self.train_predictions = self.booster.predict(self.train_Dmatrix)
+        
+    def gen_BDT(self, flag_load=False):
+        output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        param = self.booster_params.copy()
+        print(param)
+        self.num_trees = param.pop("n_estimators")
+        param['objective']   = 'binary:logistic' # objective function
+        param['eval_metric'] = 'error'           # evaluation metric for cross validation
+        param = list(param.items()) + [('eval_metric', 'logloss')] + [('eval_metric', 'rmse')]
+        print(output_dir)
+        booster, train, test, evals_result = BDT_analysis.gen_BDT(self.label, self.train_data, self.test_data, param, self.num_trees, 
+                                                    output_dir, booster_name=self.label, flag_load=flag_load, verbose=False)
+        self.booster = booster
+        self.train_Dmatrix = train
+        self.test_Dmatrix = test
+        self.evals_result = evals_result
+        return self.booster
+    
+    def plot_ratio(self, region="signal", savefig=False, plot=True):
+        bins = np.linspace(0, 1, 25)
+        fig, ax = plt.subplots(2, 1, sharex=True, figsize=(8,8), gridspec_kw=dict(height_ratios=[3, 1]))
+        output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        if region == "signal":
+            train_set_predictions = self.train_predictions[self.train_Dmatrix.get_label().astype(bool)]
+            test_set_predictions  = self.test_predictions[self.test_Dmatrix.get_label().astype(bool)]
+            train_weights = self.train_Dmatrix.get_weight()[self.train_Dmatrix.get_label().astype(bool)]
+            test_weights = self.test_Dmatrix.get_weight()[self.test_Dmatrix.get_label().astype(bool)]
+            title = "Signal Region Prediction from BDT"
+            fig_directory = output_dir + "Prediction_Signal"
+
+        elif region == "background":
+            train_set_predictions = self.train_predictions[~(self.train_Dmatrix.get_label().astype(bool))]
+            test_set_predictions  = self.test_predictions[~(self.test_Dmatrix.get_label().astype(bool))]
+            train_weights = self.train_Dmatrix.get_weight()[~(self.train_Dmatrix.get_label().astype(bool))]
+            test_weights = self.test_Dmatrix.get_weight()[~(self.test_Dmatrix.get_label().astype(bool))]
+            title = "Background Region Prediction from BDT"
+            fig_directory = output_dir + "Prediction_Background"
+
+        #NEED TO FIX ERRORS WHEN NORMALIZING (to accomodate different sized train/test sets)
+        hist_train = ax[0].hist(train_set_predictions, bins=bins, histtype='step',color='lime',label='training {}'.format(region), weights=train_weights)#, density=True)
+        hist_test  = ax[0].hist(test_set_predictions,  bins=bins, histtype='step',color='magenta'     ,label='test {}'.format(region), weights=test_weights)#, density=True)
+        yahist_train = make_yahist(hist_train)
+        yahist_test = make_yahist(hist_test)
+        ratio = yahist_train.divide(yahist_test)
+        ratio.plot(ax=ax[1], errors=True)
+        ax[1].plot([0, 1], [1, 1], 'r')
+        ax[1].set_ylim([0, 2])
+        ax[0].set_xlabel(title,fontsize=12)
+        ax[0].set_ylabel('Events',fontsize=12)
+        ax[0].legend(frameon=False)
+        if savefig:
+            plt.savefig(fig_directory + ".pdf")
+            plt.savefig(fig_directory + ".png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+
+    def gen_prediction_plots(self, savefig=True, plot=False):
+        test_weights = self.test_Dmatrix.get_weight()
+        train_weights = self.train_Dmatrix.get_weight()
+        out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        # plot all predictions (both signal and background)
+        plt.figure();
+        plt.hist(self.test_predictions,bins=np.linspace(0,1,30),histtype='step',color='darkgreen',label='All events', weights=test_weights);
+        # make the plot readable
+        plt.xlabel('Test Set Prediction from BDT',fontsize=12);
+        plt.ylabel('Weighted Events',fontsize=12);
+        plt.legend(frameon=False);
+        if savefig:
+            plt.savefig(out_dir + "Prediction_Total.pdf")
+            plt.savefig(out_dir + "Prediction_Total.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+        # plot signal and background separately
+        plt.figure();
+        plt.hist(self.test_predictions[self.test_Dmatrix.get_label().astype(bool)],bins=np.linspace(0,1,30),
+                 histtype='step',color='midnightblue',label='signal', density=True, weights=test_weights[self.test_Dmatrix.get_label().astype(bool)]);
+        plt.hist(self.test_predictions[~(self.test_Dmatrix.get_label().astype(bool))],bins=np.linspace(0,1,30),
+                 histtype='step',color='firebrick',label='background', density=True, weights=test_weights[~(self.test_Dmatrix.get_label().astype(bool))]);
+        # make the plot readable
+        plt.xlabel('Test Set Prediction from BDT',fontsize=12);
+        plt.ylabel('Normalized Events',fontsize=12);
+        plt.legend(frameon=False);
+        if savefig:
+            plt.savefig(out_dir + "Prediction_SR_BR.pdf")
+            plt.savefig(out_dir + "Prediction_SR_BR.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+
+        plt.figure();
+        plt.hist(self.train_predictions[self.train_Dmatrix.get_label().astype(bool)],bins=np.linspace(0,1,30),
+                 histtype='step',color='midnightblue',label='signal', density=True, weights=train_weights[self.train_Dmatrix.get_label().astype(bool)]);
+        plt.hist(self.train_predictions[~(self.train_Dmatrix.get_label().astype(bool))],bins=np.linspace(0,1,30),
+                 histtype='step',color='firebrick',label='background', density=True, weights=train_weights[~(self.train_Dmatrix.get_label().astype(bool))]);
+        # make the plot readable
+        plt.xlabel('Training Set Prediction from BDT',fontsize=12);
+        plt.ylabel('Normalized Events',fontsize=12);
+        plt.legend(frameon=False);
+        if savefig:
+            plt.savefig(out_dir + "Training_Prediction_SR_BR.pdf")
+            plt.savefig(out_dir + "Training_Prediction_SR_BR.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+
+        self.plot_ratio("signal", savefig, plot)
+        self.plot_ratio("background", savefig, plot)
+        cuts = np.linspace(0,1,200);
+        train_TP = np.zeros(len(cuts))
+        train_FP = np.zeros(len(cuts))
+        train_TN = np.zeros(len(cuts))
+        train_FN = np.zeros(len(cuts))
+        test_TP = np.zeros(len(cuts))
+        test_FP = np.zeros(len(cuts))
+        test_TN = np.zeros(len(cuts))
+        test_FN = np.zeros(len(cuts))
+        # TPR = TP / (TP + FN)
+        # FPR = FP / (FP + TN)
+        for i,cut in enumerate(cuts):
+            train_pos = (self.train_predictions >  cut)
+            train_neg = (self.train_predictions <= cut)
+            train_TP[i] = np.sum(self.train_Dmatrix.get_weight()[(self.train_data.Label=='s') & train_pos])
+            train_FP[i] = np.sum(self.train_Dmatrix.get_weight()[(self.train_data.Label=='b') & train_pos])
+            train_TN[i] = np.sum(self.train_Dmatrix.get_weight()[(self.train_data.Label=='b') & train_neg])
+            train_FN[i] = np.sum(self.train_Dmatrix.get_weight()[(self.train_data.Label=='s') & train_neg])
+
+            test_pos = (self.test_predictions >  cut)
+            test_neg = (self.test_predictions <= cut)
+            test_TP[i] = np.sum(self.test_Dmatrix.get_weight()[(self.test_data.Label=='s') & test_pos])
+            test_FP[i] = np.sum(self.test_Dmatrix.get_weight()[(self.test_data.Label=='b') & test_pos])
+            test_TN[i] = np.sum(self.test_Dmatrix.get_weight()[(self.test_data.Label=='b') & test_neg])
+            test_FN[i] = np.sum(self.test_Dmatrix.get_weight()[(self.test_data.Label=='s') & test_neg])
+
+        # plot efficiency vs. purity (ROC curve)
+        plt.figure(figsize=(7,7));
+        train_TPR = train_TP / (train_TP + train_FN)
+        train_FPR = train_FP / (train_FP + train_TN)
+        train_AUC = auc(train_FPR, train_TPR)
+        plt.plot(train_FPR, train_TPR, '-', color='lime', label = "Training Set (Area = {0:.3f})".format(train_AUC))
+
+        test_TPR = test_TP / (test_TP + test_FN)
+        test_FPR = test_FP / (test_FP + test_TN)
+        test_AUC = auc(test_FPR, test_TPR)
+        plt.plot(test_FPR, test_TPR, '-', color='magenta', label = "Test Set (Area = {0:.3f})".format(test_AUC))
+
+        # make the plot readable
+        plt.xlabel('False Positive Rate (Background Efficiency)',fontsize=12);
+        plt.ylabel('True Positive Rate (Signal Efficiency)',fontsize=12);
+        #plt.ylim([0, 1])
+        plt.legend(frameon=False);
+        if savefig:
+            plt.savefig(out_dir + "TPR_FPR.pdf")
+            plt.savefig(out_dir + "TPR_FPR.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+        plt.figure(figsize = (10,10))
+        xgb.plot_importance(self.booster, grid=False, max_num_features=None);
+        plt.gcf().subplots_adjust(left=0.4)
+        if savefig:
+            plt.savefig(out_dir + "Feature_Importance.pdf")
+            plt.savefig(out_dir + "Feature_Importance.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+        os.makedirs(out_dir + "/histograms", exist_ok=True)
+        labels = BDT_params[:(len(BDT_params)-1)]
+        for label in labels:
+            gen_hist(self.full_data, label, out_dir, savefig=savefig, plot=False)
+            
+        evals = self.evals_result
+        plt.figure("logloss", figsize=(7,7))
+        train_errors = evals["train"]["logloss"]
+        test_errors = evals["test"]["logloss"]
+        iterations = np.arange(1, len(test_errors)+1)
+        plt.plot(iterations, train_errors, label="train")
+        plt.plot(iterations, test_errors, label="test")
+        plt.legend()
+        plt.xlabel("Training Rounds (num_trees)")
+        plt.ylabel("Log Loss")
+        plt.title("{} Log Loss Plot".format(self.label))
+        #plt.yscale("log")
+        if savefig:
+            plt.savefig(out_dir + "Logloss.pdf")
+            plt.savefig(out_dir + "Logloss.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+            
+        plt.figure("error", figsize=(7,7))
+        train_errors = evals["train"]["error"]
+        test_errors = evals["test"]["error"]
+        iterations = np.arange(1, len(test_errors)+1)
+        plt.plot(iterations, train_errors, label="train")
+        plt.plot(iterations, test_errors, label="test")
+        plt.legend()
+        plt.xlabel("Training Rounds (num_trees)")
+        plt.ylabel("Error")
+        plt.title("{} Error Plot".format(self.label))
+        #plt.yscale("log")
+        if savefig:
+            plt.savefig(out_dir + "Error.pdf")
+            plt.savefig(out_dir + "Error.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+            
+        plt.figure("rmse", figsize=(7,7))
+        train_errors = evals["train"]["rmse"]
+        test_errors = evals["test"]["rmse"]
+        iterations = np.arange(1, len(test_errors)+1)
+        plt.plot(iterations, train_errors, label="train")
+        plt.plot(iterations, test_errors, label="test")
+        plt.legend()
+        plt.xlabel("Training Rounds (num_trees)")
+        plt.ylabel("Root Mean Square Error")
+        plt.title("{} RMSE Plot".format(self.label))
+        #plt.yscale("log")
+        if savefig:
+            plt.savefig(out_dir + "RMSE.pdf")
+            plt.savefig(out_dir + "RMSE.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+
+    def make_roc(self, signal=None, other_boosters=[], title="ROC Curves"):
+        if signal==None:
+            cat_dict = self.category_dict
+        elif signal == "HCT":
+            cat_dict = self.HCT_dict
+        elif signal == "HUT":
+            cat_dict = self.HUT_dict
+            
+        plt.figure(figsize=(7,7));
+        data = cat_dict["all"]["data"]
+        predictions = cat_dict["all"]["prediction"]
+        FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.weight.to_numpy())
+        AUC=np.trapz(TPR, FPR)
+        #AUC = roc_auc_score(data.Label=='s', predictions, sample_weight=data.weight)
+        ax = plt.gca()
+        ax.plot(FPR, TPR, '-', label = "{0} (AUC={1:.3f})".format(self.label, AUC))
+        for other in other_boosters:
+            data = other.category_dict["all"]["data"]
+            predictions = other.category_dict["all"]["prediction"]
+            FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.weight.to_numpy())
+            AUC=np.trapz(TPR, FPR)
+            ax.plot(FPR, TPR, '-', label = "{0} (AUC={1:.3f})".format(other.label, AUC))
+        ax.legend()
+        ax.set_xlabel('False Positive Rate (Background Efficiency)',fontsize=12);
+        ax.set_ylabel('True Positive Rate (Signal Efficiency)',fontsize=12);
+        ax.set_title(title)
+        plt.draw()
+        
+    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False):
+        sig_df = pd.DataFrame()
+        fakes_df = pd.DataFrame()
+        flips_df = pd.DataFrame()
+        rares_df = pd.DataFrame()
+        all_df = pd.DataFrame()
+        background_df = pd.DataFrame()
+        if data_driven:
+            for d in directories:
+                if sig_name==None:
+                    for s in ["signal_tch", "signal_tuh"]:
+                        sig_df = pd.concat([sig_df, BDT_analysis.load_category(s, d)], axis=0)
+                        all_df = pd.concat([all_df, BDT_analysis.load_category(s, d)], axis=0)
+                elif sig_name=="HCT":
+                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tch", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tch", d)])
+                elif sig_name=="HUT":
+                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tuh", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tuh", d)])
+                fakes_df = pd.concat([fakes_df, BDT_analysis.load_category("data_fakes", d)])
+                if (background=="all") or (background=="fakes"):
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("data_fakes", d)]) 
+                flips_df = pd.concat([flips_df, BDT_analysis.load_category("data_flips", d)])
+                rares_df = pd.concat([rares_df, BDT_analysis.load_category("rares", d)])
+                if (background=="all") or (background=="flips"):
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("data_flips", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("rares", d)])
+        else:
+            for d in directories:
+                if sig_name==None:
+                    for s in ["signal_tch", "signal_tuh"]:
+                        sig_df = pd.concat([sig_df, BDT_analysis.load_category(s, d)], axis=0)
+                        all_df = pd.concat([all_df, BDT_analysis.load_category(s, d)], axis=0)
+                elif sig_name=="HCT":
+                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tch", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tch", d)])
+                elif sig_name=="HUT":
+                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tuh", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tuh", d)])
+                fakes_df = pd.concat([fakes_df, BDT_analysis.load_category("fakes_mc", d)])
+                if (background=="all") or (background=="fakes"):
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("fakes_mc", d)]) 
+                flips_df = pd.concat([flips_df, BDT_analysis.load_category("flips_mc", d)])
+                rares_df = pd.concat([rares_df, BDT_analysis.load_category("rares", d)])
+                if (background=="all") or (background=="flips"):
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("flips_mc", d)])
+                    all_df = pd.concat([all_df, BDT_analysis.load_category("rares", d)])
+
+        sig_pred = self.booster.predict(make_dmatrix(sig_df))
+        fakes_pred = self.booster.predict(make_dmatrix(fakes_df))
+        flips_pred = self.booster.predict(make_dmatrix(flips_df))
+        rares_pred = self.booster.predict(make_dmatrix(rares_df))
+        all_pred = self.booster.predict(make_dmatrix(all_df))
+        cat_dict = {"signal":{"data":sig_df, "prediction":sig_pred}, "fakes":{"data":fakes_df, "prediction":fakes_pred},
+                    "flips":{"data":flips_df, "prediction":flips_pred}, "rares":{"data":rares_df, "prediction":rares_pred},
+                    "all":{"data":all_df, "prediction":all_pred}}
+        
+        if sig_name == None:
+            self.category_dict = cat_dict
+            return self.category_dict
+        elif sig_name == "HCT":
+            self.HCT_dict = cat_dict
+            return self.HCT_dict
+        elif sig_name == "HUT":
+            self.HUT_dict = cat_dict
+            return self.HUT_dict
+    
+    def plot_categories(self, plot=True, savefig=True):
+        out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        BDT_signal = self.category_dict["signal"]["data"]
+        BDT_fakes = self.category_dict["fakes"]["data"]
+        BDT_flips = self.category_dict["flips"]["data"]
+        BDT_rares = self.category_dict["rares"]["data"]
+        feature_names = BDT_fakes.columns[1:-2]
+        BDT_fakes['Label'] = BDT_fakes.Label.astype('category')
+        BDT_flips['Label'] = BDT_flips.Label.astype('category')
+        BDT_rares['Label'] = BDT_rares.Label.astype('category')
+        BDT_signal['Label'] = BDT_signal.Label.astype('category')
+        fakes_predictions = self.category_dict["fakes"]["prediction"]
+        flips_predictions = self.category_dict["flips"]["prediction"]
+        rares_predictions = self.category_dict["rares"]["prediction"]
+        signal_predictions = self.category_dict["signal"]["prediction"]
+        plt.figure(figsize=(7,7));
+        #tmp_bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.50, 0.55, 0.575, 0.60, 0.625, 0.65, 0.675, 0.70, 0.725, 0.75, 0.775, 0.8, 0.85, 1.0])
+        tmp_bins = np.array([0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        plt.hist(fakes_predictions,bins=tmp_bins,histtype='step',color='#d7191c',label='fakes', weights=BDT_fakes.weight)#, density=True);
+        plt.hist(flips_predictions,bins=tmp_bins,histtype='step',color='#2c7bb6',label='flips', weights=BDT_flips.weight)#, density=True);
+        plt.hist(rares_predictions,bins=tmp_bins,histtype='step',color='#fdae61',label='rares', weights=BDT_rares.weight)#, density=True);
+        plt.hist(signal_predictions,bins=tmp_bins,histtype='step',color='black',label='signal', weights=BDT_signal.weight/100)#, density=True);
+
+        # make the plot readable
+        plt.xlabel('Prediction from BDT',fontsize=12);
+        plt.ylabel('Yield',fontsize=12);
+        plt.legend(frameon=False);
+        plt.title(self.label)
+        if savefig:
+            os.makedirs(out_dir, exist_ok=True)
+            plt.savefig(out_dir + "Background_Categories.pdf")
+            plt.savefig(out_dir + "Background_Categories.png")
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False):
+        yield_dict = {}
+        if signal_name == "HCT":
+            self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven)
+            cat_dict = self.HCT_dict
+        elif signal_name == "HUT":
+            self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven)
+            cat_dict = self.HUT_dict
+        out_dir = "{0}/{1}/datacards/".format(self.out_base_dir, self.label)
+        BDT_signal = cat_dict["signal"]["data"]
+        BDT_fakes = cat_dict["fakes"]["data"]
+        BDT_flips = cat_dict["flips"]["data"]
+        BDT_rares = cat_dict["rares"]["data"]
+        #breakpoint()
+        BDT_bins = np.linspace(0, 1, 20)
+        #BDT_bins =  np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        feature_names = BDT_fakes.columns[1:-2]  #full_data
+        fakes_weights = BDT_fakes.weight 
+        flips_weights = BDT_flips.weight
+        rares_weights = BDT_rares.weight 
+        signal_weights = BDT_signal.weight / 100.0
+        if quantile_transform == True:
+            signal_predictions = cat_dict["signal"]["prediction"]
+            qt = QuantileTransformer(output_distribution="uniform")
+            qt.fit(signal_predictions.reshape(-1, 1))
+            signal_predictions = qt.transform(signal_predictions.reshape(-1, 1)).flatten()
+            fakes_predictions = qt.transform(cat_dict["fakes"]["prediction"].reshape(-1, 1)).flatten()
+            if len(flips_weights) > 0:
+                flips_predictions = qt.transform(cat_dict["flips"]["prediction"].reshape(-1, 1)).flatten()
+            else:
+                flips_predictions = np.array([0.])
+            rares_predictions = qt.transform(cat_dict["rares"]["prediction"].reshape(-1, 1)).flatten()
+        else:      
+            signal_predictions = cat_dict["signal"]["prediction"]
+            fakes_predictions = cat_dict["fakes"]["prediction"]
+            flips_predictions = cat_dict["flips"]["prediction"]
+            rares_predictions = cat_dict["rares"]["prediction"]
+        signal_digitized = np.digitize(signal_predictions, BDT_bins)
+        flips_digitized = np.digitize(flips_predictions, BDT_bins)
+        fakes_digitized = np.digitize(fakes_predictions, BDT_bins)
+        rares_digitized = np.digitize(rares_predictions, BDT_bins)
+        for b in range(1, len(BDT_bins)):
+            background_sum = 0
+            for category in ["signal", "fakes", "flips", "rares"]:
+                flag_empty_category=False
+                yield_name = "bin_{0}_{1}".format(b-1, category)
+                if category=="signal":
+                    tmp_yield = np.sum(signal_weights[signal_digitized==b])
+                    tmp_BDT_hist = Hist1D(signal_predictions, bins=BDT_bins, weights=signal_weights, overflow=False)
+                elif category =="flips":
+                    if len(flips_weights) > 0:
+                        tmp_yield = np.sum(flips_weights[flips_digitized==b])
+                        tmp_BDT_hist = Hist1D(flips_predictions, bins=BDT_bins, weights=flips_weights, overflow=False)
+                    else: #special case (trilep has no flips)
+                        tmp_yield = 0
+                        flag_empty_category=True
+                elif category == "fakes":
+                    tmp_yield = np.sum(fakes_weights[fakes_digitized==b])
+                    tmp_BDT_hist = Hist1D(fakes_predictions, bins=BDT_bins, weights=fakes_weights, overflow=False)
+                elif category == "rares":
+                    tmp_yield = np.sum(rares_weights[rares_digitized==b])
+                    tmp_BDT_hist = Hist1D(rares_predictions, bins=BDT_bins, weights=rares_weights, overflow=False)
+                if not flag_empty_category:
+                    tmp_error = tmp_BDT_hist.errors[b-1]
+                elif flag_empty_category:
+                    tmp_error = 0.
+                if tmp_yield > 0:
+                    yield_dict[yield_name] = tmp_yield
+                    yield_dict[yield_name+"_error"] = tmp_error
+                elif tmp_yield <=0:
+                    yield_dict[yield_name] = 0.01
+                    yield_dict[yield_name+"_error"] = 0.0
+                if category != "signal":
+                    background_sum += tmp_yield
+            yield_dict["bin_{0}_Total_Background".format(b-1)] = background_sum
+        output_path = out_dir + signal_name + "/"
+        os.makedirs(output_path, exist_ok=True)
+        if quantile_transform == True:
+            label = "QT"
+        else:
+            label = ""
+        postProcessing.makeCards.make_BDT_datacard(yield_dict, BDT_bins, signal_name, output_path, label, year)
+        
+    def plot_response(self, plot=True, savefig=False, label="all"):
+        #plot the BDT response (correlation of BDT score with feature variables)
+        #also plot the feature importance for comparison
+        corr_df = self.category_dict[label]["data"].copy()
+        corr_df["BDT_response"] = self.category_dict[label]["prediction"]
+        fig, ax = plt.subplots(1,1,figsize=(10,10))
+        response = corr_df.corr().BDT_response
+        #response_labels =  corr_df.select_dtypes(['number']).columns
+        response_labels = self.booster.get_fscore().keys()
+        bdt_response = []
+        for l in response_labels:
+            if np.isnan(response[l]):
+                bdt_response.append(0.0)
+            else:
+                bdt_response.append(response[l])
+        bdt_response = np.array(bdt_response)
+        sorted_args = np.argsort(np.abs(bdt_response))[::-1]
+        bdt_fscore = np.array([self.booster.get_fscore()[l] for l in response_labels])[sorted_args]
+        fscore_scale = np.max(bdt_fscore)
+        bdt_fscore = bdt_fscore / fscore_scale
+        bdt_fscore_plot = ax.bar(range(len(bdt_response)), bdt_fscore, label = "BDT Feature Importance", facecolor=(0,0,0,0), edgecolor='blue')
+        bdt_response_plot = ax.bar(range(len(bdt_response)), bdt_response[sorted_args], label = "BDT Response", facecolor=(0,0,0,0), edgecolor='orange')
+
+        ax.set_xticks(range(len(response_labels)))
+        ax.set_xticklabels(np.array(list(response_labels))[sorted_args], rotation=90, fontdict={'fontsize':12})
+        ax.legend()
+        ax.set_title('{} {} BDT Response vs Feature Importance'.format(self.label, label), fontsize=16)
+        plt.gcf().subplots_adjust(bottom=0.3)
+        if savefig:
+            out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+            plt.savefig(out_dir + "BDT_{}_Response.pdf".format(label))
+            plt.savefig(out_dir + "BDT_{}_Response.png".format(label))
+        if plot:
+            plt.draw()
+        else:
+            plt.close()
+    
+    def gen_BDT_and_plot(self, load=True, optimize=True):
+        if optimize:
+            self.optimize_booster()
+        elif load:
+            self.load_booster_params()
+            self.set_booster_label()
+        self.gen_BDT(flag_load=False) #load=True
+        self.get_predictions()
+        if not load:
+            self.gen_prediction_plots(savefig=True, plot=False)
+            
+    def fill_dicts(self, directories, background="all", data_driven=False):
+        self.make_category_dict(directories, background=background, data_driven=data_driven)
+        self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
+        self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
+        
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True):
+        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven)
+        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven)
+        
+    def load_custom_params(self, param, dirs):
+        self.set_booster_label()
+        self.load_booster_params()
+        print(self.booster_params)
+        self.booster_params = param
+        self.gen_BDT(False)
+        self.get_predictions()
+        self.gen_prediction_plots(savefig=True, plot=True)
+        self.fill_dicts(dirs)
+        self.plot_categories()
+        self.gen_datacards()
+        self.make_roc()
+        
+def compare_S_B_ratio(BDTs, directories="", fill_categories=True):
+    #compare the ratios
+    tmp_bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.50, 0.55, 0.575, 0.60, 0.625, 0.65, 0.675, 0.70, 0.725, 0.75, 0.775, 0.8, 0.85, 1.0])
+    ratio_hists = {}
+    for b in BDTs:
+        if fill_categories:
+            b.make_category_dict(directories)
+        combined_background = np.concatenate([b.category_dict[c]["prediction"] for c in ["fakes", "flips", "rares"]])
+        combined_background_weight = np.concatenate([b.category_dict[c]["data"].weight for c in ["fakes", "flips", "rares"]])
+        combined_signal_weight = b.category_dict["signal"]["data"].weight
+        combined_signal_prediction_hist = Hist1D(b.category_dict["signal"]["prediction"], bins=tmp_bins, weights=combined_signal_weight/100)
+        combined_background_prediction_hist = Hist1D(combined_background, bins=tmp_bins, weights=combined_background_weight)
+        plt.figure("sig/back combined: {}".format(b.label), figsize=(7,7))
+        combined_signal_prediction_hist.plot(ax=plt.gca(), label="Signal")
+        combined_background_prediction_hist.plot(ax=plt.gca(), label="Background")
+        plt.title(b.label)
+        plt.xlabel("BDT Score")
+        plt.ylabel("Weighted Yield")
+        plt.legend()
+        ratio_hists[b.label] = get_s_b_ratio(combined_signal_prediction_hist, combined_background_prediction_hist)
+        
+    plt.figure("comparison", figsize = (7,7))
+    for b in BDTs:    
+        combined_ratio = ratio_hists[b.label]
+        combined_ratio.plot(ax=plt.gca(), label = "{} Ratio".format(b.label))
+
+    plt.title(r'BDT $S/\sqrt{S + B}$ Comparison')
+    plt.xlabel("BDT Score")
+    plt.ylabel("Ratio")
+    plt.legend()
+    plt.draw()
 
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
