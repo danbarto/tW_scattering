@@ -44,6 +44,16 @@ def match2(first, second, deltaRCut=0.4):
     combs = ak.cartesian([first, second], nested=True)
     return ak.any((combs['0'].delta_r2(combs['1'])<drCut2), axis=2)
 
+def match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
+    '''
+    match based on deltaR between first and second, and impose that second.pt > first.pt*ptCut
+    '''
+    drCut2 = deltaRCut**2
+    combs = ak.cartesian([first, second], nested=True)
+    return ak.any(
+        (delta_r2(combs['0'], combs['1'])<drCut2) & (combs['1'].pt > ptCut*combs['0'].pt)
+        , axis=2)
+
 def choose(first, n=2):
     tmp = ak.combinations(first, n)
     combs = (tmp['0'] + tmp['1'])
@@ -86,6 +96,8 @@ with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
 prompt    = lambda x: x[((x.genPartFlav==1)|(x.genPartFlav==15))]
 
 nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15))]
+
+chargeflip = lambda x: x[((x.matched_gen.pdgId*(-1) == x.pdgId) & (abs(x.pdgId) == 11))]  # we only care about electron charge flips
 
 class Collections:
 
