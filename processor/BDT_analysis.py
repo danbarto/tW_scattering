@@ -9,7 +9,6 @@ import pandas as pd
 from yahist import Hist1D, Hist2D
 
 # this is all very bad practice
-from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
 from Tools.config_helpers import *
@@ -25,7 +24,98 @@ import uproot
 import glob
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import xgboost as xgb
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import xgboost as xgb
+import pickle
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.preprocessing import quantile_transform, QuantileTransformer
+import sklearn.utils
+import uproot
+import glob
+import warnings
+import os
+import os.path
 import time
+from yahist import Hist1D
+
+import Tools.objects
+from Tools.nano_mapping import make_fileset, nano_mapping
+from processor.meta_processor import get_sample_meta
+from plots.helpers import makePlot, scale_and_merge
+from sklearn.metrics import auc, roc_auc_score, roc_curve
+
+from klepto.archives import dir_archive
+from processor.default_accumulators import desired_output, add_processes_to_output
+import production.weights
+import postProcessing.makeCards
+import postProcessing.datacard_comparison.compare_datacards as compare_datacards
+
+bins_dict = { "Most_Forward_pt":np.linspace(10,200,30),
+              "HT":np.linspace(80,1200,30),
+              "LeadLep_eta":np.linspace(0,2.4,15),
+              "MET_pt":np.linspace(0,300,30),
+              "LeadLep_pt":np.linspace(10,200,30),
+              "LeadLep_dxy":np.linspace(0,0.015,30),
+              "LeadLep_dz":np.linspace(0,0.015,30),
+              "SubLeadLep_pt":np.linspace(10,120,30),
+              "SubLeadLep_eta":np.linspace(0,2.4,15),
+              "SubLeadLep_dxy":np.linspace(0,0.015,30),
+              "SubLeadLep_dz":np.linspace(0,0.015,30),
+              "nJet":np.linspace(1.5,8.5,8),
+              "LeadJet_pt":np.linspace(40,450,30),
+              "SubLeadJet_pt":np.linspace(10,250,30),
+              "SubSubLeadJet_pt":np.linspace(10,250,30),
+              "LeadJet_BtagScore":np.linspace(0, 1, 10),
+              "SubLeadJet_BtagScore":np.linspace(0, 1, 10),
+              "SubSubLeadJet_BtagScore":np.linspace(0, 1, 10),
+              "nElectron":np.linspace(-0.5,4.5,6),
+              "MT_LeadLep_MET":np.linspace(0,300,30),
+              "MT_SubLeadLep_MET":np.linspace(0,300,30),
+              "LeadBtag_pt":np.linspace(0,200,30),
+              "nbtag":np.linspace(-0.5,3.5,5),
+              "LeadLep_SubLeadLep_Mass":np.linspace(0, 350, 30),
+              "SubSubLeadLep_pt":np.linspace(10,120,30),
+              "SubSubLeadLep_eta":np.linspace(0,2.4,15),
+              "SubSubLeadLep_dxy":np.linspace(0,0.015,30),
+              "SubSubLeadLep_dz":np.linspace(0,0.015,30),
+              "MT_SubSubLeadLep_MET":np.linspace(0,300,30),
+              "LeadBtag_score":np.linspace(0, 1, 10)
+            }
+
+BDT_params = ["Most_Forward_pt",
+              "HT",
+              "LeadLep_eta",
+              "LeadLep_pt",
+              "LeadLep_dxy",
+              "LeadLep_dz",
+              "SubLeadLep_pt",
+              "SubLeadLep_eta",
+              "SubLeadLep_dxy",
+              "SubLeadLep_dz",
+              "nJet",
+              "nbtag",
+              "LeadJet_pt",
+              "SubLeadJet_pt",
+              "SubSubLeadJet_pt",
+              "LeadJet_BtagScore",
+              "SubLeadJet_BtagScore",
+              "SubSubLeadJet_BtagScore",
+              "nElectron",
+              "MET_pt",
+              "LeadBtag_pt",
+              "MT_LeadLep_MET",
+              "MT_SubLeadLep_MET",
+              "LeadLep_SubLeadLep_Mass",
+              "SubSubLeadLep_pt",
+              "SubSubLeadLep_eta",
+              "SubSubLeadLep_dxy",
+              "SubSubLeadLep_dz",
+              "MT_SubSubLeadLep_MET",
+              "LeadBtag_score",
+              "weight"]
 
 def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/", year=None):
     file_name = baby_dir + "{}".format(category)
@@ -169,6 +259,174 @@ def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
     best_params = rs_clf.best_params_
     return best_params
 
+#plotting functions
+def make_yahist(x):
+    x_counts = x[0]
+    x_bins = x[1]
+    yahist_x = Hist1D.from_bincounts(x_counts, x_bins)
+    return yahist_x
+
+def make_dmatrix(df):
+    feature_names = df.columns[:-2]
+    df["Label"] = df.Label.astype("category")
+    return xgb.DMatrix(data=df[feature_names],label=df.Label.cat.codes, missing=-999.0,feature_names=feature_names)
+
+def get_s_b_ratio(s_hist, b_hist):
+    tot_hist = s_hist + b_hist
+    denom_hist = Hist1D.from_bincounts(np.sqrt(np.array(tot_hist.counts)), bins=tot_hist.edges)
+    result = s_hist.divide(denom_hist)
+    return result
+
+def gen_hist(data_test, label, out_dir, savefig=False, plot=False):
+    plt.figure(label, figsize=(6,6));
+    bins = bins_dict[label]
+    values_signal = data_test[label][data_test.Label == 's']
+    weights_signal = data_test["weight"][data_test.Label == 's']
+    values_background = data_test[label][data_test.Label == 'b']
+    weights_background = data_test["weight"][data_test.Label == 'b']
+    weight_ratio = np.sum(weights_signal) / np.sum(weights_background)
+    weights_signal = weights_signal / weight_ratio
+    if label not in ["nJet, nbtag, nElectron"]:
+        plt.hist(np.clip(values_signal, bins[0], bins[-1]),bins=bins_dict[label],
+                 histtype='step',color='midnightblue',label='signal', weights=np.clip(weights_signal, bins[0], bins[-1]), density=True)#np.clip(weights_signal, bins[0], bins[-1])
+        plt.hist(np.clip(values_background, bins[0], bins[-1]),bins=bins_dict[label],
+                 histtype='step',color='firebrick',label='background', weights=np.clip(weights_background, bins[0], bins[-1]), density=True)#np.clip(weights_background, bins[0], bins[-1])
+    else:
+        plt.hist(values_signal, bins=bins_dict[label],
+                 histtype='step',color='midnightblue',label='signal', weights=weights_signal)#density=True);
+        plt.hist(values_background,bins=bins_dict[label],
+                 histtype='step',color='firebrick',label='background', weights=weights_background)#density=True);
+
+    log_params = ["SubLeadLep_dxy", "SubLeadLep_dz", "LeadLep_dxy", "LeadLep_dz"]
+    if label in log_params:
+        plt.yscale("log")
+    plt.xlabel(label,fontsize=12);
+    plt.ylabel('Normalized Counts',fontsize=12);
+    plt.legend(frameon=False);
+    if savefig:
+        plt.savefig(out_dir + "histograms/{}.pdf".format(label))
+        plt.savefig(out_dir + "histograms/{}.png".format(label))
+    if plot:
+        plt.draw()
+    else:
+        plt.close()
+        
+def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_category="none", flag_match_yields=True, gen_signal=True, gen_background=True):
+    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_params)+1)))})
+    if signal_name == "HCT":
+        signal_files = glob.glob(base_dir + "*hct*.root")
+    elif signal_name == "HUT":
+        signal_files = glob.glob(base_dir + "*hut*.root")
+    elif signal_name == "combined_HCT_HUT":
+        signal_files = glob.glob(base_dir + "*hct*.root") + glob.glob(base_dir + "*hut*.root")
+        
+    if background_category=="none":
+        remove_files = glob.glob(base_dir + "*hut*.root") + glob.glob(base_dir + "*hct*.root") + glob.glob(base_dir + "*data.root") + glob.glob(base_dir + "tt[0-9]lep.root")
+        background_files = glob.glob(base_dir + "*.root")
+        [background_files.remove(r) for r in remove_files]
+    elif background_category=="fakes":
+        background_files = [base_dir + "ttjets.root", base_dir + "wjets.root", base_dir + "ttg_1lep.root"]
+    elif background_category=="flips":
+        background_files = [base_dir + f for f in ["dyjets_m10-50.root", "dyjets_m50.root", "zg.root", "tw_dilep.root"]]#, "ww.root"]]
+    elif background_category=="rares":
+        remove_files = [base_dir + f for f in ["dyjets_m10-50.root", "dyjets_m50.root", "ww.root", "zg.root", "ttjets.root", "wjets.root", "ttg_1lep.root", "tw_dilep.root"]]
+        remove_files += glob.glob(base_dir + "*hut*.root") + glob.glob(base_dir + "*hct*.root") + glob.glob(base_dir + "*data.root") + glob.glob(base_dir + "tt[0-9]lep.root")
+        background_files = glob.glob(base_dir + "*.root")
+        [background_files.remove(r) for r in remove_files]
+    #print(background_files)
+    concat_file = []
+    for file in background_files:
+        concat_file.append(file[file.rfind('/')+1:file.rfind('.')])
+    print(concat_file)
+    signal_fileset = {}
+    for s in signal_files:
+        process_name = s[(s.rfind('/')+1):(s.rfind('.'))]
+        signal_fileset[process_name] = [s]
+    background_fileset = {}    
+    for b in background_files:
+        process_name = b[(b.rfind('/')+1):(b.rfind('.'))]
+        background_fileset[process_name] = [b]
+
+    exe_args = {
+        'workers': 16,
+        'function_args': {'flatten': False},
+        "schema": NanoAODSchema,
+        "skipbadfiles": True,
+    }
+    exe = processor.futures_executor
+    with warnings.catch_warnings(): #Ignoring all RuntimeWarnings (there are a lot)
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        if gen_signal:
+            signal_output = processor.run_uproot_job(
+                signal_fileset,
+                "Events",
+                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+                exe,
+                exe_args,
+                chunksize=250000,
+            )
+            signal_BDT_params = pd.DataFrame(data=signal_output["BDT_df"].value, columns=(["event"]+BDT_params))
+            signal_BDT_params["Label"] = "s"
+        else:
+            signal_BDT_params = None
+            
+        if gen_background:
+            background_output = processor.run_uproot_job(
+                background_fileset,
+                "Events",
+                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+                exe,
+                exe_args,
+                chunksize=250000,
+            )
+            background_BDT_params = pd.DataFrame(data=background_output["BDT_df"].value, columns=(["event"]+BDT_params))
+            background_BDT_params["Label"] = "b"
+            background_BDT_params = sklearn.utils.shuffle(background_BDT_params) #shuffle our background before we cut out a subset of it
+    #background_BDT_params = background_BDT_params[:signal_BDT_params.shape[0]] #make the background only as large as the signal
+        else:
+            background_BDT_params = None
+    if flag_match_yields and gen_signal and gen_background:
+        signal_yield = sum(signal_BDT_params.weight)
+        background_yield = sum(background_BDT_params.weight)
+        SR_BR_ratio = signal_yield/background_yield
+        print("signal yield:{}".format(signal_yield))
+        print("background yield:{}".format(background_yield))
+        print("SR/BR yield ratio:{}".format(SR_BR_ratio))
+        signal_BDT_params.weight = signal_BDT_params.weight / SR_BR_ratio
+        print("new signal yield:{}".format(sum(signal_BDT_params.weight)))
+        print("new SR/BR yield ratio:{}".format(sum(signal_BDT_params.weight) / background_yield))
+    if gen_signal and gen_background:
+        full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
+    else:
+        full_data = None
+    return (signal_BDT_params, background_BDT_params, full_data)
+
+def process_file(fname, base_dir, BDT_params, version, year):
+    fileset = {}
+    process_name = fname[(fname.rfind('/')+1):(fname.rfind('.'))]
+    fileset[process_name] = [fname]
+    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_params)+1)))})
+    exe_args = {
+        'workers': 16,
+        'function_args': {'flatten': False},
+        "schema": NanoAODSchema,
+        "skipbadfiles": True,
+    }
+    exe = processor.futures_executor
+    with warnings.catch_warnings(): #Ignoring all RuntimeWarnings (there are a lot)
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        tmp_output = processor.run_uproot_job(
+            fileset,
+            "Events",
+            nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+            exe,
+            exe_args,
+            chunksize=250000,
+        )
+    tmp_BDT_params = pd.DataFrame(data=tmp_output["BDT_df"].value, columns=(["event"]+BDT_params))
+    return tmp_BDT_params
+
+
 class BDT:
     def __init__(self, in_base_dir, in_files, out_base_dir, label, year, booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None):
         self.in_base_dir = in_base_dir #"/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018"
@@ -279,7 +537,7 @@ class BDT:
         return sig_copy, back_copy, full_data
     
     def __train_test_split__(self):
-        data_train, data_test = BDT_analysis.BDT_train_test_split(self.equalize_yields(self.signal, self.background)[2], verbose=False)
+        data_train, data_test = BDT_train_test_split(self.equalize_yields(self.signal, self.background)[2], verbose=False)
         return data_train, data_test
 
     def optimize_booster(self, label=None):
@@ -288,7 +546,7 @@ class BDT:
         else:
             self.booster_label = label
         output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
-        self.booster_params = BDT_analysis.optimize_BDT_params(self.train_data)
+        self.booster_params = optimize_BDT_params(self.train_data)
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(output_dir + "histograms", exist_ok=True)
         pickle.dump(self.booster_params, open(output_dir+"params.p", "wb"))
@@ -316,7 +574,7 @@ class BDT:
         param['eval_metric'] = 'error'           # evaluation metric for cross validation
         param = list(param.items()) + [('eval_metric', 'logloss')] + [('eval_metric', 'rmse')]
         print(output_dir)
-        booster, train, test, evals_result = BDT_analysis.gen_BDT(self.label, self.train_data, self.test_data, param, self.num_trees, 
+        booster, train, test, evals_result = gen_BDT(self.label, self.train_data, self.test_data, param, self.num_trees, 
                                                     output_dir, booster_name=self.label, flag_load=flag_load, verbose=False)
         self.booster = booster
         self.train_Dmatrix = train
@@ -581,42 +839,42 @@ class BDT:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
-                        sig_df = pd.concat([sig_df, BDT_analysis.load_category(s, d)], axis=0)
-                        all_df = pd.concat([all_df, BDT_analysis.load_category(s, d)], axis=0)
+                        sig_df = pd.concat([sig_df, load_category(s, d)], axis=0)
+                        all_df = pd.concat([all_df, load_category(s, d)], axis=0)
                 elif sig_name=="HCT":
-                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tch", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tch", d)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tch", d)])
+                    all_df = pd.concat([all_df, load_category("signal_tch", d)])
                 elif sig_name=="HUT":
-                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tuh", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tuh", d)])
-                fakes_df = pd.concat([fakes_df, BDT_analysis.load_category("data_fakes", d)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d)])
+                    all_df = pd.concat([all_df, load_category("signal_tuh", d)])
+                fakes_df = pd.concat([fakes_df, load_category("data_fakes", d)])
                 if (background=="all") or (background=="fakes"):
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("data_fakes", d)]) 
-                flips_df = pd.concat([flips_df, BDT_analysis.load_category("data_flips", d)])
-                rares_df = pd.concat([rares_df, BDT_analysis.load_category("rares", d)])
+                    all_df = pd.concat([all_df, load_category("data_fakes", d)]) 
+                flips_df = pd.concat([flips_df, load_category("data_flips", d)])
+                rares_df = pd.concat([rares_df, load_category("rares", d)])
                 if (background=="all") or (background=="flips"):
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("data_flips", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("rares", d)])
+                    all_df = pd.concat([all_df, load_category("data_flips", d)])
+                    all_df = pd.concat([all_df, load_category("rares", d)])
         else:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
-                        sig_df = pd.concat([sig_df, BDT_analysis.load_category(s, d)], axis=0)
-                        all_df = pd.concat([all_df, BDT_analysis.load_category(s, d)], axis=0)
+                        sig_df = pd.concat([sig_df, load_category(s, d)], axis=0)
+                        all_df = pd.concat([all_df, load_category(s, d)], axis=0)
                 elif sig_name=="HCT":
-                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tch", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tch", d)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tch", d)])
+                    all_df = pd.concat([all_df, load_category("signal_tch", d)])
                 elif sig_name=="HUT":
-                    sig_df = pd.concat([sig_df, BDT_analysis.load_category("signal_tuh", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("signal_tuh", d)])
-                fakes_df = pd.concat([fakes_df, BDT_analysis.load_category("fakes_mc", d)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d)])
+                    all_df = pd.concat([all_df, load_category("signal_tuh", d)])
+                fakes_df = pd.concat([fakes_df, load_category("fakes_mc", d)])
                 if (background=="all") or (background=="fakes"):
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("fakes_mc", d)]) 
-                flips_df = pd.concat([flips_df, BDT_analysis.load_category("flips_mc", d)])
-                rares_df = pd.concat([rares_df, BDT_analysis.load_category("rares", d)])
+                    all_df = pd.concat([all_df, load_category("fakes_mc", d)]) 
+                flips_df = pd.concat([flips_df, load_category("flips_mc", d)])
+                rares_df = pd.concat([rares_df, load_category("rares", d)])
                 if (background=="all") or (background=="flips"):
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("flips_mc", d)])
-                    all_df = pd.concat([all_df, BDT_analysis.load_category("rares", d)])
+                    all_df = pd.concat([all_df, load_category("flips_mc", d)])
+                    all_df = pd.concat([all_df, load_category("rares", d)])
 
         sig_pred = self.booster.predict(make_dmatrix(sig_df))
         fakes_pred = self.booster.predict(make_dmatrix(fakes_df))
@@ -794,15 +1052,15 @@ class BDT:
         else:
             plt.close()
     
-    def gen_BDT_and_plot(self, load=True, optimize=True):
+    def gen_BDT_and_plot(self, load_BDT=True, optimize=True, retrain=True):
         if optimize:
             self.optimize_booster()
-        elif load:
+        elif load_BDT:
             self.load_booster_params()
             self.set_booster_label()
-        self.gen_BDT(flag_load=False) #load=True
+        self.gen_BDT(flag_load=(not retrain)) #load=True
         self.get_predictions()
-        if not load:
+        if retrain:
             self.gen_prediction_plots(savefig=True, plot=False)
             
     def fill_dicts(self, directories, background="all", data_driven=False):
