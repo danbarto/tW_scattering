@@ -33,19 +33,19 @@ all_files_dd           = (["2016/data_driven/" + f for f in dd_files] + ["2017/d
 HCT_files_dd           = (["2016/data_driven/" + f for f in HCT_cat_dd] + ["2017/data_driven/" + f for f in HCT_cat_dd] + ["2018/data_driven/" + f for f in HCT_cat_dd])
 HUT_files_dd           = (["2016/data_driven/" + f for f in HUT_cat_dd] + ["2017/data_driven/" + f for f in HUT_cat_dd] + ["2018/data_driven/" + f for f in HUT_cat_dd])
 
-input_baby_dir   = "/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/cached_babies/" ###change this if the babies change
+input_baby_dir   = "/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/" ###change this if the babies change
 base_output_dir  = "/home/users/cmcmahon/public_html/BDT"
 
-all_categories   = BDT_analysis.BDT(input_baby_dir, all_files, base_output_dir, label="all_categories", year="all")
+#all_categories   = BDT_analysis.BDT(input_baby_dir, all_files, base_output_dir, label="all_categories", year="all")
 HCT              = BDT_analysis.BDT(input_baby_dir, HCT_files, base_output_dir, label="HCT", year="all")
 HUT              = BDT_analysis.BDT(input_baby_dir, HUT_files, base_output_dir, label="HUT", year="all")
 
-every_BDT = [all_categories, HCT, HUT]
+every_BDT = [HCT, HUT]
 
 for bdt in every_BDT:
     bdt.gen_BDT_and_plot(load_BDT=True, optimize=False, retrain=True)
     
-retrain_BDTs = []#[HCT_dilep, HCT_flips, HCT_trilep_fakes, HCT_trilep_flips, HUT_dilep, HUT_trilep, HUT_trilep_fakes, HUT_trilep_flips, trilep_fakes]
+retrain_BDTs = [HCT, HUT]#[HCT_dilep, HCT_flips, HCT_trilep_fakes, HCT_trilep_flips, HUT_dilep, HUT_trilep, HUT_trilep_fakes, HUT_trilep_flips, trilep_fakes]
 for bdt in retrain_BDTs:
     bdt.gen_BDT_and_plot(load_BDT=False, optimize=True, retrain=True)
     
@@ -56,7 +56,7 @@ if flag_gen_datacards:
         for bdt in every_BDT:
             bdt.gen_datacards(data_dir, y, quantile_transform=True, data_driven=True)
     
-flag_gen_categories = False
+flag_gen_categories = True
 if flag_gen_categories:
     all_directories = ["/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies" + f for f in ["/2016/MC/", "/2017/MC/", "/2018/MC/"]]
     all_directories_data_driven = ["/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies" + f for f in ["/2016/data_driven/", "/2017/data_driven/", "/2018/data_driven/"]]
