@@ -584,7 +584,6 @@ class BDT:
     
     def plot_ratio(self, region="signal", savefig=False, plot=True):
         bins = np.linspace(0, 1, 25)
-        fig, ax = plt.subplots(2, 1, sharex=True, figsize=(8,8), gridspec_kw=dict(height_ratios=[3, 1]))
         output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         if region == "signal":
             train_set_predictions = self.train_predictions[self.train_Dmatrix.get_label().astype(bool)]
@@ -603,25 +602,56 @@ class BDT:
             fig_directory = output_dir + "Prediction_Background"
 
         #NEED TO FIX ERRORS WHEN NORMALIZING (to accomodate different sized train/test sets)
-        hist_train = ax[0].hist(train_set_predictions, bins=bins, histtype='step',color='lime',label='training {}'.format(region), weights=train_weights)#, density=True)
-        hist_test  = ax[0].hist(test_set_predictions,  bins=bins, histtype='step',color='magenta'     ,label='test {}'.format(region), weights=test_weights)#, density=True)
-        yahist_train = make_yahist(hist_train)
-        yahist_test = make_yahist(hist_test)
-        ratio = yahist_train.divide(yahist_test)
-        ratio.plot(ax=ax[1], errors=True)
-        ax[1].plot([0, 1], [1, 1], 'r')
-        ax[1].set_ylim([0, 2])
-        ax[0].set_xlabel(title,fontsize=12)
-        ax[0].set_ylabel('Events',fontsize=12)
-        ax[0].legend(frameon=False)
-        if savefig:
-            plt.savefig(fig_directory + ".pdf")
-            plt.savefig(fig_directory + ".png")
-        if plot:
-            plt.draw()
-        else:
-            plt.close()
-
+        if region == "signal" or region == "background":
+            fig, ax = plt.subplots(2, 1, sharex=True, figsize=(8,8), gridspec_kw=dict(height_ratios=[3, 1]))
+            hist_train = ax[0].hist(train_set_predictions, bins=bins, histtype='step',color='lime',label='training {}'.format(region), weights=train_weights)#, density=True)
+            hist_test  = ax[0].hist(test_set_predictions,  bins=bins, histtype='step',color='magenta'     ,label='test {}'.format(region), weights=test_weights)#, density=True)
+            yahist_train = make_yahist(hist_train)
+            yahist_test = make_yahist(hist_test)
+            ratio = yahist_train.divide(yahist_test)
+            ratio.plot(ax=ax[1], errors=True)
+            ax[1].plot([0, 1], [1, 1], 'r')
+            ax[1].set_ylim([0, 2])
+            ax[0].set_xlabel(title,fontsize=12)
+            ax[0].set_ylabel('Events',fontsize=12)
+            ax[0].legend(frameon=False)
+            print("train area = {}, test area = {}".format(sum(hist_train[0] * np.diff(hist_train[1])), sum(hist_test[0] * np.diff(hist_test[1]))))
+            if savefig:
+                plt.savefig(fig_directory + ".pdf")
+                plt.savefig(fig_directory + ".png")
+            if plot:
+                plt.draw()
+            else:
+                plt.close()
+        elif region == "both":
+            fig_directory = output_dir + "Prediction_All"
+            
+            sig_train_predictions = self.train_predictions[self.train_Dmatrix.get_label().astype(bool)]
+            sig_test_predictions  = self.test_predictions[self.test_Dmatrix.get_label().astype(bool)]
+            sig_train_weights = self.train_Dmatrix.get_weight()[self.train_Dmatrix.get_label().astype(bool)]
+            sig_test_weights = self.test_Dmatrix.get_weight()[self.test_Dmatrix.get_label().astype(bool)]
+            
+            back_train_predictions = self.train_predictions[~(self.train_Dmatrix.get_label().astype(bool))]
+            back_test_predictions  = self.test_predictions[~(self.test_Dmatrix.get_label().astype(bool))]
+            back_train_weights = self.train_Dmatrix.get_weight()[~(self.train_Dmatrix.get_label().astype(bool))]
+            back_test_weights = self.test_Dmatrix.get_weight()[~(self.test_Dmatrix.get_label().astype(bool))]
+            plt.figure("sig/back", figsize=(7,7))
+            hist_sig_train = plt.hist(sig_train_predictions, bins=bins, histtype='step',color='midnightblue', label='signal (train)', weights=sig_train_weights)
+            hist_sig_test  = plt.hist(sig_test_predictions,  bins=bins, histtype='step',color='midnightblue', hatch="/", label='signal (test)', weights=sig_test_weights)
+            hist_back_train = plt.hist(back_train_predictions, bins=bins, histtype='step',color='firebrick', label='background (train)', weights=back_train_weights)
+            hist_back_test  = plt.hist(back_test_predictions,  bins=bins, histtype='step',color='firebrick', hatch="/", label='background (test)', weights=back_test_weights)
+            plt.title("{} BDT Prediction of Signal and Background".format(self.label))
+            plt.xlabel("BDT Score")
+            plt.ylabel("Yield")
+            plt.legend()
+            if savefig:
+                plt.savefig(fig_directory + ".pdf")
+                plt.savefig(fig_directory + ".png")
+            if plot:
+                plt.draw()
+            else:
+                plt.close()
+            
     def gen_prediction_plots(self, savefig=True, plot=False):
         test_weights = self.test_Dmatrix.get_weight()
         train_weights = self.train_Dmatrix.get_weight()
@@ -677,6 +707,7 @@ class BDT:
 
         self.plot_ratio("signal", savefig, plot)
         self.plot_ratio("background", savefig, plot)
+        self.plot_ratio("both", savefig, plot)
         cuts = np.linspace(0,1,200);
         train_TP = np.zeros(len(cuts))
         train_FP = np.zeros(len(cuts))
@@ -931,8 +962,42 @@ class BDT:
             plt.draw()
         else:
             plt.close()
+            
+    def plot_SB_ratio(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
+        out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        sig_weight = np.array(cat_dict["signal"]["data"].weight)
+        back_weight = np.concatenate((cat_dict["fakes"]["data"].weight, cat_dict["flips"]["data"].weight, cat_dict["rares"]["data"].weight))
+        back_pred = np.concatenate((fakes_pred, flips_pred, rares_pred))
+        sig_hist = Hist1D(sig_pred, bins=bins, weights=sig_weight/100)
+        back_hist = Hist1D(back_pred, bins=bins, weights=back_weight)
+        tot_hist = sig_hist + back_hist
+        denom_hist = Hist1D.from_bincounts(np.sqrt(np.array(tot_hist.counts)), bins=tot_hist.edges)
+        result = sig_hist.divide(denom_hist)
+        plt.figure("comparision", figsize=(7,7))
+        result.plot(ax=plt.gca())
+        plt.title(r'$S/\sqrt{S + B}$')
+        plt.xlabel("BDT Score (after QT)")
+        plt.ylabel("Ratio")
+        plt.savefig(out_dir + "SB_ratio.pdf")
+        plt.savefig(out_dir + "SB_ratio.png")
+        plt.close()
+        
+    def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
+        out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
+        sig_weight = np.array(cat_dict["signal"]["data"].weight)
+        plt.figure("dc_categories", figsize=(7,7))
+        plt.hist(fakes_pred,bins=bins,histtype='step',color='#d7191c',label='fakes', weights=cat_dict["fakes"]["data"].weight)
+        plt.hist(flips_pred,bins=bins,histtype='step',color='#2c7bb6',label='flips', weights=cat_dict["flips"]["data"].weight)
+        plt.hist(rares_pred,bins=bins,histtype='step',color='#fdae61',label='rares', weights=cat_dict["rares"]["data"].weight)
+        plt.hist(sig_pred,bins=bins,histtype='step',color='black',label='signal', weights=cat_dict["signal"]["data"].weight/100)
+        plt.title('Datacard Bins')
+        plt.legend()
+        plt.xlabel("BDT Score (after QT)")
+        plt.savefig(out_dir + "DC_bins.pdf")
+        plt.savefig(out_dir + "DC_bins.png")
+        plt.close()
 
-    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False):
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 20), flag_tmp_directory=False):
         yield_dict = {}
         if signal_name == "HCT":
             self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven)
@@ -941,14 +1006,15 @@ class BDT:
             self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven)
             cat_dict = self.HUT_dict
         out_dir = "{0}/{1}/datacards/".format(self.out_base_dir, self.label)
+        if flag_tmp_directory:
+            out_dir += "tmp/"
         BDT_signal = cat_dict["signal"]["data"]
         BDT_fakes = cat_dict["fakes"]["data"]
         BDT_flips = cat_dict["flips"]["data"]
         BDT_rares = cat_dict["rares"]["data"]
-        #breakpoint()
-        BDT_bins = np.linspace(0, 1, 20)
+        #BDT_bins = np.linspace(0, 1, 20)
         #BDT_bins =  np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        feature_names = BDT_fakes.columns[1:-2]  #full_data
+        feature_names = BDT_fakes.columns[:-2]  #full_data
         fakes_weights = BDT_fakes.weight 
         flips_weights = BDT_flips.weight
         rares_weights = BDT_rares.weight 
@@ -964,6 +1030,9 @@ class BDT:
             else:
                 flips_predictions = np.array([0.])
             rares_predictions = qt.transform(cat_dict["rares"]["prediction"].reshape(-1, 1)).flatten()
+            if plot:
+                self.plot_SB_ratio(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
+                self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
         else:      
             signal_predictions = cat_dict["signal"]["prediction"]
             fakes_predictions = cat_dict["fakes"]["prediction"]
@@ -1068,9 +1137,9 @@ class BDT:
         self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
         self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
         
-    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True):
-        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven)
-        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven)
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 20), flag_tmp_directory=False, plot=True):
+        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
+        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
         
     def load_custom_params(self, param, dirs):
         self.set_booster_label()
