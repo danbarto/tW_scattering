@@ -98,8 +98,12 @@ with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
 prompt    = lambda x: x[((x.genPartFlav==1)|(x.genPartFlav==15))]
+#prompt_mask = lambda x: (x.genPartFlav==1)|(x.genPartFlav==15)
 
-nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15))]
+nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15)&(x.genPartFlav!=22))]
+#nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15)&(x.genPartFlav!=22))]
+
+conversion = lambda x: x[(x.genPartFlav==22)]
 
 chargeflip = lambda x: x[((x.matched_gen.pdgId*(-1) == x.pdgId) & (abs(x.pdgId) == 11))]  # we only care about electron charge flips
 

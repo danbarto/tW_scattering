@@ -8,8 +8,8 @@ from Tools.triggers import getTriggers, getFilters
 from Tools.objects import choose, cross, choose3
 
 def get_pt(lep):
-    mask_tight    = (lep.id>1)*1
-    mask_fakeable = (lep.id<2)*1
+    mask_tight    = (lep.id!=1)*1  # either veto (and not fakeable) or tight
+    mask_fakeable = (lep.id==1)*1
 
     return lep.pt*mask_tight + lep.conePt*mask_fakeable
 
@@ -48,7 +48,7 @@ class Selection:
 
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
-        dilep   = cross(self.mu, self.ele)
+        dilep   = choose(lepton, 2)
 
         if SS:
             is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
@@ -88,7 +88,7 @@ class Selection:
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
 
-        ss_reqs = [
+        reqs = [
             'filter',
          #   'lepsel',
             'dilep',
@@ -105,7 +105,7 @@ class Selection:
         ]
         
         if tight:
-            ss_reqs += [
+            reqs += [
                 'N_jet>4',
                 'N_central>3',
                 'ST>600',
@@ -113,60 +113,57 @@ class Selection:
                 #'delta_eta',
             ]
 
-        ss_reqs_d = { sel: True for sel in ss_reqs if not sel in omit }
-        ss_selection = self.selection.require(**ss_reqs_d)
+        reqs_d = { sel: True for sel in reqs if not sel in omit }
+        selection = self.selection.require(**reqs_d)
+
+        self.reqs = [ sel for sel in reqs if not sel in omit ]
 
         if cutflow:
             #
             cutflow_reqs_d = {}
-            for req in ss_reqs:
+            for req in reqs:
                 cutflow_reqs_d.update({req: True})
                 cutflow.addRow( req, self.selection.require(**cutflow_reqs_d) )
 
-        return ss_selection
+        return selection
 
 
     def trilep_baseline(self, omit=[], cutflow=None, tight=False):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
+        every quantity in trilep should be calculated from loose leptons
         '''
         self.selection = PackedSelection()
 
-        is_trilep  = ((ak.num(self.ele) + ak.num(self.mu))==3)
-        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))>=2)
-        pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
-        neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
-        lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
-        lep1pt     = ((ak.num(self.ele[(self.ele.pt>20)]) + ak.num(self.mu[(self.mu.pt>20)]))>1)
-        lepveto    = ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==3)
+        is_trilep  = ( ((ak.num(self.ele_veto) + ak.num(self.mu_veto))>=3) & ((ak.num(self.ele) + ak.num(self.mu))>=3) )
+        lep0pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>25)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>25)]))>0)
+        lep1pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>20)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>20)]))>1)
+        #lep0pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>25)]) + ak.num(self.mu_veto[(self.mu_veto.pt>25)]))>0)
+        #lep1pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
 
-        dimu    = choose(self.mu, 2)
-        diele   = choose(self.ele, 2)
-        dimu_veto = choose(self.mu_veto,2)
-        diele_veto = choose(self.ele_veto,2)
-        #dilep   = cross(self.mu, self.ele)
+        dimu    = choose(self.mu_veto,2)
+        diele   = choose(self.ele_veto,2)
 
-        OS_dimu = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
-        OS_diele = diele[(diele['0'].charge*diele['1'].charge < 0)]
-        OS_dimu_veto = dimu_veto[(dimu_veto['0'].charge*dimu_veto['1'].charge < 0)]
-        OS_diele_veto = diele_veto[(diele_veto['0'].charge*diele_veto['1'].charge < 0)]
+        OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
+        OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
         
-        SFOS = ak.concatenate([OS_diele_veto, OS_dimu_veto], axis=1)
+        SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
-        offZ_veto = (ak.all(abs(OS_dimu_veto.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele_veto.mass-91.2)>10, axis=1))
 
-        lepton = ak.concatenate([self.ele, self.mu], axis=1)
+        lepton_tight = ak.concatenate([self.ele, self.mu], axis=1)
+        SS_dilep = ( ak.sum(lepton_tight.charge, axis=1)!=0 )  # this makes sure that at least the SS leptons are tight, or all 3 leptons are tight
+
+        # get lepton vectors for trigger
+        lepton = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
-        dilep = choose(lepton,2)
-        SS_dilep = (dilep['0'].charge*dilep['1'].charge > 0)
-        los_trilep_SS = (ak.any(SS_dilep, axis=1))
 
         vetolepton   = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)    
         vetotrilep = choose3(vetolepton, 3)
-        pos_trilep = ak.any((vetotrilep['0'].charge+vetotrilep['1'].charge+vetotrilep['2'].charge > 0),axis=1)
-        neg_trilep = ak.any((vetotrilep['0'].charge+vetotrilep['1'].charge+vetotrilep['2'].charge < 0),axis=1)
+
+        pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
+        neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
         
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
@@ -176,15 +173,12 @@ class Selection:
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
         st_veto = self.met.pt + ht + ak.sum(self.mu_veto.pt, axis=1) + ak.sum(self.ele_veto.pt, axis=1)
 
-        lep0pt_veto     = ((ak.num(self.ele_veto[(self.ele_veto.pt>25)]) + ak.num(self.mu_veto[(self.mu_veto.pt>25)]))>0)
-        lep1pt_veto     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
-
-        self.selection.add('lepveto',       lepveto)
-        self.selection.add('trilep',        los_trilep_SS)
+        self.selection.add('trilep',        is_trilep)
+        self.selection.add('SS_dilep',      SS_dilep)
+        self.selection.add('p_T(lep0)>25',  lep0pt)
+        self.selection.add('p_T(lep1)>20',  lep1pt)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
-        self.selection.add('p_T(lep0)>25',  lep0pt_veto)
-        self.selection.add('p_T(lep1)>20',  lep1pt_veto)
         self.selection.add('N_jet>2',       (ak.num(self.jet_all)>2) )
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
@@ -193,17 +187,17 @@ class Selection:
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
-        self.selection.add('offZ',          offZ_veto )
+        self.selection.add('offZ',          offZ )
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
         
         reqs = [
             'filter',
-            'lepveto',
             'trilep',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
             'trigger',
+            'SS_dilep',
             'offZ',
             'MET>50',
             'N_jet>2',
@@ -239,30 +233,72 @@ class Selection:
 
 
 if __name__ == '__main__':
-    
+    import warnings
+    warnings.filterwarnings("ignore")
+
     from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
     from coffea.analysis_tools import Weights, PackedSelection
     from Tools.samples import fileset_2018
-    
+    from Tools.objects import Collections
+    from Tools.helpers import get_four_vec_fromPtEtaPhiM, getCutFlowTable
+    from Tools.cutflow import Cutflow
+
+    from coffea import processor
+    from coffea.analysis_tools import Weights
+    from processor.default_accumulators import desired_output as output
+
+    output.update({'TTW': processor.defaultdict_accumulator(int)})
+
+    year = 2018
+
     # the below command will change to .from_root in coffea v0.7.0
     ev = NanoEventsFactory.from_root(fileset_2018['TTW'][0], schemaclass=NanoAODSchema).events()
-    
+    ev.metadata['dataset'] = 'TTW'
+
+    weight = Weights( len(ev) )
+    weight.add("weight", ev.weight)
+
+    ## Muons
+    mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
+    mu_t     = Collections(ev, "Muon", "tightSSTTH", year=year).get()
+    mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
+    muon     = ak.concatenate([mu_t, mu_f], axis=1)
+    muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False)
+    # the muon object automatically has the right id member, but for veto we need to take care of this.
+    # FIXME    
+
+
+    ## Electrons
+    el_v        = Collections(ev, "Electron", "vetoTTH", year=year).get()
+    el_t        = Collections(ev, "Electron", "tightSSTTH", year=year).get()
+    el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
+    electron    = ak.concatenate([el_t, el_f], axis=1)
+    electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
+
+
     sel = Selection(
         dataset = "TTW",
         events = ev,
-        year = 2018,
-        ele = ev.Electron,
-        ele_veto = ev.Electron,
-        mu = ev.Muon,
-        mu_veto = ev.Muon,
+        year = year,
+        ele = electron,
+        ele_veto = el_v,
+        mu = muon,
+        mu_veto = mu_v,
         jet_all = ev.Jet,
+        jet_light = ev.Jet,
         jet_central = ev.Jet,
         jet_btag = ev.Jet,
         jet_fwd = ev.Jet,
         met = ev.MET,
     )
 
-    trilep = sel.trilep_baseline(omit=['N_btag>0', 'N_fwd>0'], tight=False)
+    dilep = sel.dilep_baseline(omit=['N_fwd>0'], tight=False)
+    print ("Found %s raw events in dilep selection"%sum(dilep))
+    print ("Applied the following requirements:")
+    print (sel.reqs)
+
+    trilep = sel.trilep_baseline(omit=['N_fwd>0'], tight=False)
     print ("Found %s raw events in trilep selection"%sum(trilep))
     print ("Applied the following requirements:")
     print (sel.reqs)
+

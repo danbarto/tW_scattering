@@ -74,6 +74,10 @@ class SS_analysis(processor.ProcessorABC):
             leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
             trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
 
+        ####################
+        ### Reco objects ###
+        ####################
+
         # Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
         # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
         # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
@@ -108,6 +112,7 @@ class SS_analysis(processor.ProcessorABC):
 
         ## Merge electrons and muons. These are fakeable leptons now
         lepton   = ak.concatenate([muon, electron], axis=1)
+        #lead_leptons = lepton[ak.argsort(lepton.p4.pt)][:,:3]
         leading_lepton_idx = ak.singletons(ak.argmax(lepton.p4.pt, axis=1))
         leading_lepton = lepton[leading_lepton_idx]
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.p4.pt, axis=1))
