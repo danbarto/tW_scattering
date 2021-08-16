@@ -441,6 +441,7 @@ class BDT:
         self.booster_params = booster_params
         self.train_predictions = train_predictions
         self.test_predictions = test_predictions
+        self.BDT_features = BDT_features
         self.num_trees = 10
         self.signal, self.background, self.full_data = self.__get_signal_background__()
         self.train_data, self.test_data = self.__train_test_split__()
@@ -450,7 +451,7 @@ class BDT:
         self.category_dict = None
         self.HCT_dict = None
         self.HUT_dict = None
-        self.BDT_features = BDT_features
+        
         
     def combine_BDTs(self, other_BDTs, new_label, year="combined"):
         other = BDT(self.in_base_dir, self.in_files, self.out_base_dir, new_label, year=year)
