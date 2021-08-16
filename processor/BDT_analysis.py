@@ -1130,7 +1130,7 @@ class BDT:
         else:
             plt.close()
     
-    def gen_BDT_and_plot(self, load_BDT=True, optimize=True, retrain=True, flag_save_booster=True):
+    def gen_BDT_and_plot(self, load_BDT=True, optimize=True, retrain=True, flag_save_booster=True, plot=True):
         if optimize:
             self.optimize_booster()
         elif load_BDT:
@@ -1138,7 +1138,7 @@ class BDT:
             self.set_booster_label()
         self.gen_BDT(flag_load=(not retrain), flag_save_booster=flag_save_booster) #load=True
         self.get_predictions()
-        if retrain:
+        if plot:
             self.gen_prediction_plots(savefig=True, plot=False)
             
     def fill_dicts(self, directories, background="all", data_driven=False):
