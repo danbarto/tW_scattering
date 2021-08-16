@@ -85,7 +85,7 @@ bins_dict = { "Most_Forward_pt":np.linspace(10,200,30),
               "LeadBtag_score":np.linspace(0, 1, 10)
             }
 
-BDT_params = ["Most_Forward_pt",
+BDT_features = ["Most_Forward_pt",
               "HT",
               "LeadLep_eta",
               "LeadLep_pt",
@@ -311,8 +311,8 @@ def gen_hist(data_test, label, out_dir, savefig=False, plot=False):
     else:
         plt.close()
         
-def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_category="none", flag_match_yields=True, gen_signal=True, gen_background=True):
-    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_params)+1)))})
+def get_SR_BR(signal_name, base_dir, version, year, BDT_features, background_category="none", flag_match_yields=True, gen_signal=True, gen_background=True):
+    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_features)+1)))})
     if signal_name == "HCT":
         signal_files = glob.glob(base_dir + "*hct*.root")
     elif signal_name == "HUT":
@@ -360,12 +360,12 @@ def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_categ
             signal_output = processor.run_uproot_job(
                 signal_fileset,
                 "Events",
-                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_features=BDT_features, version=version),
                 exe,
                 exe_args,
                 chunksize=250000,
             )
-            signal_BDT_params = pd.DataFrame(data=signal_output["BDT_df"].value, columns=(["event"]+BDT_params))
+            signal_BDT_params = pd.DataFrame(data=signal_output["BDT_df"].value, columns=(["event"]+BDT_features))
             signal_BDT_params["Label"] = "s"
         else:
             signal_BDT_params = None
@@ -374,12 +374,12 @@ def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_categ
             background_output = processor.run_uproot_job(
                 background_fileset,
                 "Events",
-                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+                nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_features=BDT_features, version=version),
                 exe,
                 exe_args,
                 chunksize=250000,
             )
-            background_BDT_params = pd.DataFrame(data=background_output["BDT_df"].value, columns=(["event"]+BDT_params))
+            background_BDT_params = pd.DataFrame(data=background_output["BDT_df"].value, columns=(["event"]+BDT_features))
             background_BDT_params["Label"] = "b"
             background_BDT_params = sklearn.utils.shuffle(background_BDT_params) #shuffle our background before we cut out a subset of it
     #background_BDT_params = background_BDT_params[:signal_BDT_params.shape[0]] #make the background only as large as the signal
@@ -401,11 +401,11 @@ def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_categ
         full_data = None
     return (signal_BDT_params, background_BDT_params, full_data)
 
-def process_file(fname, base_dir, BDT_params, version, year):
+def process_file(fname, base_dir, BDT_features, version, year):
     fileset = {}
     process_name = fname[(fname.rfind('/')+1):(fname.rfind('.'))]
     fileset[process_name] = [fname]
-    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_params)+1)))})
+    desired_output.update({"BDT_df": processor.column_accumulator(np.zeros(shape=(0,len(BDT_features)+1)))})
     exe_args = {
         'workers': 16,
         'function_args': {'flatten': False},
@@ -418,17 +418,17 @@ def process_file(fname, base_dir, BDT_params, version, year):
         tmp_output = processor.run_uproot_job(
             fileset,
             "Events",
-            nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_params=BDT_params, version=version),
+            nano_analysis(year=year, variations=[], accumulator=desired_output, BDT_features=BDT_features, version=version),
             exe,
             exe_args,
             chunksize=250000,
         )
-    tmp_BDT_params = pd.DataFrame(data=tmp_output["BDT_df"].value, columns=(["event"]+BDT_params))
+    tmp_BDT_params = pd.DataFrame(data=tmp_output["BDT_df"].value, columns=(["event"]+BDT_features))
     return tmp_BDT_params
 
 
 class BDT:
-    def __init__(self, in_base_dir, in_files, out_base_dir, label, year, booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None):
+    def __init__(self, in_base_dir, in_files, out_base_dir, label, year, booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None, BDT_features=BDT_features):
         self.in_base_dir = in_base_dir #"/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018"
         self.out_base_dir = out_base_dir #/home/users/cmcmahon/public_html/BDT
         self.in_files = in_files
@@ -448,6 +448,7 @@ class BDT:
         self.category_dict = None
         self.HCT_dict = None
         self.HUT_dict = None
+        self.BDT_features = BDT_features
         
     def combine_BDTs(self, other_BDTs, new_label, year="combined"):
         other = BDT(self.in_base_dir, self.in_files, self.out_base_dir, new_label, year=year)
@@ -475,37 +476,39 @@ class BDT:
             process_name = file[(file.rfind('/')+1):(file.rfind('.'))]
             df = pd.DataFrame()
             df_values = tree.arrays()
-            df["Most_Forward_pt"] = np.array(df_values["Most_Forward_pt"])
-            df["HT"] = np.array(df_values["HT"])
-            df["LeadLep_eta"] = np.array(df_values["LeadLep_eta"])
-            df["LeadLep_pt"] = np.array(df_values["LeadLep_pt"])
-            df["LeadLep_dxy"] = np.array(df_values["LeadLep_dxy"])
-            df["LeadLep_dz"] = np.array(df_values["LeadLep_dz"])
-            df["SubLeadLep_pt"] = np.array(df_values["SubLeadLep_pt"])
-            df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
-            df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
-            df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
-            df["nJets"] = np.array(df_values["nJets"])
-            df["nBtag"] = np.array(df_values["nBtag"])
-            df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
-            df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
-            df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
-            df["LeadJet_BtagScore"] = np.array(df_values["LeadJet_BtagScore"])
-            df["SubLeadJet_BtagScore"] = np.array(df_values["SubLeadJet_BtagScore"])
-            df["SubSubLeadJet_BtagScore"] = np.array(df_values["SubSubLeadJet_BtagScore"])
-            df["nElectron"] = np.array(df_values["nElectron"])
-            df["MET_pt"] = np.array(df_values["MET_pt"])
-            df["LeadBtag_pt"] = np.array(df_values["LeadBtag_pt"])
-            df["MT_LeadLep_MET"] = np.array(df_values["MT_LeadLep_MET"])
-            df["MT_SubLeadLep_MET"] = np.array(df_values["MT_SubLeadLep_MET"])
-            df["LeadLep_SubLeadLep_Mass"] = np.array(df_values["LeadLep_SubLeadLep_Mass"])
-            df["SubSubLeadLep_pt"] = np.array(df_values["SubSubLeadLep_pt"])
-            df["SubSubLeadLep_eta"] = np.array(df_values["SubSubLeadLep_eta"])
-            df["SubSubLeadLep_dxy"] = np.array(df_values["SubSubLeadLep_dxy"])
-            df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
-            df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
-            df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
-            df["Weight"] = np.array(df_values["Weight"])
+            for feature in self.BDT_features:
+                df[feature] = np.array(df_values[feature])
+#             df["Most_Forward_pt"] = np.array(df_values["Most_Forward_pt"])
+#             df["HT"] = np.array(df_values["HT"])
+#             df["LeadLep_eta"] = np.array(df_values["LeadLep_eta"])
+#             df["LeadLep_pt"] = np.array(df_values["LeadLep_pt"])
+#             df["LeadLep_dxy"] = np.array(df_values["LeadLep_dxy"])
+#             df["LeadLep_dz"] = np.array(df_values["LeadLep_dz"])
+#             df["SubLeadLep_pt"] = np.array(df_values["SubLeadLep_pt"])
+#             df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
+#             df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
+#             df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
+#             df["nJets"] = np.array(df_values["nJets"])
+#             df["nBtag"] = np.array(df_values["nBtag"])
+#             df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
+#             df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
+#             df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
+#             df["LeadJet_BtagScore"] = np.array(df_values["LeadJet_BtagScore"])
+#             df["SubLeadJet_BtagScore"] = np.array(df_values["SubLeadJet_BtagScore"])
+#             df["SubSubLeadJet_BtagScore"] = np.array(df_values["SubSubLeadJet_BtagScore"])
+#             df["nElectron"] = np.array(df_values["nElectron"])
+#             df["MET_pt"] = np.array(df_values["MET_pt"])
+#             df["LeadBtag_pt"] = np.array(df_values["LeadBtag_pt"])
+#             df["MT_LeadLep_MET"] = np.array(df_values["MT_LeadLep_MET"])
+#             df["MT_SubLeadLep_MET"] = np.array(df_values["MT_SubLeadLep_MET"])
+#             df["LeadLep_SubLeadLep_Mass"] = np.array(df_values["LeadLep_SubLeadLep_Mass"])
+#             df["SubSubLeadLep_pt"] = np.array(df_values["SubSubLeadLep_pt"])
+#             df["SubSubLeadLep_eta"] = np.array(df_values["SubSubLeadLep_eta"])
+#             df["SubSubLeadLep_dxy"] = np.array(df_values["SubSubLeadLep_dxy"])
+#             df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
+#             df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
+#             df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
+#             df["Weight"] = np.array(df_values["Weight"])
             if "signal" in process_name:
                 signal_BDT_params = pd.concat([signal_BDT_params, df], axis=0)
             else:
@@ -769,7 +772,7 @@ class BDT:
         else:
             plt.close()
         os.makedirs(out_dir + "/histograms", exist_ok=True)
-        labels = BDT_params[:(len(BDT_params)-1)]
+        labels = self.BDT_features[:(len(self.BDT_features)-1)]
         for label in labels:
             gen_hist(self.full_data, label, out_dir, savefig=savefig, plot=False)
             
@@ -1187,13 +1190,13 @@ def compare_S_B_ratio(BDTs, directories="", fill_categories=True):
     plt.draw()
 
 class nano_analysis(processor.ProcessorABC):
-    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_params=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
+    def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_features=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
         self.variations = variations
         self.year = year
         self.debug = debug
         self.btagSF = btag_scalefactor(year)
         self._accumulator = processor.dict_accumulator(accumulator)
-        self.BDT_params = BDT_params
+        self.BDT_features = BDT_features
         self.version=version
         self.SS_region=SS_region
 
@@ -1373,7 +1376,7 @@ class nano_analysis(processor.ProcessorABC):
             #create pandas dataframe
             passed_events = ev[FCNC_sel]
             event_p = ak.to_pandas(passed_events[["event"]])
-            for param in self.BDT_params:
+            for param in self.BDT_features:
                 event_p[param] = BDT_param_dict[param]
             output['BDT_df'] += processor.column_accumulator(event_p.to_numpy())
         return output
