@@ -192,7 +192,7 @@ def BDT_train_test_split(full_data, verbose=True):
         
     return data_train, data_test
 
-def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True):
+def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True, flag_save_booster=True):
     feature_names = data_train.columns[:-2]  #full_data
     train_weights = data_train.Weight
     test_weights = data_test.Weight
@@ -217,13 +217,15 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
         booster.load_model(booster_path)  # load data
 
     else:
-        print("Training new model...")
+        if verbose:
+            print("Training new model...")
         evals = [(train, "train"), (test,"test")]
         booster = xgb.train(param,train,num_boost_round=num_trees, evals=evals, evals_result=evals_result, verbose_eval=False, early_stopping_rounds=min(3,(num_trees//10)))
-        print(booster.eval(test))
+        if verbose:
+            print(booster.eval(test))
 
     #if the tree is of interest, we can save it
-    if not flag_load:
+    if flag_save_booster:
         booster.save_model(booster_path)
 
     return booster, train, test, evals_result
@@ -568,17 +570,19 @@ class BDT:
         self.test_predictions = self.booster.predict(self.test_Dmatrix)
         self.train_predictions = self.booster.predict(self.train_Dmatrix)
         
-    def gen_BDT(self, flag_load=False):
+    def gen_BDT(self, flag_load=False, verbose=False, flag_save_booster=True):
         output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         param = self.booster_params.copy()
-        print(param)
+        if verbose:
+            print(param)
         self.num_trees = param.pop("n_estimators")
         param['objective']   = 'binary:logistic' # objective function
         param['eval_metric'] = 'error'           # evaluation metric for cross validation
         param = list(param.items()) + [('eval_metric', 'logloss')] + [('eval_metric', 'rmse')]
-        print(output_dir)
+        if verbose:
+            print(output_dir)
         booster, train, test, evals_result = gen_BDT(self.label, self.train_data, self.test_data, param, self.num_trees, 
-                                                    output_dir, booster_name=self.label, flag_load=flag_load, verbose=False)
+                                                    output_dir, booster_name=self.label, flag_load=flag_load, verbose=False, flag_save_booster=flag_save_booster)
         self.booster = booster
         self.train_Dmatrix = train
         self.test_Dmatrix = test
@@ -1124,13 +1128,13 @@ class BDT:
         else:
             plt.close()
     
-    def gen_BDT_and_plot(self, load_BDT=True, optimize=True, retrain=True):
+    def gen_BDT_and_plot(self, load_BDT=True, optimize=True, retrain=True, flag_save_booster=True):
         if optimize:
             self.optimize_booster()
         elif load_BDT:
             self.load_booster_params()
             self.set_booster_label()
-        self.gen_BDT(flag_load=(not retrain)) #load=True
+        self.gen_BDT(flag_load=(not retrain), flag_save_booster=flag_save_booster) #load=True
         self.get_predictions()
         if retrain:
             self.gen_prediction_plots(savefig=True, plot=False)
