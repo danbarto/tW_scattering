@@ -590,7 +590,7 @@ class BDT:
         self.evals_result = evals_result
         return self.booster
     
-    def plot_ratio(self, region="signal", savefig=False, plot=True):
+    def plot_ratio(self, region="signal", savefig=False, plot=True, verbose=False):
         bins = np.linspace(0, 1, 25)
         output_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         if region == "signal":
@@ -623,7 +623,8 @@ class BDT:
             ax[0].set_xlabel(title,fontsize=12)
             ax[0].set_ylabel('Events',fontsize=12)
             ax[0].legend(frameon=False)
-            print("train area = {}, test area = {}".format(sum(hist_train[0] * np.diff(hist_train[1])), sum(hist_test[0] * np.diff(hist_test[1]))))
+            if verbose:
+                print("train area = {}, test area = {}".format(sum(hist_train[0] * np.diff(hist_train[1])), sum(hist_test[0] * np.diff(hist_test[1]))))
             if savefig:
                 plt.savefig(fig_directory + ".pdf")
                 plt.savefig(fig_directory + ".png")
@@ -713,9 +714,9 @@ class BDT:
         else:
             plt.close()
 
-        self.plot_ratio("signal", savefig, plot)
-        self.plot_ratio("background", savefig, plot)
-        self.plot_ratio("both", savefig, plot)
+        self.plot_ratio("signal", savefig, plot, verbose=False)
+        self.plot_ratio("background", savefig, plot, verbose=False)
+        self.plot_ratio("both", savefig, plot, verbose=False)
         cuts = np.linspace(0,1,200);
         train_TP = np.zeros(len(cuts))
         train_FP = np.zeros(len(cuts))
