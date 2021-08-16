@@ -64,7 +64,7 @@ bins_dict = { "Most_Forward_pt":np.linspace(10,200,30),
               "SubLeadLep_eta":np.linspace(0,2.4,15),
               "SubLeadLep_dxy":np.linspace(0,0.015,30),
               "SubLeadLep_dz":np.linspace(0,0.015,30),
-              "nJet":np.linspace(0.5,8.5,9),
+              "nJets":np.linspace(0.5,8.5,9),
               "LeadJet_pt":np.linspace(25,450,30),
               "SubLeadJet_pt":np.linspace(10,250,30),
               "SubSubLeadJet_pt":np.linspace(10,250,30),
@@ -75,7 +75,7 @@ bins_dict = { "Most_Forward_pt":np.linspace(10,200,30),
               "MT_LeadLep_MET":np.linspace(0,300,30),
               "MT_SubLeadLep_MET":np.linspace(0,300,30),
               "LeadBtag_pt":np.linspace(0,200,30),
-              "nbtag":np.linspace(-0.5,3.5,5),
+              "nBtag":np.linspace(-0.5,3.5,5),
               "LeadLep_SubLeadLep_Mass":np.linspace(0, 350, 30),
               "SubSubLeadLep_pt":np.linspace(10,120,30),
               "SubSubLeadLep_eta":np.linspace(0,2.4,15),
@@ -95,8 +95,8 @@ BDT_params = ["Most_Forward_pt",
               "SubLeadLep_eta",
               "SubLeadLep_dxy",
               "SubLeadLep_dz",
-              "nJet",
-              "nbtag",
+              "nJets",
+              "nBtag",
               "LeadJet_pt",
               "SubLeadJet_pt",
               "SubSubLeadJet_pt",
@@ -115,7 +115,7 @@ BDT_params = ["Most_Forward_pt",
               "SubSubLeadLep_dz",
               "MT_SubSubLeadLep_MET",
               "LeadBtag_score",
-              "weight"]
+              "Weight"]
 
 def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/", year=None):
     file_name = baby_dir + "{}".format(category)
@@ -139,8 +139,8 @@ def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/hel
     tmp_df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
     tmp_df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
     tmp_df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
-    tmp_df["nJet"] = np.array(df_values["nJets"])
-    tmp_df["nbtag"] = np.array(df_values["nBtag"])
+    tmp_df["nJets"] = np.array(df_values["nJets"])
+    tmp_df["nBtag"] = np.array(df_values["nBtag"])
     tmp_df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
     tmp_df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
     tmp_df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
@@ -159,7 +159,7 @@ def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/hel
     tmp_df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
     tmp_df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
     tmp_df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
-    tmp_df["weight"] = np.array(df_values["Weight"])
+    tmp_df["Weight"] = np.array(df_values["Weight"])
     if "signal" in process_name:
         tmp_df["Label"] = "s"
     else:
@@ -194,8 +194,8 @@ def BDT_train_test_split(full_data, verbose=True):
 
 def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True):
     feature_names = data_train.columns[:-2]  #full_data
-    train_weights = data_train.weight
-    test_weights = data_test.weight
+    train_weights = data_train.Weight
+    test_weights = data_test.Weight
     # we skip the first and last two columns because they are the ID, weight, and label
     train = xgb.DMatrix(data=data_train[feature_names],label=data_train.Label.cat.codes,
                         missing=-999.0,feature_names=feature_names, weight=np.abs(train_weights))
@@ -281,9 +281,9 @@ def gen_hist(data_test, label, out_dir, savefig=False, plot=False):
     plt.figure(label, figsize=(6,6));
     bins = bins_dict[label]
     values_signal = data_test[label][data_test.Label == 's']
-    weights_signal = data_test["weight"][data_test.Label == 's']
+    weights_signal = data_test["Weight"][data_test.Label == 's']
     values_background = data_test[label][data_test.Label == 'b']
-    weights_background = data_test["weight"][data_test.Label == 'b']
+    weights_background = data_test["Weight"][data_test.Label == 'b']
     weight_ratio = np.sum(weights_signal) / np.sum(weights_background)
     weights_signal = weights_signal / weight_ratio
     if label not in ["nJet, nbtag, nElectron"]:
@@ -386,15 +386,15 @@ def get_SR_BR(signal_name, base_dir, version, year, BDT_params, background_categ
         else:
             background_BDT_params = None
     if flag_match_yields and gen_signal and gen_background:
-        signal_yield = sum(signal_BDT_params.weight)
-        background_yield = sum(background_BDT_params.weight)
+        signal_yield = sum(signal_BDT_params.Weight)
+        background_yield = sum(background_BDT_params.Weight)
         SR_BR_ratio = signal_yield/background_yield
         print("signal yield:{}".format(signal_yield))
         print("background yield:{}".format(background_yield))
         print("SR/BR yield ratio:{}".format(SR_BR_ratio))
-        signal_BDT_params.weight = signal_BDT_params.weight / SR_BR_ratio
-        print("new signal yield:{}".format(sum(signal_BDT_params.weight)))
-        print("new SR/BR yield ratio:{}".format(sum(signal_BDT_params.weight) / background_yield))
+        signal_BDT_params.Weight = signal_BDT_params.Weight / SR_BR_ratio
+        print("new signal yield:{}".format(sum(signal_BDT_params.Weight)))
+        print("new SR/BR yield ratio:{}".format(sum(signal_BDT_params.Weight) / background_yield))
     if gen_signal and gen_background:
         full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
     else:
@@ -485,8 +485,8 @@ class BDT:
             df["SubLeadLep_eta"] = np.array(df_values["SubLeadLep_eta"])
             df["SubLeadLep_dxy"] = np.array(df_values["SubLeadLep_dxy"])
             df["SubLeadLep_dz"] = np.array(df_values["SubLeadLep_dz"])
-            df["nJet"] = np.array(df_values["nJets"])
-            df["nbtag"] = np.array(df_values["nBtag"])
+            df["nJets"] = np.array(df_values["nJets"])
+            df["nBtag"] = np.array(df_values["nBtag"])
             df["LeadJet_pt"] = np.array(df_values["LeadJet_pt"])
             df["SubLeadJet_pt"] = np.array(df_values["SubLeadJet_pt"])
             df["SubSubLeadJet_pt"] = np.array(df_values["SubSubLeadJet_pt"])
@@ -505,7 +505,7 @@ class BDT:
             df["SubSubLeadLep_dz"] = np.array(df_values["SubSubLeadLep_dz"])
             df["MT_SubSubLeadLep_MET"] = np.array(df_values["MT_SubSubLeadLep_MET"])
             df["LeadBtag_score"] = np.array(df_values["LeadBtag_score"])
-            df["weight"] = np.array(df_values["Weight"])
+            df["Weight"] = np.array(df_values["Weight"])
             if "signal" in process_name:
                 signal_BDT_params = pd.concat([signal_BDT_params, df], axis=0)
             else:
@@ -522,17 +522,17 @@ class BDT:
     def equalize_yields(self, sig, back, verbose=False):
         sig_copy = sig.copy()
         back_copy = back.copy()
-        signal_yield = sum(sig_copy.weight)
-        background_yield = sum(back_copy.weight)
+        signal_yield = sum(sig_copy.Weight)
+        background_yield = sum(back_copy.Weight)
         SR_BR_ratio = signal_yield/background_yield
         if verbose:
             print("signal yield:{}".format(signal_yield))
             print("background yield:{}".format(background_yield))
             print("SR/BR yield ratio:{}".format(SR_BR_ratio))
-        sig_copy.weight = sig_copy.weight / SR_BR_ratio
+        sig_copy.Weight = sig_copy.Weight / SR_BR_ratio
         if verbose:
-            print("new signal yield:{}".format(sum(sig_copy.weight)))
-            print("new SR/BR yield ratio:{}".format(sum(sig_copy.weight) / background_yield))
+            print("new signal yield:{}".format(sum(sig_copy.Weight)))
+            print("new SR/BR yield ratio:{}".format(sum(sig_copy.Weight) / background_yield))
         full_data = pd.concat([sig_copy, back_copy], axis=0)
         return sig_copy, back_copy, full_data
     
@@ -842,15 +842,15 @@ class BDT:
         plt.figure(figsize=(7,7));
         data = cat_dict["all"]["data"]
         predictions = cat_dict["all"]["prediction"]
-        FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.weight.to_numpy())
+        FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.Weight.to_numpy())
         AUC=np.trapz(TPR, FPR)
-        #AUC = roc_auc_score(data.Label=='s', predictions, sample_weight=data.weight)
+        #AUC = roc_auc_score(data.Label=='s', predictions, sample_weight=data.Weight)
         ax = plt.gca()
         ax.plot(FPR, TPR, '-', label = "{0} (AUC={1:.3f})".format(self.label, AUC))
         for other in other_boosters:
             data = other.category_dict["all"]["data"]
             predictions = other.category_dict["all"]["prediction"]
-            FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.weight.to_numpy())
+            FPR, TPR, thresholds = roc_curve((data.Label=="s").astype(int).to_numpy(), predictions, sample_weight=data.Weight.to_numpy())
             AUC=np.trapz(TPR, FPR)
             ax.plot(FPR, TPR, '-', label = "{0} (AUC={1:.3f})".format(other.label, AUC))
         ax.legend()
@@ -944,10 +944,10 @@ class BDT:
         plt.figure(figsize=(7,7));
         #tmp_bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.50, 0.55, 0.575, 0.60, 0.625, 0.65, 0.675, 0.70, 0.725, 0.75, 0.775, 0.8, 0.85, 1.0])
         tmp_bins = np.array([0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        plt.hist(fakes_predictions,bins=tmp_bins,histtype='step',color='#d7191c',label='fakes', weights=BDT_fakes.weight)#, density=True);
-        plt.hist(flips_predictions,bins=tmp_bins,histtype='step',color='#2c7bb6',label='flips', weights=BDT_flips.weight)#, density=True);
-        plt.hist(rares_predictions,bins=tmp_bins,histtype='step',color='#fdae61',label='rares', weights=BDT_rares.weight)#, density=True);
-        plt.hist(signal_predictions,bins=tmp_bins,histtype='step',color='black',label='signal', weights=BDT_signal.weight/100)#, density=True);
+        plt.hist(fakes_predictions,bins=tmp_bins,histtype='step',color='#d7191c',label='fakes', weights=BDT_fakes.Weight)#, density=True);
+        plt.hist(flips_predictions,bins=tmp_bins,histtype='step',color='#2c7bb6',label='flips', weights=BDT_flips.Weight)#, density=True);
+        plt.hist(rares_predictions,bins=tmp_bins,histtype='step',color='#fdae61',label='rares', weights=BDT_rares.Weight)#, density=True);
+        plt.hist(signal_predictions,bins=tmp_bins,histtype='step',color='black',label='signal', weights=BDT_signal.Weight/100)#, density=True);
 
         # make the plot readable
         plt.xlabel('Prediction from BDT',fontsize=12);
@@ -965,8 +965,8 @@ class BDT:
             
     def plot_SB_ratio(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
-        sig_weight = np.array(cat_dict["signal"]["data"].weight)
-        back_weight = np.concatenate((cat_dict["fakes"]["data"].weight, cat_dict["flips"]["data"].weight, cat_dict["rares"]["data"].weight))
+        sig_weight = np.array(cat_dict["signal"]["data"].Weight)
+        back_weight = np.concatenate((cat_dict["fakes"]["data"].Weight, cat_dict["flips"]["data"].Weight, cat_dict["rares"]["data"].Weight))
         back_pred = np.concatenate((fakes_pred, flips_pred, rares_pred))
         sig_hist = Hist1D(sig_pred, bins=bins, weights=sig_weight/100)
         back_hist = Hist1D(back_pred, bins=bins, weights=back_weight)
@@ -984,12 +984,12 @@ class BDT:
         
     def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
-        sig_weight = np.array(cat_dict["signal"]["data"].weight)
+        sig_weight = np.array(cat_dict["signal"]["data"].Weight)
         plt.figure("dc_categories", figsize=(7,7))
-        plt.hist(fakes_pred,bins=bins,histtype='step',color='#d7191c',label='fakes', weights=cat_dict["fakes"]["data"].weight)
-        plt.hist(flips_pred,bins=bins,histtype='step',color='#2c7bb6',label='flips', weights=cat_dict["flips"]["data"].weight)
-        plt.hist(rares_pred,bins=bins,histtype='step',color='#fdae61',label='rares', weights=cat_dict["rares"]["data"].weight)
-        plt.hist(sig_pred,bins=bins,histtype='step',color='black',label='signal', weights=cat_dict["signal"]["data"].weight/100)
+        plt.hist(fakes_pred,bins=bins,histtype='step',color='#d7191c',label='fakes', weights=cat_dict["fakes"]["data"].Weight)
+        plt.hist(flips_pred,bins=bins,histtype='step',color='#2c7bb6',label='flips', weights=cat_dict["flips"]["data"].Weight)
+        plt.hist(rares_pred,bins=bins,histtype='step',color='#fdae61',label='rares', weights=cat_dict["rares"]["data"].Weight)
+        plt.hist(sig_pred,bins=bins,histtype='step',color='black',label='signal', weights=cat_dict["signal"]["data"].Weight/100)
         plt.title('Datacard Bins')
         plt.legend()
         plt.xlabel("BDT Score (after QT)")
@@ -1015,10 +1015,10 @@ class BDT:
         #BDT_bins = np.linspace(0, 1, 20)
         #BDT_bins =  np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         feature_names = BDT_fakes.columns[:-2]  #full_data
-        fakes_weights = BDT_fakes.weight 
-        flips_weights = BDT_flips.weight
-        rares_weights = BDT_rares.weight 
-        signal_weights = BDT_signal.weight / 100.0
+        fakes_weights = BDT_fakes.Weight 
+        flips_weights = BDT_flips.Weight
+        rares_weights = BDT_rares.Weight 
+        signal_weights = BDT_signal.Weight / 100.0
         if quantile_transform == True:
             signal_predictions = cat_dict["signal"]["prediction"]
             qt = QuantileTransformer(output_distribution="uniform")
@@ -1162,8 +1162,8 @@ def compare_S_B_ratio(BDTs, directories="", fill_categories=True):
         if fill_categories:
             b.make_category_dict(directories)
         combined_background = np.concatenate([b.category_dict[c]["prediction"] for c in ["fakes", "flips", "rares"]])
-        combined_background_weight = np.concatenate([b.category_dict[c]["data"].weight for c in ["fakes", "flips", "rares"]])
-        combined_signal_weight = b.category_dict["signal"]["data"].weight
+        combined_background_weight = np.concatenate([b.category_dict[c]["data"].Weight for c in ["fakes", "flips", "rares"]])
+        combined_signal_weight = b.category_dict["signal"]["data"].Weight
         combined_signal_prediction_hist = Hist1D(b.category_dict["signal"]["prediction"], bins=tmp_bins, weights=combined_signal_weight/100)
         combined_background_prediction_hist = Hist1D(combined_background, bins=tmp_bins, weights=combined_background_weight)
         plt.figure("sig/back combined: {}".format(b.label), figsize=(7,7))
@@ -1259,9 +1259,9 @@ class nano_analysis(processor.ProcessorABC):
         selection.add("nlep", (ak.num(lepton, axis=1) == 2))
         selection.add("nlep_tight", (ak.num(tight_lepton, axis=1) == 2))
         selection.add("SS", (ak.sum(ak.concatenate([leadlep_nofilter.charge, subleadlep_nofilter.charge], axis=1), axis=1) != 0))
-        selection.add("nbtag", (ak.num(btag, axis=1) >= 0))
+        selection.add("nBtag", (ak.num(btag, axis=1) >= 0))
         selection.add("M(ee)>12", ((ak.num(ele_t) < 2) | (ak.sum(diele_mass, axis=1) > 12.0))) #ak.sum here to flatten the diele_mass array
-        selection_reqs = ["njets", "nbtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
+        selection_reqs = ["njets", "nBtag", "nlep", "SS", "nlep_tight", "M(ee)>12"]
         
         if dataset in flips_dataset:
             flip_evts = ((ak.sum(ev.GenPart.pdgId[ele_t.genPartIdx]==((-1)*ele_t.pdgId), axis=1) == 1))
@@ -1357,8 +1357,8 @@ class nano_analysis(processor.ProcessorABC):
                               "SubLeadLep_eta":np.abs(subleadlep_eta),
                               "SubLeadLep_dxy":np.abs(subleadlep_dxy),
                               "SubLeadLep_dz":np.abs(subleadlep_dz),
-                              "nJet":njets,
-                              "nbtag":nbtag,
+                              "nJets":njets,
+                              "nBtag":nbtag,
                               "LeadJet_pt":leadjet_pt,
                               "SubLeadJet_pt":subleadjet_pt,
                               "SubSubLeadJet_pt":subsubleadjet_pt,
@@ -1368,7 +1368,7 @@ class nano_analysis(processor.ProcessorABC):
                               "MT_LeadLep_MET":mt_leadlep_met,
                               "MT_SubLeadLep_MET":mt_leadlep_met,
                               "LeadLep_SubLeadLep_Mass":leadlep_subleadlep_mass,
-                              "weight":weight
+                              "Weight":weight
                               }
             #create pandas dataframe
             passed_events = ev[FCNC_sel]

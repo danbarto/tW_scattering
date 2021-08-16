@@ -72,10 +72,10 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
             bdt_bin = BDT_bin_names[i]
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
-            if yld == 0:
+            if abs(yld) <= 0.01:
                 unc = 1.0
             else:
-                unc = (err / round(yld, 3)) + 1.0
+                unc = (err / round(yld, 4)) + 1.0
             cTitle = "bin_{0}_{1}".format(bdt_bin, p)
             rTitle = "{0}_stat_{1}".format(p, i).ljust(17) + "lnN"
             for column in yield_dict.keys():
@@ -238,3 +238,4 @@ if flag_debug:
     #for b in range(1, len(BDT_bins)):
     signal = "signal_tuh_tch"
     make_BDT_datacard(yield_dict, BDT_bins, signal, outdir)
+    
