@@ -16,7 +16,15 @@ class btag_scalefactor:
         self.year = year
 
         if self.year == 2016:
-            pass
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_WPonly_V2.csv')  #FIXME. What to do with APV?
+            self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
+
+            # and load the efficiencies
+            self.effs = {
+                'b':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_b_eff_deepJet.json")),
+                'c':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_c_eff_deepJet.json")),
+                'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_light_eff_deepJet.json")),
+            }
         elif self.year == 2017:
             SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_WPonly_V2.csv')
             self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)

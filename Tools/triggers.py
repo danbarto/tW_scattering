@@ -102,7 +102,7 @@ def getFilters(ev, year=2018, dataset='None', UL=True):
     else:
         return mask_and(ev, "Flag", filters_MC)
         
-def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'):
+def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None', era=None):
     # these are the MET triggers from the MT2 analysis
     
     triggers = {}
@@ -178,9 +178,15 @@ def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'
         ]
         
     elif year == 2016:
-        triggers['MuonEG'] = [\
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
-            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",  
+        if not era=='APV':
+            triggers['MuonEG'] = [\
+                "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+                "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",  
+            ]
+        else:
+            triggers['MuonEG'] = []
+
+        triggers['MuonEG'] += [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL",
         ]
@@ -200,7 +206,7 @@ def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'
 
         triggers['SingleMuon'] = [\
             "IsoMu24",
-            "IsoTkMu24",
+            #"IsoTkMu24",  #FIXME should go in with v0.4.1 or higher
         ]
 
         triggers['SingleElectron'] = [\

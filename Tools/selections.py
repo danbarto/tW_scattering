@@ -55,14 +55,7 @@ class Selection:
         else:
             is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
 
-        lepton_pdgId_pt_ordered = ak.fill_none(
-            ak.pad_none(
-                lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True),
-        0)
-
-        triggers  = getTriggers(self.events,
-            ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
-            ak.flatten(lepton_pdgId_pt_ordered[:,1:2]), year=self.year, dataset=self.dataset)
+        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
@@ -157,7 +150,6 @@ class Selection:
 
         # get lepton vectors for trigger
         lepton = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)
-        lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
 
         vetolepton   = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)    
         vetotrilep = choose3(vetolepton, 3)
@@ -165,9 +157,7 @@ class Selection:
         pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
         neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
         
-        triggers  = getTriggers(self.events,
-            ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
-            ak.flatten(lepton_pdgId_pt_ordered[:,1:2]), year=self.year, dataset=self.dataset)
+        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)

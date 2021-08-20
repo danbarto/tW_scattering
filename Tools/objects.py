@@ -107,6 +107,12 @@ conversion = lambda x: x[(x.genPartFlav==22)]
 
 chargeflip = lambda x: x[((x.matched_gen.pdgId*(-1) == x.pdgId) & (abs(x.pdgId) == 11))]  # we only care about electron charge flips
 
+def nonprompt_no_conv(reco_lep, gen_photon):
+    sel = ((reco_lep.genPartFlav!=1)&(reco_lep.genPartFlav!=15)&(reco_lep.genPartFlav!=22)&\
+            ~match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
+
+
 class Collections:
 
     def __init__(self, ev, obj, wp, year=2018, verbose=0):
