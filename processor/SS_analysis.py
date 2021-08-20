@@ -12,11 +12,11 @@ from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, nonprompt_no_conv
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
-from Tools.config_helpers import loadConfig, make_small
+from Tools.config_helpers import loadConfig, make_small, data_pattern
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
@@ -31,14 +31,15 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
         self.variations = variations
         self.year = year
+        self.era = era  # this is here for 2016 APV
         self.evaluate = evaluate
         self.training = training
         self.dump = dump
         
-        self.btagSF = btag_scalefactor(year)
+        self.btagSF = btag_scalefactor(year)  # this might be the only place where era in 2016 matters
         
         self.leptonSF = LeptonSF(year=year)
 
@@ -68,7 +69,7 @@ class SS_analysis(processor.ProcessorABC):
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             ## Generated leptons
             gen_lep = ev.GenL
             leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
@@ -95,15 +96,20 @@ class SS_analysis(processor.ProcessorABC):
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False) #FIXME new
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
+            gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
             el_t_p  = prompt(el_t)
-            el_t_np = nonprompt(el_t)
+            el_t_np = nonprompt_no_conv(el_t, gen_photon)
+            #el_t_np = nonprompt(el_t)
             el_f_p  = prompt(el_f)
-            el_f_np = nonprompt(el_f)
+            el_f_np = nonprompt_no_conv(el_f, gen_photon)
+            #el_f_np = nonprompt(el_f)
             mu_t_p  = prompt(mu_t)
-            mu_t_np = nonprompt(mu_t)
+            mu_t_np = nonprompt_no_conv(mu_t, gen_photon)
+            #mu_t_np = nonprompt(mu_t)
             mu_f_p  = prompt(mu_f)
-            mu_f_np = nonprompt(mu_f)
+            mu_f_np = nonprompt_no_conv(mu_f, gen_photon)
+            #mu_f_np = nonprompt(mu_f)
 
             is_flipped = ( (el_t_p.matched_gen.pdgId*(-1) == el_t_p.pdgId) & (abs(el_t_p.pdgId) == 11) )
             el_t_p_cc  = el_t_p[~is_flipped]  # this is tight, prompt, and charge consistent
@@ -125,7 +131,7 @@ class SS_analysis(processor.ProcessorABC):
         
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.p4.pt, ascending=False)].pdgId, 2, clip=True), 0)
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
             n_chargeflip = getChargeFlips(electron, ev.GenPart) + getChargeFlips(muon, ev.GenPart)
             gp = ev.GenPart
@@ -186,11 +192,12 @@ class SS_analysis(processor.ProcessorABC):
         ht = ak.sum(jet.pt, axis=1)
         #st = met_pt + ht + ak.sum(get_pt(muon), axis=1) + ak.sum(get_pt(electron), axis=1)
         st = met_pt + ht + ak.sum(lepton.p4.pt, axis=1)
+        lt = met_pt + ak.sum(lepton.p4.pt, axis=1)
         
         # define the weight
         weight = Weights( len(ev) )
 
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
             
@@ -215,6 +222,7 @@ class SS_analysis(processor.ProcessorABC):
             dataset = dataset,
             events = ev,
             year = self.year,
+            era = self.era,
             ele = electron,
             ele_veto = el_v,
             mu = muon,
@@ -230,13 +238,14 @@ class SS_analysis(processor.ProcessorABC):
         baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
         baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
 
             BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
             BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
 
             np_est_sel_mc = (baseline & \
-                ((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+                #((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+                ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # FIXME check if not requiring electron charge consistency actually makes a difference
             np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
             np_est_sel_data = (baseline & ~baseline)  # this has to be false
 
@@ -444,7 +453,7 @@ class SS_analysis(processor.ProcessorABC):
         fill_multiple_np(output['ST'],        {'ht': st})
         fill_multiple_np(output['HT'],        {'ht': ht})
 
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
             output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
             output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
@@ -453,9 +462,6 @@ class SS_analysis(processor.ProcessorABC):
             output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
             output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
 
-        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
-
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             output['lead_gen_lep'].fill(
                 dataset = dataset,
                 pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
@@ -471,6 +477,8 @@ class SS_analysis(processor.ProcessorABC):
                 phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
                 weight = weight_BL
             )
+
+        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
         
         fill_multiple_np(
             output['lead_lep'],
@@ -570,7 +578,9 @@ if __name__ == '__main__':
     verysmall   = args.verysmall
     if verysmall:
         small = True
-    year        = int(args.year)
+    
+    year        = int(args.year[0:4])
+    era         = args.year[4:7]
     local       = not args.dask
     save        = True
 
@@ -580,12 +590,13 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'SS_analysis_%s'%year
+    cacheName = 'SS_analysis_%s%s'%(year,era)
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
+    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/'
 
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL%s'%year)
+    fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
@@ -605,6 +616,9 @@ if __name__ == '__main__':
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
         'EGamma': fileset_all['EGamma'],
+        'DoubleEG': fileset_all['DoubleEG'],
+        'SingleElectron': fileset_all['SingleElectron'],
+        'SingleMuon': fileset_all['SingleMuon'],
         ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
@@ -735,7 +749,7 @@ if __name__ == '__main__':
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            SS_analysis(year=year, variations=variations, accumulator=desired_output, evaluate=args.evaluate, training=args.training, dump=args.dump),
+            SS_analysis(year=year, variations=variations, accumulator=desired_output, evaluate=args.evaluate, training=args.training, dump=args.dump, era=era),
             exe,
             exe_args,
             chunksize=250000,  # I guess that's already running into the max events/file

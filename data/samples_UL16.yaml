@@ -1,0 +1,376 @@
+/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 34
+  nEvents: 14650445
+  name: DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 34
+  sumWeight: 14650445.0
+  xsec: 18610.0
+/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 48
+  nEvents: 95237235
+  name: DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 2
+  sumWeight: 1618628871442.4622
+  xsec: 6021.0
+/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 69
+  nEvents: 104072004
+  name: DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 2
+  sumWeight: 104072004.0
+  xsec: 6021.0
+/DoubleEG/Run2016F-UL2016_MiniAODv1_NanoAODv2-v2/NANOAOD:
+  files: 3
+  nEvents: 4360689
+  name: DoubleEG_Run2016F-UL2016_MiniAODv1_NanoAODv2-v2
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 53
+  nEvents: 78797031
+  name: DoubleEG_Run2016G-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleEG/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 60
+  nEvents: 85388734
+  name: DoubleEG_Run2016H-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleMuon/Run2016F-UL2016_MiniAODv1_NanoAODv2-v2/NANOAOD:
+  files: 2
+  nEvents: 2429162
+  name: DoubleMuon_Run2016F-UL2016_MiniAODv1_NanoAODv2-v2
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleMuon/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 30
+  nEvents: 45235604
+  name: DoubleMuon_Run2016G-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/DoubleMuon/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 37
+  nEvents: 48912812
+  name: DoubleMuon_Run2016H-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/MuonEG/Run2016F-UL2016_MiniAODv1_NanoAODv2-v2/NANOAOD:
+  files: 2
+  nEvents: 1901339
+  name: MuonEG_Run2016F-UL2016_MiniAODv1_NanoAODv2-v2
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/MuonEG/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 29
+  nEvents: 33854612
+  name: MuonEG_Run2016G-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/MuonEG/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 24
+  nEvents: 29236516
+  name: MuonEG_Run2016H-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 2
+  sumWeight: 0.0
+  xsec: 1.0
+/SSWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 27
+  nEvents: 960000
+  name: SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 27
+  sumWeight: 960000.0
+  xsec: 0.02794
+? /ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 23
+  nEvents: 3800996
+  name: ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 17
+  sumWeight: 123561422.48879997
+  xsec: 19.47
+? /ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 4
+  nEvents: 3361253
+  name: ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 3
+  sumWeight: 109059106.73950003
+  xsec: 19.47
+/SingleElectron/Run2016F-UL2016_MiniAODv1_NanoAODv2-v2/NANOAOD:
+  files: 6
+  nEvents: 8858206
+  name: SingleElectron_Run2016F-UL2016_MiniAODv1_NanoAODv2-v2
+  path: null
+  split: 6
+  sumWeight: 0.0
+  xsec: 1.0
+/SingleElectron/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 70
+  nEvents: 153363109
+  name: SingleElectron_Run2016G-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/SingleElectron/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 76
+  nEvents: 129021893
+  name: SingleElectron_Run2016H-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 5
+  sumWeight: 0.0
+  xsec: 1.0
+/SingleMuon/Run2016F-UL2016_MiniAODv1_NanoAODv2-v4/NANOAOD:
+  files: 8
+  nEvents: 8024195
+  name: SingleMuon_Run2016F-UL2016_MiniAODv1_NanoAODv2-v4
+  path: null
+  split: 7
+  sumWeight: 0.0
+  xsec: 1.0
+/SingleMuon/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 86
+  nEvents: 149916849
+  name: SingleMuon_Run2016G-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/SingleMuon/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD:
+  files: 82
+  nEvents: 174035164
+  name: SingleMuon_Run2016H-UL2016_MiniAODv1_NanoAODv2-v1
+  path: null
+  split: 4
+  sumWeight: 0.0
+  xsec: 1.0
+/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 24
+  nEvents: 2286000
+  name: TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 8
+  sumWeight: 2286000.0
+  xsec: 2.22
+/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 57
+  nEvents: 2240000
+  name: TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 15
+  sumWeight: 2240000.0
+  xsec: 7.51
+/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 102
+  nEvents: 48232000
+  name: TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 3
+  sumWeight: 3478035558.1184
+  xsec: 87.315
+/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 266
+  nEvents: 158594000
+  name: TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 4
+  sumWeight: 47722670335.736
+  xsec: 364.35
+? /TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 11
+  nEvents: 3368017
+  name: TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 5
+  sumWeight: 1128312.02613228
+  xsec: 0.2043
+? /TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 2
+  nEvents: 308983
+  name: TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 2
+  sumWeight: 209107.0033584
+  xsec: 0.4062
+/TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 14
+  nEvents: 320000
+  name: TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 14
+  sumWeight: 320000.0
+  xsec: 0.007829
+/TTWZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 4
+  nEvents: 159000
+  name: TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 4
+  sumWeight: 159000.0
+  xsec: 0.002919
+/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 40
+  nEvents: 3307000
+  name: TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 12
+  sumWeight: 806696.3065048401
+  xsec: 0.2728
+/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 7
+  nEvents: 5797000
+  name: TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 3
+  sumWeight: 2961197.1709580002
+  xsec: 0.5297
+/TTZZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 22
+  nEvents: 154000
+  name: TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 22
+  sumWeight: 154000.0
+  xsec: 0.001573
+? /TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 12
+  nEvents: 227000
+  name: TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 12
+  sumWeight: 679.059913396
+  xsec: 0.003004
+? /TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 10
+  nEvents: 994000
+  name: TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 10
+  sumWeight: 2990.924971137
+  xsec: 0.003004
+? /TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 20
+  nEvents: 320000
+  name: TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 20
+  sumWeight: 480.73828940199996
+  xsec: 0.001501
+/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 5
+  nEvents: 8394172
+  name: WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 5
+  sumWeight: 8394172.0
+  xsec: 412.7
+/WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 3
+  nEvents: 69000
+  name: WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 3
+  sumWeight: 14869.109274660002
+  xsec: 0.2086
+/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 1
+  nEvents: 72000
+  name: WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 1
+  sumWeight: 12357.245087520003
+  xsec: 0.1651
+/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15_ext1-v1/NANOAODSIM:
+  files: 9
+  nEvents: 1440000
+  name: WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15_ext1-v1
+  path: null
+  split: 7
+  sumWeight: 245985.16273920005
+  xsec: 0.1651
+/WZG_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 1
+  nEvents: 599000
+  name: WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 1
+  sumWeight: 47315.267873744
+  xsec: 0.04345
+? /WZTo3LNu_mllmin01_NNPDF31_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 43
+  nEvents: 11679000
+  name: WZTo3LNu_mllmin01_NNPDF31_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 7
+  sumWeight: 54472312.38922002
+  xsec: 4.664
+/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 21
+  nEvents: 31606911
+  name: ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 1
+  sumWeight: 3110857023.403501
+  xsec: 55.48
+/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 35
+  nEvents: 15918000
+  name: ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 9
+  sumWeight: 15500230.797060004
+  xsec: 0.564
+/ZZZ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 1
+  nEvents: 72000
+  name: ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 1
+  sumWeight: 1066.5219449800002
+  xsec: 0.01398
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL16_postVFP_v7/:
+  files: 500
+  nEvents: 991105
+  name: ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL16_postVFP_v7
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL16_postVFP_v7/
+  split: 155
+  sumWeight: 15978.810670535979
+  xsec: 0.01624
+/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
+  files: 37
+  nEvents: 2534000
+  name: tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 12
+  sumWeight: 195934.34298848006
+  xsec: 0.09418
+? /ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM
+: files: 11
+  nEvents: 5301432
+  name: ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1
+  path: null
+  split: 4
+  sumWeight: 4998017.651348401
+  xsec: 0.215

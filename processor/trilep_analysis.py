@@ -13,11 +13,11 @@ from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, nonprompt_no_conv
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
-from Tools.config_helpers import loadConfig, make_small
+from Tools.config_helpers import loadConfig, make_small, data_pattern
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
@@ -32,9 +32,10 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx
 
 
 class trilep_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
         self.variations = variations
         self.year = year
+        self.era = era  # this is here for 2016 APV
         self.evaluate = evaluate
         self.training = training
         self.dump = dump
@@ -68,7 +69,7 @@ class trilep_analysis(processor.ProcessorABC):
         output['skimmedEvents']['all'] += len(ev)
         
         ## Generated leptons
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             gen_lep = ev.GenL
             leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
             trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
@@ -106,21 +107,26 @@ class trilep_analysis(processor.ProcessorABC):
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
+            gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
             # tight electrons
             el_t_p  = prompt(el_t)
-            el_t_np = nonprompt(el_t)
+            el_t_np = nonprompt_no_conv(el_t, gen_photon)
+            #el_t_np = nonprompt(el_t)
             # fakeable electrons
             el_f_p  = prompt(el_f)
-            el_f_np = nonprompt(el_f)
+            el_f_np = nonprompt_no_conv(el_f, gen_photon)
+            #el_f_np = nonprompt(el_f)
             # loose/veto electrons
             el_v_p  = prompt(el_v)
 
             mu_t_p  = prompt(mu_t)
-            mu_t_np = nonprompt(mu_t)
+            mu_t_np = nonprompt_no_conv(mu_t, gen_photon)
+            #mu_t_np = nonprompt(mu_t)
 
             mu_f_p  = prompt(mu_f)
-            mu_f_np = nonprompt(mu_f)
+            mu_f_np = nonprompt_no_conv(mu_f, gen_photon)
+            #mu_f_np = nonprompt(mu_f)
 
             mu_v_p  = prompt(mu_v)
 
@@ -139,7 +145,7 @@ class trilep_analysis(processor.ProcessorABC):
         
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.p4.pt, ascending=False)].pdgId, 2, clip=True), 0)
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
             n_chargeflip = getChargeFlips(electron, ev.GenPart) + getChargeFlips(muon, ev.GenPart)
             gp = ev.GenPart
@@ -227,6 +233,7 @@ class trilep_analysis(processor.ProcessorABC):
             dataset = dataset,
             events = ev,
             year = self.year,
+            era = self.era,
             ele = electron,
             ele_veto = el_v,
             mu = muon,
@@ -240,7 +247,7 @@ class trilep_analysis(processor.ProcessorABC):
 
         baseline = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             # The baseline selection is at least three loose leptons, at least two tight with SS.
             # For the way we estimate the background, I need to ask for the tight leptons to be prompt
             # Can I allow for loose fakes?
@@ -399,7 +406,8 @@ if __name__ == '__main__':
     verysmall   = args.verysmall
     if verysmall:
         small = True
-    year        = int(args.year)
+    year        = int(args.year[0:4])
+    era         = args.year[4:7]
     local       = not args.dask
     save        = True
 
@@ -409,12 +417,12 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'trilep_analysis_%s'%year
+    cacheName = 'trilep_analysis_%s%s'%(year,era)
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
 
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_trilep/', year='UL%s'%year)
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_trilep/', year='UL%s%s'%(year,era))
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
@@ -433,9 +441,12 @@ if __name__ == '__main__':
         #'ttbar': fileset_all['ttbar2l'],
         'ttbar': fileset_all['top'],
         'XG': fileset_all['XG'],
-        #'MuonEG': fileset_all['MuonEG'],
-        #'DoubleMuon': fileset_all['DoubleMuon'],
-        #'EGamma': fileset_all['EGamma'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'],
+        'DoubleEG': fileset_all['DoubleEG'],
+        'SingleElectron': fileset_all['SingleElectron'],
+        'SingleMuon': fileset_all['SingleMuon'],
         ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
