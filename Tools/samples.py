@@ -161,3 +161,8 @@ def get_babies(data_path, small=False, year=2018):
         return fileset
 
 
+fs_2016 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2016')
+fs_2016APV = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2016APV')
+fs_2017 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2017')
+fs_2018 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2018')
+
