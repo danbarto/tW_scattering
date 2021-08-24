@@ -115,8 +115,10 @@ signal_fill_opts = {
     'alpha': 0.1
 }
 
+import mplhep as hep
+plt.style.use(hep.style.CMS)
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, use_label=True, y_axis_label='Events', skip_unc=False):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, use_label=True, y_axis_label='Events'):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -170,9 +172,6 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     else:
         fig, ax  = plt.subplots(1,1,figsize=(10,10) )
 
-    if signals:
-        for sig in signals:
-            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     if overlay:
         ax = hist.plot1d(overlay, overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
 
@@ -180,6 +179,10 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     else:
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes), binwnorm=binwnorm)
+
+    if signals:
+        for sig in signals:
+            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     if data:
         ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False, binwnorm=binwnorm)
         #ax = hist.plot1d(observation, ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
@@ -224,8 +227,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     
     if not binwnorm:
         if not shape:
-            if not skip_unc:
-                addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+            addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
         if data:
             addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
@@ -243,6 +245,9 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
     ax.legend(
         loc='upper right',
+        #loc='upper left',
+        #bbox_to_anchor=(0.02, 0.72),#, 0.4, 0.25),
+        #bbox_to_anchor=(0.1, 0.72),
         ncol=2,
         borderaxespad=0.0,
         labels=updated_labels,
@@ -250,15 +255,24 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     )
     plt.subplots_adjust(hspace=0)
 
-    if use_label:
-        if len(data)>0:
-            fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-        else:
-            fig.text(0.0, 0.995, '$\\bf{CMS}$ Simulation', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-        fig.text(0.6, 0.995, r'$%.1f\ fb^{-1}$ (13 TeV)'%(lumi), fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    hep.cms.label(
+        "Preliminary",
+        data=len(data)>0,
+        #year=2018,
+        lumi=lumi,
+        loc=0,
+        ax=ax,
+    )
+
+    #if use_label:
+    #    if len(data)>0:
+    #        fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    #    else:
+    #        fig.text(0.0, 0.995, '$\\bf{CMS}$ Simulation', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    #    fig.text(0.6, 0.995, r'$%.1f\ fb^{-1}$ (13 TeV)'%(lumi), fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
     if normalize:
-        fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+        fig.text(0.55, 0.55, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
 
     if save:
@@ -271,8 +285,6 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
 def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
     
-    #print (up_vars)
-
     if rebin:
         h = h.project(axis, 'dataset').rebin(axis, rebin)
     
@@ -311,7 +323,7 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
         down = central - np.sqrt(down)
     
     opts = {'step': 'post', 'label': 'uncertainty', 'hatch': '///',
-                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0}
+                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0, 'zorder':100.}
     
     ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
