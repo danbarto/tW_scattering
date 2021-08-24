@@ -91,8 +91,10 @@ groups_UL = {
 
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],
-    'EGamma':       ['/EGamma', '/DoubleEG',],
+    'EGamma':       ['/EGamma'],
+    'SingleElectron': ['/SingleElectron'],
     'DoubleMuon':   ['/DoubleMuon'],
+    'SingleMuon':   ['/SingleMuon'],
 }
 
 
@@ -139,7 +141,7 @@ def get_babies(data_path, small=False, year=2018):
     if year=='2018':
         campaign = '.*'
     elif year=='UL2018':
-        campaign = '.*(Summer20UL18|Run2018|UL18)'
+        campaign = '.*(Summer20UL18|Run2018|UL18|Autumn18)'  # Autumn18 needed for missing UL samples
     elif year=='UL2017':
         campaign = '.*(Summer20UL17|Run2017|UL17)'
     elif year=='UL2016':

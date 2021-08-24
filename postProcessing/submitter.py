@@ -30,6 +30,7 @@ argParser.add_argument('--dryRun', action='store_true', default=None, help="Don'
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 argParser.add_argument('--input', action='store', default='', help="Which set of input samples?")
+argParser.add_argument('--once', action='store_true',  help="Just run once?")
 args = argParser.parse_args()
 
 tag = str(args.tag)
@@ -160,7 +161,8 @@ if not args.dryRun:
    
         # parse the total summary and write out the dashboard
         StatsParser(data=total_summary, webdir="~/public_html/dump/metis_tW_scattering/").do()
-    
+        
+        if args.once: break
         # 60 min power nap
         time.sleep(60.*60)
 

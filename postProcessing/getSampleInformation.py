@@ -37,6 +37,9 @@ def getSplitFactor(sample, target=1e6):
     print (fin)
     tree = uproot.open(fin)["Events"]
     print (len(tree))
+    if len(tree['event'].array())<1:
+        print ("Empty file")
+        return 1
     met = tree['MET_pt'].array()
     muon_pt = tree['Muon_pt'].array()
     nMuon = ak.num(muon_pt[( (muon_pt>10) & (np.abs(tree['Muon_eta'].array())<2.4) )])

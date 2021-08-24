@@ -116,7 +116,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, use_label=True, y_axis_label='Events'):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, use_label=True, y_axis_label='Events', skip_unc=False):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -224,7 +224,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     
     if not binwnorm:
         if not shape:
-            addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+            if not skip_unc:
+                addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
         if data:
             addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)

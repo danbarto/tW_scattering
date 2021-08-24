@@ -12,12 +12,15 @@ import os
 import shutil
 import math
 import copy
+import re
 
 import glob
 
 redirector_ucsd = 'root://xcache-redirector.t2.ucsd.edu:2042/' # this one is exclusively for NanoAOD. 165 TB cap.
 redirector_ucsd_mini = 'root://xcache-redirector.t2.ucsd.edu:2040/' # this cache can keep anything, also Nano.
 redirector_fnal = 'root://cmsxrootd.fnal.gov/'
+
+data_pattern = re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleElectron')
 
 data_path = os.path.expandvars('$TWHOME/data/')
 
