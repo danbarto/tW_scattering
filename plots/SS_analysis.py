@@ -369,6 +369,49 @@ if __name__ == '__main__':
             )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        makePlot(output, 'node1_score_incl', 'score',
+             data=[],
+             bins=score_bins, log=False, normalize=False, axis_label='Score',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             omit=omit+data,
+             save=os.path.expandvars(plot_dir+sub_dir+'node1_score_incl'),
+            )
+
+        makePlot(output, 'node2_score_incl', 'score',
+             data=[],
+             bins=score_bins, log=False, normalize=False, axis_label='Score',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             omit=omit+data,
+             save=os.path.expandvars(plot_dir+sub_dir+'node2_score_incl'),
+            )
+
+        makePlot(output, 'node3_score_incl', 'score',
+             data=data,
+             bins=score_bins, log=False, normalize=False, axis_label='Score',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             omit=omit,
+             save=os.path.expandvars(plot_dir+sub_dir+'node3_score_incl'),
+            )
+
+        makePlot(output, 'node4_score_incl', 'score',
+             data=data,
+             bins=score_bins, log=False, normalize=False, axis_label='Score',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             omit=omit,
+             save=os.path.expandvars(plot_dir+sub_dir+'node4_score_incl'),
+            )
+
+>>>>>>> parent of 5394daa... Revert "close to final multiclassifier, restructuring part 1"
     ## MC DRIVEN BKG ESTIMATES
 
     sub_dir = '/SS/v21/mc/'
