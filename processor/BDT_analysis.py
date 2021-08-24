@@ -103,8 +103,8 @@ tex_dict =  { "Most_Forward_pt":r'Most Forward $p_T$',
               "SubLeadJet_BtagScore":r'Sub-Leading Jet Btag Score(deepFlavB)',
               "SubSubLeadJet_BtagScore":r'Sub-Sub-Leading Jet Btag Score (deepFlavB)',
               "nElectron":r'Number of Electrons',
-              "MT_LeadLep_MET":r'$mt\left(\text{Leading Lepton}, \text{MET}\right)$',
-              "MT_SubLeadLep_MET":r'$mt\left(\text{Sub-Leading Lepton}, \text{MET}\right)$',
+              "MT_LeadLep_MET":r'mt(Leading Lepton, MET)',
+              "MT_SubLeadLep_MET":r'mt(Sub-Leading Lepton, MET)',
               "LeadBtag_pt":r'Leading B-Tagged Jet $p_T$',
               "nBtag":r'Number of B-Tagged Jets',
               "LeadLep_SubLeadLep_Mass":r'Leading Lepton + Sub-Leading Lepton Invariant Mass',
@@ -112,7 +112,7 @@ tex_dict =  { "Most_Forward_pt":r'Most Forward $p_T$',
               "SubSubLeadLep_eta":r'Sub-Sub-Leading Lepton $\left|\eta\right|$',
               "SubSubLeadLep_dxy":r'Sub-Sub-Leading Lepton $d_{xy}$',
               "SubSubLeadLep_dz":r'Sub-Sub-Leading Lepton $d_{z}$',
-              "MT_SubSubLeadLep_MET":r'$mt\left(\text{Sub-Sub-Leading Lepton}, \text{MET}\right)$',
+              "MT_SubSubLeadLep_MET":r'mt(Sub-Sub-Leading Lepton, MET)',
               "LeadBtag_score":r'Leading B-Tagged Jet Score (deepFlavB)'
             }
 
@@ -321,10 +321,9 @@ def gen_hist(data_test, label, out_dir, savefig=False, plot=False):
     weights_background = data_test["Weight"][data_test.Label == 'b']
     weight_ratio = np.sum(weights_signal) / np.sum(weights_background)
     weights_signal = weights_signal / weight_ratio
-    if label not in ["nJet", "nBtag", "nElectron", "SubLeadLep_pt", "SubSubLeadLep_pt",
-                     "SubSubLeadLep_eta", "SubLeadLep_eta", "SubLeadLep_dz", "SubSubLeadLep_dz",
-                     "SubLeadLep_dxy", "SubSubLeadLep_dxy", "SubLeadJet_pt", "SubSubLeadJet_pt",
-                     "SubLeadJet_BtagScore", "SubSubLeadJet_BtagScore", "LeadBtag_pt", "LeadBtag_score"]:
+    if label not in ["nJet", "nBtag", "nElectron", "SubSubLeadLep_pt", "SubSubLeadLep_eta", "SubSubLeadLep_dz", 
+                     "SubSubLeadLep_dxy", "SubLeadJet_pt", "SubSubLeadJet_pt", "SubLeadJet_BtagScore", 
+                     "SubSubLeadJet_BtagScore", "LeadBtag_pt", "LeadBtag_score", "MT_SubSubLeadLep_MET"]:
         plt.hist(np.clip(values_signal, bins[0], bins[-1]),bins=bins_dict[label],
                  histtype='step',color='midnightblue',label='signal', weights=np.clip(weights_signal, bins[0], bins[-1]), density=True)#np.clip(weights_signal, bins[0], bins[-1])
         plt.hist(np.clip(values_background, bins[0], bins[-1]),bins=bins_dict[label],
@@ -1028,6 +1027,7 @@ class BDT:
         plt.close()
         
     def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
+        print(bins)
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         sig_weight = np.array(cat_dict["signal"]["data"].Weight)
         plt.figure("dc_categories", figsize=(7,7))
@@ -1042,7 +1042,7 @@ class BDT:
         plt.savefig(out_dir + "DC_bins.png")
         plt.close()
 
-    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 20), flag_tmp_directory=False, dir_label="tmp"):
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp"):
         yield_dict = {}
         if signal_name == "HCT":
             self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven)
@@ -1182,7 +1182,7 @@ class BDT:
         self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
         self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
         
-    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 20), flag_tmp_directory=False, plot=True):
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True):
         self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
         self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
         
