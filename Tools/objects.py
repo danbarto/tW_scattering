@@ -5,6 +5,8 @@ import os
 
 import copy
 import numpy as np
+import numba as nb
+
 try:
     import awkward1 as ak
 except ImportError:
@@ -53,6 +55,90 @@ def match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
     return ak.any(
         (delta_r2(combs['0'], combs['1'])<drCut2) & (combs['1'].pt > ptCut*combs['0'].pt)
         , axis=2)
+
+@nb.jit
+def fast_delta_phi(first, second):
+    # my version, seems to be faster (and unsigned)
+    return np.arccos(np.cos(first.phi - second.phi))
+
+@nb.jit
+def fast_delta_r2(first, second):
+    return (first.eta - second.eta) ** 2 + fast_delta_phi(first, second) ** 2
+
+def fast_match(first, second, deltaRCut=0.4):
+    offsets, contents = match_by_dr(first, second, deltaRCut)
+    mask_by_dR_listoffsetarray = ak.layout.ListOffsetArray64(ak.layout.Index64(offsets), ak.layout.NumpyArray(contents) )
+    return ak.Array(mask_by_dR_listoffsetarray)    
+    '''
+    return a mask that is the same size as obj1
+    if obj1 is close to any obj2 in the same event, True, else False
+    '''
+
+def fast_match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
+    offsets, contents = match_by_dr_pt(first, second, deltaRCut, ptCut)
+    mask_by_dR_listoffsetarray = ak.layout.ListOffsetArray64(ak.layout.Index64(offsets), ak.layout.NumpyArray(contents) )
+    return ak.Array(mask_by_dR_listoffsetarray)    
+    '''
+    return a mask that is the same size as obj1
+    if obj1 is close to any obj2 in the same event, False, else True
+    '''
+
+@nb.jit
+def match_by_dr(objs1, objs2, dR_lim):
+    dR_lim2 = dR_lim**2
+    nEvents = len(objs1)
+    nobj1s = np.int64(0)
+    for i in range(nEvents):
+        nobj1s += len(objs1[i])
+
+    mask_offsets = np.empty(nEvents+1, np.int64)
+    mask_offsets[0] = 0
+    mask_contents = np.empty(nobj1s, np.bool_)
+    for i in range(nEvents):
+        mask_offsets[i+1] = mask_offsets[i]
+        objs1_evt = objs1[i]
+        objs2_evt = objs2[i]
+        for j in range(len(objs1_evt)):
+            obj1 = objs1_evt[j] 
+            mask_contents[mask_offsets[i+1]] = False
+            for k in range(len(objs2_evt)):
+                obj2 = objs2_evt[k]
+                dR2 = fast_delta_r2(obj1, obj2)
+                if (dR2 < dR_lim2):
+                    mask_contents[mask_offsets[i+1]] = True
+                    break
+            mask_offsets[i+1] += 1
+
+    return mask_offsets, mask_contents 
+
+@nb.jit
+def match_by_dr_pt(objs1, objs2, dR_lim, ptCut):
+    dR_lim2 = dR_lim**2
+    nEvents = len(objs1)
+    nobj1s = np.int64(0)
+    for i in range(nEvents):
+        nobj1s += len(objs1[i])
+
+    mask_offsets = np.empty(nEvents+1, np.int64)
+    mask_offsets[0] = 0
+    mask_contents = np.empty(nobj1s, np.bool_)
+    for i in range(nEvents):
+        mask_offsets[i+1] = mask_offsets[i]
+        objs1_evt = objs1[i]
+        objs2_evt = objs2[i]
+        for j in range(len(objs1_evt)):
+            obj1 = objs1_evt[j] 
+            mask_contents[mask_offsets[i+1]] = False
+            for k in range(len(objs2_evt)):
+                obj2 = objs2_evt[k]
+                dR2 = fast_delta_r2(obj1, obj2)
+                if (dR2 < dR_lim2) and (obj2.pt > ptCut*obj1.pt):
+                    mask_contents[mask_offsets[i+1]] = True
+                    break
+            mask_offsets[i+1] += 1
+
+    return mask_offsets, mask_contents 
+
 
 def choose(first, n=2):
     tmp = ak.combinations(first, n)
@@ -107,11 +193,20 @@ conversion = lambda x: x[(x.genPartFlav==22)]
 
 chargeflip = lambda x: x[((x.matched_gen.pdgId*(-1) == x.pdgId) & (abs(x.pdgId) == 11))]  # we only care about electron charge flips
 
+
+def prompt_no_conv(reco_lep, gen_photon):
+    sel = (((reco_lep.genPartFlav==1)|(reco_lep.genPartFlav==15))&\
+            ~match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
+
 def nonprompt_no_conv(reco_lep, gen_photon):
     sel = ((reco_lep.genPartFlav!=1)&(reco_lep.genPartFlav!=15)&(reco_lep.genPartFlav!=22)&\
             ~match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
     return reco_lep[sel]
 
+def external_conversion(reco_lep, gen_photon):
+    sel = ((reco_lep.genPartFlav==22) | match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
 
 class Collections:
 
