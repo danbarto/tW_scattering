@@ -27,7 +27,7 @@ def mask_or(ev, collection, masks):
     for t in masks:
         try:
             decision = decision | getattr(coll, t)
-        except KeyError:
+        except AttributeError:
             continue
     return decision
 
@@ -51,7 +51,7 @@ def mask_and(ev, collection, masks):
     for t in masks:
         try:
             decision = decision & getattr(coll, t)
-        except KeyError:
+        except AttributeError:
             continue
     return decision
 
