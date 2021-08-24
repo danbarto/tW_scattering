@@ -12,7 +12,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, nonprompt_no_conv
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
@@ -98,14 +98,18 @@ class SS_analysis(processor.ProcessorABC):
         
         if not re.search(data_pattern, dataset):
             gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
-            el_t_p  = prompt(el_t)
+            #el_t_p  = prompt(el_t)
+            el_t_p  = prompt_no_conv(el_t, gen_photon)
             el_t_np = nonprompt_no_conv(el_t, gen_photon)
+            el_t_conv = external_conversion(el_t, gen_photon)
             #el_t_np = nonprompt(el_t)
             el_f_p  = prompt(el_f)
             el_f_np = nonprompt_no_conv(el_f, gen_photon)
             #el_f_np = nonprompt(el_f)
-            mu_t_p  = prompt(mu_t)
+            #mu_t_p  = prompt(mu_t)
+            mu_t_p  = prompt_no_conv(mu_t, gen_photon)
             mu_t_np = nonprompt_no_conv(mu_t, gen_photon)
+            mu_t_conv = external_conversion(mu_t, gen_photon)
             #mu_t_np = nonprompt(mu_t)
             mu_f_p  = prompt(mu_f)
             mu_f_np = nonprompt_no_conv(mu_f, gen_photon)
@@ -238,6 +242,7 @@ class SS_analysis(processor.ProcessorABC):
         baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
         baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
         
+        # this defines all the dedicated selections for charge flip, nonprompt, conversions
         if not re.search(data_pattern, dataset):
 
             BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
@@ -252,6 +257,14 @@ class SS_analysis(processor.ProcessorABC):
             cf_est_sel_mc = (baseline_OS & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))
             cf_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_p_cf))>=1) )  # two tight leptons, at least one electron charge flip
             cf_est_sel_data = (baseline & ~baseline)  # this has to be false
+
+            if dataset == 'top':
+                conv_sel = BL  # anything that has tight, prompt, charge-consistent, non-external-conv, same-sign dileptons has to be internal conversion.
+            elif dataset == 'XG':
+                conv_sel = BL_incl & (((ak.num(el_t_conv)+ak.num(mu_t_conv))>0))
+            else:
+                conv_sel = (baseline & ~baseline)  # this has to be false
+
 
             weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
             weight_cf_mc = self.chargeflipWeight.flip_weight(el_t_p)
@@ -268,6 +281,7 @@ class SS_analysis(processor.ProcessorABC):
             cf_est_sel_mc = (baseline & ~baseline)
             cf_obs_sel_mc = (baseline & ~baseline)
             cf_est_sel_data = (baseline_OS & ((ak.num(el_t)+ak.num(mu_t))==2) )
+            conv_sel = (baseline & ~baseline)  # this has to be false
 
             weight_np_mc = np.zeros(len(ev))
             weight_cf_mc = np.zeros(len(ev))
@@ -293,7 +307,17 @@ class SS_analysis(processor.ProcessorABC):
             #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
             #print ('len', len(reg_sel[0]))
             #print ('sel', reg_sel[0])
-            reg_sel = [BL&add_sel, BL_incl&add_sel, np_est_sel_mc&add_sel, np_obs_sel_mc&add_sel, np_est_sel_data&add_sel, cf_est_sel_mc&add_sel, cf_obs_sel_mc&add_sel, cf_est_sel_data&add_sel],
+            reg_sel = [
+                BL&add_sel,
+                BL_incl&add_sel,
+                np_est_sel_mc&add_sel,
+                np_obs_sel_mc&add_sel,
+                np_est_sel_data&add_sel,
+                cf_est_sel_mc&add_sel,
+                cf_obs_sel_mc&add_sel,
+                cf_est_sel_data&add_sel,
+                conv_sel&add_sel,
+            ],
             fill_multiple(
                 hist,
                 datasets=[
@@ -305,6 +329,7 @@ class SS_analysis(processor.ProcessorABC):
                     "cf_est_mc",
                     "cf_obs_mc",
                     "cf_est_data",
+                    "conv_mc",
                 ],
                 arrays=arrays,
                 selections=reg_sel[0],  # no idea where the additional dimension is coming from...
@@ -317,6 +342,7 @@ class SS_analysis(processor.ProcessorABC):
                     weight.weight()[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
                     weight.weight()[reg_sel[0][6]],
                     weight.weight()[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
+                    weight.weight()[reg_sel[0][8]],
                 ],
             )
 
@@ -425,11 +451,11 @@ class SS_analysis(processor.ProcessorABC):
                 del scaler
                 del NN_inputs, NN_inputs_scaled, NN_pred
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6}  # these should be all?
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}  # these should be all?
         if dataset in labels:
             label_mult = labels[dataset]
         else:
-            label_mult = 7  # data or anything else
+            label_mult = 8  # data or anything else
 
         if self.dump:
             output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
@@ -437,9 +463,11 @@ class SS_analysis(processor.ProcessorABC):
             output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
             output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
             output['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
+            output['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
             output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
             output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
             output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
+            output['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
 
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
@@ -613,6 +641,7 @@ if __name__ == '__main__':
         #'ttbar': fileset_all['ttbar1l'],
         #'ttbar': fileset_all['ttbar2l'],
         'ttbar': fileset_all['top'],
+        'XG': fileset_all['XG'],
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
         'EGamma': fileset_all['EGamma'],
@@ -669,7 +698,9 @@ if __name__ == '__main__':
             'OS',
             'AR',
             'LL',
+            'conv',
             'label',
+            'total_charge',
         ]
 
         for var in variables:
