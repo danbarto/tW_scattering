@@ -453,3 +453,58 @@ class dataCard:
             if len(d) == len('43a8a7c4-0086-4ae8-94df-b1162165ddf4'):
                 print ("Deleting: ", self.releaseLocation+'/'+d)
                 shutil.rmtree(self.releaseLocation+'/'+d)
+
+
+    def run_impacts(self, fname="", bkgOnly=False, observed=False, cores=8):
+        import uuid, os
+        ustr          = str(uuid.uuid4())
+        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        print("Creating %s"%uniqueDirname)
+        os.makedirs(uniqueDirname)
+
+        shutil.copyfile(fname, uniqueDirname+'/'+fname.split('/')[-1])
+
+        fname = uniqueDirname+'/'+fname.split('/')[-1]
+        
+        prepWorkspace   = "text2workspace.py %s -m 125"%fname
+        workspace = fname.replace('.txt', '.root')
+
+        print ('datacard: %s --> workspace %s'%(fname, workspace))
+
+        if bkgOnly:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 0 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 0 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        elif observed:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        else:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 1 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 1 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        extractImpact   = "combineTool.py -M Impacts -d %s -m 125 -o impacts.json"%workspace
+        plotImpacts     = "plotImpacts.py -i impacts.json -o impacts"
+        combineCommand  = "cd %s;%s;%s;%s;%s;%s"%(uniqueDirname,prepWorkspace,robustFit,impactFits,extractImpact,plotImpacts)
+        
+        print ("Running the following command:")
+        print (combineCommand)
+
+        os.system(combineCommand)
+        #
+        #plotDir = plot_directory + "/impacts_combination/"
+        #if args.expected:
+        #    s.name += '_expected'
+        #if args.bkgOnly:
+        #    s.name += '_bkgOnly'
+        #if args.observed:
+        #    s.name += '_observed'
+        #if not os.path.isdir(plotDir): os.makedirs(plotDir)
+        #elif args.combined:
+        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s_combined%s.pdf"%(plotDir,s.name,'_signalInjected' if args.signalInjection else ''))
+        #elif args.year:
+        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s_%s%s.pdf"%(plotDir,s.name,args.year,'_signalInjected' if args.signalInjection else ''))
+        #else:
+        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s.pdf"%(plotDir,s.name))
+        #logger.info("Copied result to %s"%plotDir)
+    
+        #if args.removeDir:
+        #    logger.info("Removing directory in release location")
+        #    rmtree(combineDirname)

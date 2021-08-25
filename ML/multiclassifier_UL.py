@@ -35,7 +35,8 @@ from processor.default_accumulators import dataset_axis
 from plots.helpers import makePlot
 from ML.multiclassifier_tools import get_one_hot, get_class_weight, get_sob,\
             load_onnx_model, predict_onnx, dump_onnx_model,\
-            store_model, load_model
+            store_model, load_model,\
+            store_transformer, load_transformer
 from ML.models import baseline_model
 
 
@@ -158,19 +159,21 @@ if __name__ == '__main__':
     argParser.add_argument('--cat', action='store_true', default=None, help="Use categories?")
     argParser.add_argument('--fit', action='store_true', default=None, help="Do combine fit?")
     argParser.add_argument('--version', action='store', default='v21', help="Version number")
+    argParser.add_argument('--year', action='store', default='2018', help="Which year?")
     args = argParser.parse_args()
 
 
     load_weights = args.load
-    version = args.version
+    version = "_".join([args.year, args.version])
     is_cat = args.cat
 
-    plot_dir = os.path.expandvars("/home/users/$USER/public_html/tW_scattering/ML/%s/"%version)
+    plot_dir = os.path.expandvars("/home/users/$USER/public_html/tW_scattering/ML/%s/"%(version))
 
     # Load the input data.
     # This data frame is produced with the SS_analysis processor:
     # ipython -i SS_analysis.py -- --dump
-    df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
+    #df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
+    df = pd.read_hdf('../processor/multiclass_input_%s_v2.h5'%args.year)
 
     variables = [
         ## best results with all variables, but should get pruned at some point...
@@ -344,6 +347,8 @@ if __name__ == '__main__':
         pred_train  = predict_onnx(model, X_train_scaled )
         pred_test   = predict_onnx(model, X_test_scaled )
 
+    
+
     # We can now evaluate the performance
     df_in['score_topW'] = pred_all[:,0]
     df_in['score_prompt'] = pred_all[:,1]
@@ -351,6 +356,16 @@ if __name__ == '__main__':
     df_in['score_np'] = pred_all[:,3]
     df_in['score_cf'] = pred_all[:,4]
     df_in['score_best'] = pred_all.argmax(axis=1)
+
+    # For quantile transformation on the top-W node:
+    from sklearn.preprocessing import QuantileTransformer
+    qt = QuantileTransformer(n_quantiles=40, random_state=0)
+    qt.fit(df_in[((df_in['label']==0)&(df_in['score_best']==0))]['score_topW'].values.reshape(-1, 1))
+    
+    store_transformer(qt, version=version)
+
+    df_in['score_topW_transform'] = qt.transform(df_in['score_topW'].values.reshape(-1, 1))
+    df_in['score_prompt_transform'] = qt.transform(df_in['score_prompt'].values.reshape(-1, 1))
 
     for i in range(3):
         print ("Checking assignment for cat %s"%i)
@@ -459,3 +474,72 @@ if __name__ == '__main__':
         f_out=plot_dir+'/correlation.png'
     )
     
+
+    # make this a function for two histograms with ratio, for a certain binning
+
+    def shape_comparison(array1, array2, bins=20, weight1=[], weight2=[], normalize=True, labels=["first", "second"], save=False):
+
+        import mplhep as hep
+        plt.style.use(hep.style.CMS)
+
+        hist1 = Hist1D(array1, bins=np.arange(0,bins+1)/bins, weights=weight1)
+        hist2 = Hist1D(array2, bins=np.arange(0,bins+1)/bins, weights=weight2)
+
+        if normalize:
+            hist1 = hist1.normalize()
+            hist2 = hist1.normalize()
+
+        ratio = hist1.divide(hist2)
+        
+        fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+        hep.cms.label(
+            "Preliminary",
+            data=False,
+            lumi=60.0,
+            loc=0,
+            ax=ax,
+        )
+        
+        hep.histplot(
+            [ hist1.counts, hist2.counts ],
+            hist1.edges,
+            w2=[ hist1.errors**2, hist2.errors**2 ],
+            histtype="step",
+            stack=False,
+            label=labels,
+            ax=ax)
+
+        hep.histplot(
+            ratio.counts,
+            ratio.edges,
+            w2=ratio.errors,
+            histtype="errorbar",
+            color='black',
+            ax=rax)
+
+        rax.set_ylim(0,1.99)
+        rax.set_xlabel(r'$score$')
+        rax.set_ylabel(r'Ratio')
+        ax.set_ylabel(r'Events')
+        
+        #add_uncertainty(total_mc, rax, ratio=True)
+        #add_uncertainty(total_mc, ax)
+        
+        ax.legend()
+        
+        plt.show()
+        
+        if save:
+            fig.savefig("{}.png".format(save))
+            fig.savefig("{}.pdf".format(save))
+
+    shape_comparison(
+        df_in[((df_in['label']==0)&(df_in['score_best']==0))]['score_topW_transform'].values,
+        df_in[((df_in['label']==1)&(df_in['score_best']==0))]['score_topW_transform'].values,
+        bins=8,
+        weight1=df_in[((df_in['label']==0)&(df_in['score_best']==0))]['weight'].values,
+        weight2=df_in[((df_in['label']==1)&(df_in['score_best']==0))]['weight'].values,
+        normalize = False,
+        save = "{}/score_transformed".format(plot_dir),
+    )

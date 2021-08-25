@@ -5,7 +5,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist
-
+import copy
 import numpy as np
 
 from Tools.config_helpers import loadConfig, make_small
@@ -38,21 +38,38 @@ if __name__ == '__main__':
     if verysmall:
         small = True
     year        = args.year
-    NN = False
+    cfg         = loadConfig()
 
-    cfg = loadConfig()
+    if year == '2019':
+        # load the results
+        lumi = 35.9+41.5+60.0
+        first = True
+        for y in ['2016', '2016APV', '2017', '2018']:
+            cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'SS_analysis_%s'%y), serialized=True)
+            cache.load()
+            tmp_output = cache.get('simple_output')
+            if first:
+                output = copy.deepcopy(tmp_output)
+            else:
+                for key in tmp_output:
+                    if type(tmp_output[key]) == hist.hist_tools.Hist:
+                        output[key].add(tmp_output[key])
+            first = False
+            del cache
+
+    else:
+        cacheName = 'SS_analysis_%s'%year
+        if small: cacheName += '_small'
+        cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
+
+        cache.load()
+        output = cache.get('simple_output')
+
+        lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
 
     plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'SS/%s_v21/'%cfg['meta']['version'])
-    lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
-
-    cacheName = 'SS_analysis_%s'%year
-    if small: cacheName += '_small'
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-
-    cache.load()
-
-    output = cache.get('simple_output')
+    NN = len(output['node0_score_incl'].values().keys())>0
     
     # defining some new axes for rebinning.
     N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
@@ -64,7 +81,7 @@ if __name__ == '__main__':
     pt_bins_ext = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 1000)
     ht_bins = hist.Bin('ht', r'$H_{T}\ (GeV)$', 10, 0, 1000)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
-    score_bins = hist.Bin("score",          r"N", 25, 0, 1)
+    score_bins = hist.Bin("score",          r"N", 8, 0, 1)  # FIXME update to 8
  
 
     my_labels = {
@@ -126,7 +143,8 @@ if __name__ == '__main__':
         sub_dir = '/dd/'
 
         data    = data_all
-        order   = ['np_est_data', 'XG', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson', 'topW_v3']
+        #order   = ['np_est_data', 'XG', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson', 'topW_v3']
+        order   = ['topW_v3', 'np_est_data', 'conv_mc', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
         #order   = ['np_est_data', 'conv_mc', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson', 'topW_v3']
         signals = []
         omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
@@ -180,6 +198,46 @@ if __name__ == '__main__':
                  signals=signals,
                  omit=omit+data,
                  save=os.path.expandvars(plot_dir+sub_dir+'node0_score'),
+                )
+
+            makePlot(output, 'node0_score_transform_pp', 'score',
+                 data=[],
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_transform_pp'),
+                )
+
+            makePlot(output, 'node0_score_transform_mm', 'score',
+                 data=[],
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_transform_mm'),
+                )
+
+            makePlot(output, 'node0_score_pp', 'score',
+                 data=[],
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_pp'),
+                )
+
+            makePlot(output, 'node0_score_mm', 'score',
+                 data=[],
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_mm'),
                 )
 
             makePlot(output, 'node1_score', 'score',

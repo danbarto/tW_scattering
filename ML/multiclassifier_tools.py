@@ -40,10 +40,16 @@ def store_model(model, scaler, version='v5'):
     model.save('networks/weights_%s.h5a'%version)
     joblib.dump(scaler, 'networks/scaler_%s.joblib'%version)
 
+def store_transformer(transformer, version='v5'):
+    joblib.dump(transformer, 'networks/transformer_%s.joblib'%version)
+
 def load_model(version='v5'):
     model = tf.keras.models.load_model(os.path.expandvars('$TWHOME/ML/networks/weights_%s.h5a'%version))
     scaler = joblib.load(os.path.expandvars('$TWHOME/ML/networks/scaler_%s.joblib'%version))
     return model, scaler
+
+def load_transformer(version='v5'):
+    return joblib.load(os.path.expandvars('$TWHOME/ML/networks/transformer_%s.joblib'%version))
 
 def get_class_weight(df, dim=6):
     '''
@@ -82,3 +88,4 @@ def simple_accuracy(pred, dummy_y):
     
     # this gives the measure of correctly tagged events, over the total
     return sum(pred_Y == true_Y)/len(true_Y)
+
