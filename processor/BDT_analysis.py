@@ -321,6 +321,9 @@ def make_yahist(x):
 def make_dmatrix(df, feature_names=None):
     if feature_names==None:
         feature_names = df.columns[:-2]
+    else:
+        feature_names = feature_names.copy()
+        feature_names.pop(-1)
     df["Label"] = df.Label.astype("category")
     return xgb.DMatrix(data=df[feature_names],label=df.Label.cat.codes, missing=-999.0,feature_names=feature_names)
 
@@ -1072,7 +1075,6 @@ class BDT:
         plt.close()
         
     def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
-        print(bins)
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         sig_weight = np.array(cat_dict["signal"]["data"].Weight)
         plt.figure("dc_categories", figsize=(7,7))
@@ -1099,11 +1101,12 @@ class BDT:
             digitized_prediction = np.digitize(predictions, bins)
             tmp_yield = np.sum(weights[digitized_prediction==bin_idx])
             tmp_BDT_hist = Hist1D(predictions, bins=bins, weights=weights, overflow=False)
-            tmp_error = tmp_BDT_hist.errors[b-1]
+            tmp_error = tmp_BDT_hist.errors[bin_idx-1]
         else: #special case (trilep has no flips)
             tmp_yield = 0
             tmp_error = 0.
         yield_name = "bin_{0}_{1}".format(bin_idx-1, category)
+        return yield_name, tmp_yield, tmp_error
 
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False):
         yield_dict = {}
