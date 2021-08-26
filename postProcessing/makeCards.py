@@ -10,7 +10,7 @@ import pandas as pd
 
 #hardcoded variables other users should customize
 
-def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_weights=None):
+def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_yields=None):
 
     BDT_bin_names = [str(b) for b in range(len(BDT_bins)-1)]
     BDT_bin_comments = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
@@ -28,6 +28,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
 
     numBins = len(BDT_bin_names)
     nProc = ["signal", "rares", "fakes", "flips"]
+    systematicSources = ["LepSF","PU","Trigger","bTag","jes"]
     numBackgrounds = len(nProc)-1
 
     #make some headers for my dataframe columns
@@ -101,8 +102,6 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
             yldString = str(yield_dict["bin_{0}_{1}".format(bdt_bin, p)]).ljust(20)
             rates.append(yldString)
 
-
-
     #filling dummy systematic uncertainties
     for p in nProc:
         if "signal" in p:
@@ -125,6 +124,55 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
                 filler = "-".ljust(20)
             if ("error" not in column) and ("Total" not in column):
                 dcard_df.at[rTitle,column.ljust(20)] = filler
+    #begin systematic uncertainties               
+    fakeRateIter = 0
+    for column in dcard_df:
+        rTitle = "fakeRate_syst".ljust(17) + "lnN"
+        if "fakes_mc" in column:
+            #filler = str(1+fakeSystErr[fakeRateIter]/100)
+            filler = str(1.09).ljust(20)
+            fakeRateIter+=1
+        else:
+            filler = "-".ljust(20)
+        dcard_df.at[rTitle,column]=filler
+
+    for source in systematicSources:
+        #systematics here are just the ratio of the "up" yield to the central yield, and the "down" yield to the central yield
+        rTitle = "{}_{}".format(source, year).ljust(17) + "lnN"
+        for column in dcard_df:
+            if ("rares" in column) or ("signal" in column):
+                breakpoint()
+                #row = raresSyst_df.loc[(raresSyst_df["nLeptons"]==l) & (raresSyst_df["nJets"]==j) & (raresSyst_df["nBtags"]==b)]
+                #up_yld = systematic_yields["bin_{0}_rares_{}_up".format(bdt_bin, source)]
+                colTitleUp = "{}_{}_up".format(column.strip(), source)
+                colTitleDown = "{}_{}_down".format(column.strip(), source)
+                up_yld = systematics_yields[colTitleUp]
+                down_yld = systematics_yields[colTitleDown]
+                central_yld = yield_dict[column.strip()]
+                filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
+                #filler = str(round(down_yld/central_yld,3))+"/"+str(round(up_yld/central_yld,3))
+#                     while len(filler)<20:
+#                         filler+=" "
+
+#             elif "signal" in column:
+# #                 row = signalSyst_df.loc[(signalSyst_df["nLeptons"]==l) & (signalSyst_df["nJets"]==j) & (signalSyst_df["nBtags"]==b)]
+# #                 colTitleUp = "{}_{}_up".format(s, source)
+# #                 colTitleDown = "{}_{}_down".format(s, source)
+#                 breakpoint()
+#                 colTitleUp = "{}_{}_up".format(column, source)
+#                 colTitleDown = "{}_{}_down".format(column, source)
+#                 up_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleUp)]
+#                 down_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleDown)]
+#                 central_yld = yield_dict["bin_{0}_{1}".format(bdt_bin, column)]
+#                 filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
+#                 filler = str(round(row[colTitleDown],3))+"/"+str(round(row[colTitleUp],3))
+#                 while len(filler)<20:
+#                     filler+=" "
+
+            else:
+                filler = "-".ljust(20)
+            dcard_df.at[rTitle,column]=filler
+    #end systematic uncertainties
     #print("filled syst uncertainties")
     # outfile = open(outdir+outfileName,"w")
     # outfile.write(dcard_df.to_csv(sep="\t", index=True, header=False))

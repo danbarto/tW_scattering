@@ -1107,9 +1107,29 @@ class BDT:
             tmp_error = 0.
         yield_name = "bin_{0}_{1}".format(bin_idx-1, category)
         return yield_name, tmp_yield, tmp_error
+    
+    def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None): #ADD JES special case
+        weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)]
+        weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)]
+        if category=="signal":
+            weights_up /= 100.
+            weights_down /= 100.
+        if len(weights_up) > 0:
+            if quantile_transformer==None:
+                predictions = cat_dict[category]["prediction"] ##fix the prediction
+            else:
+                predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
+            digitized_prediction = np.digitize(predictions, bins)
+            up_yield = np.sum(weights_up[digitized_prediction==bin_idx])
+            down_yield = np.sum(weights_down[digitized_prediction==bin_idx])
+        else:
+            up_yield = 0
+            down_yield = 0
+        return (up_yield, down_yield)
 
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False):
         yield_dict = {}
+        systematics_yields = {}
         if signal_name == "HCT":
             self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
             cat_dict = self.HCT_dict
@@ -1124,7 +1144,6 @@ class BDT:
         BDT_flips = cat_dict["flips"]["data"]
         BDT_rares = cat_dict["rares"]["data"]
         #BDT_bins = np.linspace(0, 1, 20)
-        #BDT_bins =  np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         feature_names = BDT_fakes.columns[:-2]  #full_data
         fakes_weights = BDT_fakes.Weight 
         flips_weights = BDT_flips.Weight
@@ -1145,41 +1164,11 @@ class BDT:
                 self.plot_SB_ratio(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
                 self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
         else:      
-#             signal_predictions = cat_dict["signal"]["prediction"]
-#             fakes_predictions = cat_dict["fakes"]["prediction"]
-#             flips_predictions = cat_dict["flips"]["prediction"]
-#             rares_predictions = cat_dict["rares"]["prediction"]
             qt=None
-#         signal_digitized = np.digitize(signal_predictions, BDT_bins)
-#         flips_digitized = np.digitize(flips_predictions, BDT_bins)
-#         fakes_digitized = np.digitize(fakes_predictions, BDT_bins)
-#         rares_digitized = np.digitize(rares_predictions, BDT_bins)
         for b in range(1, len(BDT_bins)):
             background_sum = 0
             for category in ["signal", "fakes", "flips", "rares"]:
                 (yield_name, tmp_yield, tmp_error) = self.get_bin_yield(category, BDT_bins, b, cat_dict, qt)
-#                 flag_empty_category=False
-#                 yield_name = "bin_{0}_{1}".format(b-1, category)
-#                 if category=="signal":
-#                     tmp_yield = np.sum(signal_weights[signal_digitized==b])
-#                     tmp_BDT_hist = Hist1D(signal_predictions, bins=BDT_bins, weights=signal_weights, overflow=False)
-#                 elif category =="flips":
-#                     if len(flips_weights) > 0:
-#                         tmp_yield = np.sum(flips_weights[flips_digitized==b])
-#                         tmp_BDT_hist = Hist1D(flips_predictions, bins=BDT_bins, weights=flips_weights, overflow=False)
-#                     else: #special case (trilep has no flips)
-#                         tmp_yield = 0
-#                         flag_empty_category=True
-#                 elif category == "fakes":
-#                     tmp_yield = np.sum(fakes_weights[fakes_digitized==b])
-#                     tmp_BDT_hist = Hist1D(fakes_predictions, bins=BDT_bins, weights=fakes_weights, overflow=False)
-#                 elif category == "rares":
-#                     tmp_yield = np.sum(rares_weights[rares_digitized==b])
-#                     tmp_BDT_hist = Hist1D(rares_predictions, bins=BDT_bins, weights=rares_weights, overflow=False)
-#                 if not flag_empty_category:
-#                     tmp_error = tmp_BDT_hist.errors[b-1]
-#                 elif flag_empty_category:
-#                     tmp_error = 0.
                 if tmp_yield > 0:
                     yield_dict[yield_name] = tmp_yield
                     yield_dict[yield_name+"_error"] = tmp_error
@@ -1188,14 +1177,20 @@ class BDT:
                     yield_dict[yield_name+"_error"] = 0.0
                 if category != "signal":
                     background_sum += tmp_yield
+                if (category=="signal") or (category=="rares"):
+                    for sys in ["LepSF","PU","Trigger","bTag"]: ##TODO: add JES
+                        sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)
+                        systematics_yields["{0}_{1}_up".format(yield_name, sys)] = sys_yields[0]
+                        systematics_yields["{0}_{1}_down".format(yield_name, sys)] = sys_yields[1]
             yield_dict["bin_{0}_Total_Background".format(b-1)] = background_sum
+        
         output_path = out_dir + signal_name + "/"
         os.makedirs(output_path, exist_ok=True)
         if quantile_transform == True:
             label = "QT"
         else:
             label = ""
-        postProcessing.makeCards.make_BDT_datacard(yield_dict, BDT_bins, signal_name, output_path, label, year)
+        postProcessing.makeCards.make_BDT_datacard(yield_dict, BDT_bins, signal_name, output_path, label, year, systematics_yields=systematics_yields)
         
     def plot_response(self, plot=True, savefig=False, label="all"):
         #plot the BDT response (correlation of BDT score with feature variables)
