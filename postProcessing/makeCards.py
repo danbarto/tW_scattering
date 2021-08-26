@@ -141,7 +141,6 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
         rTitle = "{}_{}".format(source, year).ljust(17) + "lnN"
         for column in dcard_df:
             if ("rares" in column) or ("signal" in column):
-                breakpoint()
                 #row = raresSyst_df.loc[(raresSyst_df["nLeptons"]==l) & (raresSyst_df["nJets"]==j) & (raresSyst_df["nBtags"]==b)]
                 #up_yld = systematic_yields["bin_{0}_rares_{}_up".format(bdt_bin, source)]
                 colTitleUp = "{}_{}_up".format(column.strip(), source)
