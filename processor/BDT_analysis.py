@@ -465,7 +465,7 @@ def process_file(fname, base_dir, BDT_features, version, year):
 
 
 class BDT:
-    def __init__(self, in_base_dir, in_files, out_base_dir, label, year, booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None, BDT_features=BDT_features):
+    def __init__(self, in_base_dir, in_files=[], out_base_dir="/home/users/cmcmahon/public_html/BDT", label="tmp", year="all", booster=None, booster_label="", booster_params=None, train_predictions=None, test_predictions=None, BDT_features=BDT_features, pd_baby=False, pd_sig="HCT"):
         self.in_base_dir = in_base_dir #"/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018"
         self.out_base_dir = out_base_dir #/home/users/cmcmahon/public_html/BDT
         self.in_files = in_files
@@ -477,8 +477,10 @@ class BDT:
         self.train_predictions = train_predictions
         self.test_predictions = test_predictions
         self.BDT_features = BDT_features
+        self.pd_baby = pd_baby
+        self.pd_sig = pd_sig
         self.num_trees = 10
-        self.signal, self.background, self.full_data = self.__get_signal_background__()
+        self.signal, self.background, self.full_data = self.__get_signal_background__(pd_baby, in_base_dir, pd_sig)
         self.train_data, self.test_data = self.__train_test_split__()
         self.evals_result = None
         self.train_predictions = None
@@ -506,6 +508,61 @@ class BDT:
                 other.HUT_dict[cat_key]["prediction"] = np.concatenate([other.HUT_dict[cat_key]["prediction"], o.HUT_dict[cat_key]["prediction"]])
         return other
         
+    def load_pd_baby(self, pd_file_path, signal="HCT"):
+        baby = pd.read_hdf(pd_file_path)
+        signal_BDT_params = pd.DataFrame()
+        background_BDT_params = pd.DataFrame()
+        if signal == "HCT":
+            sig_label = -2
+        elif signal == "HUT":
+            sig_label = -1
+        translate = {
+                "Most_Forward_pt":"forward_jet_pt",
+                "HT":"HT",
+                "LeadLep_eta":"lead_lep_eta",
+                "MET_pt":"MET_pt",
+                "LeadLep_pt":"lead_lep_pt",
+                "LeadLep_dxy":"lead_lep_dxy",
+                "LeadLep_dz":"lead_lep_dz",
+                "SubLeadLep_pt":"sublead_lep_pt",
+                "SubLeadLep_eta":"sublead_lep_eta",
+                "SubLeadLep_dxy":"sublead_lep_dxy",
+                "SubLeadLep_dz":"sublead_lep_dz",
+                "nJets":"n_jets",
+                "LeadJet_pt":"lead_jet_pt",
+                "SubLeadJet_pt":"sublead_jet_pt",
+                "SubSubLeadJet_pt":"subsublead_jet_pt",
+                "LeadJet_BtagScore":"lead_jet_btag_score",
+                "SubLeadJet_BtagScore":"sublead_jet_btag_score",
+                "SubSubLeadJet_BtagScore":"subsublead_jet_btag_score",
+                "nElectron":"n_electrons",
+                "MT_LeadLep_MET":"lead_lep_MET_MT",
+                "MT_SubLeadLep_MET":"sublead_lep_MET_MT",
+                "LeadBtag_pt":"lead_btag_pt",
+                "nBtag":"n_btags",
+                "LeadLep_SubLeadLep_Mass":"sub_lead_lead_mass",
+                "SubSubLeadLep_pt":"subsublead_lep_pt",
+                "SubSubLeadLep_eta":"subsublead_lep_eta",
+                "SubSubLeadLep_dxy":"subsublead_lep_dxy",
+                "SubSubLeadLep_dz":"subsublead_lep_dz",
+                "MT_SubSubLeadLep_MET":"subsublead_lep_MET_MT",
+                "LeadBtag_score":"lead_btag_btag_score",
+                "Weight":"weight"
+        }
+        sig_df = baby[baby.label==sig_label]
+        fakes_df = baby[baby.label>=3]
+        flips_df = baby[baby.label==2]
+        rares_df = baby[baby.label==1]
+        back_df = pd.concat([fakes_df, flips_df, rares_df], axis=0)
+        for feature in self.BDT_features:
+            signal_BDT_params[feature] = baby[baby.label==sig_label][translate[feature]]
+            background_BDT_params[feature] = baby[baby.label>=0][translate[feature]]
+        signal_BDT_params["Label"] = "s"
+        signal_BDT_params["Weight"] *= 100
+        background_BDT_params["Label"] = "b"
+        full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
+        return signal_BDT_params, background_BDT_params, full_data
+            
     def load_SR_BR_from_babies(self, baby_files=glob.glob("/home/users/cmcmahon/fcnc/ana/analysis/helpers/BDT/babies/2018/dilep/*.root")): 
         signal_BDT_params = pd.DataFrame()
         background_BDT_params = pd.DataFrame()
@@ -556,9 +613,12 @@ class BDT:
         full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
         return signal_BDT_params, background_BDT_params, full_data
     
-    def __get_signal_background__(self):
-        baby_dir = [self.in_base_dir + f for f in self.in_files]
-        return self.load_SR_BR_from_babies(baby_dir)
+    def __get_signal_background__(self, pd_baby=False, pd_dir = "", sig="HCT"):
+        if pd_baby:
+            return self.load_pd_baby(pd_dir, signal=sig)
+        else:
+            baby_dir = [self.in_base_dir + f for f in self.in_files]
+            return self.load_SR_BR_from_babies(baby_dir)
     
     def equalize_yields(self, sig, back, verbose=False):
         sig_copy = sig.copy()
@@ -903,14 +963,14 @@ class BDT:
         ax.set_title(title)
         plt.draw()
         
-    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False):
+    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False, from_pandas=False):
         sig_df = pd.DataFrame()
         fakes_df = pd.DataFrame()
         flips_df = pd.DataFrame()
         rares_df = pd.DataFrame()
         all_df = pd.DataFrame()
         background_df = pd.DataFrame()
-        if data_driven:
+        if data_driven and not from_pandas:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
@@ -930,7 +990,7 @@ class BDT:
                 if (background=="all") or (background=="flips"):
                     all_df = pd.concat([all_df, load_category("data_flips", d, BDT_features=self.BDT_features)])
                     all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features)])
-        else:
+        elif not from_pandas:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
@@ -950,7 +1010,71 @@ class BDT:
                 if (background=="all") or (background=="flips"):
                     all_df = pd.concat([all_df, load_category("flips_mc", d, BDT_features=self.BDT_features)])
                     all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features)])
+        elif from_pandas:
+            translate = {
+                    "Most_Forward_pt":"forward_jet_pt",
+                    "HT":"HT",
+                    "LeadLep_eta":"lead_lep_eta",
+                    "MET_pt":"MET_pt",
+                    "LeadLep_pt":"lead_lep_pt",
+                    "LeadLep_dxy":"lead_lep_dxy",
+                    "LeadLep_dz":"lead_lep_dz",
+                    "SubLeadLep_pt":"sublead_lep_pt",
+                    "SubLeadLep_eta":"sublead_lep_eta",
+                    "SubLeadLep_dxy":"sublead_lep_dxy",
+                    "SubLeadLep_dz":"sublead_lep_dz",
+                    "nJets":"n_jets",
+                    "LeadJet_pt":"lead_jet_pt",
+                    "SubLeadJet_pt":"sublead_jet_pt",
+                    "SubSubLeadJet_pt":"subsublead_jet_pt",
+                    "LeadJet_BtagScore":"lead_jet_btag_score",
+                    "SubLeadJet_BtagScore":"sublead_jet_btag_score",
+                    "SubSubLeadJet_BtagScore":"subsublead_jet_btag_score",
+                    "nElectron":"n_electrons",
+                    "MT_LeadLep_MET":"lead_lep_MET_MT",
+                    "MT_SubLeadLep_MET":"sublead_lep_MET_MT",
+                    "LeadBtag_pt":"lead_btag_pt",
+                    "nBtag":"n_btags",
+                    "LeadLep_SubLeadLep_Mass":"sub_lead_lead_mass",
+                    "SubSubLeadLep_pt":"subsublead_lep_pt",
+                    "SubSubLeadLep_eta":"subsublead_lep_eta",
+                    "SubSubLeadLep_dxy":"subsublead_lep_dxy",
+                    "SubSubLeadLep_dz":"subsublead_lep_dz",
+                    "MT_SubSubLeadLep_MET":"subsublead_lep_MET_MT",
+                    "LeadBtag_score":"lead_btag_btag_score",
+                    "Weight":"weight"
+            }
+            if sig_name == "HCT":
+                sig_label = -2
+            elif sig_name == "HUT":
+                sig_label = -1
+            for d in directories:
+                baby = pd.read_hdf(d)
+                sig = pd.DataFrame()
+                fakes = pd.DataFrame()
+                flips = pd.DataFrame()
+                rares = pd.DataFrame()
+                for f in self.BDT_features:
+                    sig[f] = baby[baby.label==sig_label][translate[f]]
+                    fakes[f] = baby[baby.label>=3][translate[f]]
+                    flips[f] = baby[baby.label==2][translate[f]]
+                    rares[f] = baby[baby.label==1][translate[f]]
+                sig_df = pd.concat([sig_df, sig], axis=0)
+                fakes_df = pd.concat([fakes_df, fakes])
+                flips_df = pd.concat([flips_df, flips])
+                rares_df = pd.concat([rares_df, rares])
 
+        sig_df["Label"] = "s"
+        sig_df["Weight"] *= 100
+        fakes_df["Label"] = "b"
+        flips_df["Label"] = "b"
+        rares_df["Label"] = "b"
+        if (background=="all"):
+            all_df = pd.concat([sig_df, fakes_df, flips_df, rares_df], axis=0)
+        elif (background=="fakes"):
+            all_df = pd.concat([sig_df, fakes_df], axis=0)
+        elif (background=="flips"):
+            all_df = pd.concat([sig_df, flips_df, rares_df], axis=0)
         sig_pred = self.booster.predict(make_dmatrix(sig_df))
         fakes_pred = self.booster.predict(make_dmatrix(fakes_df))
         flips_pred = self.booster.predict(make_dmatrix(flips_df))
@@ -1042,13 +1166,13 @@ class BDT:
         plt.savefig(out_dir + "DC_bins.png")
         plt.close()
 
-    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp"):
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False):
         yield_dict = {}
         if signal_name == "HCT":
-            self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven)
+            self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas)
             cat_dict = self.HCT_dict
         elif signal_name == "HUT":
-            self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven)
+            self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas)
             cat_dict = self.HUT_dict
         out_dir = "{0}/{1}/datacards/".format(self.out_base_dir, self.label)
         if flag_tmp_directory:
@@ -1182,9 +1306,9 @@ class BDT:
         self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
         self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
         
-    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True):
-        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
-        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot)
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True, from_pandas=False):
+        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot, from_pandas=from_pandas)
+        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot, from_pandas=from_pandas)
         
     def load_custom_params(self, param, dirs):
         self.set_booster_label()
