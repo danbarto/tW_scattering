@@ -319,7 +319,7 @@ def make_yahist(x):
     return yahist_x
 
 def make_dmatrix(df, feature_names=None):
-    if feature_names=None:
+    if feature_names==None:
         feature_names = df.columns[:-2]
     df["Label"] = df.Label.astype("category")
     return xgb.DMatrix(data=df[feature_names],label=df.Label.cat.codes, missing=-999.0,feature_names=feature_names)
@@ -926,42 +926,42 @@ class BDT:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
-                        sig_df = pd.concat([sig_df, load_category(s, d, BDT_features=self.BDT_features, systematics)], axis=0)
-                        all_df = pd.concat([all_df, load_category(s, d, BDT_features=self.BDT_features, systematics)], axis=0)
+                        sig_df = pd.concat([sig_df, load_category(s, d, BDT_features=self.BDT_features, systematics=systematics)], axis=0)
+                        all_df = pd.concat([all_df, load_category(s, d, BDT_features=self.BDT_features, systematics=systematics)], axis=0)
                 elif sig_name=="HCT":
-                    sig_df = pd.concat([sig_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics)])
-                    all_df = pd.concat([all_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics=systematics)])
+                    all_df = pd.concat([all_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics=systematics)])
                 elif sig_name=="HUT":
-                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics)])
-                    all_df = pd.concat([all_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics=systematics)])
+                    all_df = pd.concat([all_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics=systematics)])
                 fakes_df = pd.concat([fakes_df, load_category("data_fakes", d, BDT_features=self.BDT_features)]) #no systematics for fakes
                 if (background=="all") or (background=="fakes"):
                     all_df = pd.concat([all_df, load_category("data_fakes", d, BDT_features=self.BDT_features)]) #no systematics for fakes
                 flips_df = pd.concat([flips_df, load_category("data_flips", d, BDT_features=self.BDT_features)]) #no systematics for flips
-                rares_df = pd.concat([rares_df, load_category("rares", d, BDT_features=self.BDT_features, systematics)])
+                rares_df = pd.concat([rares_df, load_category("rares", d, BDT_features=self.BDT_features, systematics=systematics)])
                 if (background=="all") or (background=="flips"):
                     all_df = pd.concat([all_df, load_category("data_flips", d, BDT_features=self.BDT_features)]) #no systematics for flips
-                    all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features, systematics)])
+                    all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features, systematics=systematics)])
         elif not from_pandas:
             for d in directories:
                 if sig_name==None:
                     for s in ["signal_tch", "signal_tuh"]:
-                        sig_df = pd.concat([sig_df, load_category(s, d, BDT_features=self.BDT_features, systematics)], axis=0)
-                        all_df = pd.concat([all_df, load_category(s, d, BDT_features=self.BDT_features, systematics)], axis=0)
+                        sig_df = pd.concat([sig_df, load_category(s, d, BDT_features=self.BDT_features, systematics=systematics)], axis=0)
+                        all_df = pd.concat([all_df, load_category(s, d, BDT_features=self.BDT_features, systematics=systematics)], axis=0)
                 elif sig_name=="HCT":
-                    sig_df = pd.concat([sig_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics)])
-                    all_df = pd.concat([all_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics=systematics)])
+                    all_df = pd.concat([all_df, load_category("signal_tch", d, BDT_features=self.BDT_features, systematics=systematics)])
                 elif sig_name=="HUT":
-                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics)])
-                    all_df = pd.concat([all_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics)])
+                    sig_df = pd.concat([sig_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics=systematics)])
+                    all_df = pd.concat([all_df, load_category("signal_tuh", d, BDT_features=self.BDT_features, systematics=systematics)])
                 fakes_df = pd.concat([fakes_df, load_category("fakes_mc", d, BDT_features=self.BDT_features)]) #no systematics for fakes
                 if (background=="all") or (background=="fakes"):
                     all_df = pd.concat([all_df, load_category("fakes_mc", d, BDT_features=self.BDT_features)]) #no systematics for fakes
                 flips_df = pd.concat([flips_df, load_category("flips_mc", d, BDT_features=self.BDT_features)]) #no systematics for flips
-                rares_df = pd.concat([rares_df, load_category("rares", d, BDT_features=self.BDT_features, systematics)])
+                rares_df = pd.concat([rares_df, load_category("rares", d, BDT_features=self.BDT_features, systematics=systematics)])
                 if (background=="all") or (background=="flips"):
                     all_df = pd.concat([all_df, load_category("flips_mc", d, BDT_features=self.BDT_features)]) #no systematics for flips
-                    all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features, systematics)])
+                    all_df = pd.concat([all_df, load_category("rares", d, BDT_features=self.BDT_features, systematics=systematics)])
         elif from_pandas:
 
             if sig_name == "HCT":
@@ -1092,7 +1092,7 @@ class BDT:
         if category=="signal":
             weights /= 100.
         if len(weights) > 0:
-            if quantile_transformer=None:
+            if quantile_transformer==None:
                 predictions = cat_dict[category]["prediction"] ##fix the prediction
             else:
                 predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
