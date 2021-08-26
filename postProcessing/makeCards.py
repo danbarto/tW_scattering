@@ -10,7 +10,7 @@ import pandas as pd
 
 #hardcoded variables other users should customize
 
-def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"):
+def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_weights=None):
 
     BDT_bin_names = [str(b) for b in range(len(BDT_bins)-1)]
     BDT_bin_comments = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
