@@ -318,8 +318,9 @@ def make_yahist(x):
     yahist_x = Hist1D.from_bincounts(x_counts, x_bins)
     return yahist_x
 
-def make_dmatrix(df):
-    feature_names = df.columns[:-2]
+def make_dmatrix(df, feature_names=None):
+    if feature_names=None:
+        feature_names = df.columns[:-2]
     df["Label"] = df.Label.astype("category")
     return xgb.DMatrix(data=df[feature_names],label=df.Label.cat.codes, missing=-999.0,feature_names=feature_names)
 
@@ -995,11 +996,11 @@ class BDT:
             elif (background=="flips"):
                 all_df = pd.concat([sig_df, flips_df, rares_df], axis=0)
             #end pandas df load
-        sig_pred = self.booster.predict(make_dmatrix(sig_df))
-        fakes_pred = self.booster.predict(make_dmatrix(fakes_df))
-        flips_pred = self.booster.predict(make_dmatrix(flips_df))
-        rares_pred = self.booster.predict(make_dmatrix(rares_df))
-        all_pred = self.booster.predict(make_dmatrix(all_df))
+        sig_pred = self.booster.predict(make_dmatrix(sig_df, self.BDT_features))
+        fakes_pred = self.booster.predict(make_dmatrix(fakes_df, self.BDT_features))
+        flips_pred = self.booster.predict(make_dmatrix(flips_df, self.BDT_features))
+        rares_pred = self.booster.predict(make_dmatrix(rares_df, self.BDT_features))
+        all_pred = self.booster.predict(make_dmatrix(all_df, self.BDT_features))
         cat_dict = {"signal":{"data":sig_df, "prediction":sig_pred}, "fakes":{"data":fakes_df, "prediction":fakes_pred},
                     "flips":{"data":flips_df, "prediction":flips_pred}, "rares":{"data":rares_df, "prediction":rares_pred},
                     "all":{"data":all_df, "prediction":all_pred}}
@@ -1085,6 +1086,24 @@ class BDT:
         plt.savefig(out_dir + "DC_bins.pdf")
         plt.savefig(out_dir + "DC_bins.png")
         plt.close()
+        
+    def get_bin_yield(self, category, bins, bin_idx, cat_dict, quantile_transformer=None):
+        weights = cat_dict[category]["data"].Weight
+        if category=="signal":
+            weights /= 100.
+        if len(weights) > 0:
+            if quantile_transformer=None:
+                predictions = cat_dict[category]["prediction"] ##fix the prediction
+            else:
+                predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
+            digitized_prediction = np.digitize(predictions, bins)
+            tmp_yield = np.sum(weights[digitized_prediction==bin_idx])
+            tmp_BDT_hist = Hist1D(predictions, bins=bins, weights=weights, overflow=False)
+            tmp_error = tmp_BDT_hist.errors[b-1]
+        else: #special case (trilep has no flips)
+            tmp_yield = 0
+            tmp_error = 0.
+        yield_name = "bin_{0}_{1}".format(bin_idx-1, category)
 
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False):
         yield_dict = {}
@@ -1123,39 +1142,41 @@ class BDT:
                 self.plot_SB_ratio(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
                 self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
         else:      
-            signal_predictions = cat_dict["signal"]["prediction"]
-            fakes_predictions = cat_dict["fakes"]["prediction"]
-            flips_predictions = cat_dict["flips"]["prediction"]
-            rares_predictions = cat_dict["rares"]["prediction"]
-        signal_digitized = np.digitize(signal_predictions, BDT_bins)
-        flips_digitized = np.digitize(flips_predictions, BDT_bins)
-        fakes_digitized = np.digitize(fakes_predictions, BDT_bins)
-        rares_digitized = np.digitize(rares_predictions, BDT_bins)
+#             signal_predictions = cat_dict["signal"]["prediction"]
+#             fakes_predictions = cat_dict["fakes"]["prediction"]
+#             flips_predictions = cat_dict["flips"]["prediction"]
+#             rares_predictions = cat_dict["rares"]["prediction"]
+            qt=None
+#         signal_digitized = np.digitize(signal_predictions, BDT_bins)
+#         flips_digitized = np.digitize(flips_predictions, BDT_bins)
+#         fakes_digitized = np.digitize(fakes_predictions, BDT_bins)
+#         rares_digitized = np.digitize(rares_predictions, BDT_bins)
         for b in range(1, len(BDT_bins)):
             background_sum = 0
             for category in ["signal", "fakes", "flips", "rares"]:
-                flag_empty_category=False
-                yield_name = "bin_{0}_{1}".format(b-1, category)
-                if category=="signal":
-                    tmp_yield = np.sum(signal_weights[signal_digitized==b])
-                    tmp_BDT_hist = Hist1D(signal_predictions, bins=BDT_bins, weights=signal_weights, overflow=False)
-                elif category =="flips":
-                    if len(flips_weights) > 0:
-                        tmp_yield = np.sum(flips_weights[flips_digitized==b])
-                        tmp_BDT_hist = Hist1D(flips_predictions, bins=BDT_bins, weights=flips_weights, overflow=False)
-                    else: #special case (trilep has no flips)
-                        tmp_yield = 0
-                        flag_empty_category=True
-                elif category == "fakes":
-                    tmp_yield = np.sum(fakes_weights[fakes_digitized==b])
-                    tmp_BDT_hist = Hist1D(fakes_predictions, bins=BDT_bins, weights=fakes_weights, overflow=False)
-                elif category == "rares":
-                    tmp_yield = np.sum(rares_weights[rares_digitized==b])
-                    tmp_BDT_hist = Hist1D(rares_predictions, bins=BDT_bins, weights=rares_weights, overflow=False)
-                if not flag_empty_category:
-                    tmp_error = tmp_BDT_hist.errors[b-1]
-                elif flag_empty_category:
-                    tmp_error = 0.
+                (yield_name, tmp_yield, tmp_error) = self.get_bin_yield(category, BDT_bins, b, cat_dict, qt)
+#                 flag_empty_category=False
+#                 yield_name = "bin_{0}_{1}".format(b-1, category)
+#                 if category=="signal":
+#                     tmp_yield = np.sum(signal_weights[signal_digitized==b])
+#                     tmp_BDT_hist = Hist1D(signal_predictions, bins=BDT_bins, weights=signal_weights, overflow=False)
+#                 elif category =="flips":
+#                     if len(flips_weights) > 0:
+#                         tmp_yield = np.sum(flips_weights[flips_digitized==b])
+#                         tmp_BDT_hist = Hist1D(flips_predictions, bins=BDT_bins, weights=flips_weights, overflow=False)
+#                     else: #special case (trilep has no flips)
+#                         tmp_yield = 0
+#                         flag_empty_category=True
+#                 elif category == "fakes":
+#                     tmp_yield = np.sum(fakes_weights[fakes_digitized==b])
+#                     tmp_BDT_hist = Hist1D(fakes_predictions, bins=BDT_bins, weights=fakes_weights, overflow=False)
+#                 elif category == "rares":
+#                     tmp_yield = np.sum(rares_weights[rares_digitized==b])
+#                     tmp_BDT_hist = Hist1D(rares_predictions, bins=BDT_bins, weights=rares_weights, overflow=False)
+#                 if not flag_empty_category:
+#                     tmp_error = tmp_BDT_hist.errors[b-1]
+#                 elif flag_empty_category:
+#                     tmp_error = 0.
                 if tmp_yield > 0:
                     yield_dict[yield_name] = tmp_yield
                     yield_dict[yield_name+"_error"] = tmp_error
