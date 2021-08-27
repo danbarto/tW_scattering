@@ -918,7 +918,7 @@ class BDT:
         ax.set_title(title)
         plt.draw()
         
-    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False, from_pandas=False, systematics=True):
+    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False, from_pandas=False, systematics=True, JES_dir=[]):
         sig_df = pd.DataFrame()
         fakes_df = pd.DataFrame()
         flips_df = pd.DataFrame()
@@ -1108,7 +1108,18 @@ class BDT:
         yield_name = "bin_{0}_{1}".format(bin_idx-1, category)
         return yield_name, tmp_yield, tmp_error
     
-    def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None): #ADD JES special case
+    def get_bin_CRStats(self, bins, bin_idx, cat_dict, quantile_transformer=None):
+        weights = cat_dict["fakes"]["data"].Weight
+        if quantile_transformer==None:
+            predictions = cat_dict["fakes"]["prediction"] ##fix the prediction
+        else:
+            predictions = quantile_transformer.transform(cat_dict["fakes"]["prediction"].reshape(-1, 1)).flatten()
+        digitized_prediction = np.digitize(predictions, bins)
+        tmp_yield = np.sum(weights[digitized_prediction==bin_idx])
+        tmp_counts = np.sum((digitized_prediction==bin_idx))
+        return tmp_yield, tmp_counts
+    
+    def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_up_dir="", JES_down_dir=""): #ADD JES special case
         weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)]
         weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)]
         if category=="signal":
@@ -1165,23 +1176,31 @@ class BDT:
                 self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
         else:      
             qt=None
-        for b in range(1, len(BDT_bins)):
+        for b in range(1, len(BDT_bins)): #get yields of each bin
             background_sum = 0
             for category in ["signal", "fakes", "flips", "rares"]:
                 (yield_name, tmp_yield, tmp_error) = self.get_bin_yield(category, BDT_bins, b, cat_dict, qt)
-                if tmp_yield > 0:
-                    yield_dict[yield_name] = tmp_yield
-                    yield_dict[yield_name+"_error"] = tmp_error
-                elif tmp_yield <=0:
-                    yield_dict[yield_name] = 0.01
-                    yield_dict[yield_name+"_error"] = 0.0
                 if category != "signal":
                     background_sum += tmp_yield
-                if (category=="signal") or (category=="rares"):
+                if (category=="signal") or (category=="rares"): #fill systematic uncertainties for signal and rares
                     for sys in ["LepSF","PU","Trigger","bTag"]: ##TODO: add JES
                         sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)
                         systematics_yields["{0}_{1}_up".format(yield_name, sys)] = sys_yields[0]
                         systematics_yields["{0}_{1}_down".format(yield_name, sys)] = sys_yields[1]
+                elif (category=="fakes"):
+                    yield_name = "fkStat{0}_{1}".format(year, b)
+                    sys_yields = self.get_bin_CRStats(BDT_bins, b, cat_dict, qt)
+                    systematics_yields[yield_name] = sys_yields[1]
+                    yield_dict[yield_name + "_error"] = sys_yields[1] / sys_yields[0]
+                if tmp_yield > 0:
+                    yield_dict[yield_name] = tmp_yield
+                    if (category=="fakes"):
+                        yield_dict[yield_name + "_error"] = sys_yields[1] / sys_yields[0] #fakes have their own CR error 
+                    else:
+                        yield_dict[yield_name+"_error"] = tmp_error
+                elif tmp_yield <=0:
+                    yield_dict[yield_name] = 0.01
+                    yield_dict[yield_name+"_error"] = 0.0
             yield_dict["bin_{0}_Total_Background".format(b-1)] = background_sum
         
         output_path = out_dir + signal_name + "/"

@@ -10,7 +10,7 @@ import pandas as pd
 
 #hardcoded variables other users should customize
 
-def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_yields=None):
+def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_yields=None, CRstats=None, JES_stats=None):
 
     BDT_bin_names = [str(b) for b in range(len(BDT_bins)-1)]
     BDT_bin_comments = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
@@ -55,9 +55,16 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     numParameters = 0
     for p in nProc:
         for iterator in range(numBins):
-            numParameters+=1
-            title = "{0}_stat_{1}".format(p, iterator).ljust(17) + "lnN"
-            rowTitles.append(title)
+            if p == "fakes_mc":
+                title = "fkStat{0}_{1}".format(year, iterator)
+                numParameters+=1
+                yld = str(systematics_yields[title])
+                #yld = str(fakeCRStatYld[iterator]) #implement fakeCRstatyld
+                title = title.ljust(16-len(yld)) + "gmN " + yld
+            else:
+                numParameters+=1
+                title = "{0}_stat_{1}".format(p, iterator).ljust(17) + "lnN"
+                rowTitles.append(title)
 
     for p in nProc:
         title = "{0}_syst".format(p).ljust(17) + "lnN"
@@ -70,6 +77,12 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     #now I want to know the stat uncertainty as a percentage of the yield
     for p in nProc:
         for i in range(len(BDT_bin_names)):
+#             if proc == "fakes":
+#                 #srbin = str(l)+"_"+str(j)+"_"+str(b)
+#                 yld = yield_dict["bin_{0}_fakes".format(i)]
+#                 row = fakeEst_df.loc[ (df["nLeptons"]==l) & (df["nJets"]==j) & (df["nBtags"]==b) ]
+#                 err = row["data estimate"].values[0]
+#                 # print(yld, err, err/yld)
             bdt_bin = BDT_bin_names[i]
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
