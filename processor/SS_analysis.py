@@ -31,7 +31,7 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transfo
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]]):
         self.variations = variations
         self.year = year
         self.era = era  # this is here for 2016 APV
@@ -45,6 +45,9 @@ class SS_analysis(processor.ProcessorABC):
 
         self.nonpromptWeight = NonpromptWeight(year=year)
         self.chargeflipWeight = charge_flip(year=year)
+
+        self.hyperpoly = hyperpoly
+        self.points = points
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -83,16 +86,16 @@ class SS_analysis(processor.ProcessorABC):
         # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
         # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
         ## Muons
-        mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
-        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=year).get()
-        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
+        mu_v     = Collections(ev, "Muon", "vetoTTH", year=self.year).get()  # these include all muons, tight and fakeable
+        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=self.year).get()
+        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=self.year).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
         muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False) #FIXME new
         
         ## Electrons
-        el_v        = Collections(ev, "Electron", "vetoTTH", year=year).get()
-        el_t        = Collections(ev, "Electron", "tightSSTTH", year=year).get()
-        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
+        el_v        = Collections(ev, "Electron", "vetoTTH", year=self.year).get()
+        el_t        = Collections(ev, "Electron", "tightSSTTH", year=self.year).get()
+        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False) #FIXME new
         
@@ -214,6 +217,10 @@ class SS_analysis(processor.ProcessorABC):
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
         
+        if dataset=='topW_full_EFT':
+            for point in self.points:
+                point['weight'] = Weights( len(ev) )
+                point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
 
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -437,8 +444,27 @@ class SS_analysis(processor.ProcessorABC):
                 CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
                 CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
 
-                fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+
+                if dataset=='topW_full_EFT':
+
+                    for point in self.points:
+                        output['lead_lep_SR_pp'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                            weight = (weight.weight()[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                        )
+
+                        output['lead_lep_SR_mm'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                            weight = (weight.weight()[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                            #weight = (weight[]*(point['weight'].weight()[BL]))[SR_sel_mm]
+                        )
+
+                else:
+
+                    fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
 
                 fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
@@ -510,25 +536,52 @@ class SS_analysis(processor.ProcessorABC):
                 weight = weight_BL
             )
 
-        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
-        
-        fill_multiple_np(
-            output['lead_lep'],
-            {
-                'pt':  pad_and_flatten(leading_lepton.p4.pt),
-                'eta': pad_and_flatten(leading_lepton.eta),
-                'phi': pad_and_flatten(leading_lepton.phi),
-            },
-        )
+        if dataset=='topW_full_EFT':
+            for point in self.points:
+                output['MET'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ev.MET[BL].pt,
+                    phi  = ev.MET[BL].phi,
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
 
-        fill_multiple_np(
-            output['trail_lep'],
-            {
-                'pt':  pad_and_flatten(trailing_lepton.p4.pt),
-                'eta': pad_and_flatten(trailing_lepton.eta),
-                'phi': pad_and_flatten(trailing_lepton.phi),
-            },
-        )
+                output['lead_lep'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
+                
+                output['trail_lep'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
+
+        else:
+
+            fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+            
+            fill_multiple_np(
+                output['lead_lep'],
+                {
+                    'pt':  pad_and_flatten(leading_lepton.p4.pt),
+                    'eta': pad_and_flatten(leading_lepton.eta),
+                    'phi': pad_and_flatten(leading_lepton.phi),
+                },
+            )
+
+            fill_multiple_np(
+                output['trail_lep'],
+                {
+                    'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                    'eta': pad_and_flatten(trailing_lepton.eta),
+                    'phi': pad_and_flatten(trailing_lepton.phi),
+                },
+            )
         
         output['j1'].fill(
             dataset = dataset,
