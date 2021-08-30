@@ -336,14 +336,14 @@ if __name__ == '__main__':
 
     if True:
 
-        data    = data_all
-        order   = ['np_obs_mc', 'XG', 'cf_obs_mc', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'topW_v3']
+        data    = []
+        order   = ['topW_v3', 'np_obs_mc', 'conv_mc', 'cf_obs_mc', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', ]
         signals = []
         omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 
         makePlot(output, 'MET', 'pt',
              data=data,
-             bins=pt_bins_coarse, log=False, normalize=True, axis_label=r'$p_{T}^{miss}$',
+             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}^{miss}$',
              new_colors=my_colors, new_labels=my_labels, lumi=lumi,
              order=order,
              signals=signals,
@@ -353,7 +353,7 @@ if __name__ == '__main__':
 
         makePlot(output, 'fwd_jet', 'pt',
              data=data,
-             bins=pt_bins_coarse, log=False, normalize=True, axis_label=r'$p_{T}$',
+             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}$',
              new_colors=my_colors, new_labels=my_labels, lumi=lumi,
              order=order,
              signals=signals,
@@ -363,7 +363,7 @@ if __name__ == '__main__':
 
         makePlot(output, 'HT', 'ht',
              data=data,
-             bins=ht_bins, log=False, normalize=True, axis_label=r'$H_{T}$',
+             bins=ht_bins, log=False, normalize=False, axis_label=r'$H_{T}$',
              new_colors=my_colors, new_labels=my_labels, lumi=lumi,
              order=order,
              signals=signals,
@@ -373,12 +373,22 @@ if __name__ == '__main__':
 
         makePlot(output, 'N_ele', 'multiplicity',
              data=data,
-             bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{ele}$',
+             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{ele}$',
              new_colors=my_colors, new_labels=my_labels, lumi=lumi,
              order=order,
              signals=signals,
              omit=omit,
              save=os.path.expandvars(plot_dir+sub_dir+'N_ele'),
+            )
+
+        makePlot(output, 'N_fwd', 'multiplicity',
+             data=data,
+             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{fwd\ jet}$',
+             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+             order=order,
+             signals=signals,
+             omit=omit,
+             save=os.path.expandvars(plot_dir+sub_dir+'N_fwd'),
             )
 
 
@@ -479,6 +489,37 @@ if __name__ == '__main__':
             )
 
 
+    ### Charge flip closure test
+
+    order   = ['cf_est_mc']
+    #data    = ['np_obs_mc']
+    #signals = []
+
+    for shape in [False, True]:
+
+        postfix = '_shape' if shape else ''
+        ymax = 0.6 if shape else False
+        if shape:
+            signals = ['cf_obs_mc']
+            data    = []
+        else:
+            signals = []
+            data    = ['cf_obs_mc']
+        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+        makePlot(output, 'HT', 'ht',
+             data=data,
+             bins=ht_bins, log=False, normalize=False, axis_label=r'$H_{T}\ (GeV)$',
+             shape=shape, ymax=ymax,
+             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
+             new_labels=my_labels, lumi=lumi,
+             order=order,
+             signals=signals,
+             omit=omit+data,
+             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_ht'+postfix),
+            )
+
+
     ### NP estimate closure test for inputs ###
 
     order   = ['np_est_mc']
@@ -496,6 +537,18 @@ if __name__ == '__main__':
             signals = []
             data    = ['np_obs_mc']
         omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+        if NN:
+            makePlot(output, 'node', 'multiplicity',
+                 data=data,
+                 bins=N_bins_red, log=False, normalize=False, axis_label='best node',
+                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
+                 new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_best_node'+postfix),
+                )
 
         makePlot(output, 'HT', 'ht',
              data=data,
