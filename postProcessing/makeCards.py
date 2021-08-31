@@ -55,14 +55,15 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     numParameters = 0
     for p in nProc:
         for iterator in range(numBins):
-            if p == "fakes_mc":
-                title = "fkStat{0}_{1}".format(year, iterator)
-                numParameters+=1
+            numParameters+=1
+            if p == "fakes":
+                title = "fkStat{0}_{1}".format(str(year)[-2:], iterator)
                 yld = str(systematics_yields[title])
                 #yld = str(fakeCRStatYld[iterator]) #implement fakeCRstatyld
                 title = title.ljust(16-len(yld)) + "gmN " + yld
+                rowTitles.append(title)
             else:
-                numParameters+=1
+                #numParameters+=1
                 title = "{0}_stat_{1}".format(p, iterator).ljust(17) + "lnN"
                 rowTitles.append(title)
 
@@ -70,28 +71,35 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
         title = "{0}_syst".format(p).ljust(17) + "lnN"
         rowTitles.append(title)
         numParameters+=1
+        
+    #breakpoint()
 
     #dataframe I will print to datacard file
     dcard_df = pd.DataFrame(index = rowTitles, columns = dcColumns)
     #print("defined output dataframe")
     #now I want to know the stat uncertainty as a percentage of the yield
     for p in nProc:
+        numParameters += 1
         for i in range(len(BDT_bin_names)):
-#             if proc == "fakes":
-#                 #srbin = str(l)+"_"+str(j)+"_"+str(b)
-#                 yld = yield_dict["bin_{0}_fakes".format(i)]
-#                 row = fakeEst_df.loc[ (df["nLeptons"]==l) & (df["nJets"]==j) & (df["nBtags"]==b) ]
-#                 err = row["data estimate"].values[0]
-#                 # print(yld, err, err/yld)
             bdt_bin = BDT_bin_names[i]
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
-            if abs(yld) <= 0.01:
-                unc = 1.0
-            else:
-                unc = (err / round(yld, 4)) + 1.0
+            #numParameters += 1
+            if p != "fakes":
+                if abs(yld) <= 0.01:
+                    unc = 1.0
+                else:
+                    unc = (err / round(yld, 4)) + 1.0
+                rTitle = "{0}_stat_{1}".format(p, i).ljust(17) + "lnN"
+
+            else: #fakes CR Statistics
+                unc = round(err, 4)
+                title = "fkStat{0}_{1}".format(str(year)[-2:], i)
+                CR_yld = str(systematics_yields[title])
+                #yld = str(fakeCRStatYld[iterator]) #implement fakeCRstatyld
+                rTitle = title.ljust(16-len(CR_yld)) + "gmN " + CR_yld
+                
             cTitle = "bin_{0}_{1}".format(bdt_bin, p)
-            rTitle = "{0}_stat_{1}".format(p, i).ljust(17) + "lnN"
             for column in yield_dict.keys():
                 if column==cTitle:
                     filler = str(unc).ljust(20)
@@ -139,9 +147,10 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
                 dcard_df.at[rTitle,column.ljust(20)] = filler
     #begin systematic uncertainties               
     fakeRateIter = 0
+    numParameters += 1
     for column in dcard_df:
         rTitle = "fakeRate_syst".ljust(17) + "lnN"
-        if "fakes_mc" in column:
+        if "fakes" in column:
             #filler = str(1+fakeSystErr[fakeRateIter]/100)
             filler = str(1.09).ljust(20)
             fakeRateIter+=1
@@ -191,6 +200,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     # outfile.close()
     #define output file and write to output file
     outfile = open(outdir+outfileName,"w")
+    #breakpoint()
     binHeadersObs = "bin                 \t"
     for b in binNamesObs:
         binHeadersObs+=b
@@ -223,6 +233,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     obsHeaders+="\n"
     imaxHeader = "imax "+str(numBins)+" number of channels\n"
     jmaxHeader = "jmax "+str(numBackgrounds)+" number of backgrounds\n"
+    #numParameters = len(rowTitles)
     kmaxHeader = "kmax "+str(numParameters)+" number of nuisance parameters\n"
     comments = "#{} signal region data card\n#".format(signal)
     for b in range(len(BDT_bin_names)): 

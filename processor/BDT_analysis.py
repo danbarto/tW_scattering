@@ -1188,14 +1188,14 @@ class BDT:
                         systematics_yields["{0}_{1}_up".format(yield_name, sys)] = sys_yields[0]
                         systematics_yields["{0}_{1}_down".format(yield_name, sys)] = sys_yields[1]
                 elif (category=="fakes"):
-                    yield_name = "fkStat{0}_{1}".format(year, b)
+                    stat_name = "fkStat{0}_{1}".format(str(year)[-2:], b-1)
                     sys_yields = self.get_bin_CRStats(BDT_bins, b, cat_dict, qt)
-                    systematics_yields[yield_name] = sys_yields[1]
-                    yield_dict[yield_name + "_error"] = sys_yields[1] / sys_yields[0]
+                    systematics_yields[stat_name] = sys_yields[1]
+                    #yield_dict[yield_name + "_error"] = sys_yields[0] / sys_yields[1]
                 if tmp_yield > 0:
                     yield_dict[yield_name] = tmp_yield
                     if (category=="fakes"):
-                        yield_dict[yield_name + "_error"] = sys_yields[1] / sys_yields[0] #fakes have their own CR error 
+                        yield_dict[yield_name + "_error"] = sys_yields[0] / sys_yields[1] #fakes have their own CR error 
                     else:
                         yield_dict[yield_name+"_error"] = tmp_error
                 elif tmp_yield <=0:
