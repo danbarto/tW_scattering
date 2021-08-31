@@ -1122,7 +1122,8 @@ class BDT:
         return tmp_yield, tmp_counts
     
     def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_cds=()): #ADD JES special case
-        if (category=="JES") and (len(JES_cds)==2):
+        #breakpoint()
+        if (systematic=="JES") and (len(JES_cds)==2):
             weights_up = JES_cds[0][category]["data"]["Weight"]
             weights_down = JES_cds[1][category]["data"]["Weight"]
         else:
@@ -1132,7 +1133,7 @@ class BDT:
             weights_up /= 100.
             weights_down /= 100.
         if len(weights_up) > 0:
-            if (category=="JES") and (len(JES_cds)==2):
+            if (systematic=="JES") and (len(JES_cds)==2):
                 if quantile_transformer==None:
                     predictions_up = JES_cds[0][category]["prediction"]
                     predictions_down = JES_cds[1][category]["prediction"]
@@ -1141,7 +1142,7 @@ class BDT:
                     predictions_down = quantile_transformer.transform(JES_cds[1][category]["prediction"].reshape(-1, 1)).flatten()
                 digitized_prediction_up = np.digitize(predictions_up, bins)
                 digitized_prediction_down = np.digitize(predictions_down, bins)
-                up_yield = np.sum(weights_up[digitized_predictio_up==bin_idx])
+                up_yield = np.sum(weights_up[digitized_prediction_up==bin_idx])
                 down_yield = np.sum(weights_down[digitized_prediction_down==bin_idx])
             else:
                 if quantile_transformer==None:
@@ -1156,9 +1157,11 @@ class BDT:
             down_yield = 0
         return (up_yield, down_yield)
 
-    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=()):
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21),
+                     flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=()):
         yield_dict = {}
         systematics_yields = {}
+        #breakpoint()
         if signal_name == "HCT":
             self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
             cat_dict = self.HCT_dict
@@ -1208,7 +1211,7 @@ class BDT:
                     background_sum += tmp_yield
                 if (category=="signal") or (category=="rares"): #fill systematic uncertainties for signal and rares
                     for sys in ["LepSF","PU","Trigger","bTag", "JES"]: ##TODO: add JES
-                        if sys=="JES":
+                        if (sys=="JES") and (len(JES_dirs)==2):
                             sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt, (JES_up_cd, JES_down_cd))
                         else:
                             sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)

@@ -28,7 +28,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
 
     numBins = len(BDT_bin_names)
     nProc = ["signal", "rares", "fakes", "flips"]
-    systematicSources = ["LepSF","PU","Trigger","bTag","jes"]
+    systematicSources = ["LepSF","PU","Trigger","bTag","JES"]
     numBackgrounds = len(nProc)-1
 
     #make some headers for my dataframe columns
@@ -79,7 +79,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     #print("defined output dataframe")
     #now I want to know the stat uncertainty as a percentage of the yield
     for p in nProc:
-        numParameters += 1
+        #numParameters += 1
         for i in range(len(BDT_bin_names)):
             bdt_bin = BDT_bin_names[i]
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
@@ -161,6 +161,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     for source in systematicSources:
         #systematics here are just the ratio of the "up" yield to the central yield, and the "down" yield to the central yield
         rTitle = "{}_{}".format(source, year).ljust(17) + "lnN"
+        numParameters += 1
         for column in dcard_df:
             if ("rares" in column) or ("signal" in column):
                 #row = raresSyst_df.loc[(raresSyst_df["nLeptons"]==l) & (raresSyst_df["nJets"]==j) & (raresSyst_df["nBtags"]==b)]
