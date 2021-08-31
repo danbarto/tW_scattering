@@ -28,7 +28,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
 
     numBins = len(BDT_bin_names)
     nProc = ["signal", "rares", "fakes", "flips"]
-    systematicSources = ["LepSF","PU","Trigger","bTag"]#,"jes"]
+    systematicSources = ["LepSF","PU","Trigger","bTag","jes"]
     numBackgrounds = len(nProc)-1
 
     #make some headers for my dataframe columns

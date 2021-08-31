@@ -918,7 +918,7 @@ class BDT:
         ax.set_title(title)
         plt.draw()
         
-    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False, from_pandas=False, systematics=True, JES_dir=[]):
+    def make_category_dict(self, directories, sig_name=None, background="all", data_driven=False, from_pandas=False, systematics=True, flag_store_dict=True):
         sig_df = pd.DataFrame()
         fakes_df = pd.DataFrame()
         flips_df = pd.DataFrame()
@@ -1007,16 +1007,18 @@ class BDT:
         cat_dict = {"signal":{"data":sig_df, "prediction":sig_pred}, "fakes":{"data":fakes_df, "prediction":fakes_pred},
                     "flips":{"data":flips_df, "prediction":flips_pred}, "rares":{"data":rares_df, "prediction":rares_pred},
                     "all":{"data":all_df, "prediction":all_pred}}
-
-        if sig_name == None:
-            self.category_dict = cat_dict
-            return self.category_dict
-        elif sig_name == "HCT":
-            self.HCT_dict = cat_dict
-            return self.HCT_dict
-        elif sig_name == "HUT":
-            self.HUT_dict = cat_dict
-            return self.HUT_dict
+        if flag_store_dict:
+            if sig_name == None:
+                self.category_dict = cat_dict
+                return self.category_dict
+            elif sig_name == "HCT":
+                self.HCT_dict = cat_dict
+                return self.HCT_dict
+            elif sig_name == "HUT":
+                self.HUT_dict = cat_dict
+                return self.HUT_dict
+        else:
+            return cat_dict
     
     def plot_categories(self, plot=True, savefig=True):
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
@@ -1119,34 +1121,56 @@ class BDT:
         tmp_counts = np.sum((digitized_prediction==bin_idx))
         return tmp_yield, tmp_counts
     
-    def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_up_dir="", JES_down_dir=""): #ADD JES special case
-        weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)]
-        weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)]
+    def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_cds=()): #ADD JES special case
+        if (category=="JES") and (len(JES_cds)==2):
+            weights_up = JES_cds[0][category]["data"]["Weight"]
+            weights_down = JES_cds[1][category]["data"]["Weight"]
+        else:
+            weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)]
+            weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)]
         if category=="signal":
             weights_up /= 100.
             weights_down /= 100.
         if len(weights_up) > 0:
-            if quantile_transformer==None:
-                predictions = cat_dict[category]["prediction"] ##fix the prediction
+            if (category=="JES") and (len(JES_cds)==2):
+                if quantile_transformer==None:
+                    predictions_up = JES_cds[0][category]["prediction"]
+                    predictions_down = JES_cds[1][category]["prediction"]
+                else:
+                    predictions_up = quantile_transformer.transform(JES_cds[0][category]["prediction"].reshape(-1, 1)).flatten()
+                    predictions_down = quantile_transformer.transform(JES_cds[1][category]["prediction"].reshape(-1, 1)).flatten()
+                digitized_prediction_up = np.digitize(predictions_up, bins)
+                digitized_prediction_down = np.digitize(predictions_down, bins)
+                up_yield = np.sum(weights_up[digitized_predictio_up==bin_idx])
+                down_yield = np.sum(weights_down[digitized_prediction_down==bin_idx])
             else:
-                predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
-            digitized_prediction = np.digitize(predictions, bins)
-            up_yield = np.sum(weights_up[digitized_prediction==bin_idx])
-            down_yield = np.sum(weights_down[digitized_prediction==bin_idx])
+                if quantile_transformer==None:
+                    predictions = cat_dict[category]["prediction"] ##fix the prediction
+                else:
+                    predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
+                digitized_prediction = np.digitize(predictions, bins)
+                up_yield = np.sum(weights_up[digitized_prediction==bin_idx])
+                down_yield = np.sum(weights_down[digitized_prediction==bin_idx])
         else:
             up_yield = 0
             down_yield = 0
         return (up_yield, down_yield)
 
-    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False):
+    def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=()):
         yield_dict = {}
         systematics_yields = {}
         if signal_name == "HCT":
             self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
             cat_dict = self.HCT_dict
+            if len(JES_dirs)==2:
+                JES_up_cd = self.make_category_dict(JES_dirs[0], "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
+                JES_down_cd = self.make_category_dict(JES_dirs[1], "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
         elif signal_name == "HUT":
             self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
             cat_dict = self.HUT_dict
+            if len(JES_dirs)==2:
+                JES_up_cd = self.make_category_dict(JES_dirs[0], "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
+                JES_down_cd = self.make_category_dict(JES_dirs[1], "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
         out_dir = "{0}/{1}/datacards/".format(self.out_base_dir, self.label)
         if flag_tmp_directory:
             out_dir += "tmp/{}/".format(dir_label)
@@ -1183,8 +1207,11 @@ class BDT:
                 if category != "signal":
                     background_sum += tmp_yield
                 if (category=="signal") or (category=="rares"): #fill systematic uncertainties for signal and rares
-                    for sys in ["LepSF","PU","Trigger","bTag"]: ##TODO: add JES
-                        sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)
+                    for sys in ["LepSF","PU","Trigger","bTag", "JES"]: ##TODO: add JES
+                        if sys=="JES":
+                            sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt, (JES_up_cd, JES_down_cd))
+                        else:
+                            sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)
                         systematics_yields["{0}_{1}_up".format(yield_name, sys)] = sys_yields[0]
                         systematics_yields["{0}_{1}_down".format(yield_name, sys)] = sys_yields[1]
                 elif (category=="fakes"):
@@ -1264,9 +1291,11 @@ class BDT:
         self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
         self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
         
-    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True, from_pandas=False, systematics=True):
-        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot, from_pandas=from_pandas, systematics=systematics)
-        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory, plot=plot, from_pandas=from_pandas, systematics=systematics)
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True, from_pandas=False, systematics=True, JES_dirs=()):
+        self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory,
+                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs)
+        self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory,
+                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs)
         
     def load_custom_params(self, param, dirs):
         self.set_booster_label()
