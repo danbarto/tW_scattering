@@ -1092,17 +1092,17 @@ class BDT:
         plt.close()
         
     def get_bin_yield(self, category, bins, bin_idx, cat_dict, quantile_transformer=None):
-        weights = cat_dict[category]["data"].Weight
+        tmp_weights = cat_dict[category]["data"].Weight.copy()
         if category=="signal":
-            weights /= 100.
-        if len(weights) > 0:
+            tmp_weights /= 100.
+        if len(tmp_weights) > 0:
             if quantile_transformer==None:
                 predictions = cat_dict[category]["prediction"] ##fix the prediction
             else:
                 predictions = quantile_transformer.transform(cat_dict[category]["prediction"].reshape(-1, 1)).flatten()
             digitized_prediction = np.digitize(predictions, bins)
-            tmp_yield = np.sum(weights[digitized_prediction==bin_idx])
-            tmp_BDT_hist = Hist1D(predictions, bins=bins, weights=weights, overflow=False)
+            tmp_yield = np.sum(tmp_weights[digitized_prediction==bin_idx])
+            tmp_BDT_hist = Hist1D(predictions, bins=bins, weights=tmp_weights, overflow=False)
             tmp_error = tmp_BDT_hist.errors[bin_idx-1]
         else: #special case (trilep has no flips)
             tmp_yield = 0
@@ -1111,7 +1111,7 @@ class BDT:
         return yield_name, tmp_yield, tmp_error
     
     def get_bin_CRStats(self, bins, bin_idx, cat_dict, quantile_transformer=None):
-        weights = cat_dict["fakes"]["data"].Weight
+        weights = cat_dict["fakes"]["data"].Weight.copy()
         if quantile_transformer==None:
             predictions = cat_dict["fakes"]["prediction"] ##fix the prediction
         else:
@@ -1124,11 +1124,11 @@ class BDT:
     def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_cds=()): #ADD JES special case
         #breakpoint()
         if (systematic=="JES") and (len(JES_cds)==2):
-            weights_up = JES_cds[0][category]["data"]["Weight"]
-            weights_down = JES_cds[1][category]["data"]["Weight"]
+            weights_up = JES_cds[0][category]["data"]["Weight"].copy()
+            weights_down = JES_cds[1][category]["data"]["Weight"].copy()
         else:
-            weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)]
-            weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)]
+            weights_up = cat_dict[category]["data"]["Weight_{}_up".format(systematic)].copy()
+            weights_down = cat_dict[category]["data"]["Weight_{}_down".format(systematic)].copy()
         if category=="signal":
             weights_up /= 100.
             weights_down /= 100.

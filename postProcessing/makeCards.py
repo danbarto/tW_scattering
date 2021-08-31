@@ -82,6 +82,8 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
         #numParameters += 1
         for i in range(len(BDT_bin_names)):
             bdt_bin = BDT_bin_names[i]
+#             if p == "signal":
+#                 breakpoint()
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
             #numParameters += 1
