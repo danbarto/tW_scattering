@@ -472,9 +472,6 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+sub_dir+'node0_score_incl'),
             )
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
         makePlot(output, 'node1_score_incl', 'score',
              data=[],
              bins=score_bins, log=False, normalize=False, axis_label='Score',
@@ -515,11 +512,6 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+sub_dir+'node4_score_incl'),
             )
 
->>>>>>> parent of 5394daa... Revert "close to final multiclassifier, restructuring part 1"
-    ## MC DRIVEN BKG ESTIMATES
-
-    sub_dir = '/SS/v21/mc/'
-=======
         data    = []
         order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'topW_v3']
         signals = []
@@ -633,19 +625,6 @@ if __name__ == '__main__':
              omit=omit+data,
              save=os.path.expandvars(plot_dir+sub_dir+'np_closure_lead_lep_pt'+postfix),
             )
-
-        makePlot(output, 'lead_lep', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_lead_lep_pt'+postfix),
-            )
->>>>>>> 448534c16af50b56fce823aa18181dc10e711356
 
         makePlot(output, 'trail_lep', 'pt',
              data=data,
