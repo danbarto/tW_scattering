@@ -85,14 +85,9 @@ class Selection:
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
-<<<<<<< HEAD
-        #self.selection.add('min_mll',        (min_mll) )
+        self.selection.add('min_mll',        (min_mll) )
         
-        ss_reqs = [
-=======
-
         reqs = [
->>>>>>> 448534c16af50b56fce823aa18181dc10e711356
             'filter',
          #   'lepsel',
             'dilep',
@@ -106,7 +101,7 @@ class Selection:
             'N_light>0',
             'MET>30',
             'N_fwd>0',
-            #'min_mll'
+            'min_mll'
         ]
         
         if tight:
@@ -303,11 +298,4 @@ if __name__ == '__main__':
     print ("Found %s raw events in trilep selection"%sum(trilep))
     print ("Applied the following requirements:")
     print (sel.reqs)
-<<<<<<< HEAD
-        
-        
 
-        
-=======
-
->>>>>>> 448534c16af50b56fce823aa18181dc10e711356
