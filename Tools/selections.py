@@ -59,6 +59,11 @@ class Selection:
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
+        
+        min_mll = ak.all(dilep.mass>12, axis=1)
+
+        
+
 
         #self.selection.add('lepsel',        lepsel)
         self.selection.add('dilep',         is_dilep)
@@ -80,7 +85,8 @@ class Selection:
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
-
+        self.selection.add('min_mll',        (min_mll) )
+        
         reqs = [
             'filter',
          #   'lepsel',
@@ -95,6 +101,7 @@ class Selection:
             'N_light>0',
             'MET>30',
             'N_fwd>0',
+            'min_mll'
         ]
         
         if tight:
