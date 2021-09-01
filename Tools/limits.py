@@ -21,7 +21,116 @@ def myRebin(var, nbins, binsize, threshold):
             last_index = i
     return np.array(bin_boundaries)*binsize
 
-def makeCardFromHist(out_cache, hist_name, scales={'nonprompt':1, 'signal':1}, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None, tw_name='topW_v2'):
+def makeCardFromHist(
+    out_cache,
+    hist_name,
+    scales={'nonprompt':1, 'signal':1},
+    overflow='all',
+    ext='',
+    systematics={},
+    signal_hist=None,
+    integer=False, quiet=False,
+):
+    
+    '''
+    make a card file from a processor output
+    signal_hist overrides the default signal histogram if provided
+    '''
+
+    if not quiet:
+        print ("Writing cards using histogram:", hist_name)
+    card_dir = os.path.expandvars('$TWHOME/data/cards/')
+    if not os.path.isdir(card_dir):
+        os.makedirs(card_dir)
+    
+    data_card = card_dir+hist_name+ext+'_card.txt'
+    shape_file = card_dir+hist_name+ext+'_shapes.root'
+    
+    histogram = out_cache[hist_name].copy()
+    #histogram = histogram.rebin('mass', bins[hist_name]['bins'])
+    
+    # scale some processes
+    histogram.scale(scales, axis='dataset')
+    
+    ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option
+    data_counts = np.asarray(np.round(histogram.integrate('dataset').values(overflow=overflow)[()], 0), int)
+    data_hist = histogram['signal']
+    data_hist.clear()
+    data_hist_bins = data_hist.axes()[1]
+    for i, edge in enumerate(data_hist_bins.edges(overflow=overflow)):
+        if i >= len(data_counts): break
+        for y in range(data_counts[i]):
+            data_hist.fill(**{'dataset': 'data', data_hist_bins.name: edge+0.0001})
+
+
+    fout = uproot3.recreate(shape_file)
+
+    processes = [ p[0] for p in list(histogram.values().keys()) if p[0] != 'signal']  # ugly conversion
+    
+    for process in processes + ['signal']:
+        if (signal_hist is not None) and process=='signal':
+            fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
+        else:
+            fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
+
+    if integer:
+        fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
+    else:
+        fout["data_obs"]  = hist.export1d(histogram.integrate('dataset'), overflow=overflow)
+
+    fout.close()
+    
+    # Get the total yields to write into a data card
+    totals = {}
+    
+    for process in processes + ['signal']:
+        if (signal_hist is not None) and process=='signal':
+            totals[process] = signal_hist.integrate('dataset').values(overflow=overflow)[()].sum()
+        else:
+            totals[process] = histogram[process].integrate('dataset').values(overflow=overflow)[()].sum()
+    
+    if integer:
+        totals['observation'] = data_hist.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+    else:
+        totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+    
+    if not quiet:
+        for process in processes + ['signal']:
+            print ("{:30}{:.2f}".format("Expectation for %s:"%process, totals[process]) )
+        
+        print ("{:30}{:.2f}".format("Observation:", totals['observation']) )
+    
+    
+    # set up the card
+    card = dataCard()
+    card.reset()
+    card.setPrecision(3)
+    
+    # add the single bin
+    card.addBin('Bin0', processes, 'Bin0')
+    for process in processes + ['signal']:
+        card.specifyExpectation('Bin0', process, totals[process] )
+    
+    # add the uncertainties (just flat ones for now)
+    card.addUncertainty('lumi', 'lnN')
+    if systematics:
+        for systematic, mag, proc in systematics:
+            card.addUncertainty(systematic, 'lnN')
+            card.specifyUncertainty(systematic, 'Bin0', proc, mag)
+            
+    card.specifyFlatUncertainty('lumi', 1.03)
+    
+             ## observation
+    #card.specifyObservation('Bin0', int(round(totals['observation'],0)))
+    card.specifyObservation('Bin0', totals['observation'])
+    
+    if not quiet:
+        print ("Done.\n")
+    
+    return card.writeToFile(data_card, shapeFile=shape_file)
+
+
+def makeCardFromHist_ret(out_cache, hist_name, scales={'nonprompt':1, 'signal':1}, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None, tw_name='topW_v2', quiet=False):
     print ("Writing cards using histogram:", hist_name)
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
     if not os.path.isdir(card_dir):
@@ -85,10 +194,11 @@ def makeCardFromHist(out_cache, hist_name, scales={'nonprompt':1, 'signal':1}, o
     #totals['observation'] = int(sum(data_hist['data'].sum('dataset').values(overflow=overflow)[()]))
     totals['observation'] = histogram[notdata].integrate('dataset').values(overflow=overflow)[()].sum()
     
-    print ("{:30}{:.2f}".format("Signal expectation:",totals['signal']) )
-    print ("{:30}{:.2f}".format("Non-prompt background:",totals['nonprompt']) )
-    print ("{:30}{:.2f}".format("t(t)X(X)/rare background:",totals['ttw']+totals['ttz']+totals['tth']+totals['rare']) )
-    print ("{:30}{:.2f}".format("Observation:", totals['observation']) )
+    if not quiet:
+        print ("{:30}{:.2f}".format("Signal expectation:",totals['signal']) )
+        print ("{:30}{:.2f}".format("Non-prompt background:",totals['nonprompt']) )
+        print ("{:30}{:.2f}".format("t(t)X(X)/rare background:",totals['ttw']+totals['ttz']+totals['tth']+totals['rare']) )
+        print ("{:30}{:.2f}".format("Observation:", totals['observation']) )
     
     
     # set up the card

@@ -27,7 +27,7 @@ n2_axis                 = hist.Bin("n2",            r"N",               4, -0.5,
 n_ele_axis              = hist.Bin("n_ele",         r"N",               4, -0.5, 3.5) # we can use this as categorization for ee/emu/mumu
 ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.5, 99.5) # e.g. for PV
 norm_axis               = hist.Bin("norm",          r"N",               25, 0, 1)
-score_axis              = hist.Bin("score",         r"N",               64, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
+score_axis              = hist.Bin("score",         r"N",               16, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
 
 variations = ['pt_jesTotalUp', 'pt_jesTotalDown']
 nb_variations = ['centralUp', 'centralDown', 'upCentral', 'downCentral']

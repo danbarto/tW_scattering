@@ -273,6 +273,8 @@ class SS_analysis(processor.ProcessorABC):
                 conv_sel = (baseline & ~baseline)  # this has to be false
 
 
+            data_sel = (baseline & ~baseline)  # this has to be false
+
             weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
             weight_cf_mc = self.chargeflipWeight.flip_weight(el_t_p)
 
@@ -297,6 +299,8 @@ class SS_analysis(processor.ProcessorABC):
             run_ = ak.to_numpy(ev.run)
             lumi_ = ak.to_numpy(ev.luminosityBlock)
             event_ = ak.to_numpy(ev.event)
+
+            data_sel = (baseline | ~baseline)  # this is always true
 
             if False:
                 output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
@@ -425,7 +429,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 #FIXME below needs to be fixed again with changed NN evaluation. Should work now
 
-                fill_multiple_np(output['node'], {'multiplicity':best_score})
+                fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=((data_sel & (best_score>1)) | ~data_sel))  # this should blind me
                 fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
                 fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
                 fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
@@ -461,10 +465,26 @@ class SS_analysis(processor.ProcessorABC):
                             #weight = (weight[]*(point['weight'].weight()[BL]))[SR_sel_mm]
                         )
 
+                        output['LT_SR_pp'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
+                            weight = (weight.weight()[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                        )
+
+                        output['LT_SR_mm'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
+                            weight = (weight.weight()[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                            #weight = (weight[]*(point['weight'].weight()[BL]))[SR_sel_mm]
+                        )
+
                 else:
 
                     fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
                     fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+
+                    fill_multiple_np(output['LT_SR_pp'], {'ht':  lt}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['LT_SR_mm'], {'ht':  lt}, add_sel=SR_sel_mm)
 
                 fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
@@ -561,9 +581,17 @@ class SS_analysis(processor.ProcessorABC):
                     weight = weight_BL*(point['weight'].weight()[BL])
                 )
 
+                output['LT'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    ht = ak.to_numpy(lt)[BL],
+                    weight = weight_BL*(point['weight'].weight()[BL]),
+                )
+
+
         else:
 
             fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+            fill_multiple_np(output['LT'], {'ht':lt})
             
             fill_multiple_np(
                 output['lead_lep'],
@@ -801,8 +829,11 @@ if __name__ == '__main__':
     desired_output.update({
         "ST": hist.Hist("Counts", dataset_axis, ht_axis),
         "HT": hist.Hist("Counts", dataset_axis, ht_axis),
+        "LT": hist.Hist("Counts", dataset_axis, ht_axis),
         "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pt_axis),
         "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
+        "LT_SR_pp": hist.Hist("Counts", dataset_axis, ht_axis),
+        "LT_SR_mm": hist.Hist("Counts", dataset_axis, ht_axis),
         "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
         "node0_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node1_score_incl": hist.Hist("Counts", dataset_axis, score_axis),

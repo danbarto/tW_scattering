@@ -414,14 +414,6 @@
   split: 160
   sumWeight: 15594.429092927629
   xsec: 0.01624
-/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/:
-  files: 3870
-  nEvents: 967500
-  name: ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7
-  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/
-  split: 160
-  sumWeight: 15594.429092927629
-  xsec: 0.01624
 /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/:
   files: 1985
   nEvents: 3923284
@@ -429,14 +421,6 @@
   path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/
   split: 177
   sumWeight: 1011998.2718600474
-  xsec: 0.25758
-/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_v7/:
-  files: 990
-  nEvents: 247500
-  name: ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_v7
-  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_v7/
-  split: 171
-  sumWeight: 63846.36943211976
   xsec: 0.25758
 ? /tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM
 : files: 14

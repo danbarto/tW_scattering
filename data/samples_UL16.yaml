@@ -358,6 +358,14 @@
   split: 155
   sumWeight: 15978.810670535979
   xsec: 0.01624
+/hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL16_postVFP_v7/:
+  files: 500
+  nEvents: 988849
+  name: ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL16_postVFP_v7
+  path: /hadoop/cms/store/user/dspitzba/ProjectMetis/TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL16_postVFP_v7/
+  split: 169
+  sumWeight: 254882.79436370984
+  xsec: 0.25758
 /tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM:
   files: 37
   nEvents: 2534000

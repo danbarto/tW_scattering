@@ -19,6 +19,7 @@ plt.style.use(mplhep.style.CMS)
 
 # Machine learning packages
 import tensorflow as tf
+from keras.utils.vis_utils import plot_model
 from keras.utils import np_utils
 import onnxruntime as rt
 from sklearn.utils import resample
@@ -323,6 +324,8 @@ if __name__ == '__main__':
         )
 
         store_model(model, scaler, version=version)
+
+        plot_model(model, to_file='./model_plot.png', show_shapes=True, show_layer_names=True)
 
     else:
         #model, scaler = load_model(version=version)

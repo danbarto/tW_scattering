@@ -132,8 +132,7 @@ class Selection:
         is_trilep  = ( ((ak.num(self.ele_veto) + ak.num(self.mu_veto))>=3) & ((ak.num(self.ele) + ak.num(self.mu))>=3) )
         lep0pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>25)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>25)]))>0)
         lep1pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>20)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>20)]))>1)
-        #lep0pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>25)]) + ak.num(self.mu_veto[(self.mu_veto.pt>25)]))>0)
-        #lep1pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
+        # FIXME here we need to have a 10 GeV threshold on the third lepton
 
         dimu    = choose(self.mu_veto,2)
         diele   = choose(self.ele_veto,2)

@@ -53,7 +53,10 @@ if __name__ == '__main__':
             else:
                 for key in tmp_output:
                     if type(tmp_output[key]) == hist.hist_tools.Hist:
-                        output[key].add(tmp_output[key])
+                        try:
+                            output[key].add(tmp_output[key])
+                        except KeyError:
+                            print ("Key %s not present in all years. Skipping."%key)
             first = False
             del cache
 
@@ -80,6 +83,7 @@ if __name__ == '__main__':
     pt_bins_coarse_red = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 100)
     pt_bins_ext = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 1000)
     ht_bins = hist.Bin('ht', r'$H_{T}\ (GeV)$', 10, 0, 1000)
+    ht_bins_red = hist.Bin('ht', r'$p_{T}\ (GeV)$', 7,100,800)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
     score_bins = hist.Bin("score",          r"N", 8, 0, 1)  # FIXME update to 8
  
@@ -180,6 +184,36 @@ if __name__ == '__main__':
             )
 
         if NN:
+            makePlot(output, 'LT_SR_pp', 'ht',
+                 data=[],
+                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'LT_SR_pp'),
+                )
+
+            makePlot(output, 'LT_SR_mm', 'ht',
+                 data=[],
+                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'LT_SR_mm'),
+                )
+
+            makePlot(output, 'LT', 'ht',
+                 data=[],
+                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'LT'),
+                )
+
             makePlot(output, 'node', 'multiplicity',
                  data=data,
                  bins=N_bins_red, log=False, normalize=False, axis_label='best node',
@@ -187,6 +221,7 @@ if __name__ == '__main__':
                  order=order,
                  signals=signals,
                  omit=omit,
+                 ymax = 850 if year=='2019' else False,
                  save=os.path.expandvars(plot_dir+sub_dir+'best_node'),
                 )
 
@@ -395,7 +430,7 @@ if __name__ == '__main__':
     if NN:
 
         data    = []
-        order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_est_mc', 'topW_v3']
+        order   = ['np_est_mc', 'conv_mc', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_est_mc', 'topW_v3']
         signals = []
         omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 

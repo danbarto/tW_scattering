@@ -182,8 +182,12 @@ if __name__ == '__main__':
         'n_fwd',
         'n_b',
         'n_tau', ## important for ttZ
+        'n_ele',
+        'n_sfos',
+        'charge',
         #'n_track', ## not so important, and very bad data/MC agreement
         'st',
+        'lt',
         ##'ht',
         'met',
         'mjj_max',
@@ -194,6 +198,9 @@ if __name__ == '__main__':
         'sublead_lep_eta',
         'trail_lep_pt',
         'trail_lep_eta',
+        'm3l',
+        'close_mass',
+        'far_mass',
         'dilepton_mass',
         'dilepton_pt',
         'fwd_jet_pt',

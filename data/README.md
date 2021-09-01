@@ -39,3 +39,5 @@ This is a table for 2016.
 /DoubleMuon/Run2016G-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD
 /DoubleMuon/Run2016H-UL2016_MiniAODv1_NanoAODv2-v1/NANOAOD
 ```
+
+Lumis are given [here](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TWikiLUM)

@@ -159,6 +159,7 @@ def main():
     import argparse
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
+    argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
     args = argParser.parse_args()
 
     config = loadConfig()
@@ -206,6 +207,12 @@ def main():
                 yaml.dump(samples, f, Dumper=Dumper)
 
     print ("Done.")
+
+    if args.dump:
+        import pandas as pd
+        df = pd.DataFrame(samples)
+        with pd.option_context("max_colwidth", 1000):
+            print(df.transpose()[['xsec']].to_latex())
 
     return samples
 

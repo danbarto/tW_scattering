@@ -140,6 +140,22 @@ class trilep_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.p4.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
 
+        dimuon = choose(muon, 2)
+        OS_dimuon = dimuon[(dimuon['0'].charge*dimuon['1'].charge)<0]
+        dielectron = choose(electron, 2)
+        OS_dielectron = dielectron[(dielectron['0'].charge*dielectron['1'].charge)<0]
+
+        n_sfos = ak.num(OS_dimuon, axis=1) + ak.num(OS_dielectron, axis=1)
+
+        OS_dimuon_mass = (OS_dimuon['0'].p4 + OS_dimuon['1'].p4).mass
+        OS_dielectron_mass = (OS_dielectron['0'].p4 + OS_dielectron['1'].p4).mass
+
+        SFOS_mass = ak.concatenate([OS_dimuon_mass,OS_dielectron_mass], axis=1)
+        SFOS_mass_sorted = SFOS_mass[ak.argsort(abs(SFOS_mass-91.2))]
+
+        trilep = choose(lepton, 3)
+        m3l = (trilep['0'].p4 + trilep['1'].p4 + trilep['2'].p4).mass
+
         dilepton_mass = (leading_lepton.p4 + trailing_lepton.p4).mass
         dilepton_pt = (leading_lepton.p4 + trailing_lepton.p4).pt
         #dilepton_dR = delta_r(leading_lepton, trailing_lepton)
@@ -211,6 +227,7 @@ class trilep_analysis(processor.ProcessorABC):
         ## other variables
         ht = ak.sum(jet.pt, axis=1)
         st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
+        lt = met_pt + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         
         # define the weight
         weight = Weights( len(ev) )
@@ -272,13 +289,17 @@ class trilep_analysis(processor.ProcessorABC):
             weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
 
         else:
-            BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))>=2))
+            BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))>=3))
 
             BL_incl = BL
 
             np_est_sel_mc = (baseline & ~baseline)
             np_obs_sel_mc = (baseline & ~baseline)
-            np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)>=1) & (ak.num(el_f)+ak.num(mu_f)>=1) )
+            np_est_sel_data = (baseline & \
+                ((((ak.num(el_t)+ak.num(mu_t))>=1) & ((ak.num(el_f)+ak.num(mu_f))>=2)) \
+               | (((ak.num(el_t)+ak.num(mu_t))==0) & ((ak.num(el_f)+ak.num(mu_f))>=3)) \
+               | (((ak.num(el_t)+ak.num(mu_t))>=2) & ((ak.num(el_f)+ak.num(mu_f))>=1)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+            #np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)>=1) & (ak.num(el_f)+ak.num(mu_f)>=1) )
 
             conv_sel = (baseline & ~baseline)  # this has to be false
 
@@ -332,8 +353,12 @@ class trilep_analysis(processor.ProcessorABC):
                 'n_fwd':            ak.to_numpy(ak.num(fwd)),
                 'n_b':              ak.to_numpy(ak.num(btag)),
                 'n_tau':            ak.to_numpy(ak.num(tau)),
+                'n_ele':            ak.to_numpy(ak.num(electron)),
+                'n_sfos':           ak.to_numpy(n_sfos),
+                'charge':           ak.to_numpy(ak.sum(lepton.charge, axis=1)),
                 #'n_track':          ak.to_numpy(ak.num(track)),
                 'st':               ak.to_numpy(st),
+                'lt':               ak.to_numpy(lt),
                 'met':              ak.to_numpy(ev.MET.pt),
                 'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
                 'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
@@ -343,6 +368,9 @@ class trilep_analysis(processor.ProcessorABC):
                 'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(lead_leptons[:,1:2].p4.eta)),
                 'trail_lep_pt':     ak.to_numpy(pad_and_flatten(lead_leptons[:,2:3].p4.pt)),
                 'trail_lep_eta':    ak.to_numpy(pad_and_flatten(lead_leptons[:,2:3].p4.eta)),
+                'm3l':              ak.to_numpy(pad_and_flatten(m3l)),
+                'close_mass':       ak.to_numpy(pad_and_flatten(SFOS_mass[:,0:1])),
+                'far_mass':         ak.to_numpy(pad_and_flatten(SFOS_mass[:,1:2])),
                 'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
                 'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
                 'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.pt)),
@@ -434,6 +462,69 @@ class trilep_analysis(processor.ProcessorABC):
         fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
         fill_multiple_np(output['ST'],        {'ht': st})
         fill_multiple_np(output['HT'],        {'ht': ht})
+
+        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+        
+        fill_multiple_np(
+            output['lead_lep'],
+            {
+                'pt':  pad_and_flatten(leading_lepton.p4.pt),
+                'eta': pad_and_flatten(leading_lepton.eta),
+                'phi': pad_and_flatten(leading_lepton.phi),
+            },
+        )
+
+        fill_multiple_np(
+            output['trail_lep'],
+            {
+                'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                'eta': pad_and_flatten(trailing_lepton.eta),
+                'phi': pad_and_flatten(trailing_lepton.phi),
+            },
+        )
+        
+        output['j1'].fill(
+            dataset = dataset,
+            pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
+            eta = ak.flatten(jet.eta[:, 0:1][BL]),
+            phi = ak.flatten(jet.phi[:, 0:1][BL]),
+            weight = weight_BL
+        )
+        
+        output['j2'].fill(
+            dataset = dataset,
+            pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
+            eta = ak.flatten(jet[:, 1:2][BL].eta),
+            phi = ak.flatten(jet[:, 1:2][BL].phi),
+            weight = weight_BL
+        )
+        
+        output['j3'].fill(
+            dataset = dataset,
+            pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
+            eta = ak.flatten(jet[:, 2:3][BL].eta),
+            phi = ak.flatten(jet[:, 2:3][BL].phi),
+            weight = weight_BL
+        )
+        
+        fill_multiple_np(
+            output['fwd_jet'],
+            {
+                'pt':  pad_and_flatten(best_fwd.pt),
+                'eta': pad_and_flatten(best_fwd.eta),
+                'phi': pad_and_flatten(best_fwd.phi),
+            },
+        )
+        
+        #output['fwd_jet'].fill(
+        #    dataset = dataset,
+        #    pt  = ak.flatten(j_fwd[BL].pt),
+        #    eta = ak.flatten(j_fwd[BL].eta),
+        #    phi = ak.flatten(j_fwd[BL].phi),
+        #    weight = weight_BL
+        #)
+            
+        #output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(best_fwd[BL].p), weight = weight_BL)
 
         return output
 
@@ -532,8 +623,12 @@ if __name__ == '__main__':
             'n_b',
             'n_fwd',
             'n_tau',
+            'n_ele',
+            'n_sfos',
+            'charge',
             #'n_track',
             'st',
+            'lt',
             'met',
             'mjj_max',
             'delta_eta_jj',
@@ -543,6 +638,9 @@ if __name__ == '__main__':
             'sublead_lep_eta',
             'trail_lep_pt',
             'trail_lep_eta',
+            'm3l',
+            'close_mass',
+            'far_mass',
             'dilepton_mass',
             'dilepton_pt',
             'fwd_jet_pt',
