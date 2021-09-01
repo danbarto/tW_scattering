@@ -13,7 +13,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 import numpy as np
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, nonprompt_no_conv
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, nonprompt_no_conv, external_conversion
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
@@ -28,7 +28,7 @@ from Tools.chargeFlip import charge_flip
 import warnings
 warnings.filterwarnings("ignore")
 
-from ML.multiclassifier_tools import load_onnx_model, predict_onnx
+from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
 
 
 class trilep_analysis(processor.ProcessorABC):
@@ -112,6 +112,7 @@ class trilep_analysis(processor.ProcessorABC):
             # tight electrons
             el_t_p  = prompt(el_t)
             el_t_np = nonprompt_no_conv(el_t, gen_photon)
+            el_t_conv = external_conversion(el_t, gen_photon)
             #el_t_np = nonprompt(el_t)
             # fakeable electrons
             el_f_p  = prompt(el_f)
@@ -122,6 +123,7 @@ class trilep_analysis(processor.ProcessorABC):
 
             mu_t_p  = prompt(mu_t)
             mu_t_np = nonprompt_no_conv(mu_t, gen_photon)
+            mu_t_conv = external_conversion(mu_t, gen_photon)
             #mu_t_np = nonprompt(mu_t)
 
             mu_f_p  = prompt(mu_f)
@@ -213,7 +215,7 @@ class trilep_analysis(processor.ProcessorABC):
         # define the weight
         weight = Weights( len(ev) )
         
-        if not dataset=='MuonEG':
+        if not re.search(data_pattern, dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
             #weight.add("weight", ev.genWeight*cfg['lumi'][self.year]*mult)
@@ -260,6 +262,13 @@ class trilep_analysis(processor.ProcessorABC):
             np_obs_sel_mc = (baseline & ( (ak.num(el_t)+ak.num(mu_t))>=3) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
             np_est_sel_data = (baseline & ~baseline)  # this has to be false
 
+            if dataset == 'top':
+                conv_sel = BL  # anything that has tight, prompt, charge-consistent, non-external-conv, same-sign dileptons has to be internal conversion.
+            elif dataset == 'XG':
+                conv_sel = BL_incl & (((ak.num(el_t_conv)+ak.num(mu_t_conv))>0))
+            else:
+                conv_sel = (baseline & ~baseline)  # this has to be false
+
             weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
 
         else:
@@ -271,6 +280,8 @@ class trilep_analysis(processor.ProcessorABC):
             np_obs_sel_mc = (baseline & ~baseline)
             np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)>=1) & (ak.num(el_f)+ak.num(mu_f)>=1) )
 
+            conv_sel = (baseline & ~baseline)  # this has to be false
+
             weight_np_mc = np.zeros(len(ev))
 
         weight_BL = weight.weight()[BL]  # this is just a shortened weight list for the two prompt selection
@@ -280,7 +291,14 @@ class trilep_analysis(processor.ProcessorABC):
         
         dummy = (np.ones(len(ev))==1)
         def fill_multiple_np(hist, arrays, add_sel=dummy):
-            reg_sel = [BL&add_sel, BL_incl&add_sel, np_est_sel_mc&add_sel, np_obs_sel_mc&add_sel, np_est_sel_data&add_sel],
+            reg_sel = [
+                BL&add_sel,
+                BL_incl&add_sel,
+                np_est_sel_mc&add_sel,
+                np_obs_sel_mc&add_sel,
+                np_est_sel_data&add_sel,
+                conv_sel&add_sel,
+            ],
             fill_multiple(
                 hist,
                 datasets=[
@@ -289,6 +307,7 @@ class trilep_analysis(processor.ProcessorABC):
                     "np_est_mc", # MC based NP estimate
                     "np_obs_mc", # MC based NP observation
                     "np_est_data",
+                    "conv_mc",
                 ],
                 arrays=arrays,
                 selections=reg_sel[0],  # no idea where the additional dimension is coming from...
@@ -298,6 +317,7 @@ class trilep_analysis(processor.ProcessorABC):
                     weight.weight()[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
                     weight.weight()[reg_sel[0][3]],
                     weight.weight()[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                    weight.weight()[reg_sel[0][5]],
                 ],
             )
 
@@ -344,6 +364,51 @@ class trilep_analysis(processor.ProcessorABC):
                 for k in NN_inputs_d.keys():
                     output[k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
 
+            if self.evaluate:
+            
+                NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
+
+                NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+
+                NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
+
+                model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era if self.era else '', self.training))
+
+                try:
+                    NN_inputs_scaled = scaler.transform(NN_inputs)
+
+                    NN_pred    = predict_onnx(model, NN_inputs_scaled)
+
+                    best_score = np.argmax(NN_pred, axis=1)
+
+
+                except ValueError:
+                    print ("Problem with prediction. Showing the shapes here:")
+                    print (np.shape(NN_inputs))
+                    print (np.shape(weight_BL))
+                    NN_pred = np.array([])
+                    best_score = np.array([])
+                    NN_inputs_scaled = NN_inputs
+                    raise
+
+                fill_multiple_np(output['node'], {'multiplicity':best_score})
+                fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
+                fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
+                fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
+                fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
+                
+                fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
+                fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
+                fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
+
+
+                transformer = load_transformer('%s%s_%s'%(self.year, self.era if self.era else '', self.training))
+
+                fill_multiple_np(output['node0_score_transform'], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=(best_score==0))
+
+
+
         labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG':7, 'topW_old':100}  # these should be all?
         if dataset in labels:
             label_mult = labels[dataset]
@@ -355,6 +420,7 @@ class trilep_analysis(processor.ProcessorABC):
             output['trilep']    += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
             output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
             output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
+            output['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
             output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
 
         # first, make a few super inclusive plots
@@ -497,6 +563,7 @@ if __name__ == '__main__':
             'trilep',
             'AR',
             'label',
+            'conv',
         ]
 
         for var in variables:
@@ -547,12 +614,11 @@ if __name__ == '__main__':
         "node1_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node2_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node3_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node4_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
         "node0_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node1_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node2_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node3_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node4_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score_transform": hist.Hist("Counts", dataset_axis, score_axis),
     })
 
     for rle in ['run', 'lumi', 'event']:
@@ -599,10 +665,10 @@ if __name__ == '__main__':
 
             df_out = pd.DataFrame( df_dict )
             if not args.small:
-                df_out.to_hdf('multiclass_input_%s_trilep_v2.h5'%year, key='df', format='table', mode='w')
+                df_out.to_hdf('multiclass_input_%s_trilep_v2.h5'%args.year, key='df', format='table', mode='w')
         else:
             print ("Loading DF")
-            df_out = pd.read_hdf('multiclass_input_%s_trilep_v2.h5'%year)
+            df_out = pd.read_hdf('multiclass_input_%s_trilep_v2.h5'%args.year)
 
     print ("\nNN debugging:")
     print (output['node'].sum('multiplicity').values())

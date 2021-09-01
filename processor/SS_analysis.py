@@ -27,11 +27,11 @@ from Tools.chargeFlip import charge_flip
 import warnings
 warnings.filterwarnings("ignore")
 
-from ML.multiclassifier_tools import load_onnx_model, predict_onnx
+from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]]):
         self.variations = variations
         self.year = year
         self.era = era  # this is here for 2016 APV
@@ -45,6 +45,9 @@ class SS_analysis(processor.ProcessorABC):
 
         self.nonpromptWeight = NonpromptWeight(year=year)
         self.chargeflipWeight = charge_flip(year=year)
+
+        self.hyperpoly = hyperpoly
+        self.points = points
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -83,16 +86,16 @@ class SS_analysis(processor.ProcessorABC):
         # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
         # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
         ## Muons
-        mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
-        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=year).get()
-        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
+        mu_v     = Collections(ev, "Muon", "vetoTTH", year=self.year).get()  # these include all muons, tight and fakeable
+        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=self.year).get()
+        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=self.year).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
         muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False) #FIXME new
         
         ## Electrons
-        el_v        = Collections(ev, "Electron", "vetoTTH", year=year).get()
-        el_t        = Collections(ev, "Electron", "tightSSTTH", year=year).get()
-        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
+        el_v        = Collections(ev, "Electron", "vetoTTH", year=self.year).get()
+        el_t        = Collections(ev, "Electron", "tightSSTTH", year=self.year).get()
+        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False) #FIXME new
         
@@ -214,6 +217,10 @@ class SS_analysis(processor.ProcessorABC):
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
         
+        if dataset=='topW_full_EFT':
+            for point in self.points:
+                point['weight'] = Weights( len(ev) )
+                point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
 
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -395,7 +402,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
-                model, scaler = load_onnx_model(self.training)
+                model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
 
                 try:
                     NN_inputs_scaled = scaler.transform(NN_inputs)
@@ -431,27 +438,50 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
                 fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
 
-                #SR_sel_pp = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId<0)))
-                #SR_sel_mm = ((best_score==0) & ak.flatten((leading_lepton[BL].pdgId>0)))
-                #leading_lepton_BL = leading_lepton[BL]
+                SR_sel_pp = ((best_score==0) & (ak.sum(lepton.charge, axis=1)>0))
+                SR_sel_mm = ((best_score==0) & (ak.sum(lepton.charge, axis=1)<0))
 
-                #output['lead_lep_SR_pp'].fill(
-                #    dataset = dataset,
-                #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_pp].pt)),
-                #    weight = weight_BL[SR_sel_pp]
-                #)
+                CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
+                CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
 
-                #output['lead_lep_SR_mm'].fill(
-                #    dataset = dataset,
-                #    pt  = ak.to_numpy(ak.flatten(leading_lepton_BL[SR_sel_mm].pt)),
-                #    weight = weight_BL[SR_sel_mm]
-                #)
+
+                if dataset=='topW_full_EFT':
+
+                    for point in self.points:
+                        output['lead_lep_SR_pp'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                            weight = (weight.weight()[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                        )
+
+                        output['lead_lep_SR_mm'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                            weight = (weight.weight()[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                            #weight = (weight[]*(point['weight'].weight()[BL]))[SR_sel_mm]
+                        )
+
+                else:
+
+                    fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
+
+                transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+
+                fill_multiple_np(output['node0_score_transform_pp'], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_transform_mm'], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node1_score_pp'], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+                fill_multiple_np(output['node1_score_mm'], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
 
                 del model
                 del scaler
                 del NN_inputs, NN_inputs_scaled, NN_pred
 
-        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}  # these should be all?
+        labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
         if dataset in labels:
             label_mult = labels[dataset]
         else:
@@ -506,25 +536,52 @@ class SS_analysis(processor.ProcessorABC):
                 weight = weight_BL
             )
 
-        fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
-        
-        fill_multiple_np(
-            output['lead_lep'],
-            {
-                'pt':  pad_and_flatten(leading_lepton.p4.pt),
-                'eta': pad_and_flatten(leading_lepton.eta),
-                'phi': pad_and_flatten(leading_lepton.phi),
-            },
-        )
+        if dataset=='topW_full_EFT':
+            for point in self.points:
+                output['MET'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ev.MET[BL].pt,
+                    phi  = ev.MET[BL].phi,
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
 
-        fill_multiple_np(
-            output['trail_lep'],
-            {
-                'pt':  pad_and_flatten(trailing_lepton.p4.pt),
-                'eta': pad_and_flatten(trailing_lepton.eta),
-                'phi': pad_and_flatten(trailing_lepton.phi),
-            },
-        )
+                output['lead_lep'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
+                
+                output['trail_lep'].fill(
+                    dataset = dataset+'_%s'%point['name'],
+                    pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+                    weight = weight_BL*(point['weight'].weight()[BL])
+                )
+
+        else:
+
+            fill_multiple_np(output['MET'], {'pt':ev.MET.pt, 'phi':ev.MET.phi})
+            
+            fill_multiple_np(
+                output['lead_lep'],
+                {
+                    'pt':  pad_and_flatten(leading_lepton.p4.pt),
+                    'eta': pad_and_flatten(leading_lepton.eta),
+                    'phi': pad_and_flatten(leading_lepton.phi),
+                },
+            )
+
+            fill_multiple_np(
+                output['trail_lep'],
+                {
+                    'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                    'eta': pad_and_flatten(trailing_lepton.eta),
+                    'phi': pad_and_flatten(trailing_lepton.phi),
+                },
+            )
         
         output['j1'].fill(
             dataset = dataset,
@@ -757,6 +814,12 @@ if __name__ == '__main__':
         "node2_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node3_score": hist.Hist("Counts", dataset_axis, score_axis),
         "node4_score": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score_pp": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score_mm": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, score_axis),
+        "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, score_axis),
+        "node1_score_pp": hist.Hist("Counts", dataset_axis, score_axis),
+        "node1_score_mm": hist.Hist("Counts", dataset_axis, score_axis),
     })
 
     for rle in ['run', 'lumi', 'event']:
@@ -803,10 +866,10 @@ if __name__ == '__main__':
 
             df_out = pd.DataFrame( df_dict )
             if not args.small:
-                df_out.to_hdf('multiclass_input_%s_v2.h5'%year, key='df', format='table', mode='w')
+                df_out.to_hdf('multiclass_input_%s_v2.h5'%args.year, key='df', format='table', mode='w')
         else:
             print ("Loading DF")
-            df_out = pd.read_hdf('multiclass_input_%s_v2.h5'%year)
+            df_out = pd.read_hdf('multiclass_input_%s_v2.h5'%args.year)
 
     print ("\nNN debugging:")
     print (output['node'].sum('multiplicity').values())

@@ -81,7 +81,7 @@ groups_UL = {
     'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
     'diboson':       ['/WZTo', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'],
-    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
+    'wpwp':          ['/SSWW_*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
@@ -143,7 +143,7 @@ def get_babies(data_path, small=False, year=2018):
     elif year=='UL2018':
         campaign = '.*(Summer20UL18|Run2018|UL18|Autumn18)'  # Autumn18 needed for missing UL samples
     elif year=='UL2017':
-        campaign = '.*(Summer20UL17|Run2017|UL17)'
+        campaign = '.*(Summer20UL17|Run2017|UL17|Fall17)'
     elif year=='UL2016':
         campaign = '.*(Summer20UL16NanoAODv|Run2016[GH]|Run2016F-UL|UL16_postVFP)'
     elif year=='UL2016APV':
