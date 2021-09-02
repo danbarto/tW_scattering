@@ -14,7 +14,6 @@ import math
 import copy
 import re
 
-from klepto.archives import dir_archive
 
 import glob
 
@@ -44,6 +43,7 @@ def loadConfig():
     return load_yaml(data_path+'config.yaml')
 
 def get_cache(cache_name):
+    from klepto.archives import dir_archive
     cfg = loadConfig()
     cache_dir = os.path.expandvars(cfg['caches']['base'])
 
