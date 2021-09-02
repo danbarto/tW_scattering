@@ -29,7 +29,7 @@ ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.
 norm_axis               = hist.Bin("norm",          r"N",               25, 0, 1)
 score_axis              = hist.Bin("score",         r"N",               16, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
 
-variations = ['pt_jesTotalUp', 'pt_jesTotalDown']
+variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown']
 nb_variations = ['centralUp', 'centralDown', 'upCentral', 'downCentral']
 
 desired_output = {
