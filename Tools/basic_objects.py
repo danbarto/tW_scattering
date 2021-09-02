@@ -10,6 +10,8 @@ except ImportError:
 
 import numpy as np
 
+from Tools.helpers import get_four_vec_fromPtEtaPhiM
+
 def getPtEtaPhi(coll, pt_var='pt', eta_var='eta', phi_var='phi'):
     return ak.zip({
                     'pt':  getattr(coll, pt_var),
@@ -36,8 +38,29 @@ def getFatJets(ev):
 def getHadronFlavour(jet, hadronFlavour=5):
     return jet[(abs(jet.hadronFlavour)==hadronFlavour)]
 
-def getJets(ev, maxEta=100, minPt=25, pt_var='pt', year=2018, UL=True):
-    return ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>(1 if (year>2016 or UL) else 0))]
+def getMET(ev, pt_var='pt'):
+    zeros = ak.zeros_like(ev.MET.pt)
+    if pt_var == 'pt':
+        return get_four_vec_fromPtEtaPhiM(ev.MET, ev.MET.pt, zeros, ev.MET.phi, zeros, copy=False)
+    elif pt_var == 'pt_nom':
+        return get_four_vec_fromPtEtaPhiM(ev.MET, ev.MET.T1_pt, zeros, ev.MET.T1_phi, zeros, copy=False)
+    elif pt_var == 'pt_jesTotalUp':
+        return get_four_vec_fromPtEtaPhiM(ev.MET, ev.MET.T1_pt_jesTotalUp, zeros, ev.MET.T1_phi_jesTotalUp, zeros, copy=False)
+    elif pt_var == 'pt_jesTotalDown':
+        return get_four_vec_fromPtEtaPhiM(ev.MET, ev.MET.T1_pt_jesTotalDown, zeros, ev.MET.T1_phi_jesTotalDown, zeros, copy=False)
+    else:
+        return get_four_vec_fromPtEtaPhiM(
+            ev.MET,
+            getattr(ev.MET, pt_var),
+            zeros,
+            getattr(ev.MET,  pt_var.replace('pt', 'phi'))
+        )
+
+def getJets(ev, maxEta=100, minPt=25, pt_var='pt', year=2018):
+    jets = ev.Jet[(getattr(ev.Jet, pt_var)>minPt) & (abs(ev.Jet.eta)<maxEta) & (ev.Jet.jetId>1)]
+    jets = jets[ak.argsort(getattr(jets, pt_var), ascending=False)]
+    jets['p4'] = get_four_vec_fromPtEtaPhiM(jets, getattr(jets, pt_var), jets.eta, jets.phi, jets.mass, copy=False)
+    return jets
 
 def getBTagsDeepB(jet, year=2016, invert=False):
     if year == 2016:
@@ -69,7 +92,7 @@ def getBTagsDeepFlavB(jet, year=2016, invert=False, UL=True):
 
 def getFwdJet(jet, minPt=40, puId=True):
     minId = 7 if puId else 0
-    return jet[(abs(jet.eta)>1.7) & (abs(jet.eta)<4.7) & (jet.pt>minPt) & ( ((jet.puId>=minId) & (jet.pt<50)) | (jet.pt>=50))] # PU jet Id just for jets below 50 GeV
+    return jet[(abs(jet.p4.eta)>1.7) & (abs(jet.p4.eta)<4.7) & (jet.p4.pt>minPt) & ( ((jet.puId>=minId) & (jet.p4.pt<50)) | (jet.p4.pt>=50))] # PU jet Id just for jets below 50 GeV
 
 def getHTags(fatjet, year=2016):
     # 2.5% WP

@@ -274,6 +274,7 @@ def get_four_vec_fromPtEtaPhiM(cand, pt, eta, phi, M, copy=True):
         vec4.__dict__.update(cand.__dict__)
     return vec4
 
+
 def scale_four_vec(vec, pt=1, eta=1, phi=1, mass=1):
     from coffea.nanoevents.methods import vector
     ak.behavior.update(vector.behavior)

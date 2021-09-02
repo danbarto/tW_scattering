@@ -143,8 +143,10 @@ def match_by_dr_pt(objs1, objs2, dR_lim, ptCut):
 def choose(first, n=2):
     tmp = ak.combinations(first, n)
     combs = tmp['0']
+    combs.p4 = tmp['0'].p4
     for i in range(1,n):
         combs = combs.__add__(tmp[str(i)])
+        combs.p4 = combs.__add__(tmp[str(i)].p4)
     for i in range(n):
         combs[str(i)] = tmp[str(i)]
     return combs
