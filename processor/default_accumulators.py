@@ -29,8 +29,7 @@ ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.
 norm_axis               = hist.Bin("norm",          r"N",               25, 0, 1)
 score_axis              = hist.Bin("score",         r"N",               16, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
 
-variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown']
-nb_variations = ['centralUp', 'centralDown', 'upCentral', 'downCentral']
+variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown', 'bUp', 'bDown', 'lUp', 'lDown']
 
 desired_output = {
             "PV_npvs" :         hist.Hist("PV_npvs", dataset_axis, ext_multiplicity_axis),
@@ -81,6 +80,3 @@ outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N
 for out in outputs_with_vars:
     desired_output.update( { out+'_'+var: desired_output[out].copy() for var in variations } )
     
-outputs_with_nb_vars = ['N_b']
-for out in outputs_with_nb_vars:
-    desired_output.update( { out+'_'+var: desired_output[out].copy() for var in nb_variations } )

@@ -310,21 +310,21 @@
   split: 7
   sumWeight: 467514.45042400004
   xsec: 0.4062
-? /TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8_ext1-v1/NANOAODSIM
-: files: 2
-  nEvents: 200000
-  name: TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8_ext1-v1
+/TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM:
+  files: 10
+  nEvents: 701000
+  name: TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1
   path: null
-  split: 2
-  sumWeight: 198814.7619521069
+  split: 10
+  sumWeight: 701000.0
   xsec: 0.007829
-? /TTWZ_TuneCP5_13TeV-madgraph-pythia8/RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8-v1/NANOAODSIM
-: files: 2
-  nEvents: 200000
-  name: TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8-v1
+/TTWZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM:
+  files: 5
+  nEvents: 358000
+  name: TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1
   path: null
-  split: 2
-  sumWeight: 198625.1835506958
+  split: 5
+  sumWeight: 358000.0
   xsec: 0.002919
 /TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM:
   files: 14
@@ -342,13 +342,13 @@
   split: 2
   sumWeight: 7231075.5427560005
   xsec: 0.5297
-? /TTZZ_TuneCP5_13TeV-madgraph-pythia8/RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8-v1/NANOAODSIM
-: files: 2
-  nEvents: 200000
-  name: TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIIFall17NanoAODv7-PU2017_12Apr2018_Nano02Apr2020_new_pmx_102X_mc2017_realistic_v8-v1
+/TTZZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM:
+  files: 16
+  nEvents: 336000
+  name: TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1
   path: null
-  split: 2
-  sumWeight: 199286.6288913028
+  split: 16
+  sumWeight: 336000.0
   xsec: 0.001573
 /TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM:
   files: 6

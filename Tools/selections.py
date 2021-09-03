@@ -30,7 +30,7 @@ class Selection:
         self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
-    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True):
+    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True, DY=False):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
@@ -50,10 +50,8 @@ class Selection:
         diele   = choose(self.ele, 2)
         dilep   = choose(lepton, 2)
 
-        if SS:
-            is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
-        else:
-            is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
+        is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
+        is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
 
         triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
 
@@ -62,30 +60,28 @@ class Selection:
         
         min_mll = ak.all(dilep.mass>12, axis=1)
 
-        
-
-
         #self.selection.add('lepsel',        lepsel)
         self.selection.add('dilep',         is_dilep)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
-        if SS:
-            self.selection.add('SS',            is_SS )
-        else:
-            self.selection.add('OS',            is_OS )
+        self.selection.add('SS',            is_SS )
+        self.selection.add('OS',            is_OS )
+        self.selection.add('N_jet>1',       (ak.num(self.jet_all)>1) )
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_jet>4',       (ak.num(self.jet_all)>4) )
+        self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
+        self.selection.add('N_btag=0',      (ak.num(self.jet_btag)==0) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
         self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
-        self.selection.add('min_mll',        (min_mll) )
+        self.selection.add('min_mll',       (min_mll) )
         
         reqs = [
             'filter',
@@ -103,6 +99,19 @@ class Selection:
             'N_fwd>0',
             'min_mll'
         ]
+
+        reqs_DY = [
+            'filter',
+            'dilep',
+            'p_T(lep0)>25',
+            'p_T(lep1)>20',
+            'trigger',
+            'OS',
+            'N_jet>1',
+            'N_central>1',
+            'N_btag=0',
+            'min_mll'
+        ]
         
         if tight:
             reqs += [
@@ -112,6 +121,8 @@ class Selection:
                 'MET>50',
                 #'delta_eta',
             ]
+
+        if DY: reqs = reqs_DY
 
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)

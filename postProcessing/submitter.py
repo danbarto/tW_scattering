@@ -38,17 +38,33 @@ skim = str(args.skim)
 
 tag_skim = "%s_%s"%(tag, skim)
 
+# This is one of the stupiest fucking shit things I've ever seen.
+APV_identifiers = [
+    "Summer20UL16NanoAODAPV",
+    "Run2016B-ver1_HIPM",
+    "Run2016B-ver2_HIPM",
+    "Run2016C",
+    "Run2016D",
+    "Run2016E",
+    "Run2016F-HIPM",
+]
+
+APV_pattern = re.compile('|'.join(APV_identifiers))
+
+
 def getYearFromDAS(DASname):
     isData = True if DASname.count('Run20') else False
     isUL = True if (DASname.count('UL1') or DASname.count('UL2')) else False
     isFastSim = False if not DASname.count('Fast') else True
     era = DASname[DASname.find("Run")+len('Run2000'):DASname.find("Run")+len('Run2000A')]
     if DASname.count('Autumn18') or DASname.count('Summer20UL18') or DASname.count('Run2018'):
-        return 2018, era, isData, isFastSim, isUL
+        return 2018, era, isData, isFastSim, isUL, False
     elif DASname.count('Fall17') or DASname.count('Summer20UL17') or DASname.count('Run2017'):
-        return 2017, era, isData, isFastSim, isUL
-    elif DASname.count('Summer16') or DASname.count('Summer20UL16') or DASname.count('Run2016'):
-        return 2016, era, isData, isFastSim, False #FIXME no UL JECs available yet.
+        return 2017, era, isData, isFastSim, isUL, False
+    elif re.search(APV_pattern, DASname):
+        return 2016, era, isData, isFastSim, isUL, True
+    elif DASname.count('Summer16') or DASname.count('Summer20UL16NanoAOD') or DASname.count('Run2016'):
+        return 2016, era, isData, isFastSim, isUL, False
     else:
         ### our private samples right now are all Autumn18 but have no identifier.
         return 2018, 'X', False, False, False
@@ -109,7 +125,7 @@ for s in sample_list:
     else:
         sample = DBSSample(dataset = s) # should we make use of the files??
 
-    year, era, isData, isFastSim, isUL = getYearFromDAS(s)
+    year, era, isData, isFastSim, isUL, isAPV = getYearFromDAS(s)
 
     print ("Now working on sample: %s"%s)
     print ("- has %s files"%len(sample.get_files()))
@@ -127,6 +143,8 @@ for s in sample_list:
 
     if isUL:
         year = "UL%s"%year
+        if isAPV:
+            year += "APV"
         print ("- samples are UL, this is the used year: %s"%year)
 
     maker_task = CondorTask(
