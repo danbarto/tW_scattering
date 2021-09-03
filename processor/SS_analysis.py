@@ -93,14 +93,14 @@ class SS_analysis(processor.ProcessorABC):
         mu_t     = Collections(ev, "Muon", "tightSSTTH", year=self.year).get()
         mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=self.year).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
-        muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False) #FIXME new
+        muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False)
         
         ## Electrons
         el_v        = Collections(ev, "Electron", "vetoTTH", year=self.year).get()
         el_t        = Collections(ev, "Electron", "tightSSTTH", year=self.year).get()
         el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
-        electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False) #FIXME new
+        electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
         
         if not re.search(data_pattern, dataset):
             gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
@@ -166,12 +166,13 @@ class SS_analysis(processor.ProcessorABC):
         if re.search(data_pattern, dataset):
             variations = self.variations[:1]
         else:
-            variations = [ var for var in self.variations if var['weight']==False ]
+            variations = self.variations
 
         for var in variations:
 
-            #pt_var = 'pt_nom'
-            pt_var = var['pt_var']
+            pt_var  = var['pt_var']
+            ext     = var['ext']
+            shift   = var['weight']
 
             met = getMET(ev, pt_var=pt_var)
 
@@ -223,8 +224,17 @@ class SS_analysis(processor.ProcessorABC):
                 # PU weight
                 weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
                 
-                # b-tag SFs
-                weight.add("btag", self.btagSF.Method1a(btag, light))
+                # b-tag SFs # FIXME this is not super sophisticated rn, but we need more than two shifts
+                if var['name'] == 'l_up':
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='up'))
+                elif var['name'] == 'l_down':
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='down'))
+                elif var['name'] == 'b_up':
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='up', c_direction='central'))
+                elif var['name'] == 'b_down':
+                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='down', c_direction='central'))
+                else:
+                    weight.add("btag", self.btagSF.Method1a(btag, light))
                 
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
@@ -326,7 +336,6 @@ class SS_analysis(processor.ProcessorABC):
                 # define the inputs to the NN
                 # this is super stupid. there must be a better way.
                 # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
-                #FIXME no n_b, n_fwd back in v13/v14 of the DNN
 
                 NN_inputs_d = {
                     'n_jet':            ak.to_numpy(ak.num(jet)),
@@ -389,296 +398,287 @@ class SS_analysis(processor.ProcessorABC):
                         NN_inputs_scaled = NN_inputs
                         raise
 
-            ## We need to do weight variations too, but only when using the central JECs
-            all_weight_shifts = [ var for var in self.variations if var['weight']==True ]
-            weight_shifts = all_weight_shifts if (var['name'] == 'central' and not re.search(data_pattern, dataset)) else all_weight_shifts[:1]
+            weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
+            weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
+            weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
 
-            for weight_shift in weight_shifts:
+            out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-                shift = weight_shift['var']
-                ext = var['ext'] + (weight_shift['ext'] if shift != None else '')
-
-                weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
-                weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
-                weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
-
-                out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
-
-                dummy = (np.ones(len(ev))==1)
-                def fill_multiple_np(hist, arrays, add_sel=dummy):
-                    #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
-                    #print ('len', len(reg_sel[0]))
-                    #print ('sel', reg_sel[0])
-                    reg_sel = [
-                        BL&add_sel,
-                        BL_incl&add_sel,
-                        np_est_sel_mc&add_sel,
-                        np_obs_sel_mc&add_sel,
-                        np_est_sel_data&add_sel,
-                        cf_est_sel_mc&add_sel,
-                        cf_obs_sel_mc&add_sel,
-                        cf_est_sel_data&add_sel,
-                        conv_sel&add_sel,
+            dummy = (np.ones(len(ev))==1)
+            def fill_multiple_np(hist, arrays, add_sel=dummy):
+                #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
+                #print ('len', len(reg_sel[0]))
+                #print ('sel', reg_sel[0])
+                reg_sel = [
+                    BL&add_sel,
+                    BL_incl&add_sel,
+                    np_est_sel_mc&add_sel,
+                    np_obs_sel_mc&add_sel,
+                    np_est_sel_data&add_sel,
+                    cf_est_sel_mc&add_sel,
+                    cf_obs_sel_mc&add_sel,
+                    cf_est_sel_data&add_sel,
+                    conv_sel&add_sel,
+                ],
+                fill_multiple(
+                    hist,
+                    datasets=[
+                        dataset, # only prompt contribution from process
+                        dataset+"_incl", # everything from process (inclusive MC truth)
+                        "np_est_mc", # MC based NP estimate
+                        "np_obs_mc", # MC based NP observation
+                        "np_est_data",
+                        "cf_est_mc",
+                        "cf_obs_mc",
+                        "cf_est_data",
+                        "conv_mc",
                     ],
-                    fill_multiple(
-                        hist,
-                        datasets=[
-                            dataset, # only prompt contribution from process
-                            dataset+"_incl", # everything from process (inclusive MC truth)
-                            "np_est_mc", # MC based NP estimate
-                            "np_obs_mc", # MC based NP observation
-                            "np_est_data",
-                            "cf_est_mc",
-                            "cf_obs_mc",
-                            "cf_est_data",
-                            "conv_mc",
-                        ],
-                        arrays=arrays,
-                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
-                        weights=[
-                            weight.weight(modifier=shift)[reg_sel[0][0]],
-                            weight.weight(modifier=shift)[reg_sel[0][1]],
-                            weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
-                            weight.weight(modifier=shift)[reg_sel[0][3]],
-                            weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
-                            weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
-                            weight.weight(modifier=shift)[reg_sel[0][6]],
-                            weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
-                            weight.weight(modifier=shift)[reg_sel[0][8]],
-                        ],
+                    arrays=arrays,
+                    selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                    weights=[
+                        weight.weight(modifier=shift)[reg_sel[0][0]],
+                        weight.weight(modifier=shift)[reg_sel[0][1]],
+                        weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
+                        weight.weight(modifier=shift)[reg_sel[0][3]],
+                        weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                        weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
+                        weight.weight(modifier=shift)[reg_sel[0][6]],
+                        weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
+                        weight.weight(modifier=shift)[reg_sel[0][8]],
+                    ],
+                )
+
+            if self.evaluate or self.dump:
+                if var['name'] == 'central':
+
+                    fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=((data_sel & (best_score>1)) | ~data_sel))  # this should blind me
+                    fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
+                    fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
+                    fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
+                    fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
+                    fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
+                    
+                    fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
+                    fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                    fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
+                    fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
+                    fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
+
+                SR_sel_pp = ((best_score==0) & (ak.sum(lepton.charge, axis=1)>0))
+                SR_sel_mm = ((best_score==0) & (ak.sum(lepton.charge, axis=1)<0))
+
+                CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
+                CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
+
+
+                if dataset=='topW_full_EFT':
+
+                    for point in self.points:
+                        output['lead_lep_SR_pp'+ext].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                        )
+
+                        output['lead_lep_SR_mm'+ext].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                        )
+
+                        output['LT_SR_pp'+ext].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                        )
+
+                        output['LT_SR_mm'+ext].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                        )
+
+                else:
+
+                    fill_multiple_np(output['lead_lep_SR_pp'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['lead_lep_SR_mm'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+
+                    fill_multiple_np(output['LT_SR_pp'+ext], {'ht':  lt}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['LT_SR_mm'+ext], {'ht':  lt}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
+
+                transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+
+                fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
+
+                #del model
+                #del scaler
+                #del NN_inputs
+                #del NN_inputs_scaled, NN_pred
+
+            labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
+            if dataset in labels:
+                label_mult = labels[dataset]
+            else:
+                label_mult = 8  # data or anything else
+
+            if self.dump and var['name']=='central':
+                output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
+                output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
+                output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
+                output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
+                output['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
+                output['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
+                output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
+                output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
+                output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
+                output['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
+
+            # first, make a few super inclusive plots
+
+            if var['name'] == 'central':
+                '''
+                Don't fill these histograms for the variations
+                '''
+
+                output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
+                output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
+                fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
+                fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
+                fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
+                fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
+                fill_multiple_np(output['N_mu'],      {'multiplicity':ak.num(muon)})
+                fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
+                fill_multiple_np(output['ST'],        {'ht': st})
+                fill_multiple_np(output['HT'],        {'ht': ht})
+
+                if not re.search(data_pattern, dataset):
+                    output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
+                    output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
+                    output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
+                    output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight_BL)
+                    output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight_BL)
+                    output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
+                    output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
+
+                    output['lead_gen_lep'].fill(
+                        dataset = dataset,
+                        pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
+                        eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
+                        phi = ak.to_numpy(ak.flatten(leading_gen_lep[BL].phi)),
+                        weight = weight_BL
                     )
 
-                if self.evaluate or self.dump:
-                    if var['name'] == 'central' and shift==None:
+                    output['trail_gen_lep'].fill(
+                        dataset = dataset,
+                        pt  = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].pt)),
+                        eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
+                        phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
+                        weight = weight_BL
+                    )
 
-                        fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=((data_sel & (best_score>1)) | ~data_sel))  # this should blind me
-                        fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
-                        fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
-                        fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
-                        fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
-                        fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
+                if dataset=='topW_full_EFT':
+                    for point in self.points:
+                        output['MET'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = met[BL].pt,
+                            phi  = met[BL].phi,
+                            weight = weight_BL*(point['weight'].weight()[BL])
+                        )
+
+                        output['lead_lep'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                            eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                            phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+                            weight = weight_BL*(point['weight'].weight()[BL])
+                        )
                         
-                        fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
-                        fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
-                        fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
-                        fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
-                        fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
+                        output['trail_lep'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                            phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+                            weight = weight_BL*(point['weight'].weight()[BL])
+                        )
 
-                    SR_sel_pp = ((best_score==0) & (ak.sum(lepton.charge, axis=1)>0))
-                    SR_sel_mm = ((best_score==0) & (ak.sum(lepton.charge, axis=1)<0))
+                        output['LT'].fill(
+                            dataset = dataset+'_%s'%point['name'],
+                            ht = ak.to_numpy(lt)[BL],
+                            weight = weight_BL*(point['weight'].weight()[BL]),
+                        )
 
-                    CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
-                    CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
-
-
-                    if dataset=='topW_full_EFT':
-
-                        for point in self.points:
-                            output['lead_lep_SR_pp'+ext].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
-                                weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
-                            )
-
-                            output['lead_lep_SR_mm'+ext].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
-                                weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
-                            )
-
-                            output['LT_SR_pp'+ext].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
-                                weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
-                            )
-
-                            output['LT_SR_mm'+ext].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
-                                weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
-                            )
-
-                    else:
-
-                        fill_multiple_np(output['lead_lep_SR_pp'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
-                        fill_multiple_np(output['lead_lep_SR_mm'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
-
-                        fill_multiple_np(output['LT_SR_pp'+ext], {'ht':  lt}, add_sel=SR_sel_pp)
-                        fill_multiple_np(output['LT_SR_mm'+ext], {'ht':  lt}, add_sel=SR_sel_mm)
-
-                    fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
-
-                    transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
-
-                    fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_mm)
-
-                    fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
-                    fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
-
-                    #del model
-                    #del scaler
-                    #del NN_inputs
-                    #del NN_inputs_scaled, NN_pred
-
-                labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
-                if dataset in labels:
-                    label_mult = labels[dataset]
                 else:
-                    label_mult = 8  # data or anything else
 
-                if self.dump and var['name']=='central' and shift==None:
-                    output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
-                    output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
-                    output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
-                    output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
-                    output['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
-                    output['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
-                    output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
-                    output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
-                    output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
-                    output['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
-
-                # first, make a few super inclusive plots
-
-                if var['name'] == 'central' and shift==None:
-                    '''
-                    Don't fill these histograms for the variations
-                    '''
-
-                    output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
-                    output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
-                    fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
-                    fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
-                    fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
-                    fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
-                    fill_multiple_np(output['N_mu'],      {'multiplicity':ak.num(muon)})
-                    fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
-                    fill_multiple_np(output['ST'],        {'ht': st})
-                    fill_multiple_np(output['HT'],        {'ht': ht})
-
-                    if not re.search(data_pattern, dataset):
-                        output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
-                        output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
-                        output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
-                        output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight_BL)
-                        output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight_BL)
-                        output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
-                        output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
-
-                        output['lead_gen_lep'].fill(
-                            dataset = dataset,
-                            pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
-                            eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
-                            phi = ak.to_numpy(ak.flatten(leading_gen_lep[BL].phi)),
-                            weight = weight_BL
-                        )
-
-                        output['trail_gen_lep'].fill(
-                            dataset = dataset,
-                            pt  = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].pt)),
-                            eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
-                            phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
-                            weight = weight_BL
-                        )
-
-                    if dataset=='topW_full_EFT':
-                        for point in self.points:
-                            output['MET'].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                pt  = met[BL].pt,
-                                phi  = met[BL].phi,
-                                weight = weight_BL*(point['weight'].weight()[BL])
-                            )
-
-                            output['lead_lep'].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
-                                eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
-                                phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
-                                weight = weight_BL*(point['weight'].weight()[BL])
-                            )
-                            
-                            output['trail_lep'].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
-                                eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
-                                phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
-                                weight = weight_BL*(point['weight'].weight()[BL])
-                            )
-
-                            output['LT'].fill(
-                                dataset = dataset+'_%s'%point['name'],
-                                ht = ak.to_numpy(lt)[BL],
-                                weight = weight_BL*(point['weight'].weight()[BL]),
-                            )
-
-                    else:
-
-                        fill_multiple_np(output['MET'], {'pt':met.pt, 'phi':met.phi})
-                        fill_multiple_np(output['LT'], {'ht':lt})
-                        
-                        fill_multiple_np(
-                            output['lead_lep'],
-                            {
-                                'pt':  pad_and_flatten(leading_lepton.p4.pt),
-                                'eta': pad_and_flatten(leading_lepton.eta),
-                                'phi': pad_and_flatten(leading_lepton.phi),
-                            },
-                        )
-
-                        fill_multiple_np(
-                            output['trail_lep'],
-                            {
-                                'pt':  pad_and_flatten(trailing_lepton.p4.pt),
-                                'eta': pad_and_flatten(trailing_lepton.eta),
-                                'phi': pad_and_flatten(trailing_lepton.phi),
-                            },
-                        )
-
+                    fill_multiple_np(output['MET'], {'pt':met.pt, 'phi':met.phi})
+                    fill_multiple_np(output['LT'], {'ht':lt})
+                    
                     fill_multiple_np(
-                        output['fwd_jet'],
+                        output['lead_lep'],
                         {
-                            'pt':  pad_and_flatten(best_fwd.pt),
-                            'eta': pad_and_flatten(best_fwd.eta),
-                            'phi': pad_and_flatten(best_fwd.phi),
+                            'pt':  pad_and_flatten(leading_lepton.p4.pt),
+                            'eta': pad_and_flatten(leading_lepton.eta),
+                            'phi': pad_and_flatten(leading_lepton.phi),
                         },
                     )
-                    
-                    #output['fwd_jet'].fill(
-                    #    dataset = dataset,
-                    #    pt  = ak.flatten(j_fwd[BL].pt),
-                    #    eta = ak.flatten(j_fwd[BL].eta),
-                    #    phi = ak.flatten(j_fwd[BL].phi),
-                    #    weight = weight_BL
-                    #)
-                        
-                    output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(best_fwd[BL].p), weight = weight_BL)
-                    
-                output['j1'+ext].fill(
-                    dataset = dataset,
-                    pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
-                    eta = ak.flatten(jet.eta[:, 0:1][BL]),
-                    phi = ak.flatten(jet.phi[:, 0:1][BL]),
-                    weight = weight_BL
+
+                    fill_multiple_np(
+                        output['trail_lep'],
+                        {
+                            'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                            'eta': pad_and_flatten(trailing_lepton.eta),
+                            'phi': pad_and_flatten(trailing_lepton.phi),
+                        },
+                    )
+
+                fill_multiple_np(
+                    output['fwd_jet'],
+                    {
+                        'pt':  pad_and_flatten(best_fwd.pt),
+                        'eta': pad_and_flatten(best_fwd.eta),
+                        'phi': pad_and_flatten(best_fwd.phi),
+                    },
                 )
                 
-                output['j2'+ext].fill(
-                    dataset = dataset,
-                    pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
-                    eta = ak.flatten(jet[:, 1:2][BL].eta),
-                    phi = ak.flatten(jet[:, 1:2][BL].phi),
-                    weight = weight_BL
-                )
+                #output['fwd_jet'].fill(
+                #    dataset = dataset,
+                #    pt  = ak.flatten(j_fwd[BL].pt),
+                #    eta = ak.flatten(j_fwd[BL].eta),
+                #    phi = ak.flatten(j_fwd[BL].phi),
+                #    weight = weight_BL
+                #)
+                    
+                output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(best_fwd[BL].p), weight = weight_BL)
                 
-                output['j3'+ext].fill(
-                    dataset = dataset,
-                    pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
-                    eta = ak.flatten(jet[:, 2:3][BL].eta),
-                    phi = ak.flatten(jet[:, 2:3][BL].phi),
-                    weight = weight_BL
-                )
+            output['j1'+ext].fill(
+                dataset = dataset,
+                pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
+                eta = ak.flatten(jet.eta[:, 0:1][BL]),
+                phi = ak.flatten(jet.phi[:, 0:1][BL]),
+                weight = weight_BL
+            )
+            
+            output['j2'+ext].fill(
+                dataset = dataset,
+                pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
+                eta = ak.flatten(jet[:, 1:2][BL].eta),
+                phi = ak.flatten(jet[:, 1:2][BL].phi),
+                weight = weight_BL
+            )
+            
+            output['j3'+ext].fill(
+                dataset = dataset,
+                pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
+                eta = ak.flatten(jet[:, 2:3][BL].eta),
+                phi = ak.flatten(jet[:, 2:3][BL].phi),
+                weight = weight_BL
+            )
                     
         
         return output
@@ -772,12 +772,15 @@ if __name__ == '__main__':
     add_processes_to_output(fileset, desired_output)
 
     variations = [
-        {'name': 'central', 'ext': '', 'pt_var': 'pt_nom', 'weight':False},
-        {'name': 'jes_up', 'ext': '_pt_jesTotalUp', 'pt_var': 'pt_jesTotalUp', 'weight':False},
-        {'name': 'jes_down', 'ext': '_pt_jesTotalDown', 'pt_var': 'pt_jesTotalDown', 'weight':False},
-        {'name': 'central', 'ext': '', 'var': None, 'weight':True},
-        {'name': 'PU_up', 'ext': '_PUUp', 'var': 'PUUp', 'weight':True},
-        {'name': 'PU_down', 'ext': '_PUDown', 'var': 'PUDown', 'weight':True},
+        {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+        {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
+        {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
+        {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
+        {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
+        {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
     ]
 
     if args.dump:
