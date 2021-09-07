@@ -509,6 +509,24 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
 
+                # Manually hack in the PDF weights - we don't really want to have them for all the distributions
+                if not re.search(data_pattern, dataset) and var['name'] == 'central':
+                    for i in range(1,101):
+                        pdf_ext = "_pdf_%s"%i
+
+                        output['node0_score_pp'+pdf_ext].fill(
+                            dataset = dataset,
+                            score   = NN_pred[:,0][(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)],
+                        )
+
+                        output['node0_score_mm'+pdf_ext].fill(
+                            dataset = dataset,
+                            score   = NN_pred[:,0][(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)],
+                        )
+
+
                 transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
 
                 fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_pp)
@@ -734,7 +752,7 @@ if __name__ == '__main__':
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/'
+    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.1_dilep/'
 
     fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
@@ -905,6 +923,11 @@ if __name__ == '__main__':
             "node1_score_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
         })
 
+    for i in range(1,101):
+        desired_output.update({
+            "node0_score_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node0_score_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+        })
 
     for rle in ['run', 'lumi', 'event']:
         desired_output.update({
