@@ -123,9 +123,21 @@ for s in sample_list:
     if samples[s]['path'] is not None:
         sample = DirectorySample(dataset = samples[s]['name'], location = samples[s]['path'])
     else:
-        sample = DBSSample(dataset = s) # should we make use of the files??
+        sample = DBSSample(dataset = s, filelist=samples[s]['files']) # should we make use of the files??
 
     year, era, isData, isFastSim, isUL, isAPV = getYearFromDAS(s)
+
+    #if samples[s]['path'] is None:
+    #    n_events_query = sample.get_nevents()
+    #    try:
+    #        assert n_events_query == int(samples[s]['nEvents'])
+    #    except AssertionError:
+    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    #        print ("Problem with sample %s -> number of events in yaml and from dbs query don't match. Not submitting for now."%s)
+    #        print (n_events_query, int(samples[s]['nEvents']), "ratio %.2f"%(n_events_query/float(samples[s]['nEvents'])))
+    #        continue
 
     print ("Now working on sample: %s"%s)
     print ("- has %s files"%len(sample.get_files()))
@@ -182,7 +194,5 @@ if not args.dryRun:
         
         if args.once: break
         # 60 min power nap
-        time.sleep(60.*60)
-
-
+        time.sleep(2*60.*60)
 

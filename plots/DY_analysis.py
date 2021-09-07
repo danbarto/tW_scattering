@@ -143,7 +143,9 @@ if __name__ == '__main__':
     else:
         data_all = ['DoubleMuon', 'MuonEG', 'DoubleEG', 'SingleElectron', 'SingleMuon']
 
-
+    rescale = {}
+    if year == '2017':
+        rescale = {'DY': 0.6}
 
     sub_dir = '/'
 
@@ -163,6 +165,18 @@ if __name__ == '__main__':
          omit=omit,
          save=os.path.expandvars(plot_dir+sub_dir+'MET_pt'),
         )
+
+    makePlot(output, 'MET', 'pt',
+         data=data,
+         bins=pt_bins_coarse, log=True, normalize=True, axis_label=r'$p_{T}^{miss}$',
+         new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+         order=order,
+         signals=signals,
+         omit=omit,
+         save=os.path.expandvars(plot_dir+sub_dir+'MET_pt_log'),
+         rescale = rescale,
+        )
+
 
     makePlot(output, 'fwd_jet', 'pt',
          data=data,
@@ -253,3 +267,25 @@ if __name__ == '__main__':
          omit=omit,
          save=os.path.expandvars(plot_dir+sub_dir+'j2_eta'),
         )
+
+    makePlot(output, 'dilepton_mass', 'mass',
+         data=data,
+         bins=mass_bins, log=False, normalize=True, axis_label=r'$M(\ell\ell)\ (GeV)$',
+         new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+         order=order,
+         signals=signals,
+         omit=omit,
+         save=os.path.expandvars(plot_dir+sub_dir+'dilepton_mass'),
+        )
+
+    makePlot(output, 'dilepton_mass', 'mass',
+         data=data,
+         bins=mass_bins, log=True, normalize=True, axis_label=r'$M(\ell\ell)\ (GeV)$',
+         new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+         order=order,
+         signals=signals,
+         omit=omit,
+         save=os.path.expandvars(plot_dir+sub_dir+'dilepton_mass_log'),
+        )
+
+

@@ -610,7 +610,7 @@ if __name__ == '__main__':
 
     if local:# and not profile:
         exe_args = {
-            'workers': 16,
+            'workers': 24,
             'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
