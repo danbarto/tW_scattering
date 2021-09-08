@@ -509,32 +509,63 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
 
+                transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+
+                NN_pred_0_trans = transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()
+
+                fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
+
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
                 if not re.search(data_pattern, dataset) and var['name'] == 'central':
                     for i in range(1,101):
                         pdf_ext = "_pdf_%s"%i
 
-                        output['node0_score_pp'+pdf_ext].fill(
+                        output['node0_score_transform_pp'+pdf_ext].fill(
                             dataset = dataset,
                             score   = NN_pred[:,0][(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)],
                         )
 
-                        output['node0_score_mm'+pdf_ext].fill(
+                        output['node0_score_transform_mm'+pdf_ext].fill(
                             dataset = dataset,
                             score   = NN_pred[:,0][(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)],
                         )
 
+                    for i in [0,1,3,5,7,8]:
+                        pdf_ext = "_scale_%s"%i
 
-                transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+                        output['node0_score_transform_pp'+pdf_ext].fill(
+                            dataset = dataset,
+                            score   = NN_pred[:,0][(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)],
+                        )
 
-                fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()}, add_sel=SR_sel_mm)
+                        output['node0_score_transform_mm'+pdf_ext].fill(
+                            dataset = dataset,
+                            score   = NN_pred[:,0][(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)],
+                        )
 
-                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
-                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "_PS_%s"%i
 
+                            output['node0_score_transform_pp'+pdf_ext].fill(
+                                dataset = dataset,
+                                score   = NN_pred[:,0][(BL & SR_sel_pp)],
+                                weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
+                            )
+
+                            output['node0_score_transform_mm'+pdf_ext].fill(
+                                dataset = dataset,
+                                score   = NN_pred[:,0][(BL & SR_sel_mm)],
+                                weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                            )
                 #del model
                 #del scaler
                 #del NN_inputs
@@ -785,7 +816,7 @@ if __name__ == '__main__':
     fileset = make_small(fileset, small, n_max=10)
 
     if verysmall:
-        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG'], 'ttbar': fileset['ttbar']}
+        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG'], 'TTW': fileset['TTW']}
 
     add_processes_to_output(fileset, desired_output)
 
@@ -925,8 +956,20 @@ if __name__ == '__main__':
 
     for i in range(1,101):
         desired_output.update({
-            "node0_score_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node0_score_transform_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node0_score_transform_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+        })
+
+    for i in [0,1,3,5,7,8]:
+        desired_output.update({
+            "node0_score_transform_pp_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node0_score_transform_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+        })
+
+    for i in range(4):
+        desired_output.update({
+            "node0_score_transform_pp_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node0_score_transform_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
         })
 
     for rle in ['run', 'lumi', 'event']:
