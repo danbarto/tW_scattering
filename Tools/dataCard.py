@@ -455,7 +455,7 @@ class dataCard:
                 shutil.rmtree(self.releaseLocation+'/'+d)
 
 
-    def run_impacts(self, fname="", bkgOnly=False, observed=False, cores=8):
+    def run_impacts(self, fname="", bkgOnly=False, observed=False, cores=8, plot_dir='./'):
         import uuid, os
         ustr          = str(uuid.uuid4())
         uniqueDirname = os.path.join(self.releaseLocation, ustr)
@@ -482,23 +482,21 @@ class dataCard:
             impactFits      = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 1 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
         extractImpact   = "combineTool.py -M Impacts -d %s -m 125 -o impacts.json"%workspace
         plotImpacts     = "plotImpacts.py -i impacts.json -o impacts"
-        combineCommand  = "cd %s;%s;%s;%s;%s;%s"%(uniqueDirname,prepWorkspace,robustFit,impactFits,extractImpact,plotImpacts)
+        combineCommand  = "cd %s;eval `scramv1 runtime -sh`;%s;%s;%s;%s;%s"%(uniqueDirname,prepWorkspace,robustFit,impactFits,extractImpact,plotImpacts)
         
         print ("Running the following command:")
         print (combineCommand)
 
         os.system(combineCommand)
-        #
-        #plotDir = plot_directory + "/impacts_combination/"
+        
         #if args.expected:
         #    s.name += '_expected'
         #if args.bkgOnly:
         #    s.name += '_bkgOnly'
         #if args.observed:
         #    s.name += '_observed'
-        #if not os.path.isdir(plotDir): os.makedirs(plotDir)
-        #elif args.combined:
-        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s_combined%s.pdf"%(plotDir,s.name,'_signalInjected' if args.signalInjection else ''))
+        if not os.path.isdir(plot_dir): os.makedirs(plotDir)
+        shutil.copyfile(uniqueDirname+'/impacts.pdf', "%s/impacts.pdf"%(plot_dir))
         #elif args.year:
         #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s_%s%s.pdf"%(plotDir,s.name,args.year,'_signalInjected' if args.signalInjection else ''))
         #else:

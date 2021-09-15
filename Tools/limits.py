@@ -109,6 +109,43 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
     
     return  up_hist, down_hist
 
+def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+    
+    '''
+    
+    # now get the actual values
+    tmp_central = output[hist_name].copy()
+    tmp_up      = output[hist_name+unc+'Up'].copy()
+    tmp_down    = output[hist_name+unc+'Down'].copy()
+    
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+        tmp_up      = tmp_up.rebin(rebin.name, rebin)
+        tmp_down    = tmp_down.rebin(rebin.name, rebin)
+        
+    central  = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    up_unc   = tmp_up[process].sum('dataset').values(overflow='all')[()]
+    down_unc = tmp_down[process].sum('dataset').values(overflow='all')[()]   
+    
+    up_hist = Hist1D.from_bincounts(
+        up_unc,
+        rebin.edges(overflow='all'),
+    )
+    
+    down_hist = Hist1D.from_bincounts(
+        down_unc,
+        rebin.edges(overflow='all'),
+    )
+    
+    if not quiet:
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+                
+    return  up_hist, down_hist
 
 def makeCardFromHist(
     out_cache,
