@@ -5,21 +5,110 @@ import uproot3
 import numpy as np
 from Tools.dataCard import *
 
-notdata = re.compile('(?!pseudodata)')
-notsignal = re.compile('(?!topW_v2)')
+from yahist import Hist1D
+from Tools.yahist_to_root import yahist_to_root
 
-def myRebin(var, nbins, binsize, threshold):
-    #values = output[var]['topW_v2'].sum("dataset").values()[()]
-    values = output[var]['topW_v2'].sum("dataset").values()[()]
-    bin_boundaries = [0]
-    last_index = 0
+def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+    
+    '''
+    if not hessian:
+        print ("Can't handle mc replicas.")
+        return False
+    
+    
+    # now get the actual values
+    tmp_central = output[hist_name].copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    pdf_unc = np.zeros_like(central)
+    
+    
+    for i in range(1,101):
+        tmp_variation = output['%s_pdf_%s'%(hist_name, i)]
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+        pdf_unc += (tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)**2
 
-    for i in range(nbins): # loop over the bins like a cave man
-        #output['leadingForward_p']['topW_v2'].sum("dataset").values()[()]
-        if values[last_index:i].sum() > threshold:
-            bin_boundaries.append(i)
-            last_index = i
-    return np.array(bin_boundaries)*binsize
+    pdf_unc = np.sqrt(pdf_unc)
+
+    up_hist = Hist1D.from_bincounts(
+        central+pdf_unc,
+        rebin.edges(overflow='all'),
+    )
+    
+    down_hist = Hist1D.from_bincounts(
+        central-pdf_unc,
+        rebin.edges(overflow='all'),
+    )
+
+    if not quiet:
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(pdf_unc):
+            print (i, round(val/central[i],2))
+    
+    return  up_hist, down_hist
+
+def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+    
+    From auto documentation of NanoAODv8
+    
+    OBJ: TBranch LHEScaleWeight LHE scale variation weights (w_var / w_nominal);
+    [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5";
+    [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0";
+    [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+    
+    --> take 0, 1, 3 for down variations
+    --> take 5, 7, 8 for up variations
+    --> 4 is central, if needed
+    
+    '''
+    
+    # now get the actual values
+    tmp_central = output[hist_name].copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    
+    
+    scale_unc = np.zeros_like(central)
+    for i in [0,1,3,5,7,8]:
+        '''
+        Using the full envelope.
+        Don't know how to make a sensible envelope of up/down separately,
+        without getting vulnerable to weird one-sided uncertainties.
+        '''
+        tmp_variation = output['%s_scale_%s'%(hist_name, i)].copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+        scale_unc = np.maximum(
+            scale_unc,
+            np.abs(tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)
+        )
+    
+    up_hist = Hist1D.from_bincounts(
+        central+scale_unc,
+        rebin.edges(overflow='all'),
+    )
+    
+    down_hist = Hist1D.from_bincounts(
+        central-scale_unc,
+        rebin.edges(overflow='all'),
+    )
+
+    if not quiet:
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(scale_unc):
+            print (i, round(val/central[i],2))
+    
+    return  up_hist, down_hist
+
 
 def makeCardFromHist(
     out_cache,
@@ -78,7 +167,6 @@ def makeCardFromHist(
     else:
         fout["data_obs"]  = hist.export1d(histogram.integrate('dataset'), overflow=overflow)
 
-    fout.close()
     
     # Get the total yields to write into a data card
     totals = {}
@@ -115,9 +203,21 @@ def makeCardFromHist(
     card.addUncertainty('lumi', 'lnN')
     if systematics:
         for systematic, mag, proc in systematics:
-            card.addUncertainty(systematic, 'lnN')
-            card.specifyUncertainty(systematic, 'Bin0', proc, mag)
+            if isinstance(mag, type(())):
+                card.addUncertainty(systematic, 'shape')
+                print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
+                if len(mag)>1:
+                    fout[proc+'_'+systematic+'Up']   = yahist_to_root(mag[0], systematic+'Up', systematic+'Up')
+                    fout[proc+'_'+systematic+'Down'] = yahist_to_root(mag[1], systematic+'Down', systematic+'Down')
+                else:
+                    fout[proc+'_'+systematic] = yahist_to_root(mag[0], systematic, systematic)
+                card.specifyUncertainty(systematic, 'Bin0', proc, 1)
+            else:
+                card.addUncertainty(systematic, 'lnN')
+                card.specifyUncertainty(systematic, 'Bin0', proc, mag)
             
+    fout.close()
+
     card.specifyFlatUncertainty('lumi', 1.03)
     
              ## observation
@@ -129,6 +229,11 @@ def makeCardFromHist(
     
     return card.writeToFile(data_card, shapeFile=shape_file)
 
+
+
+
+notdata = re.compile('(?!pseudodata)')
+notsignal = re.compile('(?!topW_v2)')
 
 def makeCardFromHist_ret(out_cache, hist_name, scales={'nonprompt':1, 'signal':1}, overflow='all', ext='', systematics=True, categories=False, bsm_hist=None, tw_name='topW_v2', quiet=False):
     print ("Writing cards using histogram:", hist_name)

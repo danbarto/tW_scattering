@@ -449,9 +449,10 @@ class SS_analysis(processor.ProcessorABC):
                 )
 
             if self.evaluate or self.dump:
+                blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
                 if var['name'] == 'central':
 
-                    fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=((data_sel & (best_score>1)) | ~data_sel))  # this should blind me
+                    #fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
                     fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
                     fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
                     fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
@@ -459,7 +460,7 @@ class SS_analysis(processor.ProcessorABC):
                     fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
                     
                     fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
-                    fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                    #fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
                     fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
                     fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
                     fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
@@ -506,8 +507,14 @@ class SS_analysis(processor.ProcessorABC):
                     fill_multiple_np(output['LT_SR_pp'+ext], {'ht':  lt}, add_sel=SR_sel_pp)
                     fill_multiple_np(output['LT_SR_mm'+ext], {'ht':  lt}, add_sel=SR_sel_mm)
 
+                fill_multiple_np(output['node'+ext], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
+                fill_multiple_np(output['node1_score'+ext], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+
                 fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
 
                 transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
 
@@ -516,8 +523,6 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
                 fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
 
-                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
-                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
                 if not re.search(data_pattern, dataset) and var['name'] == 'central':
@@ -526,14 +531,26 @@ class SS_analysis(processor.ProcessorABC):
 
                         output['node0_score_transform_pp'+pdf_ext].fill(
                             dataset = dataset,
-                            score   = NN_pred[:,0][(BL & SR_sel_pp)],
-                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)],
+                            score   = NN_pred_0_trans[(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
                         output['node0_score_transform_mm'+pdf_ext].fill(
                             dataset = dataset,
-                            score   = NN_pred[:,0][(BL & SR_sel_mm)],
-                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)],
+                            score   = NN_pred_0_trans[(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        )
+
+                        output['node1_score'+pdf_ext].fill(
+                            dataset = dataset,
+                            score = NN_pred[:,1][BL],
+                            weight = weight.weight()[BL] * ev.LHEPdfWeight[:,i][BL] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[BL],
+                        )
+
+                        output['node'+pdf_ext].fill(
+                            dataset = dataset,
+                            multiplicity = best_score[(BL & blind_sel)],
+                            weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
                         )
 
                     for i in [0,1,3,5,7,8]:
@@ -541,14 +558,26 @@ class SS_analysis(processor.ProcessorABC):
 
                         output['node0_score_transform_pp'+pdf_ext].fill(
                             dataset = dataset,
-                            score   = NN_pred[:,0][(BL & SR_sel_pp)],
-                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)],
+                            score   = NN_pred_0_trans[(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
                         output['node0_score_transform_mm'+pdf_ext].fill(
                             dataset = dataset,
-                            score   = NN_pred[:,0][(BL & SR_sel_mm)],
-                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)],
+                            score   = NN_pred_0_trans[(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        )
+
+                        output['node1_score'+pdf_ext].fill(
+                            dataset = dataset,
+                            score = NN_pred[:,1][BL],
+                            weight = weight.weight()[BL] * ev.LHEScaleWeight[:,i][BL] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[BL],
+                        )
+
+                        output['node'+pdf_ext].fill(
+                            dataset = dataset,
+                            multiplicity = best_score[(BL & blind_sel)],
+                            weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
                         )
 
                     if len(ev.PSWeight[0]) > 1:
@@ -557,14 +586,26 @@ class SS_analysis(processor.ProcessorABC):
 
                             output['node0_score_transform_pp'+pdf_ext].fill(
                                 dataset = dataset,
-                                score   = NN_pred[:,0][(BL & SR_sel_pp)],
+                                score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                                 weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
                             )
 
                             output['node0_score_transform_mm'+pdf_ext].fill(
                                 dataset = dataset,
-                                score   = NN_pred[:,0][(BL & SR_sel_mm)],
+                                score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                                 weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                            )
+
+                            output['node1_score'+pdf_ext].fill(
+                                dataset = dataset,
+                                score = NN_pred[:,1][BL],
+                                weight = weight.weight()[BL] * ev.PSWeight[:,i][BL],
+                            )
+
+                            output['node'+pdf_ext].fill(
+                                dataset = dataset,
+                                multiplicity = best_score[(BL & blind_sel)],
+                                weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
                             )
                 #del model
                 #del scaler
@@ -952,24 +993,32 @@ if __name__ == '__main__':
             "node0_score_transform_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_pp"+ext: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
+            "node1_score"+ext: hist.Hist("Counts", dataset_axis, score_axis),
+            "node"+ext: hist.Hist("Counts", dataset_axis, multiplicity_axis),
         })
 
     for i in range(1,101):
         desired_output.update({
             "node0_score_transform_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node0_score_transform_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node1_score_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node_pdf_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
         })
 
     for i in [0,1,3,5,7,8]:
         desired_output.update({
             "node0_score_transform_pp_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node0_score_transform_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node1_score_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node_scale_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
         })
 
     for i in range(4):
         desired_output.update({
             "node0_score_transform_pp_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node0_score_transform_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node1_score_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
+            "node_PS_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
         })
 
     for rle in ['run', 'lumi', 'event']:
