@@ -33,16 +33,18 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
         pdf_unc += (tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)**2
 
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+
     pdf_unc = np.sqrt(pdf_unc)
 
     up_hist = Hist1D.from_bincounts(
         central+pdf_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
     
     down_hist = Hist1D.from_bincounts(
         central-pdf_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
 
     if not quiet:
@@ -50,6 +52,8 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
         for i, val in enumerate(pdf_unc):
             print (i, round(val/central[i],2))
     
+        print (central)
+
     return  up_hist, down_hist
 
 def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
@@ -91,15 +95,17 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
             scale_unc,
             np.abs(tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)
         )
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
     
     up_hist = Hist1D.from_bincounts(
         central+scale_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
     
     down_hist = Hist1D.from_bincounts(
         central-scale_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
 
     if not quiet:
@@ -129,15 +135,16 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
     central  = tmp_central[process].sum('dataset').values(overflow='all')[()]
     up_unc   = tmp_up[process].sum('dataset').values(overflow='all')[()]
     down_unc = tmp_down[process].sum('dataset').values(overflow='all')[()]   
-    
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+
     up_hist = Hist1D.from_bincounts(
         up_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
     
     down_hist = Hist1D.from_bincounts(
         down_unc,
-        rebin.edges(overflow='all'),
+        edges,
     )
     
     if not quiet:
@@ -146,6 +153,41 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
             print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
                 
     return  up_hist, down_hist
+
+def regroup_and_rebin(histo, rebin, mapping):
+    tmp = histo.copy()
+    tmp = tmp.rebin(rebin.name, rebin)
+    tmp = tmp.group("dataset", hist.Cat("dataset", "new grouped dataset"), mapping)
+    return tmp
+
+def get_systematics(output, hist):
+    systematics = []
+    for proc in ['signal', 'TTW', 'TTZ', 'TTH']:
+        systematics += [
+            ('jes',     get_unc(output, hist, proc, '_pt_jesTotal'), proc),
+            ('b',       get_unc(output, hist, proc, '_b'), proc),
+            ('light',   get_unc(output, hist, proc, '_l'), proc),
+            ('PU',      get_unc(output, hist, proc, '_PU'), proc),
+        ]
+
+    for proc in ['TTW', 'TTZ', 'TTH']:
+        systematics += [
+            ('pdf', get_pdf_unc(output, hist, proc), proc),
+        ]
+
+    systematics += [
+        ('scale_TTW', get_scale_unc(output, hist, 'TTW'), 'TTW'),
+        ('scale_TTH', get_scale_unc(output, hist, 'TTH'), 'TTH'),
+        ('scale_TTZ', get_scale_unc(output, hist, 'TTZ'), 'TTZ'),
+        #('ttz_norm', 1.10, 'TTZ'),
+        #('tth_norm', 1.20, 'TTH'),
+        ('rare_norm', 1.20, 'rare'),
+        ('nonprompt_norm', 1.30, 'nonprompt'),
+        ('chargeflip_norm', 1.20, 'chargeflip'),
+        ('conversion_norm', 1.20, 'conversion')
+    ]
+
+    return systematics
 
 def makeCardFromHist(
     out_cache,

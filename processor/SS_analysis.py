@@ -543,8 +543,8 @@ class SS_analysis(processor.ProcessorABC):
 
                         output['node1_score'+pdf_ext].fill(
                             dataset = dataset,
-                            score = NN_pred[:,1][BL],
-                            weight = weight.weight()[BL] * ev.LHEPdfWeight[:,i][BL] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[BL],
+                            score = NN_pred[:,1][(BL & (best_score==1))],
+                            weight = weight.weight()[(BL & (best_score==1))] * ev.LHEPdfWeight[:,i][(BL & (best_score==1))] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
 
                         output['node'+pdf_ext].fill(
@@ -570,8 +570,8 @@ class SS_analysis(processor.ProcessorABC):
 
                         output['node1_score'+pdf_ext].fill(
                             dataset = dataset,
-                            score = NN_pred[:,1][BL],
-                            weight = weight.weight()[BL] * ev.LHEScaleWeight[:,i][BL] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[BL],
+                            score = NN_pred[:,1][(BL & (best_score==1))],
+                            weight = weight.weight()[(BL & (best_score==1))] * ev.LHEScaleWeight[:,i][(BL & (best_score==1))] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
 
                         output['node'+pdf_ext].fill(
@@ -598,8 +598,8 @@ class SS_analysis(processor.ProcessorABC):
 
                             output['node1_score'+pdf_ext].fill(
                                 dataset = dataset,
-                                score = NN_pred[:,1][BL],
-                                weight = weight.weight()[BL] * ev.PSWeight[:,i][BL],
+                                score = NN_pred[:,1][(BL & (best_score==1))],
+                                weight = weight.weight()[(BL & (best_score==1))] * ev.PSWeight[:,i][(BL & (best_score==1))],
                             )
 
                             output['node'+pdf_ext].fill(
