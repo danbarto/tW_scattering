@@ -7,10 +7,11 @@ import time
 import numpy as np
 import sys
 import pandas as pd
+import matplotlib.pyplot as plt
 
 #hardcoded variables other users should customize
 
-def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_yields=None, CRstats=None, JES_stats=None):
+def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all", systematics_yields=None, CRstats=None, JES_stats=None, flag_plot=False):
 
     BDT_bin_names = [str(b) for b in range(len(BDT_bins)-1)]
     BDT_bin_comments = ["[{0}, {1}]".format(BDT_bins[b-1], BDT_bins[b]) for b in range(1, len(BDT_bins))]
@@ -53,20 +54,35 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
     # ok, now I have headers, I can start making the titles for my rows
     rowTitles = []
     numParameters = 0
+    if flag_plot:
+        fig, ax = plt.subplots(figsize=(7,7))
+        cr_stats = []
+        iterators = []
+        err = []
     for p in nProc:
         for iterator in range(numBins):
             numParameters+=1
-            if p == "fakes":
+            if p == "fakes" and not (systematics_yields==None):
                 title = "fkStat{0}_{1}".format(str(year)[-2:], iterator)
                 yld = str(systematics_yields[title])
                 #yld = str(fakeCRStatYld[iterator]) #implement fakeCRstatyld
                 title = title.ljust(16-len(yld)) + "gmN " + yld
+                if flag_plot:
+                    iterators.append(iterator)
+                    cr_stats.append(int(yld))
+                    err.append(np.sqrt(int(yld)))
                 rowTitles.append(title)
             else:
                 #numParameters+=1
                 title = "{0}_stat_{1}".format(p, iterator).ljust(17) + "lnN"
                 rowTitles.append(title)
-
+    if flag_plot:
+        ax.bar(iterators, cr_stats, yerr=err)
+        ax.set_title("{} CR Statistics ({})".format(signal, year))
+        ax.set_xlabel("BDT Bin")
+        ax.set_ylabel("Counts")
+        plt.savefig(outdir + "CR_stats_{}.pdf".format(year))
+        plt.close()
     for p in nProc:
         title = "{0}_syst".format(p).ljust(17) + "lnN"
         rowTitles.append(title)
@@ -87,7 +103,7 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
             err = yield_dict["bin_{0}_{1}_error".format(bdt_bin, p)]
             yld = yield_dict["bin_{0}_{1}".format(bdt_bin, p)]
             #numParameters += 1
-            if p != "fakes":
+            if p != "fakes" or (systematics_yields == None):
                 if abs(yld) <= 0.01:
                     unc = 1.0
                 else:
@@ -159,43 +175,43 @@ def make_BDT_datacard(yield_dict, BDT_bins, signal, outdir, label="", year="all"
         else:
             filler = "-".ljust(20)
         dcard_df.at[rTitle,column]=filler
+    if not (systematics_yields==None):
+        for source in systematicSources:
+            #systematics here are just the ratio of the "up" yield to the central yield, and the "down" yield to the central yield
+            rTitle = "{}_{}".format(source, year).ljust(17) + "lnN"
+            numParameters += 1
+            for column in dcard_df:
+                if ("rares" in column) or ("signal" in column):
+                    #row = raresSyst_df.loc[(raresSyst_df["nLeptons"]==l) & (raresSyst_df["nJets"]==j) & (raresSyst_df["nBtags"]==b)]
+                    #up_yld = systematic_yields["bin_{0}_rares_{}_up".format(bdt_bin, source)]
+                    colTitleUp = "{}_{}_up".format(column.strip(), source)
+                    colTitleDown = "{}_{}_down".format(column.strip(), source)
+                    up_yld = systematics_yields[colTitleUp]
+                    down_yld = systematics_yields[colTitleDown]
+                    central_yld = yield_dict[column.strip()]
+                    filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
+                    #filler = str(round(down_yld/central_yld,3))+"/"+str(round(up_yld/central_yld,3))
+    #                     while len(filler)<20:
+    #                         filler+=" "
 
-    for source in systematicSources:
-        #systematics here are just the ratio of the "up" yield to the central yield, and the "down" yield to the central yield
-        rTitle = "{}_{}".format(source, year).ljust(17) + "lnN"
-        numParameters += 1
-        for column in dcard_df:
-            if ("rares" in column) or ("signal" in column):
-                #row = raresSyst_df.loc[(raresSyst_df["nLeptons"]==l) & (raresSyst_df["nJets"]==j) & (raresSyst_df["nBtags"]==b)]
-                #up_yld = systematic_yields["bin_{0}_rares_{}_up".format(bdt_bin, source)]
-                colTitleUp = "{}_{}_up".format(column.strip(), source)
-                colTitleDown = "{}_{}_down".format(column.strip(), source)
-                up_yld = systematics_yields[colTitleUp]
-                down_yld = systematics_yields[colTitleDown]
-                central_yld = yield_dict[column.strip()]
-                filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
-                #filler = str(round(down_yld/central_yld,3))+"/"+str(round(up_yld/central_yld,3))
-#                     while len(filler)<20:
-#                         filler+=" "
+    #             elif "signal" in column:
+    # #                 row = signalSyst_df.loc[(signalSyst_df["nLeptons"]==l) & (signalSyst_df["nJets"]==j) & (signalSyst_df["nBtags"]==b)]
+    # #                 colTitleUp = "{}_{}_up".format(s, source)
+    # #                 colTitleDown = "{}_{}_down".format(s, source)
+    #                 breakpoint()
+    #                 colTitleUp = "{}_{}_up".format(column, source)
+    #                 colTitleDown = "{}_{}_down".format(column, source)
+    #                 up_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleUp)]
+    #                 down_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleDown)]
+    #                 central_yld = yield_dict["bin_{0}_{1}".format(bdt_bin, column)]
+    #                 filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
+    #                 filler = str(round(row[colTitleDown],3))+"/"+str(round(row[colTitleUp],3))
+    #                 while len(filler)<20:
+    #                     filler+=" "
 
-#             elif "signal" in column:
-# #                 row = signalSyst_df.loc[(signalSyst_df["nLeptons"]==l) & (signalSyst_df["nJets"]==j) & (signalSyst_df["nBtags"]==b)]
-# #                 colTitleUp = "{}_{}_up".format(s, source)
-# #                 colTitleDown = "{}_{}_down".format(s, source)
-#                 breakpoint()
-#                 colTitleUp = "{}_{}_up".format(column, source)
-#                 colTitleDown = "{}_{}_down".format(column, source)
-#                 up_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleUp)]
-#                 down_yld = systematics_yields["bin_{0}_{1}".format(bdt_bin, colTitleDown)]
-#                 central_yld = yield_dict["bin_{0}_{1}".format(bdt_bin, column)]
-#                 filler = "{0:.3f}/{1:.3f}".format((down_yld/central_yld), (up_yld/central_yld)).ljust(20)
-#                 filler = str(round(row[colTitleDown],3))+"/"+str(round(row[colTitleUp],3))
-#                 while len(filler)<20:
-#                     filler+=" "
-
-            else:
-                filler = "-".ljust(20)
-            dcard_df.at[rTitle,column]=filler
+                else:
+                    filler = "-".ljust(20)
+                dcard_df.at[rTitle,column]=filler
     #end systematic uncertainties
     #print("filled syst uncertainties")
     # outfile = open(outdir+outfileName,"w")

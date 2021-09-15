@@ -1158,19 +1158,19 @@ class BDT:
         return (up_yield, down_yield)
 
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21),
-                     flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=()):
+                     flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=(), flag_plot=False):
         yield_dict = {}
-        systematics_yields = {}
-        #breakpoint()
+        if systematics:
+            systematics_yields = {}
+        else:
+            systematics_yields = None
         if signal_name == "HCT":
-            self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
-            cat_dict = self.HCT_dict
+            cat_dict = self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
             if len(JES_dirs)==2:
                 JES_up_cd = self.make_category_dict(JES_dirs[0], "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
                 JES_down_cd = self.make_category_dict(JES_dirs[1], "HCT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
         elif signal_name == "HUT":
-            self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics)
-            cat_dict = self.HUT_dict
+            cat_dict = self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
             if len(JES_dirs)==2:
                 JES_up_cd = self.make_category_dict(JES_dirs[0], "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
                 JES_down_cd = self.make_category_dict(JES_dirs[1], "HUT", background="all", data_driven=data_driven, from_pandas=from_pandas, systematics=systematics, flag_store_dict=False)
@@ -1209,7 +1209,7 @@ class BDT:
                 (yield_name, tmp_yield, tmp_error) = self.get_bin_yield(category, BDT_bins, b, cat_dict, qt)
                 if category != "signal":
                     background_sum += tmp_yield
-                if (category=="signal") or (category=="rares"): #fill systematic uncertainties for signal and rares
+                if ((category=="signal") or (category=="rares")) and systematics: #fill systematic uncertainties for signal and rares
                     for sys in ["LepSF","PU","Trigger","bTag", "JES"]: ##TODO: add JES
                         if (sys=="JES") and (len(JES_dirs)==2):
                             sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt, (JES_up_cd, JES_down_cd))
@@ -1217,14 +1217,14 @@ class BDT:
                             sys_yields = self.get_bin_systematic_yield(category, sys, BDT_bins, b, cat_dict, qt)
                         systematics_yields["{0}_{1}_up".format(yield_name, sys)] = sys_yields[0]
                         systematics_yields["{0}_{1}_down".format(yield_name, sys)] = sys_yields[1]
-                elif (category=="fakes"):
+                elif (category=="fakes") and systematics:
                     stat_name = "fkStat{0}_{1}".format(str(year)[-2:], b-1)
                     sys_yields = self.get_bin_CRStats(BDT_bins, b, cat_dict, qt)
                     systematics_yields[stat_name] = sys_yields[1]
                     #yield_dict[yield_name + "_error"] = sys_yields[0] / sys_yields[1]
                 if tmp_yield > 0:
                     yield_dict[yield_name] = tmp_yield
-                    if (category=="fakes"):
+                    if (category=="fakes") and systematics:
                         yield_dict[yield_name + "_error"] = sys_yields[0] / sys_yields[1] #fakes have their own CR error 
                     else:
                         yield_dict[yield_name+"_error"] = tmp_error
@@ -1239,7 +1239,7 @@ class BDT:
             label = "QT"
         else:
             label = ""
-        postProcessing.makeCards.make_BDT_datacard(yield_dict, BDT_bins, signal_name, output_path, label, year, systematics_yields=systematics_yields)
+        postProcessing.makeCards.make_BDT_datacard(yield_dict, BDT_bins, signal_name, output_path, label, year, systematics_yields=systematics_yields, flag_plot=flag_plot)
         
     def plot_response(self, plot=True, savefig=False, label="all"):
         #plot the BDT response (correlation of BDT score with feature variables)
@@ -1294,11 +1294,11 @@ class BDT:
         self.make_category_dict(directories, "HCT", background=background, data_driven=data_driven)
         self.make_category_dict(directories, "HUT", background=background, data_driven=data_driven)
         
-    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True, from_pandas=False, systematics=True, JES_dirs=()):
+    def gen_datacards(self, directory, year, quantile_transform=True, data_driven=True, BDT_bins=np.linspace(0, 1, 21), flag_tmp_directory=False, plot=True, from_pandas=False, systematics=True, JES_dirs=(), flag_plot=False):
         self.gen_datacard("HCT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory,
-                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs)
+                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs, flag_plot=flag_plot)
         self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory,
-                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs)
+                          plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs, flag_plot=flag_plot)
         
     def load_custom_params(self, param, dirs):
         self.set_booster_label()
