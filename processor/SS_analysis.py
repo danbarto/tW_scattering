@@ -525,7 +525,7 @@ class SS_analysis(processor.ProcessorABC):
 
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
-                if not re.search(data_pattern, dataset) and var['name'] == 'central':
+                if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0:  # FIXME: rare excluded because of missing samples
                     for i in range(1,101):
                         pdf_ext = "_pdf_%s"%i
 
@@ -824,7 +824,7 @@ if __name__ == '__main__':
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.1_dilep/'
+    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
     fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
@@ -839,7 +839,8 @@ if __name__ == '__main__':
         'TTZ': fileset_all['TTZ'],
         'TTH': fileset_all['TTH'],
         'diboson': fileset_all['diboson'],
-        'rare': fileset_all['TTTT']+fileset_all['triboson'],
+        #'rare': fileset_all['TTTT']+fileset_all['triboson'],
+        'rare': fileset_all['rare']+fileset_all['triboson'],
         #'ttbar': fileset_all['ttbar1l'],
         #'ttbar': fileset_all['ttbar2l'],
         'ttbar': fileset_all['top'],

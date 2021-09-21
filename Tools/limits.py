@@ -115,6 +115,90 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
     
     return  up_hist, down_hist
 
+def get_ISR_unc(output, hist_name, process, rebin=None, quiet=True):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+    
+    From auto documentation of NanoAODv8
+    
+    PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2
+    
+    --> take 0, 2 for ISR variations
+    
+    '''
+    
+    # now get the actual values
+    tmp_central = output[hist_name].copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    
+    for i in [0,2]:
+        tmp_variation = output['%s_PS_%s'%(hist_name, i)].copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+        if i == 2:
+            up_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+        if i == 0:
+            down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    
+    up_hist = Hist1D.from_bincounts(
+        up_unc,
+        edges,
+    )
+    
+    down_hist = Hist1D.from_bincounts(
+        down_unc,
+        edges,
+    )
+
+    return  up_hist, down_hist
+
+def get_FSR_unc(output, hist_name, process, rebin=None, quiet=True):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+    
+    From auto documentation of NanoAODv8
+    
+    PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2
+    
+    --> take 1, 3 for ISR variations
+    
+    '''
+    
+    # now get the actual values
+    tmp_central = output[hist_name].copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    
+    for i in [1,3]:
+        tmp_variation = output['%s_PS_%s'%(hist_name, i)].copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+        if i == 3:
+            up_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+        if i == 1:
+            down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    
+    up_hist = Hist1D.from_bincounts(
+        up_unc,
+        edges,
+    )
+    
+    down_hist = Hist1D.from_bincounts(
+        down_unc,
+        edges,
+    )
+
+    return  up_hist, down_hist
+
 def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
@@ -160,25 +244,31 @@ def regroup_and_rebin(histo, rebin, mapping):
     tmp = tmp.group("dataset", hist.Cat("dataset", "new grouped dataset"), mapping)
     return tmp
 
-def get_systematics(output, hist):
+def get_systematics(output, hist, year, correlated=False):
+    if correlated:
+        year = "cor"
     systematics = []
     for proc in ['signal', 'TTW', 'TTZ', 'TTH']:
         systematics += [
-            ('jes',     get_unc(output, hist, proc, '_pt_jesTotal'), proc),
-            ('b',       get_unc(output, hist, proc, '_b'), proc),
-            ('light',   get_unc(output, hist, proc, '_l'), proc),
+            ('jes_%s'%year,     get_unc(output, hist, proc, '_pt_jesTotal'), proc),
+            ('b_%s'%year,       get_unc(output, hist, proc, '_b'), proc),
+            ('light_%s'%year,   get_unc(output, hist, proc, '_l'), proc),
             ('PU',      get_unc(output, hist, proc, '_PU'), proc),
         ]
 
     for proc in ['TTW', 'TTZ', 'TTH']:
         systematics += [
             ('pdf', get_pdf_unc(output, hist, proc), proc),
+            ('FSR', get_FSR_unc(output, hist, proc), proc),
         ]
 
     systematics += [
         ('scale_TTW', get_scale_unc(output, hist, 'TTW'), 'TTW'),
         ('scale_TTH', get_scale_unc(output, hist, 'TTH'), 'TTH'),
         ('scale_TTZ', get_scale_unc(output, hist, 'TTZ'), 'TTZ'),
+        ('ISR_TTW', get_ISR_unc(output, hist, 'TTW'), 'TTW'),
+        ('ISR_TTH', get_ISR_unc(output, hist, 'TTH'), 'TTH'),
+        ('ISR_TTZ', get_ISR_unc(output, hist, 'TTZ'), 'TTZ'),
         #('ttz_norm', 1.10, 'TTZ'),
         #('tth_norm', 1.20, 'TTH'),
         ('rare_norm', 1.20, 'rare'),
