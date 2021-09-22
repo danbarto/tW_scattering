@@ -100,6 +100,11 @@ if __name__ == '__main__':
         new_hists = {}
         for short_name, long_name in regions:
             new_hists[short_name] = output[long_name][no_data_or_signal]
+
+        print ("- scale uncertainties for TTW (total):")
+        get_scale_unc(output, 'node0_score_transform_pp', 'TTW', score_bins, quiet=False)
+        print ("- scale uncertainties for TTW (shape/acceptance):")
+        get_scale_unc(output, 'node0_score_transform_pp', 'TTW', score_bins, quiet=False, keep_norm=True)
                 
         print ("- JES uncertainties for TTW:")
         get_unc(output, 'node0_score_transform_pp', 'TTW', '_pt_jesTotal', score_bins, quiet=False)

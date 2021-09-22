@@ -56,7 +56,7 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
 
     return  up_hist, down_hist
 
-def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
+def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=False):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
@@ -88,12 +88,21 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True):
         Don't know how to make a sensible envelope of up/down separately,
         without getting vulnerable to weird one-sided uncertainties.
         '''
+
+        norm = 1
+        if keep_norm:
+            proc_norm_central   = output['norm'][process].sum('dataset').sum('one').values(overflow='all')[()]
+            print (proc_norm_central)
+            proc_norm_var       = output['_scale_%s'%i][process].sum('dataset').sum('one').values(overflow='all')[()]
+            print (proc_norm_var)
+            norm = (proc_norm_central)/proc_norm_var
+
         tmp_variation = output['%s_scale_%s'%(hist_name, i)].copy()
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
         scale_unc = np.maximum(
             scale_unc,
-            np.abs(tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)
+            np.abs(tmp_variation[process].sum('dataset').values(overflow='all')[()] * norm - central)
         )
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
@@ -258,14 +267,14 @@ def get_systematics(output, hist, year, correlated=False):
 
     for proc in ['TTW', 'TTZ', 'TTH']:
         systematics += [
-            ('pdf', get_pdf_unc(output, hist, proc), proc),
+            ('pdf', get_pdf_unc(output, hist, proc), proc),  # FIXME not keep_norm yet
             ('FSR', get_FSR_unc(output, hist, proc), proc),
         ]
 
     systematics += [
-        ('scale_TTW', get_scale_unc(output, hist, 'TTW'), 'TTW'),
-        ('scale_TTH', get_scale_unc(output, hist, 'TTH'), 'TTH'),
-        ('scale_TTZ', get_scale_unc(output, hist, 'TTZ'), 'TTZ'),
+        ('scale_TTW', get_scale_unc(output, hist, 'TTW', keep_norm=True), 'TTW'),
+        ('scale_TTH', get_scale_unc(output, hist, 'TTH', keep_norm=True), 'TTH'),
+        ('scale_TTZ', get_scale_unc(output, hist, 'TTZ', keep_norm=True), 'TTZ'),
         ('ISR_TTW', get_ISR_unc(output, hist, 'TTW'), 'TTW'),
         ('ISR_TTH', get_ISR_unc(output, hist, 'TTH'), 'TTH'),
         ('ISR_TTZ', get_ISR_unc(output, hist, 'TTZ'), 'TTZ'),

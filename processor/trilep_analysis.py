@@ -463,10 +463,23 @@ class trilep_analysis(processor.ProcessorABC):
 
                 SR_sel = (best_score==0)
 
+                if var['name'] == 'central':
+                    output["norm"].fill(
+                        dataset = dataset,
+                        one   = ak.ones_like(met.pt),
+                        weight  = weight.weight(),
+                    )
+
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
                 if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0:  # FIXME: rare excluded because of missing samples
                     for i in range(1,101):
                         pdf_ext = "_pdf_%s"%i
+
+                        output[pdf_ext].fill(
+                            dataset = dataset,
+                            one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
+                            weight  = weight.weight() * ev.LHEPdfWeight[:,i] if len(ev.LHEPdfWeight[0])>0 else weight.weight(),
+                        )
 
                         output['node0_score_transform'+pdf_ext].fill(
                             dataset = dataset,
@@ -488,6 +501,12 @@ class trilep_analysis(processor.ProcessorABC):
 
                     for i in [0,1,3,5,7,8]:
                         pdf_ext = "_scale_%s"%i
+
+                        output[pdf_ext].fill(
+                            dataset = dataset,
+                            one   = ak.ones_like(ev.LHEScaleWeight[:,i]),
+                            weight  = weight.weight() * ev.LHEScaleWeight[:,i] if len(ev.LHEScaleWeight[0])>0 else weight.weight(),
+                        )
 
                         output['node0_score_transform'+pdf_ext].fill(
                             dataset = dataset,
@@ -842,12 +861,16 @@ if __name__ == '__main__':
             "node"+ext: hist.Hist("Counts", dataset_axis, multiplicity_axis),
         })
 
+    desired_output.update({
+        "norm": hist.Hist("Counts", dataset_axis, one_axis),
+    })
 
     for i in range(1,101):
         desired_output.update({
             "node0_score_transform_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_pdf_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "_pdf_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
         })
 
     for i in [0,1,3,5,7,8]:
@@ -855,6 +878,7 @@ if __name__ == '__main__':
             "node0_score_transform_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_scale_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "_scale_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
         })
 
     for i in range(4):
@@ -862,6 +886,7 @@ if __name__ == '__main__':
             "node0_score_transform_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_PS_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "_PS_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
         })
 
     for rle in ['run', 'lumi', 'event']:
