@@ -1122,7 +1122,6 @@ class BDT:
         return tmp_yield, tmp_counts
     
     def get_bin_systematic_yield(self, category, systematic, bins, bin_idx, cat_dict, quantile_transformer=None, JES_cds=()): #ADD JES special case
-        #breakpoint()
         if (systematic=="JES") and (len(JES_cds)==2):
             weights_up = JES_cds[0][category]["data"]["Weight"].copy()
             weights_down = JES_cds[1][category]["data"]["Weight"].copy()
@@ -1157,6 +1156,18 @@ class BDT:
             down_yield = 0
         return (up_yield, down_yield)
 
+    def get_QT_bins(self, signal_name, year, directories, bins):
+        if signal_name == "HCT":
+            cat_dict = self.make_category_dict(directories, "HCT", background="all", data_driven=True, from_pandas=False, systematics=False, flag_store_dict=False)
+        elif signal_name == "HUT":
+            cat_dict = self.make_category_dict(directories, "HUT", background="all", data_driven=True, from_pandas=False, systematics=False, flag_store_dict=False)
+
+        signal_predictions = cat_dict["signal"]["prediction"]
+        qt = QuantileTransformer(output_distribution="uniform")
+        qt.fit(signal_predictions.reshape(-1, 1))
+        transformed_bins = qt.inverse_transform(bins.reshape(-1, 1))
+        return transformed_bins
+    
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21),
                      flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=(), flag_plot=False):
         yield_dict = {}

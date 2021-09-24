@@ -49,16 +49,20 @@ every_BDT = [HCT, HUT]
 tth_input_baby_dir = "/home/users/ewallace/public_html/FCNC/BDT/FCNC_BDT_input_2018_v3.h5"
 HCT_TTH          = BDT_analysis.BDT(tth_input_baby_dir, out_base_dir=base_output_dir, label="TTH_ID_HCT_v3", pd_baby=True, pd_sig="HCT")
 HUT_TTH          = BDT_analysis.BDT(tth_input_baby_dir, out_base_dir=base_output_dir, label="TTH_ID_HUT_v3", pd_baby=True, pd_sig="HUT")
-old_SS_baby_dir =  "/home/users/ewallace/public_html/FCNC/BDT/FCNC_BDT_input_2018_currentID.h5"
-HCT_old_SS = BDT_analysis.BDT(old_SS_baby_dir, out_base_dir=base_output_dir, label="currentID_HCT", pd_baby=True, pd_sig="HCT")
-HUT_old_SS = BDT_analysis.BDT(old_SS_baby_dir, out_base_dir=base_output_dir, label="currentID_HUT", pd_baby=True, pd_sig="HUT")
-old_BDT = [HCT_old_SS, HUT_old_SS]
-for bdt in old_BDT:
-    bdt.gen_BDT_and_plot(load_BDT=True, optimize=False, retrain=False, plot=False)
-every_TTH = [HCT_TTH, HUT_TTH]
+#old_SS_baby_dir =  "/home/users/ewallace/public_html/FCNC/BDT/FCNC_BDT_input_2018_currentID.h5"
+old_SS_baby_dir = "/home/users/ewallace/public_html/FCNC/BDT/FCNC_BDT_input_2018_currentID_v3.h5"
+HCT_old_SS = BDT_analysis.BDT(old_SS_baby_dir, out_base_dir=base_output_dir, label="currentID_HCT_v3", pd_baby=True, pd_sig="HCT")
+HUT_old_SS = BDT_analysis.BDT(old_SS_baby_dir, out_base_dir=base_output_dir, label="currentID_HUT_v3", pd_baby=True, pd_sig="HUT")
+# old_BDT = [HCT_old_SS, HUT_old_SS]
+# for bdt in old_BDT:
+#     bdt.gen_BDT_and_plot(load_BDT=True, optimize=False, retrain=False, plot=False)
+every_TTH = [HCT_TTH, HUT_TTH, HCT_old_SS, HUT_old_SS]
 for bdt in every_TTH:
     bdt.gen_BDT_and_plot(load_BDT=True, optimize=False, retrain=False, plot=False)
     
+retrain_TTH = [HUT_old_SS]
+for bdt in retrain_TTH:
+    bdt.gen_BDT_and_plot(load_BDT=False, optimize=True, retrain=True, plot=True)
 quantile_dict = {
     '0.025': '-2sig',
     '0.16': '-1sig',
@@ -161,9 +165,8 @@ class combine_result:
             if verbose:
                 print("{0}\tnum_bins={1}\texpected limit={2:.5f}\tQT={3}".format(self.sig_type, bin_spacing, res["expected"], QT))
             return res
-
         
-flag_gen_datacards = True
+flag_gen_datacards = False
 if flag_gen_datacards:
     #data_dir = ["/home/users/ewallace/public_html/FCNC/BDT/FCNC_BDT_input_2018_v2.h5"]
     for bdt in every_TTH:
@@ -176,16 +179,18 @@ if flag_gen_datacards:
         bdt.gen_datacards(data_dir, 2018, quantile_transform=True, data_driven=False, plot=True, from_pandas=True, systematics=False)
 
 for bdt in every_TTH:
-    if (bdt.label == "TTH_ID_HCT") or (bdt.label=="currentID_HCT"):
+    if (bdt.label == "TTH_ID_HCT_v3") or (bdt.label=="currentID_HCT_v3"):
         sl = "HCT"
-    elif (bdt.label == "TTH_ID_HUT") or (bdt.label=="currentID_HUT"):
+    elif (bdt.label == "TTH_ID_HUT_v3") or (bdt.label=="currentID_HUT_v3"):
         sl = "HUT"
     if "TTH" in bdt.label:
-        data_dir = [tth_input_baby_dir]
+        data_dir = tth_input_baby_dir
     elif "currentID" in bdt.label:
-        data_dir = [old_SS_baby_dir]
+        data_dir = old_SS_baby_dir
     else:
         raise NameError
+    print(data_dir)
+    print(sl)
     bdt_result = combine_result(bdt, sl, base_data_dir=data_dir, from_pandas=True)
     tmp_res = bdt_result.get_limits(20, QT=True, verbose=False)["expected"]
     print("{}\texpected={}".format(bdt.label, tmp_res))
