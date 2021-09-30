@@ -92,9 +92,9 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
         norm = 1
         if keep_norm:
             proc_norm_central   = output['norm'][process].sum('dataset').sum('one').values(overflow='all')[()]
-            print (proc_norm_central)
+            #print (proc_norm_central)
             proc_norm_var       = output['_scale_%s'%i][process].sum('dataset').sum('one').values(overflow='all')[()]
-            print (proc_norm_var)
+            #print (proc_norm_var)
             norm = (proc_norm_central)/proc_norm_var
 
         tmp_variation = output['%s_scale_%s'%(hist_name, i)].copy()
