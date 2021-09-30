@@ -531,7 +531,7 @@ class SS_analysis(processor.ProcessorABC):
                     )
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
-                if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0:  # FIXME: rare excluded because of missing samples
+                if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0 and dataset.count('topW')==0:  # FIXME: rare excluded because of missing samples
                     for i in range(1,101):
                         pdf_ext = "_pdf_%s"%i
 
