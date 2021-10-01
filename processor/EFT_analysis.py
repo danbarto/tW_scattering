@@ -16,6 +16,7 @@ if __name__ == '__main__':
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
+    argParser.add_argument('--scan', action='store', default='ctW', choices=['ctW','ctp',], help="Which training to use?")
     args = argParser.parse_args()
 
     overwrite   = not args.keep
@@ -27,10 +28,13 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
 
-    cacheName = 'EFT_ctW_scan_%s%s'%(year,era)
+    cacheName = 'EFT_%s_scan_%s%s'%(args.scan, year, era)
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
 
-    points = make_scan(operator='ctW', C_min=-2.5, C_max=2.5, step=0.25)
+    if args.scan == 'ctW':
+        points = make_scan(operator='ctW', C_min=-2.5, C_max=2.5, step=0.25)
+    elif args.scan == 'ctp':
+        points = get_scan('ctp', C_min=-30, C_max=30, step=5)
 
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
@@ -39,7 +43,6 @@ if __name__ == '__main__':
     fileset = {
         'topW_NLO': fileset_all['topW_NLO'],
         'topW_full_EFT': fileset_all['topW_EFT']
-        
     }
     
     add_processes_to_output(fileset, desired_output)
