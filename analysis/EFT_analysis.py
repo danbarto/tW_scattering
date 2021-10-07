@@ -135,7 +135,7 @@ if __name__ == '__main__':
             '%s_SR_1'%year,
             overflow='all',
             ext='_BSM',
-            signal_hist=signal_hists['%s_SR_1'%year]['topW_full_EFT_ctW_1.8'],
+            signal_hist=signal_hists['%s_SR_1'%year]['topW_full_EFT_ctW_2.5'],
             #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated), 
         )
         
