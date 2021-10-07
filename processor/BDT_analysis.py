@@ -82,7 +82,10 @@ bins_dict = { "Most_Forward_pt":np.linspace(10,200,30),
               "SubSubLeadLep_dxy":np.linspace(0,0.015,30),
               "SubSubLeadLep_dz":np.linspace(0,0.015,30),
               "MT_SubSubLeadLep_MET":np.linspace(0,300,30),
-              "LeadBtag_score":np.linspace(0, 1, 10)
+              "LeadBtag_score":np.linspace(0, 1, 10),
+              "LeadJet_CtagScore":np.linspace(0, 1, 10),
+              "SubLeadJet_CtagScore":np.linspace(0, 1, 10),
+              "SubSubLeadJet_CtagScore":np.linspace(0, 1, 10)
             }
 tex_dict =  { "Most_Forward_pt":r'Most Forward $p_T$',
               "HT":r'$H_T$',
@@ -113,7 +116,10 @@ tex_dict =  { "Most_Forward_pt":r'Most Forward $p_T$',
               "SubSubLeadLep_dxy":r'Sub-Sub-Leading Lepton $d_{xy}$',
               "SubSubLeadLep_dz":r'Sub-Sub-Leading Lepton $d_{z}$',
               "MT_SubSubLeadLep_MET":r'mt(Sub-Sub-Leading Lepton, MET)',
-              "LeadBtag_score":r'Leading B-Tagged Jet Score (deepFlavB)'
+              "LeadBtag_score":r'Leading B-Tagged Jet Score (deepFlavB)',
+              "LeadJet_CtagScore":r'Leading Jet Ctag Score (deepFlavC)',
+              "SubLeadJet_CtagScore":r'Sub-Leading Jet Ctag Score(deepFlavC)',
+              "SubSubLeadJet_CtagScore":r'Sub-Sub-Leading Jet Ctag Score (deepFlavC)'
             }
 
 translate = { #for translating Jackson's pandas df into an equivalent BDT df
@@ -180,7 +186,13 @@ BDT_features = ["Most_Forward_pt",
               "SubSubLeadLep_dz",
               "MT_SubSubLeadLep_MET",
               "LeadBtag_score",
+#               "LeadJet_CtagScore",
+#               "SubLeadJet_CtagScore",
+#               "SubSubLeadJet_CtagScore",
               "Weight"]
+
+train_features = BDT_features.copy()
+train_features.pop(-1)
 
 systematics_weights = [
     "Weight_LepSF_up",
@@ -214,6 +226,7 @@ def load_category(category, baby_dir="/home/users/cmcmahon/fcnc/ana/analysis/hel
         tmp_df["Label"] = "s"
     else:
         tmp_df["Label"] = "b"
+    tmp_df["Category"] = category
     return tmp_df
 
 def BDT_train_test_split(full_data, verbose=True):
@@ -232,6 +245,13 @@ def BDT_train_test_split(full_data, verbose=True):
 
     full_data['Label'] = full_data.Label.astype('category')
     (data_train, data_test) = train_test_split(full_data, train_size=0.5)
+    #training table
+    print("Training Event Counts:")
+    print("Signal: {}\nFakes: {}\nFlips: {}\nRares: {}".format(len(data_train[data_train.Label=="s"]),len(data_train[data_train.Category=="fakes_mc"]),
+                                                              len(data_train[data_train.Category=="flips_mc"]), len(data_train[data_train.Category=="rares"])))
+    print("Test Event Counts:")
+    print("Signal: {}\nFakes: {}\nFlips: {}\nRares: {}".format(len(data_test[data_test.Label=="s"]),len(data_test[data_test.Category=="fakes_mc"]),
+                                                              len(data_test[data_test.Category=="flips_mc"]), len(data_test[data_test.Category=="rares"])))
     if verbose:
         print('Number of training samples: {}'.format(len(data_train)))
         print('Number of testing samples: {}'.format(len(data_test)))
@@ -243,7 +263,7 @@ def BDT_train_test_split(full_data, verbose=True):
     return data_train, data_test
 
 def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, booster_name="", flag_load=False, verbose=True, flag_save_booster=True):
-    feature_names = data_train.columns[:-2]  #full_data
+    feature_names = train_features#data_train.columns[:-2]  #full_data
     train_weights = data_train.Weight
     test_weights = data_test.Weight
     # we skip the first and last two columns because they are the ID, weight, and label
@@ -263,7 +283,7 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
         print(train_weights)
     if flag_load:
         print("Loading saved model...")
-        booster = xgb.Booster({"nthread": 4})  # init model
+        booster = xgb.Booster({"nthread": 4})  # init model xgb.Booster()
         booster.load_model(booster_path)  # load data
 
     else:
@@ -277,12 +297,15 @@ def gen_BDT(signal_name, data_train, data_test, param, num_trees, output_dir, bo
     #if the tree is of interest, we can save it
     if flag_save_booster:
         booster.save_model(booster_path)
-
+#         f = open(output_dir + "booster_{}_dump.txt".format(signal_name), "w")
+#         dump = booster.get_dump()
+#         f.writelines(dump)
+#         f.close()
     return booster, train, test, evals_result
 
 def optimize_BDT_params(data_train, n_iter=20, num_folds=3, param_grid={}):
     y_train = data_train.Label.cat.codes
-    feature_names = data_train.columns[1:-2] 
+    feature_names = train_features#data_train.columns[1:-2] 
     x_train = data_train[feature_names]
     clf_xgb = xgb.XGBClassifier(objective = 'binary:logistic', eval_metric="logloss", use_label_encoder=False)
     if len(param_grid.keys())==0:
@@ -319,8 +342,9 @@ def make_yahist(x):
     return yahist_x
 
 def make_dmatrix(df, feature_names=None):
+    #breakpoint()
     if feature_names==None:
-        feature_names = df.columns[:-2]
+        feature_names = train_features#df.columns[:-2]
     else:
         feature_names = feature_names.copy()
         feature_names.pop(-1)
@@ -344,12 +368,12 @@ def gen_hist(data_test, label, out_dir, savefig=False, plot=False):
     weights_signal = weights_signal / weight_ratio
     if label not in ["nJet", "nBtag", "nElectron", "SubSubLeadLep_pt", "SubSubLeadLep_eta", "SubSubLeadLep_dz", 
                      "SubSubLeadLep_dxy", "SubLeadJet_pt", "SubSubLeadJet_pt", "SubLeadJet_BtagScore", 
-                     "SubSubLeadJet_BtagScore", "LeadBtag_pt", "LeadBtag_score", "MT_SubSubLeadLep_MET"]:
+                     "SubSubLeadJet_BtagScore", "LeadBtag_pt", "LeadBtag_score", "MT_SubSubLeadLep_MET"]: #features where we want overflow/underflow bins
         plt.hist(np.clip(values_signal, bins[0], bins[-1]),bins=bins_dict[label],
                  histtype='step',color='midnightblue',label='signal', weights=np.clip(weights_signal, bins[0], bins[-1]), density=True)#np.clip(weights_signal, bins[0], bins[-1])
         plt.hist(np.clip(values_background, bins[0], bins[-1]),bins=bins_dict[label],
                  histtype='step',color='firebrick',label='background', weights=np.clip(weights_background, bins[0], bins[-1]), density=True)#np.clip(weights_background, bins[0], bins[-1])
-    else:
+    else: #do not make an overflow/underflow bin
         plt.hist(values_signal, bins=bins_dict[label],
                  histtype='step',color='midnightblue',label='signal', weights=weights_signal)#density=True);
         plt.hist(values_background,bins=bins_dict[label],
@@ -525,7 +549,7 @@ class BDT:
                 other.HUT_dict[cat_key]["prediction"] = np.concatenate([other.HUT_dict[cat_key]["prediction"], o.HUT_dict[cat_key]["prediction"]])
         return other
         
-    def load_pd_baby(self, pd_file_path, signal="HCT"):
+    def load_pd_baby(self, pd_file_path, signal="HCT"): #for reading Jackson's babies
         baby = pd.read_hdf(pd_file_path)
         signal_BDT_params = pd.DataFrame()
         background_BDT_params = pd.DataFrame()
@@ -560,9 +584,12 @@ class BDT:
                 df[feature] = np.array(df_values[feature])
                 
             if "signal" in process_name:
+                df["Category"] = "signal"
                 signal_BDT_params = pd.concat([signal_BDT_params, df], axis=0)
             else:
+                df["Category"] = process_name
                 background_BDT_params = pd.concat([background_BDT_params, df], axis=0)
+            
         signal_BDT_params["Label"] = "s"
         background_BDT_params["Label"] = "b"
         full_data = pd.concat([signal_BDT_params, background_BDT_params], axis=0)
@@ -575,7 +602,7 @@ class BDT:
             baby_dir = [self.in_base_dir + f for f in self.in_files]
             return self.load_SR_BR_from_babies(baby_dir)
     
-    def equalize_yields(self, sig, back, verbose=False):
+    def equalize_yields(self, sig, back, verbose=False): #generate a copy of the signal/background babies where the signal yield is weighted down to be == background yield.
         sig_copy = sig.copy()
         back_copy = back.copy()
         signal_yield = sum(sig_copy.Weight)
@@ -695,10 +722,18 @@ class BDT:
             back_train_weights = self.train_Dmatrix.get_weight()[~(self.train_Dmatrix.get_label().astype(bool))]
             back_test_weights = self.test_Dmatrix.get_weight()[~(self.test_Dmatrix.get_label().astype(bool))]
             plt.figure("sig/back", figsize=(7,7))
-            hist_sig_train = plt.hist(sig_train_predictions, bins=bins, histtype='step',color='midnightblue', label='signal (train)', weights=sig_train_weights)
-            hist_sig_test  = plt.hist(sig_test_predictions,  bins=bins, histtype='step',color='midnightblue', hatch="/", label='signal (test)', weights=sig_test_weights)
-            hist_back_train = plt.hist(back_train_predictions, bins=bins, histtype='step',color='firebrick', label='background (train)', weights=back_train_weights)
-            hist_back_test  = plt.hist(back_test_predictions,  bins=bins, histtype='step',color='firebrick', hatch="/", label='background (test)', weights=back_test_weights)
+            hist_sig_train = Hist1D(sig_train_predictions, bins=bins, weights=sig_train_weights, color="midnightblue", label="signal (train)")
+            hist_sig_test = Hist1D(sig_test_predictions, bins=bins, weights=sig_test_weights, color="midnightblue", label="signal (test)")
+            hist_back_train = Hist1D(back_train_predictions, bins=bins, weights=back_train_weights, color="firebrick", label="background (train)")
+            hist_back_test = Hist1D(back_test_predictions, bins=bins, weights=back_test_weights, color="firebrick", label="background (test)")
+            hist_sig_train.plot(ax=plt.gca(), errors=True)
+            hist_sig_test.plot(ax=plt.gca(), errors=True)
+            hist_back_train.plot(ax=plt.gca(), errors=True)
+            hist_back_test.plot(ax=plt.gca(), errors=True)
+#             hist_sig_train = plt.hist(sig_train_predictions, bins=bins, histtype='step',color='midnightblue', label='signal (train)', weights=sig_train_weights)
+#             hist_sig_test  = plt.hist(sig_test_predictions,  bins=bins, histtype='step',color='midnightblue', hatch="/", label='signal (test)', weights=sig_test_weights)
+#             hist_back_train = plt.hist(back_train_predictions, bins=bins, histtype='step',color='firebrick', label='background (train)', weights=back_train_weights)
+#             hist_back_test  = plt.hist(back_test_predictions,  bins=bins, histtype='step',color='firebrick', hatch="/", label='background (test)', weights=back_test_weights)
             plt.title("{} BDT Prediction of Signal and Background".format(self.label))
             plt.xlabel("BDT Score")
             plt.ylabel("Yield")
@@ -1026,7 +1061,7 @@ class BDT:
         BDT_fakes = self.category_dict["fakes"]["data"]
         BDT_flips = self.category_dict["flips"]["data"]
         BDT_rares = self.category_dict["rares"]["data"]
-        feature_names = BDT_fakes.columns[1:-2]
+        feature_names = train_features#BDT_fakes.columns[1:-2]
         BDT_fakes['Label'] = BDT_fakes.Label.astype('category')
         BDT_flips['Label'] = BDT_flips.Label.astype('category')
         BDT_rares['Label'] = BDT_rares.Label.astype('category')
@@ -1076,7 +1111,7 @@ class BDT:
         plt.savefig(out_dir + "SB_ratio.png")
         plt.close()
         
-    def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins):
+    def plot_datacard_bins(self, cat_dict, sig_pred, fakes_pred, flips_pred, rares_pred, bins, year):
         out_dir = "{0}/{1}/{2}/".format(self.out_base_dir, self.label, self.booster_label)
         sig_weight = np.array(cat_dict["signal"]["data"].Weight)
         plt.figure("dc_categories", figsize=(7,7))
@@ -1084,11 +1119,11 @@ class BDT:
         plt.hist(flips_pred,bins=bins,histtype='step',color='#2c7bb6',label='flips', weights=cat_dict["flips"]["data"].Weight)
         plt.hist(rares_pred,bins=bins,histtype='step',color='#fdae61',label='rares', weights=cat_dict["rares"]["data"].Weight)
         plt.hist(sig_pred,bins=bins,histtype='step',color='black',label='signal', weights=cat_dict["signal"]["data"].Weight/100)
-        plt.title('Datacard Bins')
+        plt.title('Datacard Bins ({})'.format(year))
         plt.legend()
         plt.xlabel("BDT Score (after QT)")
-        plt.savefig(out_dir + "DC_bins.pdf")
-        plt.savefig(out_dir + "DC_bins.png")
+        plt.savefig(out_dir + "DC_bins_{}.pdf".format(year))
+        plt.savefig(out_dir + "DC_bins_{}.png".format(year))
         plt.close()
         
     def get_bin_yield(self, category, bins, bin_idx, cat_dict, quantile_transformer=None):
@@ -1156,17 +1191,17 @@ class BDT:
             down_yield = 0
         return (up_yield, down_yield)
 
-    def get_QT_bins(self, signal_name, year, directories, bins):
+    def get_QT_bins(self, signal_name, year, directories, bins, data_driven=False):
         if signal_name == "HCT":
-            cat_dict = self.make_category_dict(directories, "HCT", background="all", data_driven=True, from_pandas=False, systematics=False, flag_store_dict=False)
+            cat_dict = self.make_category_dict(directories, "HCT", background="all", data_driven=data_driven, from_pandas=False, systematics=False, flag_store_dict=False)
         elif signal_name == "HUT":
-            cat_dict = self.make_category_dict(directories, "HUT", background="all", data_driven=True, from_pandas=False, systematics=False, flag_store_dict=False)
+            cat_dict = self.make_category_dict(directories, "HUT", background="all", data_driven=data_driven, from_pandas=False, systematics=False, flag_store_dict=False)
 
         signal_predictions = cat_dict["signal"]["prediction"]
         qt = QuantileTransformer(output_distribution="uniform")
         qt.fit(signal_predictions.reshape(-1, 1))
         transformed_bins = qt.inverse_transform(bins.reshape(-1, 1))
-        return transformed_bins
+        return transformed_bins[:,0]
     
     def gen_datacard(self, signal_name, year, directories, quantile_transform=True, data_driven=False, plot=True, BDT_bins=np.linspace(0, 1, 21),
                      flag_tmp_directory=False, dir_label="tmp", from_pandas=False, systematics=False, JES_dirs=(), flag_plot=False):
@@ -1193,7 +1228,7 @@ class BDT:
         BDT_flips = cat_dict["flips"]["data"]
         BDT_rares = cat_dict["rares"]["data"]
         #BDT_bins = np.linspace(0, 1, 20)
-        feature_names = BDT_fakes.columns[:-2]  #full_data
+        feature_names = train_features#BDT_fakes.columns[:-2]  #full_data
         fakes_weights = BDT_fakes.Weight 
         flips_weights = BDT_flips.Weight
         rares_weights = BDT_rares.Weight 
@@ -1211,7 +1246,7 @@ class BDT:
             rares_predictions = qt.transform(cat_dict["rares"]["prediction"].reshape(-1, 1)).flatten()
             if plot:
                 self.plot_SB_ratio(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
-                self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins)
+                self.plot_datacard_bins(cat_dict, signal_predictions, fakes_predictions, flips_predictions, rares_predictions, BDT_bins, year)
         else:      
             qt=None
         for b in range(1, len(BDT_bins)): #get yields of each bin
@@ -1311,7 +1346,7 @@ class BDT:
         self.gen_datacard("HUT", year, directory, quantile_transform, data_driven, BDT_bins=BDT_bins, flag_tmp_directory=flag_tmp_directory,
                           plot=plot, from_pandas=from_pandas, systematics=systematics, JES_dirs=JES_dirs, flag_plot=flag_plot)
         
-    def load_custom_params(self, param, dirs):
+    def load_custom_params(self, param, dirs): #given a specified set of hyperparameters as a dictionary, train a new BDT
         self.set_booster_label()
         self.load_booster_params()
         print(self.booster_params)
@@ -1356,6 +1391,8 @@ def compare_S_B_ratio(BDTs, directories="", fill_categories=True):
     plt.legend()
     plt.draw()
 
+    
+#Old code when we were doing preselections in coffea
 class nano_analysis(processor.ProcessorABC):
     def __init__(self, year=2018, variations=[], accumulator={}, debug=False, BDT_features=[], version= "fcnc_v6_SRonly_5may2021", SS_region="SS", ):
         self.variations = variations
