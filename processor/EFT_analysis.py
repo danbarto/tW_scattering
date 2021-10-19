@@ -36,6 +36,39 @@ if __name__ == '__main__':
     elif args.scan == 'ctp':
         points = get_scan('ctp', C_min=-30, C_max=30, step=5)
 
+    # inclusive EFT weights
+    eft_weights = [\
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_6p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_6p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_6p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_6p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_6p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_6p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+    ]
+
+
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
     fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
@@ -118,7 +151,9 @@ if __name__ == '__main__':
                         dump=False,
                         era='',
                         hyperpoly=hp,
-                        points=points),
+                        points=points,
+                        weights=eft_weights,
+                    ),
             exe,
             exe_args,
             chunksize=250000,
