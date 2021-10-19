@@ -14,9 +14,10 @@ import time
 def submit():
 
     requests = {
-        'TTWJetsToLNuEWK_5f_EFT_myNLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's EFT
-        'TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's EFT
-        'TTWJetsToLNuEWK_5f_NLO':       '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's the SM
+        #'TTWJetsToLNuEWK_5f_EFT_myNLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's EFT
+        #'TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_cpt8_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's EFT
+        #'TTWJetsToLNuEWK_5f_NLO':       '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz', # that's the SM
+        'TTZ_5f_LO_EFT': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_LO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'
     }
 
     total_summary = {}
@@ -51,7 +52,7 @@ def submit():
                         ["metis_extraargs",""],
                         ["JobBatchName",reqname],
                         ],
-                    "requirements_line": 'Requirements = ((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true) && {extra_requirements})'.format(extra_requirements=extra_requirements),
+                    "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True)'.format(extra_requirements=extra_requirements),
                     },
                 tag = tag,
                 )
