@@ -170,7 +170,7 @@ cd $CMSSW_BASE/src
 git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
 cd HiggsAnalysis/CombinedLimit
 git fetch origin
-git checkout v8.0.1
+git checkout v8.2.0
 scramv1 b clean; scramv1 b # always make a clean build
 ```
 
