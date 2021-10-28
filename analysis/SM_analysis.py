@@ -222,7 +222,7 @@ if __name__ == '__main__':
     if run_impacts:
         card.run_impacts(combined, plot_dir='/home/users/dspitzba/public_html/tW_scattering/')
     
-    
+    print ("Using the following data card: %s"%combined)
     print ("Significance: %.2f sigma"%np.sqrt(result_combined['deltaNLL'][1]*2))
     
     card.cleanUp()
