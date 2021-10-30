@@ -68,16 +68,16 @@ if __name__ == '__main__':
 
 
     # just an example.
-    points = make_scan(operator='cpQ3', C_min=0, C_max=20, step=1)
+    points = make_scan(operator='cpQM', C_min=0, C_max=10, step=1)
 
     #def get_pred(p):
     #    return hp.eval(coeff, p)
     #get_pred = lambda x: hp.eval(coeff, x)
 
-    for i in range(0,21):
+    for i in range(0,11):
         print (i, hp.eval(coeff, points[i]['point']))
 
-    pred_matrix = np.array([ np.array(hp.eval(coeff,points[i]['point'])) for i in range(21) ])
+    pred_matrix = np.array([ np.array(hp.eval(coeff,points[i]['point'])) for i in range(11) ])
 
 
     # plot the increase in yield 
@@ -97,13 +97,13 @@ if __name__ == '__main__':
         ax=ax,
     )
     
-    plt.plot(range(21), np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[0,:]), label=r'inclusive', c='green')
-    plt.plot(range(21), np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[0,7:]), label=r'$L_{T} \geq 700\ GeV$', c='blue')
+    plt.plot(range(11), np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[0,:]), label=r'inclusive', c='green')
+    plt.plot(range(11), np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[0,7:]), label=r'$L_{T} \geq 700\ GeV$', c='blue')
     
     plt.xlabel(r'$C$')
     plt.ylabel(r'$\sigma/\sigma_{SM}$')
     plt.legend()
     
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/Esquared/cpQ3_scaling.pdf')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/Esquared/cpQ3_scaling.png')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/Esquared/cpQM_scaling.pdf')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/Esquared/cpQM_scaling.png')
     

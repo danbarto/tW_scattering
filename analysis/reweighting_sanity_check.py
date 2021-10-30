@@ -59,6 +59,18 @@ def get_LT(ev):
 def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
+def add_uncertainty(vals, unc, ax, edges, ratio=False, color='gray', hatch='///', label='none'):
+    opts = {'step': 'post', 'hatch': hatch,
+                    'facecolor': 'none', 'edgecolor': color, 'linewidth': 0, 'zorder':10.}
+    
+    if ratio:
+        down = np.ones(len(vals)) - unc
+        up = np.ones(len(vals)) + unc
+    else:
+        down = vals - unc
+        up = vals + unc
+    ax.fill_between(x=edges, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
+
 if __name__ == '__main__':
 
     # Load samples
@@ -71,9 +83,24 @@ if __name__ == '__main__':
         'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_LO.root").events()
     }
 
+    res['ttZ_NLO'] = {
+        'file': base_dir + "merged_ttZ_NLO.root",
+        'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_NLO.root").events()
+    }
+
+    res['ttZ_NLO_ctz7'] = {
+        'file': base_dir + "merged_ttZ_NLO_ctz7.root",
+        'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_NLO_ctz7.root").events()
+    }
+
     res['ttZ_LO_ctz5'] = {
         'file': base_dir + "merged_ttZ_LO_ctz5.root",
         'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_LO_ctz5.root").events()
+    }
+
+    res['ttZ_LO_ctz2_cpt5_cpqm4'] = {
+        'file': base_dir + "merged_ttZ_LO_ctz2_cpt5_cpqm4.root",
+        'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_LO_ctz2_cpt5_cpqm4.root").events()
     }
     
     # Get HyperPoly parametrization.
@@ -88,7 +115,13 @@ if __name__ == '__main__':
     #pt_axis   = hist.Bin("pt",     r"p", 7, 0, 200)
 
     # this needs to be the x-sec at the ref point of course!!!
-    xsecs = {'ttZ_LO': 0.663, 'ttZ_LO_ctz5': 1.588}
+    xsecs = {
+        'ttZ_LO': 0.663,
+        'ttZ_LO_ctz5': 1.588,
+        'ttZ_LO_ctz2_cpt5_cpqm4': 0.7103,
+        'ttZ_NLO': 0.930,
+        'ttZ_NLO_ctz7': 3.628,
+    }
 
     for r in res:
 
@@ -115,7 +148,7 @@ if __name__ == '__main__':
         res[name]['central'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][0]
         res[name]['w2'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][1]
 
-        if r == 'ttZ_LO':
+        if r in ['ttZ_LO', 'ttZ_NLO']:
 
             for w in weights:
             
@@ -145,14 +178,20 @@ if __name__ == '__main__':
 
     num     = res['ttZ_LO_ctz5']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
     denom   = hp.eval(res['ttZ_LO']['coeff'], [5,0,0,0,0,0]), res['ttZ_LO']['w2']
-    ratio   = num[0]/denom[0]
+    denom_vals = res['ttZ_LO']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
+    denom_unc_rel = np.sqrt(denom_vals[1])/denom_vals[0]
+    denom_unc_abs = denom_unc_rel*denom[0]
+
+    num_h   = Hist1D.from_bincounts(num[0], edges, np.sqrt(num[1]), )
+    denom_h = Hist1D.from_bincounts(denom[0], edges, denom_unc_abs, )
+    ratio   = num_h.divide(denom_h)
 
     hep.histplot(
         num[0],
         edges,
         #w2=num[1],
         histtype="step",
-        label=[r'ttZ (LO), $c_{tZ}=5$'],
+        label=[r'LO, $c_{tZ}=5$'],
         color=['red'],
         ax=ax)
 
@@ -163,26 +202,118 @@ if __name__ == '__main__':
         histtype="step",
         linestyle='--',
         #linewidth=1.5,
-        label=[r'ttZ (LO), $c_{tZ}=5$, reweighted'],
+        label=[r'LO, $c_{tZ}=5$, reweighted'],
         color=['red'],
         ax=ax)
 
     hep.histplot(
-        ratio,
+        ratio.counts,
         edges,
         #w2=ratio.errors,
         histtype="errorbar",
-        color='black',
+        color='red',
         ax=rax,
     )
 
+    add_uncertainty(denom[0], denom_unc_abs, ax, edges, ratio=False, color='red', hatch='///')
+    add_uncertainty(num[0], np.sqrt(num[1]), ax, edges, ratio=False, color='red', hatch="\\\\")
+    add_uncertainty(ratio.counts, ratio.errors, rax, edges, ratio=False, color='red', hatch="///")
+
+    num     = res['ttZ_LO_ctz2_cpt5_cpqm4']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
+    denom   = hp.eval(res['ttZ_LO']['coeff'], [2,5,4,0,0,0]), res['ttZ_LO']['w2']
+    denom_vals = res['ttZ_LO']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
+    denom_unc_rel = np.sqrt(denom_vals[1])/denom_vals[0]
+    denom_unc_abs = denom_unc_rel*denom[0]
+
+    num_h   = Hist1D.from_bincounts(num[0], edges, np.sqrt(num[1]), )
+    denom_h = Hist1D.from_bincounts(denom[0], edges, denom_unc_abs, )
+    ratio   = num_h.divide(denom_h)
+
+    hep.histplot(
+        num[0],
+        edges,
+        #w2=num[1],
+        histtype="step",
+        label=[r'LO, $c_{tZ}=2, c_{\varphi t}=5, c_{\varphi Q}^{-}=4$'],
+        color=['blue'],
+        ax=ax)
+
+    hep.histplot(
+        denom[0],
+        edges,
+        #w2=denom[1],
+        histtype="step",
+        linestyle='--',
+        #linewidth=1.5,
+        label=[r'LO, $c_{tZ}=2, c_{\varphi t}=5, c_{\varphi Q}^{-}=4$, rew.'],
+        color=['blue'],
+        ax=ax)
+
+    hep.histplot(
+        ratio.counts,
+        edges,
+        #w2=ratio.errors,
+        histtype="errorbar",
+        color='blue',
+        ax=rax,
+    )
+
+    add_uncertainty(denom[0], denom_unc_abs, ax, edges, ratio=False, color='blue', hatch='///')
+    add_uncertainty(num[0], np.sqrt(num[1]), ax, edges, ratio=False, color='blue', hatch="\\\\")
+    add_uncertainty(ratio.counts, ratio.errors, rax, edges, ratio=False, color='blue', hatch="|||")
+
+    num     = res['ttZ_NLO_ctz7']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
+    denom   = hp.eval(res['ttZ_NLO']['coeff'], [7,0,0,0,0,0]), res['ttZ_NLO']['w2']
+    denom_vals = res['ttZ_LO']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
+    denom_unc_rel = np.sqrt(denom_vals[1])/denom_vals[0]
+    denom_unc_abs = denom_unc_rel*denom[0]
+
+    num_h   = Hist1D.from_bincounts(num[0], edges, np.sqrt(num[1]), )
+    denom_h = Hist1D.from_bincounts(denom[0], edges, denom_unc_abs, )
+    ratio   = num_h.divide(denom_h)
+
+    hep.histplot(
+        num[0],
+        edges,
+        histtype="step",
+        label=[r'NLO, $c_{tZ}=7$'],
+        color=['green'],
+        ax=ax)
+
+    hep.histplot(
+        denom[0],
+        edges,
+        histtype="step",
+        linestyle='--',
+        label=[r'NLO, $c_{tZ}=7$, reweighted'],
+        color=['green'],
+        ax=ax)
+
+    hep.histplot(
+        ratio.counts,
+        edges,
+        histtype="errorbar",
+        color='green',
+        ax=rax,
+    )
+
+    add_uncertainty(denom[0], denom_unc_abs, ax, edges, ratio=False, color='green', hatch='///')
+    add_uncertainty(num[0], np.sqrt(num[1]), ax, edges, ratio=False, color='green', hatch="\\\\")
+    add_uncertainty(ratio.counts, ratio.errors, rax, edges, ratio=False, color='green', hatch="\\\\")
+
     rax.set_ylim(0,1.99)
-    rax.set_xlabel(r'$L_T\ (l_1+l_2+p_{T}^{miss})\ (GeV)$')
+    rax.set_xlabel(r'$p_{T}(l_1)+p_{T}(l_2)+p_{T}^{miss}\ (GeV)$')
     rax.set_ylabel(r'Ratio')
     ax.set_ylabel(r'Events')
     ax.set_yscale('log')
+    ax.set_ylim(0.0001,0.9)
 
     ax.legend()
+
+    x1, y1 = [-100, 1000], [1, 1]
+    plt.xlim(0, 900)
+    #plt.ylim(-2, 8)
+    plt.plot(x1, y1, marker = 'o', color='black')
 
     plt.show()
     
