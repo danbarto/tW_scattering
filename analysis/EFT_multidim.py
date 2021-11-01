@@ -50,13 +50,19 @@ def histo_values(histo, weight):
 
 if __name__ == '__main__':
 
+    import matplotlib.pyplot as plt
+    import mplhep as hep
+    plt.style.use(hep.style.CMS)
+
     ht_bins     = hist.Bin('ht', r'$H_{T}\ (GeV)$', [100,200,300,400,500,600,700,800])
 
-    output_EFT = get_cache('EFT_ctW_scan_2017')
-    eft_mapping = {k[0]:k[0] for k in output_EFT['LT_SR_pp'].values().keys() if 'topW_full_EFT_ctZ' in k[0]}  # not strictly necessary
-    weights = [ k[0].replace('topW_full_EFT_','').replace('_nlo','') for k in output_EFT['LT_SR_pp'].values().keys() if 'topW_full_EFT_ctZ' in k[0] ]
+    hist_name = 'LT_SR_mm'
 
-    output_EFT['LT_SR_pp'] = regroup_and_rebin(output_EFT['LT_SR_pp'], ht_bins, eft_mapping)
+    output_EFT = get_cache('EFT_ctW_scan_2017')
+    eft_mapping = {k[0]:k[0] for k in output_EFT[hist_name].values().keys() if 'topW_full_EFT_ctZ' in k[0]}  # not strictly necessary
+    weights = [ k[0].replace('topW_full_EFT_','').replace('_nlo','') for k in output_EFT[hist_name].values().keys() if 'topW_full_EFT_ctZ' in k[0] ]
+
+    output_EFT[hist_name] = regroup_and_rebin(output_EFT[hist_name], ht_bins, eft_mapping)
     
     ref_point = 'ctZ_2p_cpt_4p_cpQM_4p_cpQ3_4p_ctW_2p_ctp_2p'
     ref_values = [ float(x.replace('p','.')) for x in ref_point.split('_')[1::2] ]
@@ -64,27 +70,18 @@ if __name__ == '__main__':
     hp = HyperPoly(order=2)
     hp.initialize( [get_coordinates(weight) for weight in weights], ref_values )
 
-    coeff = hp.get_parametrization( [histo_values(output_EFT['LT_SR_pp'], 'topW_full_EFT_%s_nlo'%w) for w in weights] )
+    coeff = hp.get_parametrization( [histo_values(output_EFT[hist_name], 'topW_full_EFT_%s_nlo'%w) for w in weights] )
 
 
     # just an example.
     points = make_scan(operator='cpQM', C_min=0, C_max=10, step=1)
-
-    #def get_pred(p):
-    #    return hp.eval(coeff, p)
-    #get_pred = lambda x: hp.eval(coeff, x)
 
     for i in range(0,11):
         print (i, hp.eval(coeff, points[i]['point']))
 
     pred_matrix = np.array([ np.array(hp.eval(coeff,points[i]['point'])) for i in range(11) ])
 
-
     # plot the increase in yield 
-
-    import matplotlib.pyplot as plt
-    import mplhep as hep
-    plt.style.use(hep.style.CMS)
     
     fig, ax = plt.subplots()
     
