@@ -31,7 +31,7 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transfo
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]]):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]], weights=[]):
         self.variations = variations
 
         print (variations)
@@ -51,6 +51,7 @@ class SS_analysis(processor.ProcessorABC):
 
         self.hyperpoly = hyperpoly
         self.points = points
+        self.weights = weights
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -243,6 +244,9 @@ class SS_analysis(processor.ProcessorABC):
                 for point in self.points:
                     point['weight'] = Weights( len(ev) )
                     point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
+
+                
+
 
             #print (weight.variations())
 
@@ -497,6 +501,31 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset+'_%s'%point['name'],
                             ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                        )
+
+                    for point in self.weights:
+                        output['lead_lep_SR_pp'+ext].fill(
+                            dataset = dataset+'_%s'%point,
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
+                        )
+
+                        output['lead_lep_SR_mm'+ext].fill(
+                            dataset = dataset+'_%s'%point,
+                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
+                        )
+
+                        output['LT_SR_pp'+ext].fill(
+                            dataset = dataset+'_%s'%point,
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
+                        )
+
+                        output['LT_SR_mm'+ext].fill(
+                            dataset = dataset+'_%s'%point,
+                            ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
+                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
                         )
 
                 else:

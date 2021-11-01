@@ -17,6 +17,7 @@ if __name__ == '__main__':
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--scan', action='store', default='ctW', choices=['ctZ', 'cpt', 'cpQM', 'cpQ3', 'ctW', 'ctp'], help="Which training to use?")
+
     args = argParser.parse_args()
 
     overwrite   = not args.keep
@@ -43,6 +44,38 @@ if __name__ == '__main__':
         points = make_scan(operator='cpQM', C_min=-11, C_max=11, step=1)
     elif args.scan == 'cpQ3':
         points = make_scan(operator='cpQ3', C_min=-6, C_max=6, step=0.6)           
+
+    # inclusive EFT weights
+    eft_weights = [\
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_6p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_6p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_0p_cpQ3_6p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_3p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_0p_cpQM_6p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_3p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_0p_cpt_6p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_3p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+        'ctZ_6p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
+    ]
 
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
@@ -126,7 +159,9 @@ if __name__ == '__main__':
                         dump=False,
                         era='',
                         hyperpoly=hp,
-                        points=points),
+                        points=points,
+                        weights=eft_weights,
+                    ),
             exe,
             exe_args,
             chunksize=250000,

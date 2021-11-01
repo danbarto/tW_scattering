@@ -68,6 +68,7 @@ if __name__ == '__main__':
         'conversion': ['conv_mc'],
         'signal': ['topW_v3'],
     }
+
     year = 2017
     output = get_cache('SS_analysis_%s'%year)
     output_EFT = get_cache('EFT_%s_scan_%s'%(scan, year))
@@ -230,6 +231,7 @@ if __name__ == '__main__':
     #combined = card.combineCards(data_cards)
     #result_combined = card.nllScan(combined, rmin=0, rmax=3, npoints=61, options=' -v -1')
     
+
     #    data_cards.update({
     #        '%s_SR1'%year: sm_card_sr1,
     #        '%s_SR2'%year: sm_card_sr2,

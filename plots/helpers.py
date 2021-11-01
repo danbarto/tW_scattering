@@ -118,7 +118,7 @@ signal_fill_opts = {
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, is_data=True, y_axis_label='Events', rescale={}):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, is_data=True, y_axis_label='Events', rescale={}, obs_label='Observation'):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -206,7 +206,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     for handle, label in zip(handles, labels):
         try:
             if label is None or label=='None':
-                updated_labels.append("Observation")
+                updated_labels.append(obs_label)
                 handle.set_color('#000000')
             else:
                 updated_labels.append(new_labels[label])
