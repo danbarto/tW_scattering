@@ -16,7 +16,8 @@ if __name__ == '__main__':
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
-    argParser.add_argument('--scan', action='store', default='ctW', choices=['ctW','ctp',], help="Which training to use?")
+    argParser.add_argument('--scan', action='store', default='ctW', choices=['ctZ', 'cpt', 'cpQM', 'cpQ3', 'ctW', 'ctp'], help="Which training to use?")
+
     args = argParser.parse_args()
 
     overwrite   = not args.keep
@@ -34,7 +35,15 @@ if __name__ == '__main__':
     if args.scan == 'ctW':
         points = make_scan(operator='ctW', C_min=-2.5, C_max=2.5, step=0.25)
     elif args.scan == 'ctp':
-        points = get_scan('ctp', C_min=-30, C_max=30, step=5)
+        points = make_scan(operator='ctp', C_min=-30, C_max=30, step=5)
+    elif args.scan == 'ctZ':
+        points = make_scan(operator='ctZ', C_min=-10, C_max=10, step=1)
+    elif args.scan == 'cpt':
+        points = make_scan(operator='cpt', C_min=-7, C_max=7, step=0.7)
+    elif args.scan == 'cpQM':
+        points = make_scan(operator='cpQM', C_min=-11, C_max=11, step=1)
+    elif args.scan == 'cpQ3':
+        points = make_scan(operator='cpQ3', C_min=-6, C_max=6, step=0.6)           
 
     # inclusive EFT weights
     eft_weights = [\
@@ -67,7 +76,6 @@ if __name__ == '__main__':
         'ctZ_3p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
         'ctZ_6p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo',
     ]
-
 
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
