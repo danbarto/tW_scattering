@@ -197,7 +197,8 @@ if __name__ == '__main__':
 
     if run_scan:
 
-        years = ['2016', '2016APV']
+        #years = ['2016', '2016APV', '2017', '2018']
+        years = ['2018']
 
         res_sm = get_NLL(years=years, point=[0,0,0,0,0,0])
 
