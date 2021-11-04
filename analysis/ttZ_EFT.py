@@ -289,10 +289,10 @@ if __name__ == '__main__':
 
     c_values = []
     for i in range(0,41):
-        print (i-20, hp.eval(res['ttZ_NLO']['coeff'], points[i]['point']))
+        print (i-20, hp.eval(res['ttZ_LO']['coeff'], points[i]['point']))
         c_values.append(i-20)
 
-    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_NLO']['coeff'],points[i]['point'])) for i in range(41) ])
+    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_LO']['coeff'],points[i]['point'])) for i in range(41) ])
 
     fig, ax = plt.subplots()
     hep.cms.label(
@@ -313,18 +313,18 @@ if __name__ == '__main__':
 
     ax.set_ylim(0,10)
     
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/NLO_cpQM_scaling.pdf')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/NLO_cpQM_scaling.png')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpQM_scaling.pdf')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpQM_scaling.png')
 
     # just an example.
     points = make_scan(operator='cpt', C_min=-20, C_max=20, step=1)
 
     c_values = []
     for i in range(0,41):
-        print (i-20, hp.eval(res['ttZ_NLO']['coeff'], points[i]['point']))
+        print (i-20, hp.eval(res['ttZ_LO']['coeff'], points[i]['point']))
         c_values.append(i-20)
 
-    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_NLO']['coeff'],points[i]['point'])) for i in range(41) ])
+    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_LO']['coeff'],points[i]['point'])) for i in range(41) ])
 
     fig, ax = plt.subplots()
     
@@ -346,6 +346,6 @@ if __name__ == '__main__':
 
     ax.set_ylim(0,10)
     
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/NLO_cpt_scaling.pdf')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/NLO_cpt_scaling.png')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpt_scaling.pdf')
+    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpt_scaling.png')
 
