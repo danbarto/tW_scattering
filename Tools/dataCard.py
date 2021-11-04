@@ -231,7 +231,7 @@ class dataCard:
         print("[cardFileWrite] Written card file %s"%fname)
         return fname
 
-    def combineCards(self, cards):
+    def combineCards(self, cards, name='combined_card.txt'):
 
         import uuid, os
         ustr          = str(uuid.uuid4())
@@ -252,7 +252,7 @@ class dataCard:
         combineCommand  = "cd "+uniqueDirname+"; eval `scramv1 runtime -sh`; combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
         print ("Executing %s"%combineCommand)
         os.system(combineCommand)
-        resFile = cards[years[0]].replace(str(years[0]), 'COMBINED')
+        resFile = '/'+os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
         f = resFile.split('/')[-1]
         resPath = resFile.replace(f, '')
         if not os.path.isdir(resPath):

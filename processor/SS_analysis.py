@@ -594,6 +594,18 @@ class SS_analysis(processor.ProcessorABC):
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
                         )
 
+                        output['LT_SR_pp'+pdf_ext].fill(
+                            dataset = dataset,
+                            ht = lt[(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                        )
+
+                        output['LT_SR_mm'+pdf_ext].fill(
+                            dataset = dataset,
+                            ht = lt[(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        )
+
                     for i in [0,1,3,5,7,8]:
                         pdf_ext = "_scale_%s"%i
 
@@ -627,6 +639,18 @@ class SS_analysis(processor.ProcessorABC):
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
                         )
 
+                        output['LT_SR_pp'+pdf_ext].fill(
+                            dataset = dataset,
+                            ht = lt[(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                        )
+
+                        output['LT_SR_mm'+pdf_ext].fill(
+                            dataset = dataset,
+                            ht = lt[(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        )
+
                     if len(ev.PSWeight[0]) > 1:
                         for i in range(4):
                             pdf_ext = "_PS_%s"%i
@@ -653,6 +677,18 @@ class SS_analysis(processor.ProcessorABC):
                                 dataset = dataset,
                                 multiplicity = best_score[(BL & blind_sel)],
                                 weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
+                            )
+
+                            output['LT_SR_pp'+pdf_ext].fill(
+                                dataset = dataset,
+                                ht = lt[(BL & SR_sel_pp)],
+                                weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                            )
+    
+                            output['LT_SR_mm'+pdf_ext].fill(
+                                dataset = dataset,
+                                ht = lt[(BL & SR_sel_mm)],
+                                weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                             )
                 #del model
                 #del scaler
@@ -1056,6 +1092,8 @@ if __name__ == '__main__':
             "node1_score_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_pdf_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "_pdf_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
+            "LT_SR_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
+            "LT_SR_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
         })
 
     for i in [0,1,3,5,7,8]:
@@ -1064,6 +1102,8 @@ if __name__ == '__main__':
             "node0_score_transform_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_scale_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "LT_SR_pp_scale_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
+            "LT_SR_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
             "_scale_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
         })
 
@@ -1073,6 +1113,8 @@ if __name__ == '__main__':
             "node0_score_transform_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node1_score_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
             "node_PS_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "LT_SR_pp_PS_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
+            "LT_SR_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
             "_PS_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
         })
 

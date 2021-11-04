@@ -1,4 +1,5 @@
 import warnings
+import copy
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -18,8 +19,9 @@ class TAxis(object):
 
 def yahist_to_root(hist, label, name, overflow='all'):
 
-    sumw, sumw2 = hist.counts, hist.errors**2
-    edges = hist.edges[1:-1]
+    tmp = copy.deepcopy(hist)
+    sumw, sumw2 = tmp.counts, tmp.errors**2
+    edges = tmp.edges[1:-1]
 
     out = TH1.__new__(TH1)
     out._fXaxis = TAxis(len(edges) - 1, edges[0], edges[-1])

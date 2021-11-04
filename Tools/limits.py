@@ -310,6 +310,8 @@ def makeCardFromHist(
     ext='',
     systematics={},
     signal_hist=None,
+    bsm_vals=None,
+    sm_vals=None,
     integer=False, quiet=False,
 ):
     
@@ -351,13 +353,30 @@ def makeCardFromHist(
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
             fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
+        elif (bsm_vals is not None) and process=='signal':
+            #tmp_hist = Hist1D.from_bincounts(
+            #    bsm_vals,
+            #    data_hist_bins.edges(overflow=overflow),
+            #)
+            print ("First sum", sum(bsm_vals.counts))
+            fout[process] = yahist_to_root(bsm_vals, 'signal', 'signal', overflow='all')
+            print ("Second sum", sum(bsm_vals.counts))
         else:
             fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
 
     if integer:
         fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
     else:
-        fout["data_obs"]  = hist.export1d(histogram.integrate('dataset'), overflow=overflow)
+        if sm_vals is not None:
+            bkg_tmp = histogram.integrate('dataset').values(overflow=overflow)[()]
+            sig_tmp = histogram['signal'].integrate('dataset').values(overflow=overflow)[()]
+            tmp_hist = Hist1D.from_bincounts(
+                bkg_tmp+sm_vals.counts-sig_tmp,
+                data_hist_bins.edges(overflow=overflow),
+            )
+            fout["data_obs"]  = yahist_to_root(tmp_hist, 'data_obs', 'data_obs', overflow=overflow)
+        else:
+            fout["data_obs"]  = hist.export1d(histogram.integrate('dataset'), overflow=overflow)
 
     
     # Get the total yields to write into a data card
@@ -366,13 +385,21 @@ def makeCardFromHist(
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
             totals[process] = signal_hist.integrate('dataset').values(overflow=overflow)[()].sum()
+        elif (bsm_vals is not None) and process=='signal':
+            print ("sum in limit tool", sum(bsm_vals.counts))
+            totals[process] = sum(bsm_vals.counts)
         else:
             totals[process] = histogram[process].integrate('dataset').values(overflow=overflow)[()].sum()
     
     if integer:
         totals['observation'] = data_hist.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
     else:
-        totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+        if sm_vals is not None:
+            totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum() \
+                + sum(sm_vals.counts) \
+                - histogram['signal'].integrate('dataset').values(overflow=overflow)[()].sum()
+        else:
+            totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
     
     if not quiet:
         for process in processes + ['signal']:

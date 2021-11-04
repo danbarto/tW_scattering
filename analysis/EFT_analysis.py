@@ -28,6 +28,8 @@ from Tools.dataCard import dataCard
 
 if __name__ == '__main__':
 
+    from Tools.limits import regroup_and_rebin, get_systematics
+
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -41,19 +43,12 @@ if __name__ == '__main__':
     res_sm_data_cards = {}
     res_bsm_data_cards = {}
 
-    #card = dataCard(releaseLocation=os.path.expandvars('/home/users/$USER/combine/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))  # FIXME for whatever reason this version still has the issue with the absolute NLL value...
-    #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    #card = dataCard(releaseLocation=os.path.expandvars('/home/users/hbronson/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     
-    #card = dataCard(releaseLocation=os.path.expandvars('/home/users/$USER/combine/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    #card = dataCard(releaseLocation=os.path.expandvars('/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit'))
-    card = dataCard(releaseLocation=os.path.expandvars('/home/users/hbronson/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    
-    #/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit
-     
-    #~/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit
-    #####point it to the new directory####
     
     pt_bins     = hist.Bin('pt', r'$p_{T}\ (GeV)$', [0,100,150,200,400])
+    ht_bins     = hist.Bin('ht', r'$H_{T}\ (GeV)$', [100,200,300,400,500,600,700,800])
     score_bins  = hist.Bin("score",          r"N", 8, 0, 1)
     N_bins      = hist.Bin("multiplicity",   r"N", 3, 1.5, 4.5)
 
@@ -72,25 +67,25 @@ if __name__ == '__main__':
     year = 2017
     output = get_cache('SS_analysis_%s'%year)
     output_EFT = get_cache('EFT_%s_scan_%s'%(scan, year))
-    eft_mapping = {k[0]:k[0] for k in output_EFT['lead_lep_SR_pp'].values().keys() if 'topW_full_EFT' in k[0]}
-    print(eft_mapping)
+    eft_mapping = {k[0]:k[0] for k in output_EFT['lead_lep_SR_pp'].values().keys() if 'topW_full_EFT_%s'%scan in k[0]}
     
     xaxis = []
     yaxis = []
+
     for i in range(len(eft_mapping)):
         for year in years:
-            # load the cache
-            output = get_cache('SS_analysis_%s'%year)
+            # load the EFT cache cache
             output_EFT = get_cache('EFT_%s_scan_%s'%(scan, year))
             eft_mapping = {k[0]:k[0] for k in output_EFT['lead_lep_SR_pp'].values().keys() if 'topW_full_EFT' in k[0]}
-            print(eft_mapping)
 
-            # FIXME this needs to become flexible
-            #scan = 'ctW'
+            regions = [
+                ('%s_SR_1'%year, 'LT_SR_pp'),
+                ('%s_SR_2'%year, 'LT_SR_mm'),
+                ('%s_CR'%year, 'node1_score'),
+                ('%s_CR_norm'%year, 'node'),
+            ]
         
-            # not strictly necessary
-        
-            # check out that the histogram we want is actually there
+            output = get_cache('SS_analysis_%s'%year)
             all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
             data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
             data    = data_all
@@ -100,18 +95,11 @@ if __name__ == '__main__':
         
             no_data_or_signal  = re.compile('(?!(%s))'%('|'.join(omit)))
         
-            regions = [
-                ('%s_SR_1'%year, 'lead_lep_SR_pp'),
-                ('%s_SR_2'%year, 'lead_lep_SR_mm'),
-                ('%s_CR'%year, 'node1_score'),
-                ('%s_CR_norm'%year, 'node'),
-            ]
 
-            from Tools.limits import regroup_and_rebin, get_systematics
             # First, rebin & map
             for k in output.keys():
-                if 'lead_lep_SR' in k:
-                    output[k] = regroup_and_rebin(output[k], pt_bins, mapping)
+                if 'LT_SR' in k:
+                    output[k] = regroup_and_rebin(output[k], ht_bins, mapping)
                 elif 'node1_score' in k:
                     output[k] = regroup_and_rebin(output[k], score_bins, mapping)
                 elif k.startswith('node') and not k.count('score'):
@@ -119,8 +107,8 @@ if __name__ == '__main__':
         
         
             for k in output_EFT.keys():
-                if 'lead_lep_SR' in k:
-                    output_EFT[k] = regroup_and_rebin(output_EFT[k], pt_bins, eft_mapping)
+                if 'LT_SR' in k:
+                    output_EFT[k] = regroup_and_rebin(output_EFT[k], ht_bins, eft_mapping)
                 elif 'node1_score' in k:
                     output_EFT[k] = regroup_and_rebin(output_EFT[k], score_bins, eft_mapping)
                 elif k.startswith('node') and not k.count('score'):
@@ -144,24 +132,25 @@ if __name__ == '__main__':
             We need to find a clever way of looping through the years and the EFT points.
             '''
             
-            # First we need to make the SM card. This is just for a single set of SRs
-            sm_card_sr1 = makeCardFromHist(
-                new_hists,
-                '%s_SR_1'%year,
-                overflow='all',
-                ext='',
-                signal_hist=signal_hists['%s_SR_1'%year]['topW_full_EFT_%s_0.0'%scan],
-                #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated),  # FIXME we need systematics for the lepton pt distributions, and for signal.
-            )
-            
-            sm_card_sr2 = makeCardFromHist(
-                new_hists,
-                '%s_SR_2'%year,
-                overflow='all',
-                ext='',
-                signal_hist=signal_hists['%s_SR_2'%year]['topW_full_EFT_%s_0.0'%scan],
-                #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated),  # FIXME we need systematics for the lepton pt distributions, and for signal.
-            )
+            if i == 0:
+                # First we need to make the SM card. This is just for a single set of SRs
+                sm_card_sr1 = makeCardFromHist(
+                    new_hists,
+                    '%s_SR_1'%year,
+                    overflow='all',
+                    ext='',
+                    signal_hist=signal_hists['%s_SR_1'%year]['topW_full_EFT_%s_0.0'%scan],
+                    #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated),  # FIXME we need systematics for the lepton pt distributions, and for signal.
+                )
+                
+                sm_card_sr2 = makeCardFromHist(
+                    new_hists,
+                    '%s_SR_2'%year,
+                    overflow='all',
+                    ext='',
+                    signal_hist=signal_hists['%s_SR_2'%year]['topW_full_EFT_%s_0.0'%scan],
+                    #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated),  # FIXME we need systematics for the lepton pt distributions, and for signal.
+                )
                  
             # BSM card for a single set of SRs. # FIXME year and EFT point should not be hard coded
             bsm_card_sr1 = makeCardFromHist(
@@ -181,21 +170,22 @@ if __name__ == '__main__':
                 signal_hist=signal_hists['%s_SR_2'%year][(list(eft_mapping.keys())[i])],
                 #systematics = get_systematics(output, 'node0_score_transform_pp', year, correlated=correlated), 
             )
-        
-            #res_sm = card.calcNLL(sm_card_sr1)
-            #res_bsm = card.calcNLL(bsm_card_sr1)
-            res_sm_data_cards.update({
-                '%s_SR1'%year: sm_card_sr1,
-                '%s_SR2'%year: sm_card_sr2,
-            })
+            
+            if i == 0:
+                res_sm_data_cards.update({
+                    '%s_SR1'%year: sm_card_sr1,
+                    '%s_SR2'%year: sm_card_sr2,
+                })
             res_bsm_data_cards.update({
                 '%s_SR1'%year: bsm_card_sr1,
                 '%s_SR2'%year: bsm_card_sr2,
             })
             
-        combined_res_sm = card.combineCards(res_sm_data_cards)
-        combined_res_bsm = card.combineCards(res_bsm_data_cards)
-        res_sm = card.calcNLL(combined_res_sm)
+        if i == 0:
+            combined_res_sm = card.combineCards(res_sm_data_cards, name='combined_card_SM.txt')
+            res_sm = card.calcNLL(combined_res_sm)
+
+        combined_res_bsm = card.combineCards(res_bsm_data_cards, name='combined_card_BSM.txt')
         res_bsm = card.calcNLL(combined_res_bsm)
         
         deltaNLL = -2*(res_sm['nll0'][0]+res_sm['nll'][0] - (res_bsm['nll0'][0]+res_bsm['nll'][0]))
@@ -206,43 +196,26 @@ if __name__ == '__main__':
             xaxis.append(float((list(eft_mapping.keys())[i])[18:]))
         yaxis.append(deltaNLL)
                             
-        print ("DeltaNLL: %.2f"%deltaNLL)
-            
-            #data_cards.update({
-            #'%s_SR1'%year: sm_card_sr1,
-            #'%s_SR1'%year: bsm_card_sr1,
-            
-            #})
-            
-        card.cleanUp()    
+    print ("DeltaNLL: %.2f"%deltaNLL)
         
+        #data_cards.update({
+        #'%s_SR1'%year: sm_card_sr1,
+        #'%s_SR1'%year: bsm_card_sr1,
         
-        #####Trying to plot stuff
-        cfg = loadConfig()
-        plot_dir = os.path.expandvars(cfg['meta']['plots']) + 'eft/test/twoSignalRegions' 
-        plt.figure()
-        plt.plot(xaxis,yaxis)
-        plt.xlabel('%s'%scan)
-        plt.savefig(os.path.expandvars(plot_dir+'/%s_combinedYears.png'%scan))
-        #plt.savefig(os.path.expandvars(plot_dir+'/%splots/%s.png'%(year,scan)))
-        #plt.show()
-        print("############ \n it's making a plot \n #########")
+        #})
         
-    #combined = card.combineCards(data_cards)
-    #result_combined = card.nllScan(combined, rmin=0, rmax=3, npoints=61, options=' -v -1')
+    card.cleanUp()    
     
-
-    #    data_cards.update({
-    #        '%s_SR1'%year: sm_card_sr1,
-    #        '%s_SR2'%year: sm_card_sr2,
-    #        '%s_CR'%year: sm_card_cr,
-    #        '%s_CR_norm'%year: sm_card_cr_norm,
-    #    })
-
-
-    #combined = card.combineCards(data_cards)
-    #
-    #result_combined = card.nllScan(combined, rmin=0, rmax=3, npoints=61, options=' -v -1')
-    #
+    
+    #####Trying to plot stuff
+    cfg = loadConfig()
+    plot_dir = os.path.expandvars(cfg['meta']['plots']) + 'eft/test/twoSignalRegions' 
+    plt.figure()
+    plt.plot(xaxis,yaxis)
+    plt.xlabel('%s'%scan)
+    plt.savefig(os.path.expandvars(plot_dir+'/%s_combinedYears.png'%scan))
+    #plt.savefig(os.path.expandvars(plot_dir+'/%splots/%s.png'%(year,scan)))
+    #plt.show()
+    print("############ \n it's making a plot \n #########")
     
     card.cleanUp()

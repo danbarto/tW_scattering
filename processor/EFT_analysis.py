@@ -85,6 +85,8 @@ if __name__ == '__main__':
         'topW_NLO': fileset_all['topW_NLO'],
         'topW_full_EFT': fileset_all['topW_EFT']
     }
+    if year == 2018:
+        fileset['topW_full_EFT'] = glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root')
     
     add_processes_to_output(fileset, desired_output)
     
