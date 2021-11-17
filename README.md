@@ -71,10 +71,15 @@ conda install python=3.8.6
 
 ### Coffea developer mode
 
-If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository
+If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository.
+This gives instructions for our private fork that fixes the root export for our needs.
+Based on coffea 0.7.0.
 ```
 git clone https://github.com/CoffeaTeam/coffea
 cd coffea
+git remote add upstream git@github.com:danbarto/coffea.git
+git fetch upstream
+git checkout upstream/root_export
 pip install --editable .[dev]
 ```
 Full instructions are given [here](https://coffeateam.github.io/coffea/installation.html#for-developers).
@@ -167,11 +172,15 @@ Similarly, you can stop the process by running `kill 27709`.
 ## Get combine (experts only)
 Latest recommendations at https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#setting-up-the-environment-and-installation
 ```
+cmsRel CMSSW_10_2_13
+cd CMSSW_10_2_13/src
+cmsenv
+git cms-init
 cd $CMSSW_BASE/src
 git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
 cd HiggsAnalysis/CombinedLimit
 git fetch origin
-git checkout v8.0.1
+git checkout v8.1.0
 scramv1 b clean; scramv1 b # always make a clean build
 ```
 
