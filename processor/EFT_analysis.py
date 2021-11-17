@@ -122,7 +122,7 @@ if __name__ == '__main__':
     
     exe_args = {
         'workers': 16,
-        'function_args': {'flatten': False},
+        #'function_args': {'flatten': False},
         "schema": NanoAODSchema,
     }
     exe = processor.futures_executor

@@ -105,7 +105,7 @@ def get_NLL(years=['2016', '2016APV', '2017', '2018'], point=[0,0,0,0,0,0]):
 
         correlated = False  # switch on correlations for JES/b/light uncertainties
 
-        output_EFT = get_cache('EFT_cpt_scan_%s'%year)
+        output_EFT = get_cache('EFT_ctW_scan_%s'%year)
 
         eft_mapping = {k[0]:k[0] for k in output_EFT['LT_SR_pp'].values().keys() if 'topW_full_EFT_ctZ' in k[0]}  # not strictly necessary
         weights = [ k[0].replace('topW_full_EFT_','').replace('_nlo','') for k in output_EFT['LT_SR_pp'].values().keys() if 'topW_full_EFT_ctZ' in k[0] ]

@@ -335,6 +335,7 @@ class SS_analysis(processor.ProcessorABC):
                     output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
                     output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
 
+            out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
             if self.evaluate or self.dump:
                 # define the inputs to the NN
@@ -406,7 +407,7 @@ class SS_analysis(processor.ProcessorABC):
             weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
             weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
 
-            out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
+            #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
             dummy = (np.ones(len(ev))==1)
             def fill_multiple_np(hist, arrays, add_sel=dummy):
@@ -452,7 +453,8 @@ class SS_analysis(processor.ProcessorABC):
                     ],
                 )
 
-            if self.evaluate or self.dump:
+            #if self.evaluate or self.dump:
+            if self.evaluate:
                 blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
                 if var['name'] == 'central':
 
@@ -1005,14 +1007,14 @@ if __name__ == '__main__':
     if local:# and not profile:
         exe_args = {
             'workers': 16,
-            'function_args': {'flatten': False},
+            #'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
         exe = processor.futures_executor
 
     elif iterative:
         exe_args = {
-            'function_args': {'flatten': False},
+            #'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
         exe = processor.iterative_executor
@@ -1026,7 +1028,7 @@ if __name__ == '__main__':
 
         exe_args = {
             'client': c,
-            'function_args': {'flatten': False},
+            #'function_args': {'flatten': False},
             "schema": NanoAODSchema,
             "tailtimeout": 300,
             "retries": 3,
