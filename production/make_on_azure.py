@@ -22,7 +22,8 @@ def submit():
         #'TTWJetsToLNuEWK_5f_EFT_mix_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc6_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',  # EFT mix
         #'TTWJetsToLNuEWK_5f_EFT_cpq3_4_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks//TTWJetsToLNuEWK_5f_EFT_myNLO_cpq3_4_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',  # C_pq3 = 4
         #'TTWJetsToLNuEWK_5f_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',
-        'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        #'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        'TTW_5f_EFT_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
 
     total_summary = {}
@@ -31,23 +32,24 @@ def submit():
 
     # v6+ is UL
 
-    tag = "UL18_v7"
+    campaign = 'UL18'
+    tag = "v9"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
     events_per_point = 4000000
-    events_per_job = 2000
+    events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
+    #events_per_point = 200
+    #events_per_job = 40
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
         gridpack = requests[reqname]
 
         task = CondorTask(
-                sample = DummySample(dataset="/%s/RunIIAutumn18/NANO"%reqname,N=njobs,nevents=int(events_per_point)),
+                sample = DummySample(dataset="/%s/RunIISummer20%s/NANO"%(reqname, campaign),N=njobs,nevents=int(events_per_point)),
                 output_name = "nanoAOD.root",
-                executable = "executables/condor_executable_UL18.sh",
-                #executable = "executables/condor_executable_UL17.sh",
-                #executable = "executables/condor_executable_UL16_postVFP.sh",
+                executable = "executables/condor_executable_%s.sh"%campaign,
                 tarfile = "package.tar.gz",
                 additional_input_files = [gridpack],
                 open_dataset = False,
@@ -63,7 +65,7 @@ def submit():
                         ["param_nevents",events_per_job],
                         ["metis_extraargs",""],
                         ["JobBatchName",reqname],
-                        ["IS_CLOUD_JOB", "yes"],
+                        #["IS_CLOUD_JOB", "yes"],
                         ],
                     "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True)'
                     },
