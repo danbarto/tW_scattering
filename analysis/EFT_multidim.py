@@ -50,10 +50,15 @@ def get_coordinates(points):
 def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
-def get_NLL(years=['2016', '2016APV', '2017', '2018'], point=[0,0,0,0,0,0]):
+def get_NLL(
+        years = ['2016', '2016APV', '2017', '2018'],
+        point = [0,0,0,0,0,0],
+        scales = {},
+        bsm_scales = {},
+    ):
 
     start_time = time.time()
-    card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
 
     pt_bins     = hist.Bin('pt', r'$p_{T}\ (GeV)$', [0,100,150,200,400])
     ht_bins     = hist.Bin('ht', r'$H_{T}\ (GeV)$', [100,200,300,400,500,600,700,800])
@@ -99,9 +104,22 @@ def get_NLL(years=['2016', '2016APV', '2017', '2018'], point=[0,0,0,0,0,0]):
         # then make copies for SR and CR
         new_hists = {}
         for short_name, long_name in regions:
-            new_hists[short_name] = output[long_name][no_data_or_signal]
-            if 'LT_SR' in long_name:
-                new_hists[short_name] = regroup_and_rebin(new_hists[short_name], ht_bins, mapping)
+            new_hists['norm'] = output['norm']  # will need this later on
+            for x in output.keys():
+                if x.startswith('_'):
+                    new_hists[x] = output[x]
+
+            all_hists = [ x for x in output.keys() if long_name in x ]  # get all the histograms
+            for h in all_hists:
+                new_name = h.replace(long_name, short_name)
+                new_hists[new_name] = output[h][no_data_or_signal]
+                new_hists[new_name] = regroup_and_rebin(new_hists[new_name], ht_bins, mapping)
+
+
+            #new_hists[short_name] = output[long_name][no_data_or_signal]
+            #if 'LT_SR' in long_name:
+            #    short_name_full =
+            #    new_hists[short_name] = regroup_and_rebin(new_hists[short_name], ht_bins, mapping)
 
         correlated = False  # switch on correlations for JES/b/light uncertainties
 
@@ -143,8 +161,10 @@ def get_NLL(years=['2016', '2016APV', '2017', '2018'], point=[0,0,0,0,0,0]):
             ext='_BSM',
             bsm_vals =  bsm_hist,
             sm_vals =  sm_hist,
+            scales = scales,
+            bsm_scales = bsm_scales,
             # get_systematics(output, hist, year, correlated=False, signal=True)
-            systematics = get_systematics(output, 'LT_SR_pp', year, correlated=correlated, signal=False), ## FIXME omit signal uncertainties for now 
+            systematics = get_systematics(new_hists, '%s_SR_1'%year, year, correlated=correlated, signal=True), ## FIXME omit signal uncertainties for now
         )
         
 
@@ -170,8 +190,10 @@ def get_NLL(years=['2016', '2016APV', '2017', '2018'], point=[0,0,0,0,0,0]):
             ext='_BSM',
             bsm_vals = bsm_hist,
             sm_vals = sm_hist,
+            scales = scales,
+            bsm_scales = bsm_scales,
             # get_systematics(output, hist, year, correlated=False, signal=True)
-            systematics = get_systematics(output, 'LT_SR_mm', year, correlated=correlated, signal=False), ## FIXME omit signal uncertainties for now
+            systematics = get_systematics(new_hists, '%s_SR_2'%year, year, correlated=correlated, signal=True), ## FIXME omit signal uncertainties for now
         )
 
         res_bsm_data_cards.update({
@@ -240,7 +262,7 @@ if __name__ == '__main__':
         fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test.pdf')
 
 
-        card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TTW/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+        card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
         card.cleanUp()
 
 

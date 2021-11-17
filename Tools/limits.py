@@ -29,6 +29,7 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
     
     for i in range(1,101):
         tmp_variation = output['%s_pdf_%s'%(hist_name, i)]
+        #print (tmp_variation.values())
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
         pdf_unc += (tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)**2
@@ -38,12 +39,12 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
     pdf_unc = np.sqrt(pdf_unc)
 
     up_hist = Hist1D.from_bincounts(
-        central+pdf_unc,
+        (central+pdf_unc)/central,
         edges,
     )
     
     down_hist = Hist1D.from_bincounts(
-        central-pdf_unc,
+        (central-pdf_unc)/central,
         edges,
     )
 
@@ -108,12 +109,12 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
     
     up_hist = Hist1D.from_bincounts(
-        central+scale_unc,
+        (central+scale_unc)/central,
         edges,
     )
     
     down_hist = Hist1D.from_bincounts(
-        central-scale_unc,
+        (central-scale_unc)/central,
         edges,
     )
 
@@ -155,12 +156,12 @@ def get_ISR_unc(output, hist_name, process, rebin=None, quiet=True):
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
     
     up_hist = Hist1D.from_bincounts(
-        up_unc,
+        up_unc/central,
         edges,
     )
     
     down_hist = Hist1D.from_bincounts(
-        down_unc,
+        down_unc/central,
         edges,
     )
 
@@ -197,12 +198,12 @@ def get_FSR_unc(output, hist_name, process, rebin=None, quiet=True):
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
     
     up_hist = Hist1D.from_bincounts(
-        up_unc,
+        up_unc/central,
         edges,
     )
     
     down_hist = Hist1D.from_bincounts(
-        down_unc,
+        down_unc/central,
         edges,
     )
 
@@ -231,12 +232,12 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
 
     up_hist = Hist1D.from_bincounts(
-        up_unc,
+        up_unc/central,
         edges,
     )
     
     down_hist = Hist1D.from_bincounts(
-        down_unc,
+        down_unc/central,
         edges,
     )
     
@@ -244,7 +245,7 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
         print ("Rel. uncertainties:")
         for i, val in enumerate(up_unc):
             print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
-                
+
     return  up_hist, down_hist
 
 def regroup_and_rebin(histo, rebin, mapping):
@@ -303,16 +304,18 @@ def add_signal_systematics(output, hist, year, correlated=False, systematics=[],
     return systematics
 
 def makeCardFromHist(
-    out_cache,
-    hist_name,
-    scales={'nonprompt':1, 'signal':1},
-    overflow='all',
-    ext='',
-    systematics={},
-    signal_hist=None,
-    bsm_vals=None,
-    sm_vals=None,
-    integer=False, quiet=False,
+        out_cache,
+        hist_name,
+        scales={'nonprompt':1, 'signal':1},  # this scales everything, also the expected observation
+        bsm_scales={'TTZ':1},  # this only scales the expected background + signal, but leaves expected observation at 1
+        overflow='all',
+        ext='',
+        systematics={},
+        signal_hist=None,
+        bsm_vals=None,
+        sm_vals=None,
+        integer=False,
+        quiet=False,
 ):
     
     '''
@@ -330,13 +333,16 @@ def makeCardFromHist(
     shape_file = card_dir+hist_name+ext+'_shapes.root'
     
     histogram = out_cache[hist_name].copy()
+    histogram_sm = out_cache[hist_name].copy()
     #histogram = histogram.rebin('mass', bins[hist_name]['bins'])
     
     # scale some processes
     histogram.scale(scales, axis='dataset')
+    histogram_sm.scale(scales, axis='dataset')
+    histogram.scale(bsm_scales, axis='dataset')
     
     ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option
-    data_counts = np.asarray(np.round(histogram.integrate('dataset').values(overflow=overflow)[()], 0), int)
+    data_counts = np.asarray(np.round(histogram_sm.integrate('dataset').values(overflow=overflow)[()], 0), int)
     data_hist = histogram['signal']
     data_hist.clear()
     data_hist_bins = data_hist.axes()[1]
@@ -358,9 +364,9 @@ def makeCardFromHist(
             #    bsm_vals,
             #    data_hist_bins.edges(overflow=overflow),
             #)
-            print ("First sum", sum(bsm_vals.counts))
+            #print ("First sum", sum(bsm_vals.counts))
             fout[process] = yahist_to_root(bsm_vals, 'signal', 'signal', overflow='all')
-            print ("Second sum", sum(bsm_vals.counts))
+            #print ("Second sum", sum(bsm_vals.counts))
         else:
             fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
 
@@ -368,15 +374,15 @@ def makeCardFromHist(
         fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
     else:
         if sm_vals is not None:
-            bkg_tmp = histogram.integrate('dataset').values(overflow=overflow)[()]
-            sig_tmp = histogram['signal'].integrate('dataset').values(overflow=overflow)[()]
+            bkg_tmp = histogram_sm.integrate('dataset').values(overflow=overflow)[()]
+            sig_tmp = histogram_sm['signal'].integrate('dataset').values(overflow=overflow)[()]
             tmp_hist = Hist1D.from_bincounts(
                 bkg_tmp+sm_vals.counts-sig_tmp,
                 data_hist_bins.edges(overflow=overflow),
             )
             fout["data_obs"]  = yahist_to_root(tmp_hist, 'data_obs', 'data_obs', overflow=overflow)
         else:
-            fout["data_obs"]  = hist.export1d(histogram.integrate('dataset'), overflow=overflow)
+            fout["data_obs"]  = hist.export1d(histogram_sm.integrate('dataset'), overflow=overflow)
 
     
     # Get the total yields to write into a data card
@@ -395,11 +401,11 @@ def makeCardFromHist(
         totals['observation'] = data_hist.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
     else:
         if sm_vals is not None:
-            totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum() \
+            totals['observation'] = histogram_sm.integrate('dataset').values(overflow=overflow)[()].sum() \
                 + sum(sm_vals.counts) \
                 - histogram['signal'].integrate('dataset').values(overflow=overflow)[()].sum()
         else:
-            totals['observation'] = histogram.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+            totals['observation'] = histogram_sm.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
     
     if not quiet:
         for process in processes + ['signal']:
@@ -423,15 +429,51 @@ def makeCardFromHist(
     if systematics:
         for systematic, mag, proc in systematics:
             if isinstance(mag, type(())):
+                # if systematics are shapes we need to scale them similar to the expectations
+                if proc in scales:
+                    scale = scales[proc]
+                else:
+                    scale = 1
+                if proc in bsm_scales:
+                    scale *= bsm_scales[proc]
+
                 card.addUncertainty(systematic, 'shape')
                 print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
+
                 if len(mag)>1:
-                    fout[proc+'_'+systematic+'Up']   = yahist_to_root(mag[0], systematic+'Up', systematic+'Up')
-                    fout[proc+'_'+systematic+'Down'] = yahist_to_root(mag[1], systematic+'Down', systematic+'Down')
+                    # NOTE: if we switch to relative uncertainties we need the central values too.
+                    # NOTE need to make a new yahist with scaled counts. fuck
+                    # However, here at least I don't care about the unceratinties
+                    val = mag[0].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    val_h = Hist1D.from_bincounts(val, mag[0].edges)
+
+                    fout[proc+'_'+systematic+'Up']   = yahist_to_root(
+                        #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
+                        val_h,
+                        systematic+'Up',
+                        systematic+'Up',
+                    )
+                    val = mag[1].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    val_h = Hist1D.from_bincounts(val, mag[1].edges)
+                    fout[proc+'_'+systematic+'Down'] = yahist_to_root(
+                        #mag[1]*scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
+                        val_h,
+                        systematic+'Down',
+                        systematic+'Down',
+                    )
                 else:
-                    fout[proc+'_'+systematic] = yahist_to_root(mag[0], systematic, systematic)
+                    val = mag[0].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    val_h = Hist1D.from_bincounts(val, mag[0].edges)
+                    fout[proc+'_'+systematic] = yahist_to_root(
+                        #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
+                        val_h,
+                        systematic,
+                        systematic,
+                    )
+
                 card.specifyUncertainty(systematic, 'Bin0', proc, 1)
             else:
+                # this type systematic does not need any scaling
                 card.addUncertainty(systematic, 'lnN')
                 card.specifyUncertainty(systematic, 'Bin0', proc, mag)
             
