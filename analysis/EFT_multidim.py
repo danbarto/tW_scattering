@@ -55,6 +55,7 @@ def get_NLL(
         point = [0,0,0,0,0,0],
         scales = {},
         bsm_scales = {},
+        systematics = True,
     ):
 
     start_time = time.time()
@@ -115,12 +116,6 @@ def get_NLL(
                 new_hists[new_name] = output[h][no_data_or_signal]
                 new_hists[new_name] = regroup_and_rebin(new_hists[new_name], ht_bins, mapping)
 
-
-            #new_hists[short_name] = output[long_name][no_data_or_signal]
-            #if 'LT_SR' in long_name:
-            #    short_name_full =
-            #    new_hists[short_name] = regroup_and_rebin(new_hists[short_name], ht_bins, mapping)
-
         correlated = False  # switch on correlations for JES/b/light uncertainties
 
         output_EFT = get_cache('EFT_ctW_scan_%s'%year)
@@ -154,6 +149,7 @@ def get_NLL(
 
         # FIXME need to fix the stat uncertainties for the signal
         # FIXME overflow should be correct, but needs to be double checked
+        sys = get_systematics(new_hists, '%s_SR_1'%year, year, correlated=correlated, signal=True) if systematics else False
         bsm_card_sr1 = makeCardFromHist(
             new_hists,
             '%s_SR_1'%year,
@@ -163,10 +159,8 @@ def get_NLL(
             sm_vals =  sm_hist,
             scales = scales,
             bsm_scales = bsm_scales,
-            # get_systematics(output, hist, year, correlated=False, signal=True)
-            systematics = get_systematics(new_hists, '%s_SR_1'%year, year, correlated=correlated, signal=True), ## FIXME omit signal uncertainties for now
+            systematics = sys,
         )
-        
 
         pp_val, pp_unc = output_EFT['LT_SR_mm']['topW_full_EFT_%s_nlo'%weights[0]].sum('dataset').values(sumw2=True, overflow='all')[()]
 
@@ -183,6 +177,7 @@ def get_NLL(
             errors = np.sqrt(pp_unc),
         )
 
+        sys = get_systematics(new_hists, '%s_SR_2'%year, year, correlated=correlated, signal=True) if systematics else False
         bsm_card_sr2 = makeCardFromHist(
             new_hists,
             '%s_SR_2'%year,
@@ -192,9 +187,8 @@ def get_NLL(
             sm_vals = sm_hist,
             scales = scales,
             bsm_scales = bsm_scales,
-            # get_systematics(output, hist, year, correlated=False, signal=True)
-            systematics = get_systematics(new_hists, '%s_SR_2'%year, year, correlated=correlated, signal=True), ## FIXME omit signal uncertainties for now
-        )
+            systematics = sys,
+            )
 
         res_bsm_data_cards.update({
             '%s_SR1'%year: bsm_card_sr1,
@@ -228,10 +222,13 @@ if __name__ == '__main__':
         y = np.arange(-10,11,4)
         X, Y = np.meshgrid(x, y)
 
+        raise NotImplementedError
+
         z = []
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [0, y, x, 0, 0, 0]
             z.append((-2*(res_sm-get_NLL(years=years, point=point))))
+
 
         Z = np.array(z)
         Z = np.reshape(Z, X.shape)

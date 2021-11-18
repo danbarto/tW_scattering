@@ -381,6 +381,78 @@ class dataCard:
 
         return result
 
+    def fit_diagnostics(self, fname=None, options=""):
+        '''
+        Does max likelihood fits, both with r=1 and a best-fit value
+        '''
+        import uuid, os
+        import uproot
+        from plots.helpers import get_yahist, finalizePlotDir
+        import matplotlib.pyplot as plt
+        import mplhep as hep
+        plt.style.use(hep.style.CMS)
+
+        ustr          = str(uuid.uuid4())
+        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        print("Creating %s"%uniqueDirname)
+        os.makedirs(uniqueDirname)
+        if fname is not None:  # Assume card is already written when fname is not none
+          filename = os.path.abspath(fname)
+        else:
+          filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
+          self.writeToFile(filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine --robustHesse 1 --forceRecreateNLL -M FitDiagnostics --saveShapes --saveNormalizations --saveOverall --saveWithUncertainties %s %s"%(options,filename)
+        os.system(combineCommand)
+
+        fit_list = ['shapes_prefit', 'shapes_fit_s', 'shapes_fit_b']
+
+        res = uproot.open(uniqueDirname+'/fitDiagnostics.root')
+
+        for fit in fit_list:
+            histos = res[fit].keys()
+            histos = [ x.replace(';1','') for x in histos if (x.count('data')==0 and x.count('covar')==0 and x.count('/')>0)]
+
+            new_histos = { x:get_yahist(res['%s/%s'%(fit, x)], overflow=False) for x in histos }
+
+            for new_hist in new_histos:
+
+                region, process = new_hist.split('/')
+
+                fig, ax = plt.subplots(1,1,figsize=(10,10))#, gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+                hep.cms.label(
+                    "Preliminary",
+                    data=True,
+                    #lumi=60.0,
+                    loc=0,
+                    ax=ax,
+                )
+
+                hep.histplot(
+                    new_histos[new_hist].counts,
+                    new_histos[new_hist].edges,
+                    w2=new_histos[new_hist].errors,
+                    histtype="step",
+                    stack=False,
+                    label='%s (%.0f)'%(new_hist, sum(new_histos[new_hist].counts)),
+                    ax=ax)
+
+                ax.set_ylabel(r'Events')
+                ax.legend()
+
+                plot_dir = os.path.expandvars('/home/users/$USER/public_html/tW_scattering/fitDiagnostics/%s/'%fit)
+                finalizePlotDir(plot_dir)
+                if not os.path.isdir(plot_dir):
+                    os.makedirs(plot_dir)
+
+                ext = ['png', 'pdf']
+                for e in ext:
+                    fig.savefig(plot_dir + '/%s_%s.'%(region, process)+e)
+
+
+                del fig, ax
+
+        return filename
 
     def calcNuisances(self, fname=None, options="", outputFileAddon = "", bonly=False):
         import uuid, os

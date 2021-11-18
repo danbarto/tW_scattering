@@ -242,6 +242,7 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
     )
     
     if not quiet:
+        print (process)
         print ("Rel. uncertainties:")
         for i, val in enumerate(up_unc):
             print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
@@ -264,10 +265,10 @@ def get_systematics(output, hist, year, correlated=False, signal=True):
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(output, hist, proc, '_pt_jesTotal'), proc),
-            ('b_%s'%year,       get_unc(output, hist, proc, '_b'), proc),
-            ('light_%s'%year,   get_unc(output, hist, proc, '_l'), proc),
-            ('PU',      get_unc(output, hist, proc, '_PU'), proc),
+            ('jes_%s'%year,     get_unc(output, hist, proc, '_pt_jesTotal', quiet=True), proc),
+            ('b_%s'%year,       get_unc(output, hist, proc, '_b', quiet=True), proc),
+            ('light_%s'%year,   get_unc(output, hist, proc, '_l', quiet=True), proc),
+            ('PU',      get_unc(output, hist, proc, '_PU', quiet=True), proc),
         ]
 
     for proc in ['TTW', 'TTZ', 'TTH']:
@@ -283,8 +284,8 @@ def get_systematics(output, hist, year, correlated=False, signal=True):
         ('ISR_TTW', get_ISR_unc(output, hist, 'TTW'), 'TTW'),
         ('ISR_TTH', get_ISR_unc(output, hist, 'TTH'), 'TTH'),
         ('ISR_TTZ', get_ISR_unc(output, hist, 'TTZ'), 'TTZ'),
-        #('ttz_norm', 1.10, 'TTZ'),
-        #('tth_norm', 1.20, 'TTH'),
+        ##('ttz_norm', 1.10, 'TTZ'),
+        ##('tth_norm', 1.20, 'TTH'),
         ('rare_norm', 1.20, 'rare'),
         ('nonprompt_norm', 1.30, 'nonprompt'),
         ('chargeflip_norm', 1.20, 'chargeflip'),
@@ -444,7 +445,10 @@ def makeCardFromHist(
                     # NOTE: if we switch to relative uncertainties we need the central values too.
                     # NOTE need to make a new yahist with scaled counts. fuck
                     # However, here at least I don't care about the unceratinties
-                    val = mag[0].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    if proc == 'signal' and bsm_vals:
+                        val = mag[0].counts * scale * bsm_vals.counts
+                    else:
+                        val = mag[0].counts * scale * histogram[proc].integrate('dataset').values(overflow=overflow)[()]
                     val_h = Hist1D.from_bincounts(val, mag[0].edges)
 
                     fout[proc+'_'+systematic+'Up']   = yahist_to_root(
@@ -453,7 +457,10 @@ def makeCardFromHist(
                         systematic+'Up',
                         systematic+'Up',
                     )
-                    val = mag[1].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    if proc == 'signal' and bsm_vals:
+                        val = mag[1].counts * scale * bsm_vals.counts
+                    else:
+                        val = mag[1].counts * scale * histogram[proc].integrate('dataset').values(overflow=overflow)[()]
                     val_h = Hist1D.from_bincounts(val, mag[1].edges)
                     fout[proc+'_'+systematic+'Down'] = yahist_to_root(
                         #mag[1]*scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
