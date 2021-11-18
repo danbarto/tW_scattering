@@ -391,3 +391,20 @@ def bin_text(counts, x_edges, y_edges, axes, cbar, errors=None, size=10, fmt=":0
 
     return
 
+def get_yahist(hist, rebin=1, overflow=True):
+    from yahist import Hist1D
+    counts = hist.values()
+    edges = hist.axis().edges()
+    w2 = hist.errors()**2
+    if overflow:
+        counts[1] += counts[0]
+        counts[-2] += counts[-1]
+        w2[1] += w2[1]
+        w2[-2] += w2[-1]
+        counts = np.array(counts[1:-1])
+        edges = np.array(edges[1:-1])
+        w2 = np.array(w2[1:-1])
+
+    tmp_hist = Hist1D.from_bincounts(counts, edges, np.sqrt(w2), )
+    tmp_hist = tmp_hist.rebin(rebin)
+    return tmp_hist
