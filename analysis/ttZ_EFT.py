@@ -20,6 +20,7 @@ from Tools.HyperPoly import *
 from Tools.gen import find_first_parent, get_lepton_fromW, get_neutrino_fromW, get_lepton_filter, get_lepton_from
 from Tools.objects import choose
 from Tools.helpers import get_four_vec_fromPtEtaPhiM
+from plots.helpers import finalizePlotDir
 
 from processor.default_accumulators import dataset_axis
 
@@ -65,6 +66,8 @@ if __name__ == '__main__':
 
     # Load samples
     base_dir = "/nfs-7/userdata/dspitzba/"
+    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/"
+    finalizePlotDir(plot_dir)
     
     res = {}
 
@@ -279,8 +282,8 @@ if __name__ == '__main__':
 
     plt.show()
     
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LT_cpt.png')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LT_cpt.pdf')
+    fig.savefig(plot_dir+'LT_cpt.png')
+    fig.savefig(plot_dir+'LT_cpt.pdf')
 
     # FIXME WIP
     ## E^2 scaling for ttZ
@@ -312,9 +315,10 @@ if __name__ == '__main__':
     plt.legend()
 
     ax.set_ylim(0,10)
-    
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpQM_scaling.pdf')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpQM_scaling.png')
+
+
+    fig.savefig(plot_dir+'LO_cpQM_scaling.pdf')
+    fig.savefig(plot_dir+'LO_cpQM_scaling.png')
 
     # just an example.
     points = make_scan(operator='cpt', C_min=-20, C_max=20, step=1)
@@ -346,6 +350,5 @@ if __name__ == '__main__':
 
     ax.set_ylim(0,10)
     
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpt_scaling.pdf')
-    fig.savefig('/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/LO_cpt_scaling.png')
-
+    fig.savefig(plot_dir+'LO_cpt_scaling.pdf')
+    fig.savefig(plot_dir+'LO_cpt_scaling.png')
