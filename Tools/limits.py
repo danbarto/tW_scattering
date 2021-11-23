@@ -356,18 +356,15 @@ def makeCardFromHist(
     fout = uproot3.recreate(shape_file)
 
     processes = [ p[0] for p in list(histogram.values().keys()) if p[0] != 'signal']  # ugly conversion
-    
+
+    # Start with making the central value histograms.
+    # NOTE: this works!
+    #
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
             fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
         elif (bsm_vals is not None) and process=='signal':
-            #tmp_hist = Hist1D.from_bincounts(
-            #    bsm_vals,
-            #    data_hist_bins.edges(overflow=overflow),
-            #)
-            #print ("First sum", sum(bsm_vals.counts))
             fout[process] = yahist_to_root(bsm_vals, 'signal', 'signal', overflow='all')
-            #print ("Second sum", sum(bsm_vals.counts))
         else:
             fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
 
@@ -387,6 +384,8 @@ def makeCardFromHist(
 
     
     # Get the total yields to write into a data card
+    # NOTE: this works!
+    #
     totals = {}
     
     for process in processes + ['signal']:
@@ -446,10 +445,15 @@ def makeCardFromHist(
                     # NOTE need to make a new yahist with scaled counts. fuck
                     # However, here at least I don't care about the unceratinties
                     if proc == 'signal' and bsm_vals:
-                        val = mag[0].counts * scale * bsm_vals.counts
+                        central = bsm_vals.counts
                     else:
-                        val = mag[0].counts * scale * histogram[proc].integrate('dataset').values(overflow=overflow)[()]
+                        central = histogram[proc].integrate('dataset').values(overflow=overflow)[()]
+                    val = np.nan_to_num(mag[0].counts, nan=1.0) * scale * central
                     val_h = Hist1D.from_bincounts(val, mag[0].edges)
+                    incl_rel = sum(val_h.counts)/sum(central)
+                    print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
+                    print (" - central prediction: %.2f"%sum(central))
+                    print (" - relative uncertainty: %.2f"%incl_rel)
 
                     fout[proc+'_'+systematic+'Up']   = yahist_to_root(
                         #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
@@ -457,11 +461,9 @@ def makeCardFromHist(
                         systematic+'Up',
                         systematic+'Up',
                     )
-                    if proc == 'signal' and bsm_vals:
-                        val = mag[1].counts * scale * bsm_vals.counts
-                    else:
-                        val = mag[1].counts * scale * histogram[proc].integrate('dataset').values(overflow=overflow)[()]
+                    val = np.nan_to_num(mag[1].counts, nan=1.0) * scale * central
                     val_h = Hist1D.from_bincounts(val, mag[1].edges)
+                    #incl_rel = sum(val_h.counts)/sum(central)
                     fout[proc+'_'+systematic+'Down'] = yahist_to_root(
                         #mag[1]*scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
                         val_h,
@@ -469,7 +471,7 @@ def makeCardFromHist(
                         systematic+'Down',
                     )
                 else:
-                    val = mag[0].counts * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
+                    val = np.nan_to_num(mag[0].counts, nan=1.0) * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
                     val_h = Hist1D.from_bincounts(val, mag[0].edges)
                     fout[proc+'_'+systematic] = yahist_to_root(
                         #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],

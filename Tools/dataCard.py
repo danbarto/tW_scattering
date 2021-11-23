@@ -449,7 +449,6 @@ class dataCard:
                 for e in ext:
                     fig.savefig(plot_dir + '/%s_%s.'%(region, process)+e)
 
-
                 del fig, ax
 
         return filename

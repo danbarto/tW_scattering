@@ -33,13 +33,14 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--impacts', action='store_true', default=None, help="Run impacts?")
     argParser.add_argument('--years', action='store', default='2016', help="Which years to include?")
+    argParser.add_argument('--trilep', action='store_true', help="Also run trilep analysis?")
     args = argParser.parse_args()
 
     years = args.years.split(',')
     run_impacts = args.impacts
     data_cards = {}
 
-    card = dataCard(releaseLocation=os.path.expandvars('/home/users/$USER/combine/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('/home/users/$USER/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     score_bins = hist.Bin("score",          r"N", 8, 0, 1)
     N_bins     = hist.Bin("multiplicity",   r"N", 3, 1.5, 4.5)
 
@@ -155,65 +156,67 @@ if __name__ == '__main__':
 
 
         # load the cache
-        output = get_cache('trilep_analysis_%s'%year)
-        
-        # check out that the histogram we want is actually there
-        all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
-        data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
-        data    = data_all
-        order   = ['topW_v3', 'np_est_mc', 'conv_mc', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-        
-        no_data_or_signal  = re.compile('(?!(%s))'%('|'.join(omit)))
-        
-        
-        # FIXME I should just rebin / map everything at the same time.
-        from Tools.limits import regroup_and_rebin, get_systematics
-        # First, rebin & map
-        for k in output.keys():
-            if 'node0_score' in k:
-                output[k] = regroup_and_rebin(output[k], score_bins_3l, mapping)
-            elif 'node1_score' in k:
-                output[k] = regroup_and_rebin(output[k], score_bins_3l, mapping)
-            elif k.startswith('node') and not k.count('score'):
-                output[k] = regroup_and_rebin(output[k], N_bins_3l, mapping)
-        
-        # then make copies for SR and CR
-        new_hists = {}
-        for short_name, long_name in regions_3l:
-            new_hists[short_name] = output[long_name][no_data_or_signal]
-                
-        correlated = False  # switch on correlations for JES/b/light uncertainties
-        sm_card_sr_3l = makeCardFromHist(
-            new_hists,
-            '%s_SR_3l'%year,
-            overflow='all',
-            ext='',
-            systematics = get_systematics(output, 'node0_score_transform', year, correlated=correlated),
-        )
-        
-        sm_card_cr_3l = makeCardFromHist(
-            new_hists,
-            '%s_CR_3l'%year,
-            overflow='all',
-            ext='',
-            systematics = get_systematics(output, 'node1_score', year, correlated=correlated),
-        )
-        
-        sm_card_cr_norm_3l = makeCardFromHist(
-            new_hists,
-            '%s_CR_norm_3l'%year,
-            overflow='all',
-            ext='',
-            systematics = get_systematics(output, 'node', year, correlated=correlated),
-        )
-        
-        data_cards.update({
-            '%s_SR_3l'%year: sm_card_sr_3l,
-            '%s_CR_3l'%year: sm_card_cr_3l,
-            '%s_CR_norm_3l'%year: sm_card_cr_norm_3l,
-        })
+        # FIXME: removed trilep for now
+        if args.trilep:
+            output = get_cache('trilep_analysis_%s'%year)
+
+            # check out that the histogram we want is actually there
+            all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
+            data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
+            data    = data_all
+            order   = ['topW_v3', 'np_est_mc', 'conv_mc', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
+            signals = []
+            omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+            no_data_or_signal  = re.compile('(?!(%s))'%('|'.join(omit)))
+
+
+            # FIXME I should just rebin / map everything at the same time.
+            from Tools.limits import regroup_and_rebin, get_systematics
+            # First, rebin & map
+            for k in output.keys():
+                if 'node0_score' in k:
+                    output[k] = regroup_and_rebin(output[k], score_bins_3l, mapping)
+                elif 'node1_score' in k:
+                    output[k] = regroup_and_rebin(output[k], score_bins_3l, mapping)
+                elif k.startswith('node') and not k.count('score'):
+                    output[k] = regroup_and_rebin(output[k], N_bins_3l, mapping)
+
+                    # then make copies for SR and CR
+                    new_hists = {}
+                    for short_name, long_name in regions_3l:
+                        new_hists[short_name] = output[long_name][no_data_or_signal]
+
+                        correlated = False  # switch on correlations for JES/b/light uncertainties
+                        sm_card_sr_3l = makeCardFromHist(
+                            new_hists,
+                            '%s_SR_3l'%year,
+                            overflow='all',
+                            ext='',
+                            systematics = get_systematics(output, 'node0_score_transform', year, correlated=correlated),
+                        )
+
+                        sm_card_cr_3l = makeCardFromHist(
+                            new_hists,
+                            '%s_CR_3l'%year,
+                            overflow='all',
+                            ext='',
+                            systematics = get_systematics(output, 'node1_score', year, correlated=correlated),
+                        )
+
+                        sm_card_cr_norm_3l = makeCardFromHist(
+                            new_hists,
+                            '%s_CR_norm_3l'%year,
+                            overflow='all',
+                            ext='',
+                            systematics = get_systematics(output, 'node', year, correlated=correlated),
+                        )
+
+                        data_cards.update({
+                            '%s_SR_3l'%year: sm_card_sr_3l,
+                            '%s_CR_3l'%year: sm_card_cr_3l,
+                            '%s_CR_norm_3l'%year: sm_card_cr_norm_3l,
+                        })
     
     combined = card.combineCards(data_cards)
     
