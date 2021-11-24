@@ -23,7 +23,7 @@ from keras.utils.vis_utils import plot_model
 from keras.utils import np_utils
 import onnxruntime as rt
 from sklearn.utils import resample
-from sklearn.metrics import roc_curve, roc_auc_score, auc
+from sklearn.metrics import roc_curve, roc_auc_score, auc, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 import joblib
@@ -471,7 +471,7 @@ if __name__ == '__main__':
         dump_onnx_model(model, version=version)
 
     # Correlations
-    from ML.multiclassifier_tools import get_correlation_matrix
+    from ML.multiclassifier_tools import get_correlation_matrix, get_confusion_matrix
     get_correlation_matrix(
         df_in[(df_in['label']==0)][(variables+['score_topW', 'score_prompt', 'score_ll', 'score_np', 'score_cf'])], 
         f_out=plot_dir+'/correlation.png'
@@ -546,3 +546,18 @@ if __name__ == '__main__':
         normalize = False,
         save = "{}/score_transformed".format(plot_dir),
     )
+
+    ## Confusion matrix
+    get_confusion_matrix(
+        y_train_int,
+        np.argmax(pred_train, axis=1),
+        f_out=plot_dir+'/confusion_train.pdf',
+    )
+    get_confusion_matrix(
+        y_test_int,
+        np.argmax(pred_test, axis=1),
+        f_out=plot_dir+'/confusion_test.pdf',
+    )
+    # normalize='true' essentially does the same thing as
+    # CM_test / (np.ones_like(CM_test) * np.sum(CM_test, axis=1)[:, np.newaxis])
+    # which of course is ugly.
