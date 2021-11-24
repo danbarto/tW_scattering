@@ -4,7 +4,7 @@ import numpy as np
 import onnxruntime as rt
 from keras.utils import np_utils
 
-from sklearn.metrics import roc_curve, roc_auc_score, auc
+from sklearn.metrics import roc_curve, roc_auc_score, auc, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 import joblib
@@ -81,6 +81,29 @@ def get_correlation_matrix(df, f_out='./correlation.pdf'):
     ax.set_title('Correlation Matrix', fontsize=16)
 
     fig.savefig(f_out)
+
+def get_confusion_matrix(y_true, y_pred, f_out='./confusion'):
+    f_out = f_out.strip('.pdf')
+    f_out = f_out.strip('.png')
+    CM = confusion_matrix(y_true, y_pred, normalize='true')
+    # normalize='true' essentially does the same thing as
+    # CM / (np.ones_like(CM) * np.sum(CM, axis=1)[:, np.newaxis])
+    # which of course is ugly.
+    fig, ax = plt.subplots(1,1,figsize=(10,10))
+
+    im = ax.matshow(CM)
+    ax.set_ylabel('True Label')
+    ax.set_xlabel('Predicted Label')  # loc doesn't move the label to a different axis
+    for i in range(CM.shape[0]):
+        for j in range(CM.shape[1]):
+            c = CM[j,i]
+            ax.text(i, j, "%.2f"%c, va='center', ha='center')
+    cbar = ax.figure.colorbar(im)
+    cbar.ax.tick_params(labelsize=12)
+
+    for ext in ['.png', '.pdf']:
+        fig.savefig(f_out+ext)
+
 
 def simple_accuracy(pred, dummy_y):
     pred_Y = pred.argmax(axis=1)
