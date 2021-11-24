@@ -304,6 +304,7 @@ class SS_analysis(processor.ProcessorABC):
                 data_sel = (baseline & ~baseline)  # this has to be false
 
                 weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
+                weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD')
                 weight_cf_mc = self.chargeflipWeight.flip_weight(el_t_p)
 
             else:
@@ -321,6 +322,7 @@ class SS_analysis(processor.ProcessorABC):
                 conv_sel = (baseline & ~baseline)  # this has to be false
 
                 weight_np_mc = np.zeros(len(ev))
+                weight_np_mc_qcd = np.zeros(len(ev))
                 weight_cf_mc = np.zeros(len(ev))
 
                 #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
@@ -424,6 +426,7 @@ class SS_analysis(processor.ProcessorABC):
                     cf_obs_sel_mc&add_sel,
                     cf_est_sel_data&add_sel,
                     conv_sel&add_sel,
+                    np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
                 ],
                 fill_multiple(
                     hist,
@@ -437,6 +440,7 @@ class SS_analysis(processor.ProcessorABC):
                         "cf_obs_mc",
                         "cf_est_data",
                         "conv_mc",
+                        "np_est_mc_qcd",  # MC based NP estimate with QCD FR
                     ],
                     arrays=arrays,
                     selections=reg_sel[0],  # no idea where the additional dimension is coming from...
@@ -450,6 +454,7 @@ class SS_analysis(processor.ProcessorABC):
                         weight.weight(modifier=shift)[reg_sel[0][6]],
                         weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
                         weight.weight(modifier=shift)[reg_sel[0][8]],
+                        weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
                     ],
                 )
 

@@ -594,6 +594,42 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_ht'+postfix),
             )
 
+        makePlot(output, 'ST', 'ht',
+             data=data,
+             bins=ht_bins, log=False, normalize=False, axis_label=r'$S_{T}\ (GeV)$',
+             shape=shape, ymax=ymax,
+             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
+             new_labels=my_labels, lumi=lumi,
+             order=order,
+             signals=signals,
+             omit=omit+data,
+             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_st'+postfix),
+            )
+
+        makePlot(output, 'lead_lep', 'pt',
+             data=data,
+             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
+             shape=shape, ymax=ymax,
+             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
+             new_labels=my_labels, lumi=lumi,
+             order=order,
+             signals=signals,
+             omit=omit+data,
+             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_lead_lep_pt'+postfix),
+            )
+
+        if NN:
+            makePlot(output, 'node', 'multiplicity',
+                 data=data,
+                 bins=N_bins_red, log=False, normalize=False, axis_label='best node',
+                 new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
+                 new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_best_node'+postfix),
+                )
+
 
     ### NP estimate closure test for inputs ###
 
@@ -623,6 +659,28 @@ if __name__ == '__main__':
                  signals=signals,
                  omit=omit+data,
                  save=os.path.expandvars(plot_dir+sub_dir+'np_closure_best_node'+postfix),
+                )
+
+            makePlot(output, 'node0_score_transform_pp', 'score',
+                 data=data,
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
+                 new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_node0_score_transform_pp'),
+                )
+
+            makePlot(output, 'node0_score_transform_mm', 'score',
+                 data=data,
+                 bins=score_bins, log=False, normalize=False, axis_label='Score',
+                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
+                 new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 omit=omit+data,
+                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_node0_score_transform_mm'),
                 )
 
         makePlot(output, 'HT', 'ht',
