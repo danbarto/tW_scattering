@@ -17,7 +17,7 @@ cmsDriver.py --filein file:output_gen.root --fileout file:output_sim.root --mc -
 ## Premix
 
 ```
-cmsDriver.py --filein file:output_sim.root --fileout file:output_premix.root  --pileup_input "dbs:/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX" --mc --eventcontent PREMIXRAW --runUnscheduled --datatier GEN-SIM-DIGI --conditions 106X_mcRun2_asymptotic_preVFP_v9 --step DIGI,DATAMIX,L1,DIGI2RAW --procModifiers premix_stage2 --geometry DB:Extended --datamix PreMix --era Run2_2016_HIPM --python_filename premix_cfg.py -n 10 --no_exec
+cmsDriver.py --filein file:output_sim.root --fileout file:output_premix.root  --pileup_input "dbs:/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX" --mc --eventcontent PREMIXRAW --runUnscheduled --datatier GEN-SIM-DIGI --conditions 106X_mcRun2_asymptotic_preVFP_v9 --step DIGI,DATAMIX,L1,DIGI2RAW --procModifiers premix_stage2 --geometry DB:Extended --datamix PreMix --era Run2_2016_HIPM --python_filename premix_cfg.py -n 10 --no_exec
 ```
 
 ## HLT
