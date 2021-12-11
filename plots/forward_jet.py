@@ -1,3 +1,4 @@
+
 import os
 try:
     import awkward1 as ak
@@ -5,7 +6,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist
-
+import copy
 import numpy as np
 
 from Tools.config_helpers import loadConfig, make_small
@@ -21,255 +22,831 @@ from plots.helpers import makePlot
 
 from klepto.archives import dir_archive
 
+cache = dir_archive('/home/users/hbronson/CMSSW_10_2_9/src/tW_scattering/caches/testing_OS_2016_small', serialized=True)
+cache.load()
+output = cache.get('simple_output')
 
-if __name__ == '__main__':
-
-
-    small = False
-    cfg = loadConfig()
-
-    plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/UL/'
+N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
+N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
+pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
+eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
+score_bins = hist.Bin("score",          r"N", 25, 0, 1)
+mjf_bins = hist.Bin('mass', r'$M\ (GeV)$', 50, 0, 2000)
+#mjf_bins = None
+#deltaEta_bins = hist.Bin('eta', r'$\eta $', 20, 0, 10)
+deltaEta_bins = None
+jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
     
-    cacheName = 'forward'
-    if small: cacheName += '_small'
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
-
-    cache.load()
-
-    output = cache.get('simple_output')
-    
-    # defining some new axes for rebinning.
-    N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
-    N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
-    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
-    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
-    pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
-    eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
-    score_bins = hist.Bin("score",          r"N", 25, 0, 1)
-    
-    my_labels = {
-        'topW_v2': 'top-W scat.',
+my_labels = {
         'topW_v3': 'top-W scat.',
+        'topW_EFT_cp8': 'EFT, cp8',
+        'topW_EFT_mix': 'EFT mix',
         'TTZ': r'$t\bar{t}Z$',
-        'TTXnoW': r'$t\bar{t}Z/H$',
+        'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
         'TTW': r'$t\bar{t}W$',
         'TTH': r'$t\bar{t}H$',
         'diboson': 'VV/VVV',
+        'rare': 'rare',
         'ttbar': r'$t\bar{t}$',
-        'DY': 'Drell-Yan',
-        'WW': 'WW',
-        'WZ': 'WZ',
+        'XG': 'XG',  # this is bare XG
+        'DY': 'Drell-Yan',  # this is bare XG
+        'conv_mc': 'conversion',
+        'np_obs_mc': 'nonprompt (MC true)',
+        'np_est_mc': 'nonprompt (MC est)',
+        'cf_obs_mc': 'charge flip (MC true)',
+        'cf_est_mc': 'charge flip (MC est)',
+        'np_est_data': 'nonprompt (est)',
+        'cf_est_data': 'charge flip (est)',
     }
-    
-    my_colors = {
-        'topW_v2': '#FF595E',
+
+my_colors = {
         'topW_v3': '#FF595E',
+        'topW_EFT_cp8': '#000000',
+        'topW_EFT_mix': '#0F7173',
         'TTZ': '#FFCA3A',
         'TTXnoW': '#FFCA3A',
         'TTW': '#8AC926',
         'TTH': '#34623F',
         'diboson': '#525B76',
+        'rare': '#EE82EE',
         'ttbar': '#1982C4',
+        'XG': '#5bc0de',
+        'conv_mc': '#5bc0de',
         'DY': '#6A4C93',
-        'WW': '#34623F',
-        'WZ': '#525B76',
+        'np_obs_mc': '#1982C4',
+        'np_est_mc': '#1982C4',
+        'np_est_data': '#1982C4',
+        'cf_obs_mc': '#0F7173',
+        'cf_est_mc': '#0F7173',
+        'cf_est_data': '#0F7173',
     }
+cfg = loadConfig()
+plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/test'
+version_dir = 'test/'
 
-    makePlot(output, 'lead_lep', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=True, normalize=True, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
+lumi_year = 16.8
+TFnormalize = True
+
+'''year='2019'
+if year == '2019':
+        # load the results
+        lumi_year = 35.9+41.5+60.0
+        first = True
+        for y in ['2016', '2016APV', '2017', '2018']:
+            if y=='2016APV': 
+                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'tmp'), serialized=True)
+            elif y=='2016':
+                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'forward_2016_OS'), serialized=True)
+            elif y=='2017':
+                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), '2017_OS_v2'), serialized=True)
+            elif y=='2018':
+                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'forward_2018_OS'), serialized=True)
+                            
+            cache.load()
+            tmp_output = cache.get('simple_output')
+            if first:
+                output = copy.deepcopy(tmp_output)
+            else:
+                for key in tmp_output:
+                    if type(tmp_output[key]) == hist.hist_tools.Hist:
+                        output[key].add(tmp_output[key])
+            first = False
+            del cache'''
+
+
+all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
+data = ['MuonEG','DoubleMuon','EGamma','SingleElectron','SingleMuon', 'DoubleEG']
+#order = ['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar', 'XG']
+order = ['topW_v3', 'diboson', 'TTXnoW', 'DY', 'ttbar', 'XG']
+signals = []
+omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+
+
+makePlot(output, 'lead_lep', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/lead_lep_pt'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_pt')
+        )
+makePlot(output, 'lead_lep', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_eta')
         )
 
-    makePlot(output, 'lead_lep', 'eta',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=eta_bins, log=True, normalize=True, axis_label=r'$\eta\ lead \ lep$',
+makePlot(output, 'lead_lep', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/lead_lep_eta'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_phi'),
         )
 
-    makePlot(output, 'lead_lep', 'phi',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=True, normalize=True, axis_label=r'$\phi\ lead \ lep$',
+makePlot(output, 'trail_lep', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/lead_lep_phi'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_pt'),
         )
 
-    makePlot(output, 'trail_lep', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=True, normalize=True, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
+makePlot(output, 'trail_lep', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/trail_lep_pt'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_eta'),
         )
 
-    makePlot(output, 'trail_lep', 'eta',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=eta_bins, log=True, normalize=True, axis_label=r'$\eta\ trail \ lep$',
+makePlot(output, 'trail_lep', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/trail_lep_eta'),
-        )
-
-    makePlot(output, 'trail_lep', 'phi',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=True, normalize=True, axis_label=r'$\phi\ trail \ lep$',
-        new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/trail_lep_phi'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_phi'),
         )
 
 
-    makePlot(output, 'PV_npvsGood', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=False, normalize=True, axis_label=r'$N_{PV}$',
+makePlot(output, 'PV_npvsGood', 'multiplicity',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$N_{PV}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/PV_npvsGood'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'PV_npvsGood'),
         )
 
-    makePlot(output, 'N_fwd', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{fwd\ jets}$',
+makePlot(output, 'N_fwd', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{fwd\ jets}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/N_fwd'),
+        save=os.path.expandvars(plot_dir+version_dir+'N_fwd'),
         )
 
-    makePlot(output, 'N_fwd', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{fwd\ jets}$',
+makePlot(output, 'N_fwd', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{fwd\ jets}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/N_fwd_stat'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'N_fwd_stat'),
         )
 
-    makePlot(output, 'fwd_jet', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=False, normalize=True, axis_label=r'$p_{T}\ selected\ fwd\ jet$ (GeV)',
+makePlot(output, 'fwd_jet', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ selected\ fwd\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/fwd_jet_pt'),
+        save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_pt'),
         )
 
-    makePlot(output, 'fwd_jet', 'eta',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=eta_bins, log=False, normalize=True, axis_label=r'$\eta\ selected\ fwd\ jet$ (GeV)',
+makePlot(output, 'fwd_jet', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ selected\ fwd\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/fwd_jet_eta'),
+        save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_eta'),
         )
 
-    makePlot(output, 'fwd_jet', 'phi',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=False, normalize=True, axis_label=r'$\phi\ selected\ fwd\ jet$ (GeV)',
+makePlot(output, 'fwd_jet', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ selected\ fwd\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/fwd_jet_phi'),
+        save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_phi'),
         )
 
-    makePlot(output, 'N_jet', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=N_bins, log=False, normalize=True, axis_label=r'$N_{jet}$',
+makePlot(output, 'N_jet', 'multiplicity',
+        data=data,
+        bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{jet}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/N_jet'),
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'N_jet'),
         )
 
-    makePlot(output, 'j1', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=False, normalize=True, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
+makePlot(output, 'j1', 'pt',
+        data=data,
+        bins=jet_pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/j1_pt'),
+        save=os.path.expandvars(plot_dir+version_dir+'j1_pt'),
         )
 
-    makePlot(output, 'j1', 'eta',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=eta_bins, log=False, normalize=True, axis_label=r'$\eta\ leading\ jet$ (GeV)',
+makePlot(output, 'j1', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/j1_eta'),
+        save=os.path.expandvars(plot_dir+version_dir+'j1_eta'),
         )
 
-    makePlot(output, 'j1', 'phi',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=False, normalize=True, axis_label=r'$\phi\ leading\ jet$ (GeV)',
+makePlot(output, 'j1', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ leading\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/j1_phi'),
+        save=os.path.expandvars(plot_dir+version_dir+'j1_phi'),
         )
 
-    makePlot(output, 'N_b', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{b-tag}$',
+makePlot(output, 'N_b', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/N_b'),
+        save=os.path.expandvars(plot_dir+version_dir+'N_b'),
         )
-
-    makePlot(output, 'N_central', 'multiplicity',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{central\ jet}$',
+    
+makePlot(output, 'N_ele', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{ele}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/N_central'),
+        save=os.path.expandvars(plot_dir+version_dir+'N_ele'),
         )
 
-    makePlot(output, 'b1', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=False, normalize=True, axis_label=r'$p_{T}\ leading\ b-jet$ (GeV)',
+makePlot(output, 'N_central', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{central\ jet}$',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/b1_pt'),
-        )
-
-    makePlot(output, 'b1', 'eta',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=eta_bins, log=False, normalize=True, axis_label=r'$\eta\ leading\ b-jet$ (GeV)',
-        new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/b1_eta'),
-        )
-
-    makePlot(output, 'b1', 'phi',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=False, normalize=True, axis_label=r'$\phi\ leading\ b-jet$ (GeV)',
-        new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/b1_phi'),
+        save=os.path.expandvars(plot_dir+version_dir+'N_central'),
         )
 
-    makePlot(output, 'MET', 'pt',
-        data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=pt_bins, log=False, normalize=True, axis_label=r'$p_{T}^{miss}$ (GeV)',
+'''
+makePlot(output, 'b1', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ b-jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
-        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
         upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/MET_pt'),
+        save=os.path.expandvars(plot_dir+version_dir+'b1_pt'),
+        )
+makePlot(output, 'b1', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading\ b-jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'b1_eta'),
+        )
+makePlot(output, 'b1', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ leading\ b-jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'b1_phi'),
+        )
+        '''
+
+makePlot(output, 'MET', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}^{miss}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'MET_pt'),
         )
 
-    makePlot(output, 'MET', 'phi',
+makePlot(output, 'MET', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi(p_{T}^{miss})$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'MET_phi'),
+        )
+    
+makePlot(output, 'N_tau', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{tau\ }$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'N_tau'),
+        )
+    
+makePlot(output, 'N_track', 'multiplicity',
+        data=data,
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{track\ }$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'N_track'),
+        )
+
+makePlot(output, 'dilep_pt', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ dilep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_pt'),
+        )
+    
+    
+makePlot(output, 'dilep_mass', 'mass',
+        data=data,
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass'),
+        )
+    
+'''makePlot(output, 'dilep_mass_ee', 'mass',
         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=None, log=False, normalize=True, axis_label=r'$\phi(p_{T}^{miss})$',
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_ee'),
+        )
+makePlot(output, 'dilep_mass_emu', 'mass',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_emu'),
+        )
+    
+makePlot(output, 'dilep_mass_mumu', 'mass',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_mumu'),
+        )
+    
+makePlot(output, 'dilep_mass_Nb=0', 'mass',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_Nb=0'),
+        )
+    
+makePlot(output, 'dilep_mass_Nb>1', 'mass',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_Nb>=2'),
+        )'''
+    
+
+makePlot(output, 'deltaEta', 'eta',
+        data=data,
+        bins=deltaEta_bins, log=False, normalize=TFnormalize, axis_label=r'$\Delta \eta $(GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'deltaEta'),
+        )
+    
+makePlot(output, 'mjf_max', 'mass',
+        data=data,
+        bins=mjf_bins, log=False, normalize=TFnormalize, axis_label='mjf_max (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'mjf_max'),
+        )
+    
+makePlot(output, 'min_bl_dR', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label='min_bl_dR (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'min_bl_dR'),
+        )
+    
+makePlot(output, 'min_mt_lep_met', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label='min_mt_lep_met (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'min_mt_lep_met'),
+        )
+    
+makePlot(output, 'leading_jet_pt', 'pt',
+        data=data,
+        bins=jet_pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_jet_pt'),
+        )
+    
+makePlot(output, 'subleading_jet_pt', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ subleading\ jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_pt'),
+        )
+    
+makePlot(output, 'leading_jet_eta', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_jet_eta'),
+        )
+    
+makePlot(output, 'subleading_jet_eta', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ subleading \ jet$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_eta'),
+        )
+    
+'''
+makePlot(output, 'leading_btag_pt', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ btag$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_btag_pt'),
+        )
+    
+makePlot(output, 'subleading_btag_pt', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ subleading\ btag$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_pt'),
+        )
+    
+makePlot(output, 'leading_btag_eta', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,  
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_btag_eta'),
+        )
+    
+makePlot(output, 'subleading_btag_eta', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ subleading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_eta'),
+        )
+        '''
+        
+'''makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
         new_colors=my_colors, new_labels=my_labels,
         order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
-        save=os.path.expandvars(plot_dir+'/OS_fwd_v1/MET_phi'),
+        upHists=['centralUp', 'upCentral', 'pt_jesTotalUp'], downHists=['centralDown', 'downCentral', 'pt_jesTotalDown'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_jes&SFUncertanties'),
+        )'''
+    
+makePlot(output, 'lead_lep_2mu', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order, 
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_pt'),
         )
 
+makePlot(output, 'lead_lep_2mu', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_eta'),
+        )
+
+makePlot(output, 'lead_lep_2mu', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_phi'),
+        )
+
+makePlot(output, 'trail_lep_2mu', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_pt'),
+        )
+
+makePlot(output, 'trail_lep_2mu', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_eta'),
+        )
+
+makePlot(output, 'trail_lep_2mu', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_phi'),
+        )
+    
+makePlot(output, 'lead_lep_2ele', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order, 
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_pt'),
+        )
+
+makePlot(output, 'lead_lep_2ele', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_eta'),
+        )
+
+makePlot(output, 'lead_lep_2ele', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_phi'),
+        )
+
+makePlot(output, 'trail_lep_2ele', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_pt'),
+        )
+
+makePlot(output, 'trail_lep_2ele', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_eta'),
+        )
+
+makePlot(output, 'trail_lep_2ele', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_phi'),
+        )
+
+makePlot(output, 'lead_lep_elemu', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order, 
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_pt'),
+        )
+
+makePlot(output, 'lead_lep_elemu', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_eta'),
+        )
+
+makePlot(output, 'lead_lep_elemu', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_phi'),
+        )
+
+makePlot(output, 'trail_lep_elemu', 'pt',
+        data=data,
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_pt'),
+        )
+
+makePlot(output, 'trail_lep_elemu', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_eta'),
+        )
+
+makePlot(output, 'trail_lep_elemu', 'phi',
+        data=data,
+        bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,
+        omit=omit,
+        signals=signals,
+        lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_phi'),
+        )
+        
+'''makePlot(output, 'dR_mu_genphoton', 'eta',
+        data=data,
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=order,lumi=lumi_year,
+        save=os.path.expandvars(plot_dir+version_dir+'dR_mu_genphoton'),
+        )''' 
