@@ -53,7 +53,8 @@ class Selection:
         is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
         is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
 
-        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
+        #triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
+        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset)
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
@@ -76,7 +77,7 @@ class Selection:
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
         self.selection.add('N_btag=0',      (ak.num(self.jet_btag)==0) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
-        self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
+        #self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
@@ -94,7 +95,7 @@ class Selection:
             'N_jet>3',
             'N_central>2',
             'N_btag>0',
-            'N_light>0',
+        #    'N_light>0',
             'MET>30',
             'N_fwd>0',
             'min_mll'
@@ -161,6 +162,7 @@ class Selection:
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
+        onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))
 
         lepton_tight = ak.concatenate([self.ele, self.mu], axis=1)
         SS_dilep = ( ak.sum(lepton_tight.charge, axis=1)!=0 )  # this makes sure that at least the SS leptons are tight, or all 3 leptons are tight
@@ -174,7 +176,8 @@ class Selection:
         pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
         neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
         
-        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
+        #triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
+        triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset)
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
@@ -195,6 +198,7 @@ class Selection:
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
         self.selection.add('offZ',          offZ )
+        self.selection.add('onZ',           onZ )
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
         
@@ -205,11 +209,12 @@ class Selection:
             'p_T(lep1)>20',
             'trigger',
             'SS_dilep',
-            'offZ',
+            #'offZ',
+            'onZ',
             'MET>50',
             'N_jet>2',
             'N_central>1',
-            'N_btag>0',
+            #'N_btag>0',
             'N_fwd>0',
             #'SFOS>=1',
             #'charge_sum'
@@ -271,6 +276,7 @@ if __name__ == '__main__':
     mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
     muon     = ak.concatenate([mu_t, mu_f], axis=1)
     muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False)
+    mu_v['p4'] = get_four_vec_fromPtEtaPhiM(mu_v, get_pt(mu_v), mu_v.eta, mu_v.phi, mu_v.mass, copy=False) 
     # the muon object automatically has the right id member, but for veto we need to take care of this.
     # FIXME    
 
@@ -281,7 +287,7 @@ if __name__ == '__main__':
     el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=year).get()
     electron    = ak.concatenate([el_t, el_f], axis=1)
     electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
-
+    el_v['p4'] = get_four_vec_fromPtEtaPhiM(el_v, get_pt(el_v), el_v.eta, el_v.phi, el_v.mass, copy=False)
 
     sel = Selection(
         dataset = "TTW",

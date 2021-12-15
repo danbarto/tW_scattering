@@ -19,6 +19,7 @@ ht_axis                 = hist.Bin("ht",            r"$H_{T}$ (GeV)",   250, 0, 
 mass_axis               = hist.Bin("mass",          r"M (GeV)",         200, 0, 200)  # for any real resonance, like W, Z, maybe even top
 ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
 eta_axis                = hist.Bin("eta",           r"$\eta$",          50, -5.0, 5.0)
+delta_eta_axis          = hist.Bin("eta",           r"$\eta$",          150, -5.0, 10.0)
 phi_axis                = hist.Bin("phi",           r"$\phi$",          64, -3.2, 3.2)
 delta_axis              = hist.Bin("delta",         r"$\delta$",        50, 0, 10)
 multiplicity_axis       = hist.Bin("multiplicity",  r"N",               20, -0.5, 19.5)
@@ -30,7 +31,8 @@ norm_axis               = hist.Bin("norm",          r"N",               25, 0, 1
 score_axis              = hist.Bin("score",         r"N",               16, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
 one_axis                = hist.Bin("one",         r"N",               1, -100, 100)
 
-variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown', 'bUp', 'bDown', 'lUp', 'lDown']
+variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown', 'bUp', 'bDown', 'lUp', 'lDown']  
+    
 
 desired_output = {
             "PV_npvs" :         hist.Hist("PV_npvs", dataset_axis, ext_multiplicity_axis),
