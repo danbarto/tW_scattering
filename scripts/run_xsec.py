@@ -1,6 +1,6 @@
 '''
 Get x-secs. Needs a working cmsenv, like:
-cd /home/users/dspitzba/TTW/CMSSW_10_6_19/src/; cmsenv; cd -;
+cd /home/users/dspitzba/TOP/CMSSW_10_6_19/src/; cmsenv; cd -;
 
 '''
 
@@ -42,7 +42,7 @@ samples = [
     #'/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv2-106X_mcRun2_asymptotic_v15-v1/NANOAODSIM', ## 5.212
     #'/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
     #'/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM', # 0.2178
-    '/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
+    #'/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
     #'/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
     #'/SSWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
     #'/QCD_Pt_15to30_TuneCP5_13TeV_pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM',
@@ -75,6 +75,7 @@ samples = [
     #'/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
     #'/store/mc/PhaseIISummer17wmLHEGENOnly/TTWJetsToLNu_TuneCUETP8M1_14TeV-amcatnloFXFX-madspin-pythia8/GEN/93X_upgrade2023_realistic_v5_ext1-v3/10000/0029E818-8552-E811-87D1-1866DAEA6D08.root', # 0.2378
     #'/store/mc/PhaseIISummer17wmLHEGENOnly/TTZToLLNuNu_M-10_TuneCUETP8M1_14TeV-amcatnlo-pythia8/GEN/93X_upgrade2023_realistic_v5-v1/80000/8A4401A0-5672-E811-8903-0CC47A84788A.root', # 0.2949
+    '/store/mc/RunIIAutumn18MiniAOD/ggTomonoH_bb_sn_0p35_tn_1p0_mXd_10_MH3_1600_MH4_350_MH2_1600_MHC_1600_TuneCP3_13TeV_madgraph-pythia/MINIAODSIM/102X_upgrade2018_realistic_v15-v2/100000/461BFB17-6F80-134C-B2B9-AD46C2B59EB6.root',
     ]
     
 print ("## Will process the following samples: %s"%(",".join( f for f in samples ) ))

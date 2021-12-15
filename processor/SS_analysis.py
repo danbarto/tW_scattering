@@ -1,3 +1,15 @@
+'''
+Central analysis script for the SS channel.
+All histograms and numbers are produced here,
+starting from skimmed NanoAOD samples.
+We deal with 4 eras:
+- 2016APV = preVFP = HIPM, B-F
+- 2016 = postVFP, F-H
+- 2017
+- 2018
+'''
+
+
 import os
 import re
 try:
@@ -42,12 +54,12 @@ class SS_analysis(processor.ProcessorABC):
         self.training = training
         self.dump = dump
         
-        self.btagSF = btag_scalefactor(year)  # this might be the only place where era in 2016 matters
+        self.btagSF = btag_scalefactor(year, era=era)
         
-        self.leptonSF = LeptonSF(year=year)
+        self.leptonSF = LeptonSF(year=year)  # NOTE no era specific lepton SFs yet
 
-        self.nonpromptWeight = NonpromptWeight(year=year)
-        self.chargeflipWeight = charge_flip(year=year)
+        self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split
+        self.chargeflipWeight = charge_flip(year=year)  # NOTE no era split
 
         self.hyperpoly = hyperpoly
         self.points = points
@@ -183,8 +195,9 @@ class SS_analysis(processor.ProcessorABC):
             jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
             
             central   = jet[(abs(jet.eta)<2.4)]
-            btag      = getBTagsDeepFlavB(jet, year=self.year) # should study working point for DeepJet
-            light     = getBTagsDeepFlavB(jet, year=self.year, invert=True)
+            btag      = getBTagsDeepFlavB(jet, era=era, year=self.year)
+            light     = getBTagsDeepFlavB(jet, era=era, year=self.year, invert=True)
+            light_central = light[(abs(light.eta)<2.5)]
             fwd       = getFwdJet(light)
             #fwd_noPU  = getFwdJet(light, puId=False)
             
@@ -227,15 +240,15 @@ class SS_analysis(processor.ProcessorABC):
                 
                 # b-tag SFs # FIXME this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
-                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='up'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='up'))
                 elif var['name'] == 'l_down':
-                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='down'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='down'))
                 elif var['name'] == 'b_up':
-                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='up', c_direction='central'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='up', c_direction='central'))
                 elif var['name'] == 'b_down':
-                    weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='down', c_direction='central'))
+                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='down', c_direction='central'))
                 else:
-                    weight.add("btag", self.btagSF.Method1a(btag, light))
+                    weight.add("btag", self.btagSF.Method1a(btag, light_central))
                 
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
@@ -1146,7 +1159,15 @@ if __name__ == '__main__':
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            SS_analysis(year=year, variations=variations, accumulator=desired_output, evaluate=args.evaluate, training=args.training, dump=args.dump, era=era),
+            SS_analysis(
+                year=year,
+                variations=variations,
+                accumulator=desired_output,
+                evaluate=args.evaluate,
+                training=args.training,
+                dump=args.dump,
+                era=era,
+            ),
             exe,
             exe_args,
             chunksize=250000,  # I guess that's already running into the max events/file

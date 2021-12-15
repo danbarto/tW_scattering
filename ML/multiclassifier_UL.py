@@ -20,6 +20,10 @@ plt.style.use(mplhep.style.CMS)
 # Machine learning packages
 import tensorflow as tf
 from keras.utils.vis_utils import plot_model
+
+from sklearn.model_selection import GridSearchCV
+from keras.wrappers.scikit_learn import KerasClassifier
+
 from keras.utils import np_utils
 import onnxruntime as rt
 from sklearn.utils import resample
@@ -38,7 +42,7 @@ from ML.multiclassifier_tools import get_one_hot, get_class_weight, get_sob,\
             load_onnx_model, predict_onnx, dump_onnx_model,\
             store_model, load_model,\
             store_transformer, load_transformer
-from ML.models import baseline_model
+from ML.models import baseline_model, create_model
 
 
 def test_train(test, train, y_test, y_train, labels=[], bins=25, node=0, plot_dir=None, weight_test=None, weight_train=None):
@@ -161,12 +165,18 @@ if __name__ == '__main__':
     argParser.add_argument('--fit', action='store_true', default=None, help="Do combine fit?")
     argParser.add_argument('--version', action='store', default='v21', help="Version number")
     argParser.add_argument('--year', action='store', default='2018', help="Which year?")
+    argParser.add_argument('--seed', action='store', default=-1, help="Fix the random seed in numpy?")
+    argParser.add_argument('--optimize', action='store_true', help="Run grid search for hyper parameters?")
+    # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
 
 
     load_weights = args.load
     version = "_".join([args.year, args.version])
     is_cat = args.cat
+
+    if args.seed>0:
+        np.random.seed(args.seed)
 
     plot_dir = os.path.expandvars("/home/users/$USER/public_html/tW_scattering/ML/%s/"%(version))
 
@@ -303,15 +313,68 @@ if __name__ == '__main__':
 
     if not load_weights:
 
-        epochs = 100  # 50 -> 200
-        batch_size = 5120
+        epochs = 10 #100  # 50 -> 200
+        batch_size = 100 #5120
         validation_split = 0.2
 
         scaler = RobustScaler()
         X_train_scaled = scaler.fit_transform(X_train)
         params = scaler.get_params()
 
-        model = baseline_model(input_dim, out_dim)
+        if args.optimize:
+            model = KerasClassifier(build_fn=create_model,
+                                    input_dim=input_dim, out_dim=out_dim,
+                                    epochs = epochs,
+                                    batch_size = batch_size,
+                                    verbose = 0,
+                                    #class_weight = class_weight,
+                                    #sample_weight = np.abs(df_train['weight'].values),  # this doesn't work here.
+                                    #dropout_rate=0.1,
+                                    #neurons=150,
+                                    #learning_rate=0.001,
+                                    #activation='relu',
+                                    #optimizer='RMSprop',  # this doesn't do anything atm?
+                                    )
+            print ("Input dim: %s"%input_dim)
+            # define the grid search parameters
+            neurons = [1, 10, 20, 50, 75, 100, 150]
+            #param_grid = dict(neurons=neurons)
+            # Best: 0.499523 using {'neurons': 100}
+            dropout_rate = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+            #param_grid = dict(dropout_rate=dropout_rate)
+            # Best: 0.506186 using {'dropout_rate': 0.5}
+            activation = ['softmax', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear']
+            #param_grid = dict(activation=activation)
+            # Best: 0.648132 using {'activation': 'relu'} NOTE: this was without sample_weight
+            # Best: 0.498214 using {'activation': 'relu'} NOTE: this was with sample_weight
+            batch_size = [100, 1000]
+            epochs = [10, 100]
+            param_grid = dict(batch_size=batch_size, epochs=epochs)
+            # Best: 0.516183 using {'batch_size': 100, 'epochs': 10}
+            grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=5, cv=3)
+            grid_result = grid.fit(
+                X_train_scaled,
+                y_train,
+                class_weight = class_weight,
+                sample_weight = np.abs(df_train['weight'].values),
+            )
+            # summarize results
+            print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+            means = grid_result.cv_results_['mean_test_score']
+            stds = grid_result.cv_results_['std_test_score']
+            params = grid_result.cv_results_['params']
+            for mean, stdev, param in zip(means, stds, params):
+                print("%f (%f) with: %r" % (mean, stdev, param))
+
+            model = create_model(input_dim=input_dim, out_dim=out_dim,
+                                 dropout_rate=0.5,
+                                 neurons=100,  # FIXME
+                                 learning_rate=0.001,
+                                 activation='relu',
+                                 optimizer='RMSprop',
+                                 )
+        else:
+            model = baseline_model(input_dim, out_dim)
 
         history = model.fit(
             X_train_scaled,

@@ -34,7 +34,7 @@ def submit():
 
     #campaign = 'UL16'
     campaign = 'UL16_preVFP'
-    tag = "v9"
+    tag = "v10"
     #tag = "v8_pre"
     #events_per_point = 250000
     #events_per_job = 250

@@ -72,10 +72,13 @@ def getBTagsDeepB(jet, year=2016, invert=False):
     if invert: sel = ~sel
     return jet[sel]
 
-def getBTagsDeepFlavB(jet, year=2016, invert=False, UL=True):
+def getBTagsDeepFlavB(jet, year=2016, era=None, invert=False, UL=True):
     if UL:
         if year == 2016:
-            sel = ((jet.btagDeepFlavB>0.3093) & (abs(jet.eta)<2.5)) #FIXME
+            if era=='APV':
+                sel = ((jet.btagDeepFlavB>0.2598) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16preVFP
+            else:
+                sel = ((jet.btagDeepFlavB>0.2489) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16postVFP
         elif year == 2017:
             sel = ((jet.btagDeepFlavB>0.3040) & (abs(jet.eta)<2.5)) # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL17
         elif year == 2018:
