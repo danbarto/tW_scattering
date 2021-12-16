@@ -1217,99 +1217,128 @@ if __name__ == '__main__':
         em_e = np.intersect1d(em, e)
         print ("Overlap MuonEG/EGamma:", len(em_e))
 
-    
-    ## some plots
-    import matplotlib.pyplot as plt
-    import mplhep as hep
-    plt.style.use(hep.style.CMS)
-    
-    from plots.helpers import makePlot
-    
-    # defining some new axes for rebinning.
-    N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
-    N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
-    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
-    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
-    pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
-    eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
-    score_bins = hist.Bin("score",          r"N", 25, 0, 1)
-    
-    my_labels = {
-        'topW_v3': 'top-W scat.',
-        'topW_EFT_cp8': 'EFT, cp8',
-        'topW_EFT_mix': 'EFT mix',
-        'TTZ': r'$t\bar{t}Z$',
-        'TTW': r'$t\bar{t}W$',
-        'TTH': r'$t\bar{t}H$',
-        'diboson': 'VV/VVV',
-        'rare': 'rare',
-        'ttbar': r'$t\bar{t}$',
-        'np_obs_mc': 'nonprompt (MC true)',
-        'np_est_mc': 'nonprompt (MC est)',
-        'cf_obs_mc': 'charge flip (MC true)',
-        'cf_est_mc': 'charge flip (MC est)',
-        'np_est_data': 'nonprompt (est)',
-        'cf_est_data': 'charge flip (est)',
-    }
-    
-    my_colors = {
-        'topW_v3': '#FF595E',
-        'topW_EFT_cp8': '#000000',
-        'topW_EFT_mix': '#0F7173',
-        'TTZ': '#FFCA3A',
-        'TTW': '#8AC926',
-        'TTH': '#34623F',
-        'diboson': '#525B76',
-        'rare': '#EE82EE',
-        'ttbar': '#1982C4',
-        'np_obs_mc': '#1982C4',
-        'np_est_mc': '#1982C4',
-        'np_est_data': '#1982C4',
-        'cf_obs_mc': '#0F7173',
-        'cf_est_mc': '#0F7173',
-        'cf_est_data': '#0F7173',
-    }
 
-    makePlot(output, 'node', 'multiplicity',
-         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-         bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-         new_colors=my_colors, new_labels=my_labels,
-         order=['rare', 'diboson', 'TTW', 'TTH', 'TTZ', 'np_est_data', 'cf_est_data', 'topW_v3'],
-         #order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-         #signals=['topW_v3'],
-         omit=['ttbar', 'cf_est_mc', 'cf_obs_mc', 'np_est_mc', 'np_obs_mc',],
-         save=os.path.expandvars('$TWHOME/dump/ML_node'),
-        )
 
-    makePlot(output, 'node', 'multiplicity',
-         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-         bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-         new_colors=my_colors, new_labels=my_labels,
-         order=['rare', 'diboson', 'TTW', 'TTH', 'TTZ', 'np_obs_mc', 'cf_obs_mc', 'topW_v3'],
-         #order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-         #signals=['topW_v3'],
-         omit=['ttbar', 'cf_est_mc', 'cf_est_data', 'np_est_mc', 'np_est_data',],
-         save=os.path.expandvars('$TWHOME/dump/ML_node_MC'),
-        )
+    from Tools.helpers import getCutFlowTable
+    processes = ['topW_v3', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar']
+    lines= [
+            'filter',
+            'dilep',
+            'p_T(lep0)>25',
+            'p_T(lep1)>20',
+            'trigger',
+            'SS',
+            'N_jet>3',
+            'N_central>2',
+            'N_btag>0',
+            'N_light>0',
+            'MET>30',
+            'N_fwd>0',
+            'min_mll'
+        ]
 
-    # This is a partial unblinding
-    makePlot(output, 'node0_score_incl', 'score',
-         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-         bins=score_bins, log=False, normalize=False, axis_label=r'score',
-         new_colors=my_colors, new_labels=my_labels,
-         order=['diboson', 'TTW', 'TTH', 'TTZ', 'np_est_data', 'cf_est_data'],
-         signals=['topW_v3'],
-         omit=['ttbar', 'rare', 'cf_est_mc', 'cf_obs_mc', 'np_est_mc', 'np_obs_mc',],
-         save=os.path.expandvars('$TWHOME/dump/ML_node0_score_incl'),
-        )
+    print (getCutFlowTable(output,
+                           processes=processes,
+                           lines=lines,
+                           significantFigures=3,
+                           absolute=True,
+                           signal='topW_v3',
+                           total=False,
+                           ))
 
-    makePlot(output, 'node0_score', 'score',
-         data=[],
-         bins=score_bins, log=False, normalize=False, axis_label=r'score', shape=True, ymax=0.35,
-         new_colors=my_colors, new_labels=my_labels,
-         order=['TTW'],
-         signals=['topW_v3'],
-         omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'ttbar', 'TTH', 'TTZ', 'cf_est_data', 'cf_est_mc', 'cf_obs_mc', 'np_est_data', 'np_est_mc', 'np_obs_mc', 'rare'],
-         save=os.path.expandvars('$TWHOME/dump/ML_node0_score_shape'),
-        )
+    make_plots = False
+    if make_plots:
+        ## some plots
+        import matplotlib.pyplot as plt
+        import mplhep as hep
+        plt.style.use(hep.style.CMS)
 
+        from plots.helpers import makePlot
+
+        # defining some new axes for rebinning.
+        N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
+        N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+        mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+        pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
+        pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
+        eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
+        score_bins = hist.Bin("score",          r"N", 25, 0, 1)
+
+        my_labels = {
+            'topW_v3': 'top-W scat.',
+            'topW_EFT_cp8': 'EFT, cp8',
+            'topW_EFT_mix': 'EFT mix',
+            'TTZ': r'$t\bar{t}Z$',
+            'TTW': r'$t\bar{t}W$',
+            'TTH': r'$t\bar{t}H$',
+            'diboson': 'VV/VVV',
+            'rare': 'rare',
+            'ttbar': r'$t\bar{t}$',
+            'np_obs_mc': 'nonprompt (MC true)',
+            'np_est_mc': 'nonprompt (MC est)',
+            'cf_obs_mc': 'charge flip (MC true)',
+            'cf_est_mc': 'charge flip (MC est)',
+            'np_est_data': 'nonprompt (est)',
+            'cf_est_data': 'charge flip (est)',
+        }
+
+        my_colors = {
+            'topW_v3': '#FF595E',
+            'topW_EFT_cp8': '#000000',
+            'topW_EFT_mix': '#0F7173',
+            'TTZ': '#FFCA3A',
+            'TTW': '#8AC926',
+            'TTH': '#34623F',
+            'diboson': '#525B76',
+            'rare': '#EE82EE',
+            'ttbar': '#1982C4',
+            'np_obs_mc': '#1982C4',
+            'np_est_mc': '#1982C4',
+            'np_est_data': '#1982C4',
+            'cf_obs_mc': '#0F7173',
+            'cf_est_mc': '#0F7173',
+            'cf_est_data': '#0F7173',
+        }
+
+        makePlot(output, 'node', 'multiplicity',
+                 data=['DoubleMuon', 'MuonEG', 'EGamma'],
+                 bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=['rare', 'diboson', 'TTW', 'TTH', 'TTZ', 'np_est_data', 'cf_est_data', 'topW_v3'],
+                 #order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
+                 #signals=['topW_v3'],
+                 omit=['ttbar', 'cf_est_mc', 'cf_obs_mc', 'np_est_mc', 'np_obs_mc',],
+                 save=os.path.expandvars('$TWHOME/dump/ML_node'),
+                 )
+
+        makePlot(output, 'node', 'multiplicity',
+                 data=['DoubleMuon', 'MuonEG', 'EGamma'],
+                 bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=['rare', 'diboson', 'TTW', 'TTH', 'TTZ', 'np_obs_mc', 'cf_obs_mc', 'topW_v3'],
+                 #order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
+                 #signals=['topW_v3'],
+                 omit=['ttbar', 'cf_est_mc', 'cf_est_data', 'np_est_mc', 'np_est_data',],
+                 save=os.path.expandvars('$TWHOME/dump/ML_node_MC'),
+                 )
+
+        # This is a partial unblinding
+        makePlot(output, 'node0_score_incl', 'score',
+                 data=['DoubleMuon', 'MuonEG', 'EGamma'],
+                 bins=score_bins, log=False, normalize=False, axis_label=r'score',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=['diboson', 'TTW', 'TTH', 'TTZ', 'np_est_data', 'cf_est_data'],
+                 signals=['topW_v3'],
+                 omit=['ttbar', 'rare', 'cf_est_mc', 'cf_obs_mc', 'np_est_mc', 'np_obs_mc',],
+                 save=os.path.expandvars('$TWHOME/dump/ML_node0_score_incl'),
+                 )
+
+        makePlot(output, 'node0_score', 'score',
+                 data=[],
+                 bins=score_bins, log=False, normalize=False, axis_label=r'score', shape=True, ymax=0.35,
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=['TTW'],
+                 signals=['topW_v3'],
+                 omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'ttbar', 'TTH', 'TTZ', 'cf_est_data', 'cf_est_mc', 'cf_obs_mc', 'np_est_data', 'np_est_mc', 'np_obs_mc', 'rare'],
+                 save=os.path.expandvars('$TWHOME/dump/ML_node0_score_shape'),
+                 )
