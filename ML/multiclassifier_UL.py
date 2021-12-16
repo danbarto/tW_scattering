@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
     if not load_weights:
 
-        epochs = 10 #100  # 50 -> 200
+        epochs = 50  # 50 -> 200 # NOTE 10 was found to be best?
         batch_size = 100 #5120
         validation_split = 0.2
 
@@ -329,11 +329,6 @@ if __name__ == '__main__':
                                     verbose = 0,
                                     #class_weight = class_weight,
                                     #sample_weight = np.abs(df_train['weight'].values),  # this doesn't work here.
-                                    #dropout_rate=0.1,
-                                    #neurons=150,
-                                    #learning_rate=0.001,
-                                    #activation='relu',
-                                    #optimizer='RMSprop',  # this doesn't do anything atm?
                                     )
             print ("Input dim: %s"%input_dim)
             # define the grid search parameters
@@ -349,8 +344,11 @@ if __name__ == '__main__':
             # Best: 0.498214 using {'activation': 'relu'} NOTE: this was with sample_weight
             batch_size = [100, 1000]
             epochs = [10, 100]
-            param_grid = dict(batch_size=batch_size, epochs=epochs)
+            #param_grid = dict(batch_size=batch_size, epochs=epochs)
             # Best: 0.516183 using {'batch_size': 100, 'epochs': 10}
+            learning_rates = [0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+            param_grid = dict(learning_rate = learning_rates)
+            # Best: 0.497346 using {'learning_rate': 0.0005}
             grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=5, cv=3)
             grid_result = grid.fit(
                 X_train_scaled,
@@ -375,6 +373,13 @@ if __name__ == '__main__':
                                  )
         else:
             model = baseline_model(input_dim, out_dim)
+            #model = create_model(input_dim=input_dim, out_dim=out_dim,
+            #                     dropout_rate=0.5,
+            #                     neurons=100,
+            #                     learning_rate=0.001,
+            #                     activation='relu',
+            #                     optimizer='RMSprop',
+            #                     )
 
         history = model.fit(
             X_train_scaled,
