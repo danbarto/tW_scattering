@@ -100,8 +100,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
         
         central   = jet[(abs(jet.eta)<2.4)]
-        btag      = getBTagsDeepFlavB(jet, year=self.year) # should study working point for DeepJet
-        light     = getBTagsDeepFlavB(jet, year=self.year, invert=True)
+        btag      = getBTagsDeepFlavB(jet, era=era, year=self.year) # should study working point for DeepJet
+        light     = getBTagsDeepFlavB(jet, era=era, year=self.year, invert=True)
+        light_central = light[(abs(light.eta)<2.5)]
         fwd       = getFwdJet(light)
         fwd_noPU  = getFwdJet(light, puId=False)
         
@@ -165,7 +166,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
             
             # b-tag SFs
-            weight.add("btag", self.btagSF.Method1a(btag, light))
+            weight.add("btag", self.btagSF.Method1a(btag, light_central))
             
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
@@ -179,6 +180,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             dataset = dataset,
             events = ev,
             year = self.year,
+            era = self.era,
             ele = electron,
             ele_veto = vetoelectron,
             mu = muon,
@@ -187,6 +189,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             jet_central = central,
             jet_btag = btag,
             jet_fwd = fwd,
+            jet_light = light,
             met = met,
             #met = ev.MET,
         )
@@ -353,6 +356,22 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(trailing_lepton[BL_1ele].phi)),
             weight = weight.weight()[BL_1ele]
         )
+
+        output['electron_elemu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(electron[BL_1ele].p4.pt)),
+            eta = ak.to_numpy(ak.flatten(electron[BL_1ele].p4.eta)),
+            phi = ak.to_numpy(ak.flatten(electron[BL_1ele].phi)),
+            weight = weight.weight()[BL_1ele]
+        )
+
+        output['muon_elemu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(muon[BL_1ele].p4.pt)),
+            eta = ak.to_numpy(ak.flatten(muon[BL_1ele].p4.eta)),
+            phi = ak.to_numpy(ak.flatten(muon[BL_1ele].phi)),
+            weight = weight.weight()[BL_1ele]
+        )
         
 #        BL_bldr = BL & (ak.num(fwd)>0)
         BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>0'])
@@ -462,6 +481,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     jet_central = central,
                     jet_btag = btag,
                     jet_fwd = fwd,
+                    jet_light = light,
                     met = met,
                 )
 #                BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
@@ -600,7 +620,6 @@ if __name__ == '__main__':
     small       = args.small
     verysmall   = args.verysmall
     
-    verysmall=True
     if verysmall:
         small = True
     
@@ -615,7 +634,7 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'testing_OS_2016'
+    cacheName = 'forward_OS_%s%s'%(year,era)
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
@@ -642,7 +661,7 @@ if __name__ == '__main__':
         'XG': fileset_all['XG'],
     }
 
-    fileset = make_small(fileset, small, 1)
+    fileset = make_small(fileset, small, n_max=10)
 
     add_processes_to_output(fileset, desired_output)
     for rle in ['run', 'lumi', 'event']:
@@ -653,30 +672,32 @@ if __name__ == '__main__':
                 'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'SingleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'SingleElectron_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                "N_tau": hist.Hist("Counts", dataset_axis, multiplicity_axis),
-                "N_track": hist.Hist("Counts", dataset_axis, multiplicity_axis),
-                "dilep_pt": hist.Hist("Counts", dataset_axis, pt_axis),
-                "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
-                "deltaEta": hist.Hist("Counts", dataset_axis, eta_axis),
-                "mjf_max": hist.Hist("Counts", dataset_axis, ext_mass_axis),
-                "min_bl_dR": hist.Hist("Counts", dataset_axis, eta_axis),
-                "min_mt_lep_met": hist.Hist("Counts", dataset_axis, pt_axis),
-                "leading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
-                "subleading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
-                "leading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
-                "subleading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "N_tau":                hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "N_track":              hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "dilep_pt":             hist.Hist("Counts", dataset_axis, pt_axis),
+                "dilep_mass":           hist.Hist("Counts", dataset_axis, mass_axis),
+                "deltaEta":             hist.Hist("Counts", dataset_axis, eta_axis),
+                "mjf_max":              hist.Hist("Counts", dataset_axis, ext_mass_axis),
+                "min_bl_dR":            hist.Hist("Counts", dataset_axis, eta_axis),
+                "min_mt_lep_met":       hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_pt":       hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_jet_pt":    hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_eta":      hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_jet_eta":   hist.Hist("Counts", dataset_axis, eta_axis),
             
-                "leading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
-                "subleading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
-                "leading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
-                "subleading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
-                "lead_lep_2ele":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "trail_lep_2ele":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "lead_lep_2mu":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "trail_lep_2mu":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "lead_lep_elemu":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "trail_lep_elemu":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
-                "dR_mu_genphoton": hist.Hist("Counts", dataset_axis, eta_axis),
+                "leading_btag_pt":      hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_btag_pt":   hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_btag_eta":     hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_btag_eta":  hist.Hist("Counts", dataset_axis, eta_axis),
+                "lead_lep_2ele":        hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_2ele":       hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_2mu":         hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_2mu":        hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_elemu":       hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_elemu":      hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "electron_elemu":       hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "muon_elemu":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "dR_mu_genphoton":      hist.Hist("Counts", dataset_axis, eta_axis),
                 
              })
 
@@ -690,7 +711,6 @@ if __name__ == '__main__':
     if local:
         exe_args = {
             'workers': 12,
-            'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
         exe = processor.futures_executor
@@ -704,7 +724,6 @@ if __name__ == '__main__':
 
         exe_args = {
             'client': c,
-            'function_args': {'flatten': False},
             "schema": NanoAODSchema,
         }
         exe = processor.dask_executor
