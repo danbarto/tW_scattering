@@ -150,7 +150,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_pt')
+             save=os.path.expandvars(plot_dir+'lead_lep_pt')
              )
     makePlot(output, 'lead_lep', 'eta',
              data=data,
@@ -160,7 +160,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_eta')
+             save=os.path.expandvars(plot_dir+'lead_lep_eta')
              )
 
     makePlot(output, 'lead_lep', 'phi',
@@ -171,7 +171,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_phi'),
+             save=os.path.expandvars(plot_dir+'lead_lep_phi'),
              )
 
     makePlot(output, 'trail_lep', 'pt',
@@ -182,7 +182,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_pt'),
+             save=os.path.expandvars(plot_dir+'trail_lep_pt'),
              )
 
     makePlot(output, 'trail_lep', 'eta',
@@ -193,7 +193,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_eta'),
+             save=os.path.expandvars(plot_dir+'trail_lep_eta'),
              )
 
     makePlot(output, 'trail_lep', 'phi',
@@ -204,7 +204,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_phi'),
+             save=os.path.expandvars(plot_dir+'trail_lep_phi'),
              )
 
 
@@ -216,7 +216,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'PV_npvsGood'),
+             save=os.path.expandvars(plot_dir+'PV_npvsGood'),
              )
 
     makePlot(output, 'N_fwd', 'multiplicity',
@@ -228,7 +228,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_fwd'),
+             save=os.path.expandvars(plot_dir+'N_fwd'),
              )
 
     makePlot(output, 'N_fwd', 'multiplicity',
@@ -239,7 +239,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'N_fwd_stat'),
+             save=os.path.expandvars(plot_dir+'N_fwd_stat'),
              )
 
     makePlot(output, 'fwd_jet', 'pt',
@@ -251,7 +251,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_pt'),
+             save=os.path.expandvars(plot_dir+'fwd_jet_pt'),
              )
 
     makePlot(output, 'fwd_jet', 'eta',
@@ -263,7 +263,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_eta'),
+             save=os.path.expandvars(plot_dir+'fwd_jet_eta'),
              )
 
     makePlot(output, 'fwd_jet', 'phi',
@@ -275,7 +275,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'fwd_jet_phi'),
+             save=os.path.expandvars(plot_dir+'fwd_jet_phi'),
              )
 
     makePlot(output, 'N_jet', 'multiplicity',
@@ -286,7 +286,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'N_jet'),
+             save=os.path.expandvars(plot_dir+'N_jet'),
              )
 
     makePlot(output, 'j1', 'pt',
@@ -298,7 +298,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'j1_pt'),
+             save=os.path.expandvars(plot_dir+'j1_pt'),
              )
 
     makePlot(output, 'j1', 'eta',
@@ -310,7 +310,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'j1_eta'),
+             save=os.path.expandvars(plot_dir+'j1_eta'),
              )
 
     makePlot(output, 'j1', 'phi',
@@ -322,7 +322,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'j1_phi'),
+             save=os.path.expandvars(plot_dir+'j1_phi'),
              )
 
     makePlot(output, 'N_b', 'multiplicity',
@@ -334,7 +334,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_b'),
+             save=os.path.expandvars(plot_dir+'N_b'),
              )
     
     makePlot(output, 'N_ele', 'multiplicity',
@@ -346,7 +346,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_ele'),
+             save=os.path.expandvars(plot_dir+'N_ele'),
              )
 
     makePlot(output, 'N_central', 'multiplicity',
@@ -358,7 +358,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_central'),
+             save=os.path.expandvars(plot_dir+'N_central'),
              )
 
     '''
@@ -371,7 +371,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'b1_pt'),
+    save=os.path.expandvars(plot_dir+'b1_pt'),
     )
     makePlot(output, 'b1', 'eta',
     data=data,
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'b1_eta'),
+    save=os.path.expandvars(plot_dir+'b1_eta'),
     )
     makePlot(output, 'b1', 'phi',
     data=data,
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'b1_phi'),
+    save=os.path.expandvars(plot_dir+'b1_phi'),
     )
     '''
 
@@ -406,7 +406,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'MET_pt'),
+             save=os.path.expandvars(plot_dir+'MET_pt'),
              )
 
     makePlot(output, 'MET', 'phi',
@@ -417,7 +417,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'MET_phi'),
+             save=os.path.expandvars(plot_dir+'MET_phi'),
              )
     
     makePlot(output, 'N_tau', 'multiplicity',
@@ -429,7 +429,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_tau'),
+             save=os.path.expandvars(plot_dir+'N_tau'),
              )
     
     makePlot(output, 'N_track', 'multiplicity',
@@ -441,7 +441,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'N_track'),
+             save=os.path.expandvars(plot_dir+'N_track'),
              )
 
     makePlot(output, 'dilep_pt', 'pt',
@@ -452,7 +452,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'dilep_pt'),
+             save=os.path.expandvars(plot_dir+'dilep_pt'),
              )
     
     
@@ -464,7 +464,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'dilep_mass'),
+             save=os.path.expandvars(plot_dir+'dilep_mass'),
              )
     
     '''makePlot(output, 'dilep_mass_ee', 'mass',
@@ -472,14 +472,14 @@ if __name__ == '__main__':
     bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
     new_colors=my_colors, new_labels=my_labels,
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_ee'),
+    save=os.path.expandvars(plot_dir+'dilep_mass_ee'),
     )
     makePlot(output, 'dilep_mass_emu', 'mass',
     data=['DoubleMuon', 'MuonEG', 'EGamma'],
     bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
     new_colors=my_colors, new_labels=my_labels,
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_emu'),
+    save=os.path.expandvars(plot_dir+'dilep_mass_emu'),
     )
     
     makePlot(output, 'dilep_mass_mumu', 'mass',
@@ -487,7 +487,7 @@ if __name__ == '__main__':
     bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
     new_colors=my_colors, new_labels=my_labels,
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_mumu'),
+    save=os.path.expandvars(plot_dir+'dilep_mass_mumu'),
     )
     
     makePlot(output, 'dilep_mass_Nb=0', 'mass',
@@ -495,7 +495,7 @@ if __name__ == '__main__':
     bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
     new_colors=my_colors, new_labels=my_labels,
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_Nb=0'),
+    save=os.path.expandvars(plot_dir+'dilep_mass_Nb=0'),
     )
     
     makePlot(output, 'dilep_mass_Nb>1', 'mass',
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
     new_colors=my_colors, new_labels=my_labels,
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dilep_mass_Nb>=2'),
+    save=os.path.expandvars(plot_dir+'dilep_mass_Nb>=2'),
     )'''
     
 
@@ -516,7 +516,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'deltaEta'),
+             save=os.path.expandvars(plot_dir+'deltaEta'),
              )
     
     makePlot(output, 'mjf_max', 'mass',
@@ -527,7 +527,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'mjf_max'),
+             save=os.path.expandvars(plot_dir+'mjf_max'),
              )
     
     makePlot(output, 'min_bl_dR', 'eta',
@@ -539,7 +539,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'min_bl_dR'),
+             save=os.path.expandvars(plot_dir+'min_bl_dR'),
              )
     
     makePlot(output, 'min_mt_lep_met', 'pt',
@@ -551,7 +551,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'min_mt_lep_met'),
+             save=os.path.expandvars(plot_dir+'min_mt_lep_met'),
              )
     
     makePlot(output, 'leading_jet_pt', 'pt',
@@ -563,7 +563,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'leading_jet_pt'),
+             save=os.path.expandvars(plot_dir+'leading_jet_pt'),
              )
     
     makePlot(output, 'subleading_jet_pt', 'pt',
@@ -575,7 +575,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_pt'),
+             save=os.path.expandvars(plot_dir+'subleading_jet_pt'),
              )
     
     makePlot(output, 'leading_jet_eta', 'eta',
@@ -587,7 +587,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'leading_jet_eta'),
+             save=os.path.expandvars(plot_dir+'leading_jet_eta'),
              )
     
     makePlot(output, 'subleading_jet_eta', 'eta',
@@ -599,7 +599,7 @@ if __name__ == '__main__':
              signals=signals,
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_eta'),
+             save=os.path.expandvars(plot_dir+'subleading_jet_eta'),
              )
     
     '''
@@ -612,7 +612,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'leading_btag_pt'),
+    save=os.path.expandvars(plot_dir+'leading_btag_pt'),
     )
     
     makePlot(output, 'subleading_btag_pt', 'pt',
@@ -624,7 +624,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_pt'),
+    save=os.path.expandvars(plot_dir+'subleading_btag_pt'),
     )
     
     makePlot(output, 'leading_btag_eta', 'eta',
@@ -636,7 +636,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'leading_btag_eta'),
+    save=os.path.expandvars(plot_dir+'leading_btag_eta'),
     )
     
     makePlot(output, 'subleading_btag_eta', 'eta',
@@ -648,7 +648,7 @@ if __name__ == '__main__':
     signals=signals,
     lumi=lumi,
     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_eta'),
+    save=os.path.expandvars(plot_dir+'subleading_btag_eta'),
     )
     '''
 
@@ -659,7 +659,7 @@ if __name__ == '__main__':
     order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
     upHists=['centralUp', 'upCentral', 'pt_jesTotalUp'], downHists=['centralDown', 'downCentral', 'pt_jesTotalDown'],
     shape=False,
-    save=os.path.expandvars(plot_dir+version_dir+'N_b_jes&SFUncertanties'),
+    save=os.path.expandvars(plot_dir+'N_b_jes&SFUncertanties'),
     )'''
     
     makePlot(output, 'lead_lep_2mu', 'pt',
@@ -670,7 +670,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_pt'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2mu_pt'),
              )
 
     makePlot(output, 'lead_lep_2mu', 'eta',
@@ -681,7 +681,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_eta'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2mu_eta'),
              )
 
     makePlot(output, 'lead_lep_2mu', 'phi',
@@ -692,7 +692,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2mu_phi'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2mu_phi'),
              )
 
     makePlot(output, 'trail_lep_2mu', 'pt',
@@ -703,7 +703,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_pt'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2mu_pt'),
              )
 
     makePlot(output, 'trail_lep_2mu', 'eta',
@@ -714,7 +714,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_eta'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2mu_eta'),
              )
 
     makePlot(output, 'trail_lep_2mu', 'phi',
@@ -725,7 +725,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2mu_phi'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2mu_phi'),
              )
     
     makePlot(output, 'lead_lep_2ele', 'pt',
@@ -736,7 +736,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_pt'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2ele_pt'),
              )
 
     makePlot(output, 'lead_lep_2ele', 'eta',
@@ -747,7 +747,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_eta'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2ele_eta'),
              )
 
     makePlot(output, 'lead_lep_2ele', 'phi',
@@ -758,7 +758,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_2ele_phi'),
+             save=os.path.expandvars(plot_dir+'lead_lep_2ele_phi'),
              )
 
     makePlot(output, 'trail_lep_2ele', 'pt',
@@ -769,7 +769,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_pt'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2ele_pt'),
              )
 
     makePlot(output, 'trail_lep_2ele', 'eta',
@@ -780,7 +780,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_eta'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2ele_eta'),
              )
 
     makePlot(output, 'trail_lep_2ele', 'phi',
@@ -791,7 +791,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_2ele_phi'),
+             save=os.path.expandvars(plot_dir+'trail_lep_2ele_phi'),
              )
 
     makePlot(output, 'lead_lep_elemu', 'pt',
@@ -802,7 +802,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_pt'),
+             save=os.path.expandvars(plot_dir+'lead_lep_elemu_pt'),
              )
 
     makePlot(output, 'lead_lep_elemu', 'eta',
@@ -813,7 +813,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_eta'),
+             save=os.path.expandvars(plot_dir+'lead_lep_elemu_eta'),
              )
 
     makePlot(output, 'lead_lep_elemu', 'phi',
@@ -824,7 +824,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'lead_lep_elemu_phi'),
+             save=os.path.expandvars(plot_dir+'lead_lep_elemu_phi'),
              )
 
     makePlot(output, 'trail_lep_elemu', 'pt',
@@ -835,7 +835,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_pt'),
+             save=os.path.expandvars(plot_dir+'trail_lep_elemu_pt'),
              )
 
     makePlot(output, 'trail_lep_elemu', 'eta',
@@ -846,7 +846,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_eta'),
+             save=os.path.expandvars(plot_dir+'trail_lep_elemu_eta'),
              )
 
     makePlot(output, 'trail_lep_elemu', 'phi',
@@ -857,7 +857,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'trail_lep_elemu_phi'),
+             save=os.path.expandvars(plot_dir+'trail_lep_elemu_phi'),
              )
 
     makePlot(output, 'electron_elemu', 'pt',
@@ -868,7 +868,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'electron_elemu_pt'),
+             save=os.path.expandvars(plot_dir+'electron_elemu_pt'),
              )
 
     makePlot(output, 'electron_elemu', 'eta',
@@ -879,7 +879,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'electron_elemu_eta'),
+             save=os.path.expandvars(plot_dir+'electron_elemu_eta'),
              )
 
     makePlot(output, 'muon_elemu', 'pt',
@@ -890,7 +890,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'muon_elemu_pt'),
+             save=os.path.expandvars(plot_dir+'muon_elemu_pt'),
              )
 
     makePlot(output, 'muon_elemu', 'eta',
@@ -901,7 +901,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             save=os.path.expandvars(plot_dir+version_dir+'muon_elemu_eta'),
+             save=os.path.expandvars(plot_dir+'muon_elemu_eta'),
              )
 
     '''makePlot(output, 'dR_mu_genphoton', 'eta',
@@ -909,5 +909,5 @@ if __name__ == '__main__':
     bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
     new_colors=my_colors, new_labels=my_labels,
     order=order,lumi=lumi,
-    save=os.path.expandvars(plot_dir+version_dir+'dR_mu_genphoton'),
+    save=os.path.expandvars(plot_dir+'dR_mu_genphoton'),
     )'''

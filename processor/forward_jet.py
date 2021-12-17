@@ -194,7 +194,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             #met = ev.MET,
         )
 #        BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
-        BL = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>0', 'N_fwd>0'])
+        BL = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>2', 'N_fwd>0'])
         if dataset=='XG':
             BL = (BL & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -214,7 +214,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
         
 #        BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag>0'])
-        BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag=0','N_central>0', 'N_fwd>0'])
+        BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'])
         
         if dataset=='XG':
             BL_minusNb = (BL_minusNb & conversion_req)
@@ -228,7 +228,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
 
 #        BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])
-        BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>0'])           
+        BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>2'])
         if dataset=='XG':
             BL_minusFwd = (BL_minusFwd & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -242,7 +242,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
 #        BL_mjf = BL & (ak.num(fwd)>0)
 #        BL_bldr = BL
-        BL_mjf = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>0'])
+        BL_mjf = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>2'])
         BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])
         
         output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL_mjf], weight=weight.weight()[BL_mjf])
@@ -263,7 +263,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         '''
 #        
 #        BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>50'])
-        BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>50', 'N_central>0','N_fwd>0'])
+        BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'])
         if dataset=='XG':
             BL_minusMET = (BL_minusMET & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -374,7 +374,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         )
         
 #        BL_bldr = BL & (ak.num(fwd)>0)
-        BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>0'])
+        BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>2'])
         
         output['fwd_jet'].fill(
             dataset = dataset,
@@ -485,7 +485,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     met = met,
                 )
 #                BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
-                BL = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>0'])
+                BL = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>2'])
           
                 if dataset=='XG':
                     BL = (BL & conversion_req)
@@ -510,7 +510,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
                 
 #                BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])
-                BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>0'])
+                BL_minusFwd = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>2'])
                 if dataset=='XG':
                     BL_minusFwd = (BL_minusFwd & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -519,7 +519,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
                 
 #                BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag>0'])
-                BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag=0','N_fwd>0', 'N_central>0'])
+                BL_minusNb = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_btag>0','N_fwd>0', 'N_central>2'])
                 if dataset=='XG':
                     BL_minusNb = (BL_minusNb & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -551,7 +551,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 '''
 #    
 #                BL_bldr = BL & (ak.num(fwd)>0)
-                BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>0'])
+                BL_bldr = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_central>2'])
                 
                 output['fwd_jet_'+var].fill(
                     dataset = dataset,
@@ -563,7 +563,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 ) 
                 
 #                BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>50'])
-                BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>50','N_fwd>0', 'N_central>0'])
+                BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30','N_fwd>0', 'N_central>2'])
                 if dataset=='XG':
                     BL_minusMET = (BL_minusMET & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
