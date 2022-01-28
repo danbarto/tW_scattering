@@ -1,5 +1,5 @@
 caches:
-  base: $TWHOME/caches/
+  base: $TWHOME/outputs/
   diLepOS: diLepOS
   diLepOS_small: diLepOS_small
   doublemuonProcessor: doublemuonProcessor

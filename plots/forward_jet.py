@@ -32,6 +32,7 @@ if __name__ == '__main__':
     argParser.add_argument('--normalize', action='store_true', default=None, help="Normalize?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--version', action='store', default='v21', help="Version of the NN training. Just changes subdir.")
+    argParser.add_argument('--postfix', action='store', default='', help="postfix for plot directory")
     args = argParser.parse_args()
 
     small       = args.small
@@ -73,6 +74,8 @@ if __name__ == '__main__':
         lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
 
     plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/%s_v21/'%cfg['meta']['version'])
+    if args.postfix:
+        plot_dir += '_%s'%args.postfix
     if TFnormalize:
         plot_dir += '/normalized/'
 

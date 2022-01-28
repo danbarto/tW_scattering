@@ -164,13 +164,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             
             # PU weight - not in the babies...
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
-            
+
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light_central))
-            
+
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
-            
+
             weight.add("trigger", self.triggerSF.get(electron, muon))
             
         

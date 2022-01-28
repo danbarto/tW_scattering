@@ -12,12 +12,13 @@ We deal with 4 eras:
 
 import os
 import re
+import datetime
 try:
     import awkward1 as ak
 except ImportError:
     import awkward as ak
 
-from coffea import processor, hist
+from coffea import processor, hist, util
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
@@ -884,7 +885,6 @@ class SS_analysis(processor.ProcessorABC):
 
 if __name__ == '__main__':
 
-    from klepto.archives import dir_archive
     from Tools.samples import get_babies
     from processor.default_accumulators import *
 
@@ -896,22 +896,19 @@ if __name__ == '__main__':
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
-    argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
+    argParser.add_argument('--sample', action='store', default='all', choices=['all', 'topW_v3', 'TTW', 'TTZ', 'TTH', 'diboson', 'rare', 'ttbar', 'XG',])  # FIXME: add data
     args = argParser.parse_args()
 
     profile     = args.profile
     iterative   = args.iterative
     overwrite   = not args.keep
     small       = args.small
-    verysmall   = args.verysmall
-    if verysmall:
-        small = True
-    
+
     year        = int(args.year[0:4])
     era         = args.year[4:7]
     local       = not args.dask
@@ -922,14 +919,15 @@ if __name__ == '__main__':
 
     # load the config and the cache
     cfg = loadConfig()
-    
-    cacheName = 'SS_analysis_%s%s'%(year,era)
-    if small: cacheName += '_small'
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
-    
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    cache_name = f'SS_analysis_{args.sample}_{year}{era}_{timestamp}.coffea'
+    if small: cache_name += '_small'
+    cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
-    fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
+    fileset_all = get_babies(in_path, year=f'UL{year}{era}')
     #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
     
     fileset = {
@@ -957,11 +955,13 @@ if __name__ == '__main__':
         ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
         ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
     }
+
+    if args.sample == 'all':
+        pass
+    else:
+        fileset = {args.sample: fileset[args.sample]}
     
     fileset = make_small(fileset, small, n_max=10)
-
-    if verysmall:
-        fileset = {'topW_v3': fileset['topW_v3'], 'MuonEG': fileset['MuonEG'], 'TTW': fileset['TTW']}
 
     add_processes_to_output(fileset, desired_output)
 
@@ -1023,19 +1023,10 @@ if __name__ == '__main__':
             desired_output.update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
 
     if local:# and not profile:
-        exe_args = {
-            'workers': 16,
-            #'function_args': {'flatten': False},
-            "schema": NanoAODSchema,
-        }
-        exe = processor.futures_executor
+        exe = processor.FuturesExecutor(workers=10)
 
     elif iterative:
-        exe_args = {
-            #'function_args': {'flatten': False},
-            "schema": NanoAODSchema,
-        }
-        exe = processor.iterative_executor
+        exe = processor.IterativeExecutor()
 
     else:
         from Tools.helpers import get_scheduler_address
@@ -1044,15 +1035,7 @@ if __name__ == '__main__':
         scheduler_address = get_scheduler_address()
         c = Client(scheduler_address)
 
-        exe_args = {
-            'client': c,
-            #'function_args': {'flatten': False},
-            "schema": NanoAODSchema,
-            "tailtimeout": 300,
-            "retries": 3,
-            "skipbadfiles": True
-        }
-        exe = processor.dask_executor
+        exe = processor.DaskExecutor(client=c, status=True)
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
@@ -1061,7 +1044,7 @@ if __name__ == '__main__':
         "ST": hist.Hist("Counts", dataset_axis, ht_axis),
         "HT": hist.Hist("Counts", dataset_axis, ht_axis),
         "LT": hist.Hist("Counts", dataset_axis, ht_axis),
-        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pt_axis),
+        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematics_axis, pt_axis),
         "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
         "LT_SR_pp": hist.Hist("Counts", dataset_axis, ht_axis),
         "LT_SR_mm": hist.Hist("Counts", dataset_axis, ht_axis),
@@ -1145,40 +1128,48 @@ if __name__ == '__main__':
                 'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
         })
 
-    histograms = sorted(list(desired_output.keys()))
-    
-    if not overwrite:
-        cache.load()
-    
-    if cfg == cache.get('cfg') and histograms == cache.get('histograms') and cache.get('simple_output'):
-        output = cache.get('simple_output')
-    
-    else:
-        print ("I'm running now")
-        
-        output = processor.run_uproot_job(
-            fileset,
-            "Events",
-            SS_analysis(
-                year=year,
-                variations=variations,
-                accumulator=desired_output,
-                evaluate=args.evaluate,
-                training=args.training,
-                dump=args.dump,
-                era=era,
-            ),
-            exe,
-            exe_args,
-            chunksize=250000,  # I guess that's already running into the max events/file
-        )
-        
-        if save:
-            cache['fileset']        = fileset
-            cache['cfg']            = cfg
-            cache['histograms']     = histograms
-            cache['simple_output']  = output
-            cache.dump()
+    print ("I'm running now")
+
+    runner = processor.Runner(
+        executor=exe,
+        schema=NanoAODSchema,
+        chunksize=50000,
+        maxchunks=None,
+    )
+
+    output = runner(
+        fileset,
+        treename="Events",
+        processor_instance=SS_analysis(
+            year=year,
+            variations=variations,
+            accumulator=desired_output,
+            evaluate=args.evaluate,
+            training=args.training,
+            dump=args.dump,
+            era=era,
+        ),
+    )
+
+
+    #output = processor.run_uproot_job(
+    #    fileset,
+    #    "Events",
+    #    SS_analysis(
+    #        year=year,
+    #        variations=variations,
+    #        accumulator=desired_output,
+    #        evaluate=args.evaluate,
+    #        training=args.training,
+    #        dump=args.dump,
+    #        era=era,
+    #    ),
+    #    exe,
+    #    exe_args,
+    #    chunksize=250000,  # I guess that's already running into the max events/file
+    #)
+
+    util.save(output, cache)
 
     ## output for DNN training
     if args.dump:
@@ -1220,7 +1211,7 @@ if __name__ == '__main__':
 
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW_v3', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar']
+    processes = ['topW_v3', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'all' else [args.sample]
     lines= [
             'filter',
             'dilep',
@@ -1242,7 +1233,7 @@ if __name__ == '__main__':
                            lines=lines,
                            significantFigures=3,
                            absolute=True,
-                           signal='topW_v3',
+                           #signal='topW_v3',
                            total=False,
                            ))
 
