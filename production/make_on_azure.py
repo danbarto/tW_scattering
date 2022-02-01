@@ -32,8 +32,8 @@ def submit():
 
     # v6+ is UL
 
-    #campaign = 'UL16'
-    campaign = 'UL16_preVFP'
+    #campaign = 'UL16_preVFP'
+    campaign = 'UL16_postVFP'
     tag = "v10"
     #tag = "v8_pre"
     #events_per_point = 250000
