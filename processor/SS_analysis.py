@@ -99,6 +99,8 @@ class SS_analysis(processor.ProcessorABC):
         ### Reco objects ###
         ####################
 
+        # NOTE: lepton objects are unaffected by any of the variations, therefore we keep them outside the variation loop.
+
         # Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
         # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
         # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
@@ -184,9 +186,9 @@ class SS_analysis(processor.ProcessorABC):
 
         for var in variations:
 
-            pt_var  = var['pt_var']
-            ext     = var['ext']
-            shift   = var['weight']
+            pt_var   = var['pt_var']
+            var_name = var['name']
+            shift    = var['weight']
 
             met = getMET(ev, pt_var=pt_var)
 
@@ -470,6 +472,7 @@ class SS_analysis(processor.ProcessorABC):
                         weight.weight(modifier=shift)[reg_sel[0][8]],
                         weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
                     ],
+                    systematic = var_name,  # NOTE check this.
                 )
 
             #if self.evaluate or self.dump:
@@ -500,82 +503,99 @@ class SS_analysis(processor.ProcessorABC):
                 if dataset=='topW_full_EFT':
 
                     for point in self.points:
-                        output['lead_lep_SR_pp'+ext].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                        output['lead_lep_SR_pp'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
                         )
 
-                        output['lead_lep_SR_mm'+ext].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                        output['lead_lep_SR_mm'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
                         )
 
-                        output['LT_SR_pp'+ext].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                        output['LT_SR_pp'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
                         )
 
-                        output['LT_SR_mm'+ext].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                        output['LT_SR_mm'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
                         )
 
                     for point in self.weights:
-                        output['lead_lep_SR_pp'+ext].fill(
-                            dataset = dataset+'_%s'%point,
+                        output['lead_lep_SR_pp'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point,
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
                         )
 
-                        output['lead_lep_SR_mm'+ext].fill(
-                            dataset = dataset+'_%s'%point,
+                        output['lead_lep_SR_mm'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point,
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
                         )
 
-                        output['LT_SR_pp'+ext].fill(
-                            dataset = dataset+'_%s'%point,
+                        output['LT_SR_pp'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point,
                             ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
                         )
 
-                        output['LT_SR_mm'+ext].fill(
-                            dataset = dataset+'_%s'%point,
+                        output['LT_SR_mm'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point,
                             ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
                         )
 
                 else:
 
-                    fill_multiple_np(output['lead_lep_SR_pp'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['lead_lep_SR_mm'+ext], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+                    fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
 
-                    fill_multiple_np(output['LT_SR_pp'+ext], {'ht':  lt}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['LT_SR_mm'+ext], {'ht':  lt}, add_sel=SR_sel_mm)
+                    fill_multiple_np(output['LT_SR_pp'], {'ht':  lt}, add_sel=SR_sel_pp)
+                    fill_multiple_np(output['LT_SR_mm'], {'ht':  lt}, add_sel=SR_sel_mm)
 
-                fill_multiple_np(output['node'+ext], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
-                fill_multiple_np(output['node1_score'+ext], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
+                fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
 
-                fill_multiple_np(output['node0_score_pp'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['node0_score_mm'+ext], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
+                fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
 
-                fill_multiple_np(output['node1_score_pp'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
-                fill_multiple_np(output['node1_score_mm'+ext], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
+                fill_multiple_np(output['node1_score_pp'], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+                fill_multiple_np(output['node1_score_mm'], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
 
                 transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
 
                 NN_pred_0_trans = transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()
 
-                fill_multiple_np(output['node0_score_transform_pp'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['node0_score_transform_mm'+ext], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
+                fill_multiple_np(output['node0_score_transform_pp'], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['node0_score_transform_mm'], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
 
                 if var['name'] == 'central':
                     output["norm"].fill(
                         dataset = dataset,
+                        systematic = var['name'],
                         one   = ak.ones_like(met.pt),
                         weight  = weight.weight(),
                     )
@@ -583,131 +603,158 @@ class SS_analysis(processor.ProcessorABC):
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
                 if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0 and dataset.count('topW')==0:  # FIXME: rare excluded because of missing samples
                     for i in range(1,101):
-                        pdf_ext = "_pdf_%s"%i
+                        pdf_ext = "pdf_%s"%i
 
-                        output[pdf_ext].fill(
+                        output['pdf'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
                             weight  = weight.weight() * ev.LHEPdfWeight[:,i] if len(ev.LHEPdfWeight[0])>0 else weight.weight(),
                         )
 
-                        output['node0_score_transform_pp'+pdf_ext].fill(
+                        output['node0_score_transform_pp'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
-                        output['node0_score_transform_mm'+pdf_ext].fill(
+                        output['node0_score_transform_mm'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
 
-                        output['node1_score'+pdf_ext].fill(
+                        output['node1_score'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score = NN_pred[:,1][(BL & (best_score==1))],
                             weight = weight.weight()[(BL & (best_score==1))] * ev.LHEPdfWeight[:,i][(BL & (best_score==1))] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
 
-                        output['node'+pdf_ext].fill(
+                        output['node'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             multiplicity = best_score[(BL & blind_sel)],
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
                         )
 
-                        output['LT_SR_pp'+pdf_ext].fill(
+                        output['LT_SR_pp'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             ht = lt[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
-                        output['LT_SR_mm'+pdf_ext].fill(
+                        output['LT_SR_mm'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             ht = lt[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
 
                     for i in [0,1,3,5,7,8]:
-                        pdf_ext = "_scale_%s"%i
+                        pdf_ext = "scale_%s"%i
 
-                        output[pdf_ext].fill(
+                        output['scale'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             one   = ak.ones_like(ev.LHEScaleWeight[:,i]),
                             weight  = weight.weight() * ev.LHEScaleWeight[:,i] if len(ev.LHEScaleWeight[0])>0 else weight.weight(),
                         )
 
-                        output['node0_score_transform_pp'+pdf_ext].fill(
+                        output['node0_score_transform_pp'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
-                        output['node0_score_transform_mm'+pdf_ext].fill(
+                        output['node0_score_transform_mm'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
 
-                        output['node1_score'+pdf_ext].fill(
+                        output['node1_score'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             score = NN_pred[:,1][(BL & (best_score==1))],
                             weight = weight.weight()[(BL & (best_score==1))] * ev.LHEScaleWeight[:,i][(BL & (best_score==1))] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
 
-                        output['node'+pdf_ext].fill(
+                        output['node'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             multiplicity = best_score[(BL & blind_sel)],
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
                         )
 
-                        output['LT_SR_pp'+pdf_ext].fill(
+                        output['LT_SR_pp'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             ht = lt[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
-                        output['LT_SR_mm'+pdf_ext].fill(
+                        output['LT_SR_mm'].fill(
                             dataset = dataset,
+                            systematic = pdf_ext,
                             ht = lt[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
 
                     if len(ev.PSWeight[0]) > 1:
                         for i in range(4):
-                            pdf_ext = "_PS_%s"%i
+                            pdf_ext = "PS_%s"%i
 
-                            output['node0_score_transform_pp'+pdf_ext].fill(
+                            output['PS'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
+                                one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
+                                weight  = weight.weight() * ev.PSWeight[:,i],
+                            )
+
+                            output['node0_score_transform_pp'].fill(
+                                dataset = dataset,
+                                systematic = pdf_ext,
                                 score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                                 weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
                             )
 
-                            output['node0_score_transform_mm'+pdf_ext].fill(
+                            output['node0_score_transform_mm'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
                                 score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                                 weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
                             )
 
-                            output['node1_score'+pdf_ext].fill(
+                            output['node1_score'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
                                 score = NN_pred[:,1][(BL & (best_score==1))],
                                 weight = weight.weight()[(BL & (best_score==1))] * ev.PSWeight[:,i][(BL & (best_score==1))],
                             )
 
-                            output['node'+pdf_ext].fill(
+                            output['node'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
                                 multiplicity = best_score[(BL & blind_sel)],
                                 weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
                             )
 
-                            output['LT_SR_pp'+pdf_ext].fill(
+                            output['LT_SR_pp'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
                                 ht = lt[(BL & SR_sel_pp)],
                                 weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                             )
     
-                            output['LT_SR_mm'+pdf_ext].fill(
+                            output['LT_SR_mm'].fill(
                                 dataset = dataset,
+                                systematic = pdf_ext,
                                 ht = lt[(BL & SR_sel_mm)],
                                 weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                             )
@@ -741,8 +788,8 @@ class SS_analysis(processor.ProcessorABC):
                 Don't fill these histograms for the variations
                 '''
 
-                output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight_BL)
-                output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
+                output['PV_npvs'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvs, weight=weight_BL)
+                output['PV_npvsGood'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
                 fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
                 fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
                 fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
@@ -753,6 +800,7 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['HT'],        {'ht': ht})
 
                 if not re.search(data_pattern, dataset):
+                    # NOTE: gen quantities - don't care about systematics
                     output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
                     output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
                     output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
@@ -780,14 +828,18 @@ class SS_analysis(processor.ProcessorABC):
                 if dataset=='topW_full_EFT':
                     for point in self.points:
                         output['MET'].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             pt  = met[BL].pt,
                             phi  = met[BL].phi,
                             weight = weight_BL*(point['weight'].weight()[BL])
                         )
 
                         output['lead_lep'].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
                             eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
                             phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
@@ -795,7 +847,9 @@ class SS_analysis(processor.ProcessorABC):
                         )
                         
                         output['trail_lep'].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
                             eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
                             phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
@@ -803,7 +857,9 @@ class SS_analysis(processor.ProcessorABC):
                         )
 
                         output['LT'].fill(
-                            dataset = dataset+'_%s'%point['name'],
+                            dataset = dataset,
+                            systematic = var_name,
+                            eft = point['name'],
                             ht = ak.to_numpy(lt)[BL],
                             weight = weight_BL*(point['weight'].weight()[BL]),
                         )
@@ -848,26 +904,34 @@ class SS_analysis(processor.ProcessorABC):
                 #    weight = weight_BL
                 #)
                     
-                output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(best_fwd[BL].p), weight = weight_BL)
+                output['high_p_fwd_p'].fill(
+                    dataset=dataset,
+                    systematic = var_name,
+                    p = ak.flatten(best_fwd[BL].p),
+                    weight = weight_BL,
+                )
                 
-            output['j1'+ext].fill(
+            output['j1'].fill(
                 dataset = dataset,
+                systematic = var_name,
                 pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
                 eta = ak.flatten(jet.eta[:, 0:1][BL]),
                 phi = ak.flatten(jet.phi[:, 0:1][BL]),
                 weight = weight_BL
             )
             
-            output['j2'+ext].fill(
+            output['j2'].fill(
                 dataset = dataset,
+                systematic = var_name,
                 pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
                 eta = ak.flatten(jet[:, 1:2][BL].eta),
                 phi = ak.flatten(jet[:, 1:2][BL].phi),
                 weight = weight_BL
             )
             
-            output['j3'+ext].fill(
+            output['j3'].fill(
                 dataset = dataset,
+                systematic = var_name,
                 pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
                 eta = ak.flatten(jet[:, 2:3][BL].eta),
                 phi = ak.flatten(jet[:, 2:3][BL].phi),
@@ -1039,87 +1103,37 @@ if __name__ == '__main__':
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
-    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis
+    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis
     desired_output.update({
-        "ST": hist.Hist("Counts", dataset_axis, ht_axis),
-        "HT": hist.Hist("Counts", dataset_axis, ht_axis),
-        "LT": hist.Hist("Counts", dataset_axis, ht_axis),
-        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematics_axis, pt_axis),
-        "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pt_axis),
-        "LT_SR_pp": hist.Hist("Counts", dataset_axis, ht_axis),
-        "LT_SR_mm": hist.Hist("Counts", dataset_axis, ht_axis),
-        "node": hist.Hist("Counts", dataset_axis, multiplicity_axis),
-        "node0_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node1_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node2_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node3_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node4_score_incl": hist.Hist("Counts", dataset_axis, score_axis),
-        "node0_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node1_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node2_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node3_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node4_score": hist.Hist("Counts", dataset_axis, score_axis),
-        "node0_score_pp": hist.Hist("Counts", dataset_axis, score_axis),
-        "node0_score_mm": hist.Hist("Counts", dataset_axis, score_axis),
-        "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, score_axis),
-        "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, score_axis),
-        "node1_score_pp": hist.Hist("Counts", dataset_axis, score_axis),
-        "node1_score_mm": hist.Hist("Counts", dataset_axis, score_axis),
+        "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+        "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+        "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
+        "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
+        "LT_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
+        "LT_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
+        "node": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
+        "node0_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node1_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node2_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node3_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node4_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node0_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node1_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node2_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node3_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node4_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node0_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node0_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node1_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "node1_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+        "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+        "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+        "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+        "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
     })
-
-    for variation in variations:
-        ext = variation['ext']
-        desired_output.update({
-            "lead_lep_SR_pp"+ext: hist.Hist("Counts", dataset_axis, pt_axis),
-            "lead_lep_SR_mm"+ext: hist.Hist("Counts", dataset_axis, pt_axis),
-            "LT_SR_pp"+ext: hist.Hist("Counts", dataset_axis, ht_axis),
-            "LT_SR_mm"+ext: hist.Hist("Counts", dataset_axis, ht_axis),
-            "node0_score_pp"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_transform_pp"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_transform_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score_pp"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score_mm"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score"+ext: hist.Hist("Counts", dataset_axis, score_axis),
-            "node"+ext: hist.Hist("Counts", dataset_axis, multiplicity_axis),
-        })
-
-    desired_output.update({
-        "norm": hist.Hist("Counts", dataset_axis, one_axis),
-    })
-
-    for i in range(1,101):
-        desired_output.update({
-            "node0_score_transform_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_transform_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score_pdf_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node_pdf_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
-            "_pdf_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
-            "LT_SR_pp_pdf_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-            "LT_SR_mm_pdf_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-        })
-
-    for i in [0,1,3,5,7,8]:
-        desired_output.update({
-            "node0_score_transform_pp_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_transform_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score_scale_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node_scale_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
-            "LT_SR_pp_scale_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-            "LT_SR_mm_scale_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-            "_scale_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
-        })
-
-    for i in range(4):
-        desired_output.update({
-            "node0_score_transform_pp_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node0_score_transform_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node1_score_PS_%s"%i: hist.Hist("Counts", dataset_axis, score_axis),
-            "node_PS_%s"%i: hist.Hist("Counts", dataset_axis, multiplicity_axis),
-            "LT_SR_pp_PS_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-            "LT_SR_mm_PS_%s"%i: hist.Hist("Counts", dataset_axis, ht_axis),
-            "_PS_%s"%i: hist.Hist("Counts", dataset_axis, one_axis),
-        })
 
     for rle in ['run', 'lumi', 'event']:
         desired_output.update({
