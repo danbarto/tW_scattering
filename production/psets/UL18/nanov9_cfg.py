@@ -85,6 +85,18 @@ from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeMC
 #call to customisation function nanoAOD_customizeMC imported from PhysicsTools.NanoAOD.nano_cff
 process = nanoAOD_customizeMC(process)
 
+named_weights = [
+    "cpt_0p_cpQM_0p_nlo",
+    "cpt_3p_cpQM_0p_nlo",
+    "cpt_0p_cpQM_3p_nlo",
+    "cpt_6p_cpQM_0p_nlo",
+    "cpt_3p_cpQM_3p_nlo",
+    "cpt_0p_cpQM_6p_nlo",
+]
+
+process.genWeightsTable.namedWeightIDs = named_weights
+process.genWeightsTable.namedWeightLabels = named_weights
+
 # End of customisation functions
 
 # Customisation from command line
