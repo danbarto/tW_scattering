@@ -29,7 +29,7 @@ from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, 
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet, getMET
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
-from Tools.config_helpers import loadConfig, make_small, data_pattern
+from Tools.config_helpers import loadConfig, make_small, data_pattern, get_latest_output
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
@@ -955,7 +955,7 @@ if __name__ == '__main__':
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
-    argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
+    argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
@@ -965,12 +965,12 @@ if __name__ == '__main__':
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
-    argParser.add_argument('--sample', action='store', default='all', choices=['all', 'topW_v3', 'TTW', 'TTZ', 'TTH', 'diboson', 'rare', 'ttbar', 'XG',])  # FIXME: add data
+    argParser.add_argument('--sample', action='store', default='all', )
     args = argParser.parse_args()
 
     profile     = args.profile
     iterative   = args.iterative
-    overwrite   = not args.keep
+    overwrite   = args.rerun
     small       = args.small
 
     year        = int(args.year[0:4])
@@ -981,13 +981,9 @@ if __name__ == '__main__':
     if profile:
         from pympler import muppy, summary
 
-    # load the config and the cache
+    # load the config
     cfg = loadConfig()
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    cache_name = f'SS_analysis_{args.sample}_{year}{era}_{timestamp}.coffea'
-    if small: cache_name += '_small'
-    cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
 
     in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
 
@@ -1023,6 +1019,7 @@ if __name__ == '__main__':
     if args.sample == 'all':
         pass
     else:
+        fileset.update(fileset_all)  # NOTE: this way we can also run sub-samples for tests
         fileset = {args.sample: fileset[args.sample]}
     
     fileset = make_small(fileset, small, n_max=10)
@@ -1151,39 +1148,31 @@ if __name__ == '__main__':
         maxchunks=None,
     )
 
-    output = runner(
-        fileset,
-        treename="Events",
-        processor_instance=SS_analysis(
-            year=year,
-            variations=variations,
-            accumulator=desired_output,
-            evaluate=args.evaluate,
-            training=args.training,
-            dump=args.dump,
-            era=era,
-        ),
-    )
+    # define the cache name
+    cache_name = f'SS_analysis_{args.sample}_{year}{era}'
+    # find an old existing output
+    output = get_latest_output(cache_name, cfg)
 
+    if overwrite or output is None:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        cache_name += f'_{timestamp}.coffea'
+        if small: cache_name += '_small'
+        cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+        output = runner(
+            fileset,
+            treename="Events",
+            processor_instance=SS_analysis(
+                year=year,
+                variations=variations,
+                accumulator=desired_output,
+                evaluate=args.evaluate,
+                training=args.training,
+                dump=args.dump,
+                era=era,
+            ),
+        )
 
-    #output = processor.run_uproot_job(
-    #    fileset,
-    #    "Events",
-    #    SS_analysis(
-    #        year=year,
-    #        variations=variations,
-    #        accumulator=desired_output,
-    #        evaluate=args.evaluate,
-    #        training=args.training,
-    #        dump=args.dump,
-    #        era=era,
-    #    ),
-    #    exe,
-    #    exe_args,
-    #    chunksize=250000,  # I guess that's already running into the max events/file
-    #)
-
-    util.save(output, cache)
+        util.save(output, cache)
 
     ## output for DNN training
     if args.dump:
