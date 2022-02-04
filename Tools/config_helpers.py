@@ -76,3 +76,17 @@ def make_small(fileset, small, n_max=1):
             fileset[proc] = fileset[proc][:n_max]
     return fileset
 
+def get_latest_output(cache_name, cfg):
+    from coffea import util
+    cache_dir = os.path.expandvars(cfg['caches']['base'])
+    all_caches = glob.glob(cache_dir+'/*.coffea')
+    filtered = [f for f in all_caches if f.count(cache_name)]
+    filtered.sort(reverse=True)
+    try:
+        latest = filtered[0]
+    except:
+        print ("Couldn't find a suitable cache! Rerunning.")
+        return None
+    print (f"Found the following cache: {latest}")
+    return util.load(filtered[0])
+#    return filtered[0]
