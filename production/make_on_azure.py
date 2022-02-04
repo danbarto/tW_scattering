@@ -32,26 +32,27 @@ def submit():
 
     # v6+ is UL
 
+    campaign = 'UL18'
     #campaign = 'UL16_preVFP'
-    campaign = 'UL16_postVFP'
-    tag = "v10"
+    #campaign = 'UL16_postVFP'
+    tag = "v11_pre3"
     #tag = "v8_pre"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
-    events_per_point = 1500000
-    events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
-    #events_per_point = 200
-    #events_per_job = 40
+    #events_per_point = 1500000
+    #events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
+    events_per_point = 200
+    events_per_job = 40
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
         gridpack = requests[reqname]
 
         task = CondorTask(
-                sample = DummySample(dataset="/%s/RunIISummer20%s/NANO"%(reqname, campaign),N=njobs,nevents=int(events_per_point)),
+                sample = DummySample(dataset="/%s/RunIISummer20%s_NanoAODv9/NANO"%(reqname, campaign),N=njobs,nevents=int(events_per_point)),
                 output_name = "nanoAOD.root",
-                executable = "executables/condor_executable_%s.sh"%campaign,
+                executable = "executables/condor_executable_%s_NanoAODv9.sh"%campaign,
                 tarfile = "package.tar.gz",
                 additional_input_files = [gridpack],
                 open_dataset = False,

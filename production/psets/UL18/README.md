@@ -72,8 +72,25 @@ Release: `CMSSW_10_6_17_patch1`
 cmsDriver.py step2 --filein file:output_hlt.root --fileout file:output_maod.root --mc --eventcontent MINIAODSIM --datatier MINIAODSIM --runUnscheduled --conditions 106X_upgrade2018_realistic_v15_L1v1 --step RAW2DIGI,L1Reco,RECO,RECOSIM,PAT --nThreads 8 --geometry DB:Extended --era Run2_2018 --python_filename maod_cfg.py -n 10 --no_exec
 ```
 
-## NanoAOD
+## RECO-MAOD for MiniAODv2
+
+CMSSW_10_6_20
+maybe CMSSW_10_6_27?
+```
+cmsDriver.py step2 --filein file:output_hlt.root --fileout file:miniAOD.root --mc --eventcontent MINIAODSIM --datatier MINIAODSIM --runUnscheduled --conditions 106X_upgrade2018_realistic_v16_L1v1 --step RAW2DIGI,L1Reco,RECO,RECOSIM,PAT --procModifiers run2_miniAOD_UL --nThreads 8 --geometry DB:Extended --era Run2_2018 --python_filename maodv2_cfg.py -n 10 --no_exec
+```
+
+
+## NanoAOD v2/v8
 
 ```
 cmsDriver.py step3 --filein file:output_maod.root --fileout file:output_nano.root --mc --eventcontent NANOAODSIM --datatier NANOAODSIM --conditions 106X_upgrade2018_realistic_v15_L1v1 --step NANO --nThreads 8 --era Run2_2018 --python_filename nano_cfg.py -n 10 --no_exec
+```
+--> this works in CMSSW_10_6_19 from the above miniAOD file
+
+## NanoAOD v9
+in CMSSW_10_6_27
+
+```
+cmsDriver.py step3 --mc --filein file:miniAOD.root --fileout file:nanoAOD.root --conditions 106X_upgrade2018_realistic_v16_L1v1 --step NANO --era Run2_2018,run2_nanoAOD_106Xv2 --eventcontent NANOAODSIM --datatier NANOAODSIM --customise_commands="process.add_(cms.Service('InitRootHandlers', EnableIMT = cms.untracked.bool(False)));process.MessageLogger.cerr.FwkReport.reportEvery=100" --nThreads 8 --python_filename nanov9_cfg.py -n -1 --no_exec
 ```
