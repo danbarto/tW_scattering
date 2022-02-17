@@ -35,15 +35,15 @@ def submit():
     campaign = 'UL18'
     #campaign = 'UL16_preVFP'
     #campaign = 'UL16_postVFP'
-    tag = "v11_pre5"
+    tag = "v11"
     #tag = "v8_pre"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
-    #events_per_point = 1500000
-    #events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
-    events_per_point = 200
-    events_per_job = 40
+    events_per_point = 4000000
+    events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
+    #events_per_point = 200
+    #events_per_job = 40
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:

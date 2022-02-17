@@ -75,7 +75,12 @@ samples = [
     #'/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
     #'/store/mc/PhaseIISummer17wmLHEGENOnly/TTWJetsToLNu_TuneCUETP8M1_14TeV-amcatnloFXFX-madspin-pythia8/GEN/93X_upgrade2023_realistic_v5_ext1-v3/10000/0029E818-8552-E811-87D1-1866DAEA6D08.root', # 0.2378
     #'/store/mc/PhaseIISummer17wmLHEGENOnly/TTZToLLNuNu_M-10_TuneCUETP8M1_14TeV-amcatnlo-pythia8/GEN/93X_upgrade2023_realistic_v5-v1/80000/8A4401A0-5672-E811-8903-0CC47A84788A.root', # 0.2949
-    '/store/mc/RunIIAutumn18MiniAOD/ggTomonoH_bb_sn_0p35_tn_1p0_mXd_10_MH3_1600_MH4_350_MH2_1600_MHC_1600_TuneCP3_13TeV_madgraph-pythia/MINIAODSIM/102X_upgrade2018_realistic_v15-v2/100000/461BFB17-6F80-134C-B2B9-AD46C2B59EB6.root',
+    #'/store/mc/RunIIAutumn18MiniAOD/ggTomonoH_bb_sn_0p35_tn_1p0_mXd_10_MH3_1600_MH4_350_MH2_1600_MHC_1600_TuneCP3_13TeV_madgraph-pythia/MINIAODSIM/102X_upgrade2018_realistic_v15-v2/100000/461BFB17-6F80-134C-B2B9-AD46C2B59EB6.root',
+    #'/store/mc/RunIISummer20UL18MiniAODv2/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v2/80000/3C272FC5-CFCA-594E-8B9A-FC1877E43C47.root',
+    #'/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM',
+    #'/THW_5f_Hincl_13TeV_madgraph_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
+    #'/THQ_4f_Hincl_13TeV_madgraph_pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
+    '/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM',
     ]
     
 print ("## Will process the following samples: %s"%(",".join( f for f in samples ) ))

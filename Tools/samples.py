@@ -75,6 +75,7 @@ groups_UL = {
     'TTH':           ['/ttHJetToNonbb[-_]'],
     'TTZ':           ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
     'TTTT':          ['/TTTT[-_]'],
+    'THX':           ['/TH[W,Q][-_]'],
     'rare':          ['/TTTT[-_]', '/TH[W,Q][-_]',],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
