@@ -14,20 +14,24 @@ import uproot
 
 nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
-def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018):
+def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018, skim=False):
+    '''
+    This was supposed to give a NanoAOD samples based fileset. Can also be used for skims now.
+    '''
     fileset = {}
-    #print (nano_mapping[year])
     for dataset in datasets:
         for nano_sample in nano_mapping[year][dataset]:
-            dbs_files = DBSSample(dataset=nano_sample).get_files()
-            files = [ redirector+x.name for x in dbs_files ]
+            if skim:
+                files = samples[nano_sample]['files']
+            else:
+                dbs_files = DBSSample(dataset=nano_sample).get_files()
+                files = [ redirector+x.name for x in dbs_files ]
             if not small:
                 fileset.update({nano_sample: files})
             else:
                 fileset.update({nano_sample: files[:n_max]})
 
     return fileset
-
 
 if __name__ == '__main__':
 

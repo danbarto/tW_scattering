@@ -31,8 +31,10 @@ argParser.add_argument('--small', action='store_true', default=None, help="Only 
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 argParser.add_argument('--input', action='store', default='', help="Which set of input samples?")
 argParser.add_argument('--once', action='store_true',  help="Just run once?")
+argParser.add_argument('--merge', action='store_true',  help="Run merge step")
 args = argParser.parse_args()
 
+merge = args.merge
 tag = str(args.tag)
 skim = str(args.skim)
 
@@ -146,11 +148,11 @@ for s in sample_list:
         print ("The era is: %s"%era)
     # merge three files into one for all MC samples except ones where we expect a high efficiency of the skim
     signal_string = re.compile("TTW.*EWK")
-    mergeFactor = min(4, samples[s]['split']) if not (samples[s]['name'].count('tW_scattering') or re.search(signal_string, samples[s]['name']) ) else samples[s]['split'] # not running over more than 4 files because we prefetch...
-    print ("- using merge factor: %s"%mergeFactor)
-
+    #mergeFactor = min(4, samples[s]['split']) if not (samples[s]['name'].count('tW_scattering') or re.search(signal_string, samples[s]['name']) ) else samples[s]['split'] # not running over more than 4 files because we prefetch...
+    #print ("- using merge factor: %s"%mergeFactor)
     #lumiWeightString = 1000*samples[s]['xsec']/samples[s]['sumWeight'] if not isData else 1
-    lumiWeightString = 1 if (isData or samples[s]['name'].count('TChiWH')) else 1000*samples[s]['xsec']/samples[s]['sumWeight']
+    #lumiWeightString = 1 if (isData or samples[s]['name'].count('TChiWH')) else 1000*samples[s]['xsec']/samples[s]['sumWeight']
+    lumiWeightString = 1
     print ("- found sumWeight %s and x-sec %s"%(samples[s]['sumWeight'], samples[s]['xsec']) )
 
     if isUL:
@@ -162,8 +164,10 @@ for s in sample_list:
     maker_task = CondorTask(
         sample = sample,
         executable = "executable.sh",
+        additional_input_files = ["run_macro.py", "counter_macro.C"],
         arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0, args.skim, args.user ]] ),
-        files_per_output = int(mergeFactor),
+        #files_per_output = int(mergeFactor),
+        files_per_output = 1,
         output_dir = os.path.join(outDir, samples[s]['name']),
         output_name = "nanoSkim.root",
         output_is_tree = True,
@@ -171,21 +175,53 @@ for s in sample_list:
         condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
         cmssw_version = "CMSSW_10_2_9",
         scram_arch = "slc6_amd64_gcc700",
-        min_completion_fraction = 1.00,
+        min_completion_fraction = 1.00 if isData else 0.95,
     )
     
     maker_tasks.append(maker_task)
+
+    merge_task = CondorTask(
+        sample = DirectorySample(
+            dataset="merge_"+sample.get_datasetname(),
+            location=maker_task.get_outputdir(),
+        ),
+        executable = "merge_executable.sh",
+        arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0, args.skim, args.user ]] ),  # just use the same arguments for simplicity
+        files_per_output = int(samples[s]['split']*2),
+        output_dir = os.path.join(outDir, samples[s]['name'], 'merged'),
+        output_name = "nanoSkim.root",
+        output_is_tree = True,
+        tag = tag_skim,
+        condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
+        cmssw_version = "CMSSW_10_2_9",
+        scram_arch = "slc6_amd64_gcc700",
+    )
+
+    if merge:
+        merge_tasks.append(merge_task)
+    else:
+        merge_tasks.append(None)
 
 if not args.dryRun:
     for i in range(100):
         total_summary = {}
     
         #for maker_task, merge_task in zip(maker_tasks,merge_tasks):
-        for maker_task in maker_tasks:
+        for maker_task, merge_task in zip(maker_tasks, merge_tasks):
             maker_task.process()
     
             frac = maker_task.complete(return_fraction=True)
+
+            if frac >= (maker_task.min_completion_fraction) and merge:
+                print ("merging now")
+                merge_task.reset_io_mapping()
+                merge_task.update_mapping()
+                merge_task.process()
+
+
             total_summary[maker_task.get_sample().get_datasetname()] = maker_task.get_task_summary()
+            if merge:
+                total_summary[merge_task.get_sample().get_datasetname()] = merge_task.get_task_summary()
  
         print (frac)
    

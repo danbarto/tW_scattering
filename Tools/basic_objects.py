@@ -25,7 +25,11 @@ def getPtEtaPhi(coll, pt_var='pt', eta_var='eta', phi_var='phi'):
 
 def getTaus(ev, WP='veto'):
     if WP == 'veto':
-        return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.4) & (ev.Tau.idDecayMode) & (ev.Tau.idMVAnewDM2017v2 >= 8)]
+        # FIXME THIS IS A VERY OLD ID AND NOT SUPPORTED ANYMORE!
+        # https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2#Tau_Identification
+        # I guess we can use Tau_idDeepTau2017v2p1VSjet >= 8. Could be optimized?
+        #return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.4) & (ev.Tau.idDecayMode) & (ev.Tau.idMVAnewDM2017v2 >= 8)]
+        return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.4)]
 
 def getIsoTracks(ev, WP='veto'):
     if WP == 'veto':

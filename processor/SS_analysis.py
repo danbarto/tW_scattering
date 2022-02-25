@@ -28,8 +28,8 @@ import pandas as pd
 from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet, getMET
 from Tools.cutflow import Cutflow
-from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM
-from Tools.config_helpers import loadConfig, make_small, data_pattern, get_latest_output
+from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM, get_samples
+from Tools.config_helpers import loadConfig, make_small, data_pattern, get_latest_output, load_yaml, data_path
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
@@ -82,9 +82,6 @@ class SS_analysis(processor.ProcessorABC):
         
         ev = events[presel]
         dataset = ev.metadata['dataset']
-        
-        # load the config - probably not needed anymore
-        cfg = loadConfig()
         
         output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
@@ -236,7 +233,7 @@ class SS_analysis(processor.ProcessorABC):
 
             if not re.search(data_pattern, dataset):
                 # lumi weight
-                weight.add("weight", ev.weight*cfg['lumi'][self.year])
+                weight.add("weight", ev.genWeight)
                 
                 # PU weight
                 weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
@@ -710,7 +707,7 @@ class SS_analysis(processor.ProcessorABC):
                         for i in range(4):
                             pdf_ext = "PS_%s"%i
 
-                            output['PS'].fill(
+                            output['PS'].fill( # NOTE: these should be obsolete now
                                 dataset = dataset,
                                 systematic = pdf_ext,
                                 one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
@@ -974,6 +971,7 @@ if __name__ == '__main__':
     small       = args.small
 
     year        = int(args.year[0:4])
+    ul          = "UL%s"%(args.year[2:])
     era         = args.year[4:7]
     local       = not args.dask
     save        = True
@@ -984,45 +982,50 @@ if __name__ == '__main__':
     # load the config
     cfg = loadConfig()
 
+    #in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.6.0_dilep/'
 
-    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/'
+    samples = get_samples("samples_%s.yaml"%ul)
+    mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    fileset_all = get_babies(in_path, year=f'UL{year}{era}')
-    #fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
-    
-    fileset = {
-        'topW_v3': fileset_all['topW_NLO'],
-        ##'topW_v3': fileset_all['topW_v3'],
-        ###'topW_EFT_mix': fileset_all['topW_EFT'],
-        ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-        ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-        'TTW': fileset_all['TTW'],
-        'TTZ': fileset_all['TTZ'],
-        'TTH': fileset_all['TTH'],
-        'diboson': fileset_all['diboson'],
-        #'rare': fileset_all['TTTT']+fileset_all['triboson'],
-        'rare': fileset_all['rare']+fileset_all['triboson'],
-        #'ttbar': fileset_all['ttbar1l'],
-        #'ttbar': fileset_all['ttbar2l'],
-        'ttbar': fileset_all['top'],
-        'XG': fileset_all['XG'],
-        'MuonEG': fileset_all['MuonEG'],
-        'DoubleMuon': fileset_all['DoubleMuon'],
-        'EGamma': fileset_all['EGamma'],
-        'DoubleEG': fileset_all['DoubleEG'],
-        'SingleElectron': fileset_all['SingleElectron'],
-        'SingleMuon': fileset_all['SingleMuon'],
-        ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
-        ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
-    }
+    from Tools.nano_mapping import make_fileset
+    fileset = make_fileset([args.sample], samples, year=ul, skim=True, small=small, n_max=1)
 
-    if args.sample == 'all':
-        pass
-    else:
-        fileset.update(fileset_all)  # NOTE: this way we can also run sub-samples for tests
-        fileset = {args.sample: fileset[args.sample]}
-    
-    fileset = make_small(fileset, small, n_max=10)
+    #fileset_all = get_babies(in_path, year=f'UL{year}{era}')
+    ##fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
+    #
+    #fileset = {
+    #    'topW_v3': fileset_all['topW_NLO'],
+    #    ##'topW_v3': fileset_all['topW_v3'],
+    #    ###'topW_EFT_mix': fileset_all['topW_EFT'],
+    #    ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
+    #    ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
+    #    'TTW': fileset_all['TTW'],
+    #    'TTZ': fileset_all['TTZ'],
+    #    'TTH': fileset_all['TTH'],
+    #    'diboson': fileset_all['diboson'],
+    #    #'rare': fileset_all['TTTT']+fileset_all['triboson'],
+    #    'rare': fileset_all['rare']+fileset_all['triboson'],
+    #    #'ttbar': fileset_all['ttbar1l'],
+    #    #'ttbar': fileset_all['ttbar2l'],
+    #    'ttbar': fileset_all['top'],
+    #    'XG': fileset_all['XG'],
+    #    'MuonEG': fileset_all['MuonEG'],
+    #    'DoubleMuon': fileset_all['DoubleMuon'],
+    #    'EGamma': fileset_all['EGamma'],
+    #    'DoubleEG': fileset_all['DoubleEG'],
+    #    'SingleElectron': fileset_all['SingleElectron'],
+    #    'SingleMuon': fileset_all['SingleMuon'],
+    #    ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
+    #    ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
+    #}
+
+    #if args.sample == 'all':
+    #    pass
+    #else:
+    #    fileset.update(fileset_all)  # NOTE: this way we can also run sub-samples for tests
+    #    fileset = {args.sample: fileset[args.sample]}
+    #
+    #fileset = make_small(fileset, small, n_max=10)
 
     add_processes_to_output(fileset, desired_output)
 
@@ -1211,10 +1214,17 @@ if __name__ == '__main__':
         em_e = np.intersect1d(em, e)
         print ("Overlap MuonEG/EGamma:", len(em_e))
 
-
+    # Scale the cutflow output. This should be packed into a function?
+    cutflow_output = {}
+    cutflow_output[args.sample] = {}
+    dataset_0 = mapping[ul][args.sample][0]
+    for key in output[dataset_0]:
+        cutflow_output[args.sample][key] = 0.
+        for dataset in mapping[ul][args.sample]:
+            cutflow_output[args.sample][key] += (output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW_v3', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'all' else [args.sample]
+    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'all' else [args.sample]
     lines= [
             'filter',
             'dilep',
@@ -1231,7 +1241,7 @@ if __name__ == '__main__':
             'min_mll'
         ]
 
-    print (getCutFlowTable(output,
+    print (getCutFlowTable(cutflow_output,
                            processes=processes,
                            lines=lines,
                            significantFigures=3,

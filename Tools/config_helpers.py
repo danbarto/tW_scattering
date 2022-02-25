@@ -87,6 +87,6 @@ def get_latest_output(cache_name, cfg):
     except:
         print ("Couldn't find a suitable cache! Rerunning.")
         return None
-    print (f"Found the following cache: {latest}")
+    print ("Found the following cache: %s"%latest)
     return util.load(filtered[0])
 #    return filtered[0]

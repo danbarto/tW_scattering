@@ -147,10 +147,10 @@ def getDict(sample):
         #print (allFiles)
         sample_dict['files'] = len(allFiles)
 
-        if not isData:
-            nEvents, sumw, sumw2, good_files = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
-        else:
-            nEvents, sumw, sumw2, good_files = metis_sample.get_nevents(),0,0, [redirector_ucsd+f.get_name() for f in metis_sample.get_files()]
+        #if not isData:
+        #    nEvents, sumw, sumw2, good_files = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
+        #else:
+        nEvents, sumw, sumw2, good_files = metis_sample.get_nevents(),0,0, []  # [redirector_ucsd+f.get_name() for f in metis_sample.get_files()]
 
         #print (nEvents, sumw, sumw2)
         sample_dict.update({'sumWeight': float(sumw), 'nEvents': int(nEvents), 'xsec': float(sample[1]), 'name':name, 'split':split_factor, 'files': good_files})
@@ -165,12 +165,16 @@ def main():
     import argparse
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
+    argParser.add_argument('--version',  action='store', default=None, help='Skim version')
     argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
     args = argParser.parse_args()
 
     config = loadConfig()
 
     name = args.name
+
+    if args.version is not None:
+        skim_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/%s/'%args.version
 
     # get list of samples
     sampleList = readSampleNames( data_path+'%s.txt'%name )
@@ -187,7 +191,6 @@ def main():
         print ("Checking if sample info for sample: %s is here already"%sample[0])
         if sample[0] in samples.keys(): continue
         sampleList_missing.append(sample)
-    
 
     workers = 1
     # then, run over the missing ones
@@ -211,6 +214,23 @@ def main():
 
             with open(data_path+'%s.yaml'%name, 'w') as f:
                 yaml.dump(samples, f, Dumper=Dumper)
+
+    for sample in samples.keys():
+        sample_name = samples[sample]['name']
+        print (sample_name)
+        if args.version is not None:
+            skim_path_total = f"{skim_path}/{sample_name}/merged/"
+            print (skim_path_total)
+            samples[sample]['files'] = glob.glob(skim_path_total+"*.root")
+            if samples[sample]['xsec'] > 0:  # NOTE: identifier for data / MC
+                samples[sample]['sumWeight'] = 0
+                for f_in in samples[sample]['files']:
+                    with uproot.open(f_in) as f:
+                        #print (f['genEventSumw'].counts()[0])
+                        samples[sample]['sumWeight'] += float(f['genEventSumw'].counts()[0])
+
+        with open(data_path+'%s.yaml'%name, 'w') as f:
+            yaml.dump(samples, f, Dumper=Dumper)
 
     print ("Done.")
 
