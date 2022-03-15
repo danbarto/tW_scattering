@@ -140,7 +140,8 @@ process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
     #args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsEWK_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), # SM without madspin
     #args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
     #args = cms.vstring('/home/users/dspitzba/TTW/MG_test/genproductions/bin/MadGraph5_aMCatNLO/TTZJetsToLL_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
-    args = cms.vstring('/home/users/dspitzba/TTW/MG_SMEFTNLO103/genproductions/bin/MadGraph5_aMCatNLO/TTZ_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
+    #args = cms.vstring('/home/users/dspitzba/TTW/MG_SMEFTNLO103/genproductions/bin/MadGraph5_aMCatNLO/TTZ_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
+    args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_NLO_fixed_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
     nEvents = cms.untracked.uint32(maxN),
     numberOfParameters = cms.uint32(1),
     outputFile = cms.string('cmsgrid_final.lhe'),
@@ -182,34 +183,12 @@ process = customizeNanoGEN(process)
 ## postfix _nlo for NLO samples, nothing for LO samples
 
 named_weights = [
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_6p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_3p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_6p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_3p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_3p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_0p_cpQ3_6p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_3p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_3p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_3p_cpQ3_3p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_0p_cpQM_6p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo",
-    "ctZ_0p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo",
-    "ctZ_0p_cpt_3p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_3p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_0p_cpt_6p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_3p_nlo",
-    "ctZ_3p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_3p_ctp_0p_nlo",
-    "ctZ_3p_cpt_0p_cpQM_0p_cpQ3_3p_ctW_0p_ctp_0p_nlo",
-    "ctZ_3p_cpt_0p_cpQM_3p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_3p_cpt_3p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
-    "ctZ_6p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo",
+    "cpt_0p_cpQM_0p_nlo",
+    "cpt_3p_cpQM_0p_nlo",
+    "cpt_6p_cpQM_0p_nlo",
+    "cpt_0p_cpQM_3p_nlo",
+    "cpt_0p_cpQM_6p_nlo",
+    "cpt_3p_cpQM_3p_nlo",
 ]
 
 process.genWeightsTable.namedWeightIDs = named_weights
@@ -222,7 +201,7 @@ from Configuration.DataProcessing.Utils import addMonitoring
 process = addMonitoring(process)
 
 
-process.options.numberOfThreads=cms.untracked.uint32(12)
+process.options.numberOfThreads=cms.untracked.uint32(8)
 # End of customisation functions
 
 # Customisation from command line

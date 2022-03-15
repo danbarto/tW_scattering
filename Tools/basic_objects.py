@@ -29,7 +29,7 @@ def getTaus(ev, WP='veto'):
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2#Tau_Identification
         # I guess we can use Tau_idDeepTau2017v2p1VSjet >= 8. Could be optimized?
         #return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.4) & (ev.Tau.idDecayMode) & (ev.Tau.idMVAnewDM2017v2 >= 8)]
-        return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.4)]
+        return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.3)]  # NOTE: We need some new Decay Mode and the new deep tau ID. skim version > 0.6.2 should have them.
 
 def getIsoTracks(ev, WP='veto'):
     if WP == 'veto':

@@ -22,6 +22,8 @@ ISFASTSIM=${12}
 SKIM=${13}
 GITHUBUSER=${14}
 
+export ISDATA=$9
+
 OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
 
 ## from https://github.com/aminnj/ProjectMetis/blob/master/metis/executables/condor_cmssw_exe.sh#L76

@@ -22,6 +22,8 @@ OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
 
 export SCRAM_ARCH=${SCRAMARCH}
 
+echo $GRIDPACK
+
 function getjobad {
     grep -i "^$1" "$_CONDOR_JOB_AD" | cut -d= -f2- | xargs echo
 }
@@ -140,6 +142,8 @@ NEVENTS=$(getjobad param_nevents)
 
 echo -e "\n--- end header output ---\n" #                       <----- section division
 
+echo "After stage-in (are input files copied over?): ls -lrth"
+ls -lrth
 
 nanocfg="psets/nanogen/nanogen_nlo_cfg.py"
 
@@ -151,9 +155,10 @@ setup_environment
 mkdir temp
 cd temp
 cp ../*.gz .
+cp ../*.xz .
 tar xf *.gz
 
-edit_psets $GRIDPACK $IFILE $NEVENTS
+edit_psets $PWD/$GRIDPACK $IFILE $NEVENTS
 
 echo "before running: ls -lrth"
 ls -lrth
@@ -191,8 +196,14 @@ fi
 echo "time before copy: $(date +%s)"
 chirp ChirpMetisStatus "before_copy"
 
+echo "Local output dir"
+echo ${OUTPUTDIR}
+
+export REP="/store"
+OUTPUTDIR="${OUTPUTDIR/\/hadoop\/cms\/store/$REP}"
+
 COPY_SRC="file://`pwd`/${OUTPUTNAME}.root"
-COPY_DEST="gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+COPY_DEST=" davs://redirector.t2.ucsd.edu:1094/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 echo -e "\n--- end copying output ---\n" #                      <----- section division
