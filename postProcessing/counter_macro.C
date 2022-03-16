@@ -42,6 +42,20 @@ void counter_macro(TString file_path="", TString skim_path="") // was void
         h_scale->SetBinContent(i+1, in_runs->GetLeaf("LHEScaleSumw")->GetValue(i) * genEventSumw);
     }
 
+    // NOTE: This is only for THQ / THW samples
+    if (in_runs->GetListOfBranches()->FindObject("nLHEReweightingSumw")){
+        std::cout << "LHEReweightingSumw found!" << std::endl;
+        int nLHEReweightingSumw = in_runs->GetLeaf("nLHEReweightingSumw")->GetValue();
+        TH1* h_reweighting = new TH1F("LHEReweightingSumw", "LHEReweightingSumw", nLHEReweightingSumw, 0, 1);
+        for(int i=0;i<nLHEReweightingSumw;i++){
+            h_reweighting->SetBinContent(i+1, in_runs->GetLeaf("LHEReweightingSumw")->GetValue(i) * genEventSumw);
+        }
+    }
+    else {
+        std::cout << "No LHEReweightingSumw found" << std::endl;
+    }
+
+
     skim_file.Write();
 
     return ;
