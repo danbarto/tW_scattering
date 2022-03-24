@@ -8,14 +8,33 @@ from dask_jobqueue.htcondor import HTCondorJob, HTCondorCluster, quote_environme
 
 BASEDIR = os.path.dirname(os.path.realpath(__file__))
 
-def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=[
-            "sdsc-49.t2.ucsd.edu",
-            "sdsc-50.t2.ucsd.edu",
-            "sdsc-68.t2.ucsd.edu",
-            "cabinet-7-7-36.t2.ucsd.edu",
-            "cabinet-8-8-1.t2.ucsd.edu",
-            "cabinet-4-4-18.t2.ucsd.edu",
-    ], memory=4000, disk=20000, whitelisted_machines=[]):
+blacklisted_machines = [
+        "sdsc-1.t2.ucsd.edu",
+        "sdsc-37.t2.ucsd.edu",
+        "sdsc-49.t2.ucsd.edu",
+        "sdsc-50.t2.ucsd.edu",
+        "sdsc-68.t2.ucsd.edu",
+        "cabinet-0-0-20.t2.ucsd.edu",
+        "cabinet-0-0-21.t2.ucsd.edu",
+        "cabinet-0-0-22.t2.ucsd.edu",
+        "cabinet-0-0-23.t2.ucsd.edu",
+        "cabinet-0-0-28.t2.ucsd.edu",
+        "cabinet-0-0-29.t2.ucsd.edu",
+        "cabinet-0-0-30.t2.ucsd.edu",
+        "cabinet-0-0-31.t2.ucsd.edu",
+        "cabinet-3-3-2.t2.ucsd.edu",
+        "cabinet-4-4-16.t2.ucsd.edu"
+        "cabinet-4-4-18.t2.ucsd.edu",
+        "cabinet-7-7-36.t2.ucsd.edu",
+        "cabinet-8-8-1.t2.ucsd.edu",
+        "cabinet-11-11-0.t2.ucsd.edu",
+        "cabinet-11-11-3.t2.ucsd.edu",
+        "cabinet-11-11-2.t2.ucsd.edu",
+        "cabinet-11-11-6.t2.ucsd.edu",
+        "cabinet-11-11-9.t2.ucsd.edu",
+]
+
+def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=blacklisted_machines, memory=4000, disk=20000, whitelisted_machines=[]):
 
     template = """
 universe                = vanilla
@@ -23,7 +42,7 @@ should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 transfer_output_files = ""
 Transfer_Executable     = True
-transfer_input_files    = utils.py,cachepreload.py,daskworkerenv.tar.gz,analysis.tar.gz
+transfer_input_files    = utils.py,cachepreload.py,workerenv.tar.gz,analysis.tar.gz
 output                  = logs/1e.$(Cluster).$(Process).out
 error                   = logs/1e.$(Cluster).$(Process).err
 log                     = logs/$(Cluster).log
@@ -111,15 +130,26 @@ def make_htcondor_cluster(
         cores = 1,
         local=False,
         dashboard_address=8787,
+        blacklisted_machines = blacklisted_machines,
         ):
 
-    input_files = [os.path.join(BASEDIR, x) for x in ["utils.py","cachepreload.py","daskworkerenv.tar.gz","analysis.tar.gz"]]
+    input_files = [os.path.join(BASEDIR, x) for x in ["utils.py","cachepreload.py","workerenv.tar.gz","analysis.tar.gz"]]
     log_directory = os.path.join(BASEDIR, "logs/")
     proxy_file = "/tmp/x509up_u{0}".format(os.getuid())
 
     [make_sure_exists(p) for p in input_files + [proxy_file]]
     make_sure_exists(log_directory, make=True)
 
+    whitelisted_machines = []
+
+    extra_requirements = "True"
+    if blacklisted_machines:
+        extra_requirements = " && ".join(map(lambda x: '(TARGET.Machine != "{0}")'.format(x),blacklisted_machines))
+    if whitelisted_machines:
+        extra_requirements = " || ".join(map(lambda x: '(TARGET.Machine == "{0}")'.format(x),whitelisted_machines))
+
+
+    print (extra_requirements)
 
     params = {
             "disk": disk,
@@ -141,7 +171,7 @@ def make_htcondor_cluster(
                 "Stream_Error": False,
                 "+DESIRED_Sites":'"T2_US_UCSD"',
                 # "Requirements": '((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true) && (TARGET.Machine != "sdsc-18.t2.ucsd.edu") && (TARGET.Machine != "sdsc-20.t2.ucsd.edu") && (TARGET.Machine != "cabinet-7-7-36.t2.ucsd.edu") && (TARGET.Machine != "cabinet-4-4-18.t2.ucsd.edu"))',
-                "Requirements": '((HAS_SINGULARITY=?=True) && (HAS_CVMFS_cms_cern_ch =?= true))',
+                "Requirements": '((HAS_SINGULARITY=?=True)&&%s)'%extra_requirements,
                 },
             }
     if local:

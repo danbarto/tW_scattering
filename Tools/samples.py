@@ -6,7 +6,8 @@ cfg = loadConfig()
 
 version = cfg['meta']['version']
 #tag = version.replace('.','p')
-tag = 'topW_v0.2.3' #!FIXME update this!
+tag = 'topW_v0.2.3'
+#tag = 'topW_v0.2.4_trilep' #!FIXME this is temporary
 
 data_path = os.path.join(cfg['meta']['localSkim'], tag)
 
@@ -33,7 +34,8 @@ groups_2018 = {
     'ttbar1l_MG':    ['/TTJets_SingleLept'],
     'TTW':           ['/TTWJets'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
-    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]'], # there's also a powheg sample
+    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'], # there's also a powheg sample
+    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
@@ -63,14 +65,38 @@ groups_2018 = {
     'DoubleMuon':       ['/DoubleMuon_Run2018[ABCD]'],
 }
 
+groups_UL = {
+    #'topW_NLO':      ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO'],
+    #'topW_EFT':      ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO'],
+    'topW_NLO':      ['/ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v11'],
+    'TTW':           ['/TTWJets'],
+    'TTH':           ['/ttHJetToNonbb[-_]'],
+    'TTZ':           ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
+    'rare':          ['/TTTT[-_]', '/TH[W,Q][-_]',],
+    'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
+    'wjets':         ['/W[1-4]JetsToLNu[-_]'],
+    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/SSWW_*'],
+    'DY':            ['/DYJetsToLL.*madgraphMLM'], # LO samples
+    'XG':            ['/TTGamma', '/WG', '/ZG', '/WZG'], # LO samples
+
+    'MuonEG':       ['/MuonEG'],
+    'DoubleEG':     ['/DoubleEG'],
+    'EGamma':       ['/EGamma'],
+    'SingleElectron': ['/SingleElectron'],
+    'DoubleMuon':   ['/DoubleMuon'],
+    'SingleMuon':   ['/SingleMuon'],
+}
+
+
+# FIXME: delete the old crap?
 #samples_2016 = glob.glob(data_path_2016 + '/*')
 #fileset_2016 = { group: [] for group in groups_2016.keys() }
 #
 #samples_2017 = glob.glob(data_path_2017 + '/*')
 #fileset_2017 = { group: [] for group in groups_2017.keys() }
-
-samples_2018 = glob.glob(data_path + '/*')
-fileset_2018 = { group: [] for group in groups_2018.keys() }
+#
+#samples_2018 = glob.glob(data_path + '/*')
+#fileset_2018 = { group: [] for group in groups_2018.keys() }
 
 #for sample in samples_2016:
 #    for group in groups_2016.keys():
@@ -87,12 +113,45 @@ fileset_2018 = { group: [] for group in groups_2018.keys() }
 #                fileset_2017[group] += glob.glob(sample+'/*.root')
 #
 #fileset_2017_small = { sample: fileset_2017[sample][:2] for sample in fileset_2017.keys() }
+#
+#for sample in samples_2018:
+#    for group in groups_2018.keys():
+#        for process in groups_2018[group]:
+#            if re.search(process, sample):
+#                fileset_2018[group] += glob.glob(sample+'/*.root')
+#
+#fileset_2018_small = { sample: fileset_2018[sample][:2] for sample in fileset_2018.keys() }
+# FIXME: delete the old crap ^
 
-for sample in samples_2018:
-    for group in groups_2018.keys():
-        for process in groups_2018[group]:
-            if re.search(process, sample):
-                fileset_2018[group] += glob.glob(sample+'/*.root')
+def get_babies(data_path, year=2018):
+    year = str(year)
 
-fileset_2018_small = { sample: fileset_2018[sample][:2] for sample in fileset_2018.keys() }
+    samples = glob.glob(data_path + '/*')
+    groups = groups_UL if not year == '2018' else groups_2018
+    fileset = { group: {} for group in groups.keys() }
 
+    if year=='2018':
+        campaign = '.*'
+    elif year=='UL2018':
+        campaign = '.*(Summer20UL18|Run2018|UL18|Autumn18)'  # Autumn18 needed for missing UL samples
+    elif year=='UL2017':
+        campaign = '.*(Summer20UL17|Run2017|UL17|Fall17)'
+    elif year=='UL2016':
+        campaign = '.*(Summer20UL16NanoAODv|Run2016[GH]|Run2016F-UL|UL16_postVFP)'
+    elif year=='UL2016APV':
+        campaign = '.*(Summer20UL16NanoAODAPV|Run2016[BCDE]|Run2016F-HIPM|UL16_preVFP)'
+    
+    for sample in samples:
+        for group in groups.keys():
+            for process in groups[group]:
+                if re.search( (process.strip('/') if process[-1] == '/' else (process+campaign)), sample):
+                    fileset[group][sample] = glob.glob(sample+'/*.root')  # FIXME: merged samples?
+    
+    return fileset
+
+
+# FIXME this needs to be updated once we have NanoAODv9 from everything.
+#fs_2016 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/', year='UL2016')
+#fs_2016APV = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/', year='UL2016APV')
+#fs_2017 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.5.2_dilep/', year='UL2017')
+fs_2018 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.6.0_dilep/', year='UL2018')

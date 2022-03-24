@@ -5,7 +5,13 @@ import os
 
 import copy
 import numpy as np
-import awkward1 as ak
+import numba as nb
+
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 
 from yaml import load, dump
 try:
@@ -40,11 +46,119 @@ def match2(first, second, deltaRCut=0.4):
     combs = ak.cartesian([first, second], nested=True)
     return ak.any((combs['0'].delta_r2(combs['1'])<drCut2), axis=2)
 
+def match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
+    '''
+    match based on deltaR between first and second, and impose that second.pt > first.pt*ptCut
+    '''
+    drCut2 = deltaRCut**2
+    combs = ak.cartesian([first, second], nested=True)
+    return ak.any(
+        (delta_r2(combs['0'], combs['1'])<drCut2) & (combs['1'].pt > ptCut*combs['0'].pt)
+        , axis=2)
+
+@nb.jit
+def fast_delta_phi(first, second):
+    # my version, seems to be faster (and unsigned)
+    return np.arccos(np.cos(first.phi - second.phi))
+
+@nb.jit
+def fast_delta_r2(first, second):
+    return (first.eta - second.eta) ** 2 + fast_delta_phi(first, second) ** 2
+
+def fast_match(first, second, deltaRCut=0.4):
+    offsets, contents = match_by_dr(first, second, deltaRCut)
+    mask_by_dR_listoffsetarray = ak.layout.ListOffsetArray64(ak.layout.Index64(offsets), ak.layout.NumpyArray(contents) )
+    return ak.Array(mask_by_dR_listoffsetarray)    
+    '''
+    return a mask that is the same size as obj1
+    if obj1 is close to any obj2 in the same event, True, else False
+    '''
+
+def fast_match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
+    offsets, contents = match_by_dr_pt(first, second, deltaRCut, ptCut)
+    mask_by_dR_listoffsetarray = ak.layout.ListOffsetArray64(ak.layout.Index64(offsets), ak.layout.NumpyArray(contents) )
+    return ak.Array(mask_by_dR_listoffsetarray)    
+    '''
+    return a mask that is the same size as obj1
+    if obj1 is close to any obj2 in the same event, False, else True
+    '''
+
+@nb.jit
+def match_by_dr(objs1, objs2, dR_lim):
+    dR_lim2 = dR_lim**2
+    nEvents = len(objs1)
+    nobj1s = np.int64(0)
+    for i in range(nEvents):
+        nobj1s += len(objs1[i])
+
+    mask_offsets = np.empty(nEvents+1, np.int64)
+    mask_offsets[0] = 0
+    mask_contents = np.empty(nobj1s, np.bool_)
+    for i in range(nEvents):
+        mask_offsets[i+1] = mask_offsets[i]
+        objs1_evt = objs1[i]
+        objs2_evt = objs2[i]
+        for j in range(len(objs1_evt)):
+            obj1 = objs1_evt[j] 
+            mask_contents[mask_offsets[i+1]] = False
+            for k in range(len(objs2_evt)):
+                obj2 = objs2_evt[k]
+                dR2 = fast_delta_r2(obj1, obj2)
+                if (dR2 < dR_lim2):
+                    mask_contents[mask_offsets[i+1]] = True
+                    break
+            mask_offsets[i+1] += 1
+
+    return mask_offsets, mask_contents 
+
+@nb.jit
+def match_by_dr_pt(objs1, objs2, dR_lim, ptCut):
+    dR_lim2 = dR_lim**2
+    nEvents = len(objs1)
+    nobj1s = np.int64(0)
+    for i in range(nEvents):
+        nobj1s += len(objs1[i])
+
+    mask_offsets = np.empty(nEvents+1, np.int64)
+    mask_offsets[0] = 0
+    mask_contents = np.empty(nobj1s, np.bool_)
+    for i in range(nEvents):
+        mask_offsets[i+1] = mask_offsets[i]
+        objs1_evt = objs1[i]
+        objs2_evt = objs2[i]
+        for j in range(len(objs1_evt)):
+            obj1 = objs1_evt[j] 
+            mask_contents[mask_offsets[i+1]] = False
+            for k in range(len(objs2_evt)):
+                obj2 = objs2_evt[k]
+                dR2 = fast_delta_r2(obj1, obj2)
+                if (dR2 < dR_lim2) and (obj2.pt > ptCut*obj1.pt):
+                    mask_contents[mask_offsets[i+1]] = True
+                    break
+            mask_offsets[i+1] += 1
+
+    return mask_offsets, mask_contents 
+
+
 def choose(first, n=2):
     tmp = ak.combinations(first, n)
-    combs = (tmp['0'] + tmp['1'])
+    combs = tmp['0']
+    combs.p4 = tmp['0'].p4
+    for i in range(1,n):
+        combs = combs.__add__(tmp[str(i)])
+        combs.p4 = combs.__add__(tmp[str(i)].p4)
+    for i in range(n):
+        combs[str(i)] = tmp[str(i)]
+    return combs
+
+def choose3(first, n=3):
+    from warnings import warn
+    warn("Deprecation Warning: The choose3 function will be removed. Use choose(first, n=3) instead.")
+    tmp = ak.combinations(first, n)
+    combs = (tmp['0'] + tmp['1'] + tmp['2'])
     combs['0'] = tmp['0']
     combs['1'] = tmp['1']
+    combs['2'] = tmp['2']
     return combs
 
 def cross(first, second):
@@ -64,15 +178,41 @@ def getNonPromptFromFlavour(obj, allow_tau=True):
     else:
         return ak.num(obj[(obj.genPartFlav!=1)])
 
-def getChargeFlips(obj, gen):
-    return ak.num(obj[(gen[obj.genPartIdx].pdgId/abs(gen[obj.genPartIdx].pdgId) != obj.pdgId/abs(obj.pdgId))])
+def getChargeFlips(obj, gen=0):
+    # gen is not needed, but keep to not break things
+    return ak.num(obj[(obj.matched_gen.pdgId/abs(obj.matched_gen.pdgId) != obj.pdgId/abs(obj.pdgId))])
 
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
+prompt    = lambda x: x[((x.genPartFlav==1)|(x.genPartFlav==15))]
+#prompt_mask = lambda x: (x.genPartFlav==1)|(x.genPartFlav==15)
+
+nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15)&(x.genPartFlav!=22))]
+#nonprompt = lambda x: x[((x.genPartFlav!=1)&(x.genPartFlav!=15)&(x.genPartFlav!=22))]
+
+conversion = lambda x: x[(x.genPartFlav==22)]
+
+chargeflip = lambda x: x[((x.matched_gen.pdgId*(-1) == x.pdgId) & (abs(x.pdgId) == 11))]  # we only care about electron charge flips
+
+
+def prompt_no_conv(reco_lep, gen_photon):
+    sel = (((reco_lep.genPartFlav==1)|(reco_lep.genPartFlav==15))&\
+            ~match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
+
+def nonprompt_no_conv(reco_lep, gen_photon):
+    sel = ((reco_lep.genPartFlav!=1)&(reco_lep.genPartFlav!=15)&(reco_lep.genPartFlav!=22)&\
+            ~match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
+
+def external_conversion(reco_lep, gen_photon):
+    sel = ((reco_lep.genPartFlav==22) | match_with_pt(reco_lep, gen_photon, deltaRCut=0.3, ptCut=0.5))
+    return reco_lep[sel]
+
 class Collections:
 
-    def __init__(self, ev, obj, wp, verbose=0):
+    def __init__(self, ev, obj, wp, year=2018, verbose=0):
         self.obj = obj
         self.wp = wp
         if self.wp == None:
@@ -81,9 +221,15 @@ class Collections:
             self.selection_dict = obj_def[self.obj][self.wp]
 
         self.v = verbose
-        #self.year = df['year'][0] ## to be implemented in next verison of babies
-        self.year = 2018
-        
+        self.year = year
+
+        id_level = None
+        if wp.lower().count('veto'):
+            id_level = 0
+        elif wp.lower().count('fake'):
+            id_level = 1
+        elif wp.lower().count('tight'):
+            id_level = 2
         
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
@@ -95,16 +241,18 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
-            mask_far = ~(delta_r(ev.Jet[ev.Muon.jetIdx], ev.Muon)<0.4)*1
+            mask_close = (ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
 
-            deepJet = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close + 0*mask_far
             jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Jet[ev.Muon.jetIdx].pt * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + (ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all))*mask_far
+            #conePt = 0.8 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + (ev.Muon.pt/(1 + ev.Muon.miniPFRelIso_all))*mask_far
 
-            ev['Muon', 'deepJet'] = deepJet
+            ev['Muon', 'deepJet'] = ak.copy(deepJet)
             ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Muon', 'conePt'] = conePt
+            ev['Muon', 'id'] = ak.ones_like(conePt)*id_level
 
             self.cand = ev.Muon
             
@@ -122,16 +270,18 @@ class Collections:
             # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
             # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
 
-            mask_close = (delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
-            mask_far = ~(delta_r(ev.Jet[ev.Electron.jetIdx], ev.Electron)<0.4)*1
+            mask_close = (ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
 
-            deepJet = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB*mask_close  # this defaults to 0
+            deepJet = ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB, 0)*mask_close
             jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
-            conePt = 0.9 * ev.Jet[ev.Electron.jetIdx].pt * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+            conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + (ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all))*mask_far
+            #conePt = 0.8 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + (ev.Electron.pt/(1 + ev.Electron.miniPFRelIso_all))*mask_far
 
-            ev['Electron', 'deepJet'] = deepJet
+            ev['Electron', 'deepJet'] = ak.copy(deepJet)
             ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
             ev['Electron', 'conePt'] = conePt
+            ev['Electron', 'id'] = ak.ones_like(conePt)*id_level
             
             self.cand = ev.Electron
             
@@ -140,14 +290,25 @@ class Collections:
         if self.obj == "Electron" and self.wp == "tight":
             self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
             if self.v>0: print (" - custom ID and multi-isolation")
+
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
             if self.v>0: print (" - custom multi-isolation")
+            #self.selection = self.selection & ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Muon.matched_jet.btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
         if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH' or self.wp == "tightSSTTH" or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & self.getSigmaIEtaIEta()
             if self.v>0: print (" - SigmaIEtaIEta")
+            #self.selection = self.selection & ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Electron.matched_jet.btagDeepFlavB<0.2770)
+            #self.selection = self.selection & (ev.Jet[ev.Electron.jetIdx].btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
         if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
-            self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
+            #self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
+            self.selection = self.selection & (ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB,0) < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45))
             if self.v>0: print (" - interpolated deepJet")
         
     def getValue(self, var):
@@ -281,10 +442,16 @@ class Collections:
         if self.v>0: print (" - custom multi isolation")
         return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
 
-    def getThreshold(self, pt, min_pt=20, max_pt=45, low=0.2770, high=0.0494):
+    def getThreshold(self, pt, min_pt=20, max_pt=45, low=None, high=None):
         '''
         get the deepJet threshold for ttH FO muons. default values are for 2018.
+        UL values from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL18
         '''
+        b_low = {2016: 0.3093, 2017: 0.3040, 2018: 0.2783,}
+        b_high = {2016: 0.0614, 2017: 0.0532, 2018: 0.0490,}
+        if low is None: low = b_low[self.year]
+        if high is None: high = b_high[self.year]
+
         k = (low-high)/(min_pt-max_pt)
         d = low - k*min_pt
         return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high

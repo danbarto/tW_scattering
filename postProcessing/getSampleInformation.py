@@ -37,6 +37,9 @@ def getSplitFactor(sample, target=1e6):
     print (fin)
     tree = uproot.open(fin)["Events"]
     print (len(tree))
+    if len(tree['event'].array())<1:
+        print ("Empty file")
+        return 1
     met = tree['MET_pt'].array()
     muon_pt = tree['Muon_pt'].array()
     nMuon = ak.num(muon_pt[( (muon_pt>10) & (np.abs(tree['Muon_eta'].array())<2.4) )])
@@ -77,6 +80,7 @@ def getMetaUproot(file, local=True):
         f = uproot.open(file)
         r = f['Runs']
     except:
+        print ("Couldn't open file: %s"%file)
         return 0,0,0
 
     if local:
@@ -100,12 +104,16 @@ def dasWrapper(DASname, query='file'):
 def getSampleNorm(files, local=True, redirector=redirector_ucsd):
     files = [ redirector+f for f in files ] if not local else files
     nEvents, sumw, sumw2 = 0,0,0
+    good_files = []
     for f in files:
         res = getMetaUproot(f, local=local)
-        nEvents += res[0]
-        sumw += res[1]
-        sumw2 += res[2]
-    return nEvents, sumw, sumw2
+        if res[0]>0:
+            nEvents += res[0]
+            sumw += res[1]
+            sumw2 += res[2]
+            good_files.append(f)
+        
+    return nEvents, sumw, sumw2, good_files
 
 def getDict(sample):
         sample_dict = {}
@@ -115,6 +123,7 @@ def getDict(sample):
         # First, get the name
         name = getName(sample[0])
         print ("Started with: %s"%name)
+        print (sample[0])
 
         year, era, isData, isFastSim = getYearFromDAS(sample[0])
 
@@ -138,13 +147,13 @@ def getDict(sample):
         #print (allFiles)
         sample_dict['files'] = len(allFiles)
 
-        if not isData:
-            nEvents, sumw, sumw2 = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
-        else:
-            nEvents, sumw, sumw2 = metis_sample.get_nevents(),0,0
+        #if not isData:
+        #    nEvents, sumw, sumw2, good_files = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
+        #else:
+        nEvents, sumw, sumw2, good_files = metis_sample.get_nevents(),0,0, []  # [redirector_ucsd+f.get_name() for f in metis_sample.get_files()]
 
         #print (nEvents, sumw, sumw2)
-        sample_dict.update({'sumWeight': float(sumw), 'nEvents': int(nEvents), 'xsec': float(sample[1]), 'name':name, 'split':split_factor})
+        sample_dict.update({'sumWeight': float(sumw), 'nEvents': int(nEvents), 'xsec': float(sample[1]), 'name':name, 'split':split_factor, 'files': good_files})
 
         print ("Done with: %s"%name)
         
@@ -153,13 +162,25 @@ def getDict(sample):
 
 def main():
 
+    import argparse
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
+    argParser.add_argument('--version',  action='store', default=None, help='Skim version')
+    argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
+    args = argParser.parse_args()
+
     config = loadConfig()
 
-    # get list of samples
-    sampleList = readSampleNames( data_path+'samples.txt' )
+    name = args.name
 
-    if os.path.isfile(data_path+'samples.yaml'):
-        with open(data_path+'samples.yaml') as f:
+    if args.version is not None:
+        skim_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/%s/'%args.version
+
+    # get list of samples
+    sampleList = readSampleNames( data_path+'%s.txt'%name )
+
+    if os.path.isfile(data_path+'%s.yaml'%name):
+        with open(data_path+'%s.yaml'%name) as f:
             samples = yaml.load(f, Loader=Loader)
     else:
         samples = {}
@@ -170,9 +191,8 @@ def main():
         print ("Checking if sample info for sample: %s is here already"%sample[0])
         if sample[0] in samples.keys(): continue
         sampleList_missing.append(sample)
-    
 
-    workers = 12
+    workers = 1
     # then, run over the missing ones
     print ("Will have to work in %s samples."%len(sampleList_missing))
 
@@ -190,12 +210,35 @@ def main():
             #print (result)
             #print ("Done with %s samples."%counter)
 
-    print ("Done with the heavy lifting. Dumping results to yaml file now.")
+            print ("Done with the heavy lifting. Dumping results to yaml file now.")
 
-    with open(data_path+'samples.yaml', 'w') as f:
-        yaml.dump(samples, f, Dumper=Dumper)
+            with open(data_path+'%s.yaml'%name, 'w') as f:
+                yaml.dump(samples, f, Dumper=Dumper)
+
+    for sample in samples.keys():
+        sample_name = samples[sample]['name']
+        print (sample_name)
+        if args.version is not None:
+            skim_path_total = f"{skim_path}/{sample_name}/merged/"
+            print (skim_path_total)
+            samples[sample]['files'] = glob.glob(skim_path_total+"*.root")
+            if samples[sample]['xsec'] > 0:  # NOTE: identifier for data / MC
+                samples[sample]['sumWeight'] = 0
+                for f_in in samples[sample]['files']:
+                    with uproot.open(f_in) as f:
+                        #print (f['genEventSumw'].counts()[0])
+                        samples[sample]['sumWeight'] += float(f['genEventSumw'].counts()[0])
+
+        with open(data_path+'%s.yaml'%name, 'w') as f:
+            yaml.dump(samples, f, Dumper=Dumper)
 
     print ("Done.")
+
+    if args.dump:
+        import pandas as pd
+        df = pd.DataFrame(samples)
+        with pd.option_context("max_colwidth", 1000):
+            print(df.transpose()[['xsec']].to_latex())
 
     return samples
 

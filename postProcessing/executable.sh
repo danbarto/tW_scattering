@@ -22,6 +22,8 @@ ISFASTSIM=${12}
 SKIM=${13}
 GITHUBUSER=${14}
 
+export ISDATA=$9
+
 OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
 
 ## from https://github.com/aminnj/ProjectMetis/blob/master/metis/executables/condor_cmssw_exe.sh#L76
@@ -108,6 +110,18 @@ echo "Running python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFI
 python PhysicsTools/NanoAODTools/scripts/run_processor.py $INPUTFILENAMES $SUMWEIGHT $ISDATA $YEAR $ERA $ISFASTSIM $SKIM
 RET=$?
 
+echo "Adding sum of weights to output file"
+cp ../../run_macro.py .
+cp ../../counter_macro.C .
+
+REP="/store/mc/"
+RED="root://cmsxrootd.fnal.gov//store/mc/"
+INFILETMP="${INPUTFILENAMES/$REP/$RED}"
+
+if [ "$ISDATA" -eq 0 ]; then
+    python run_macro.py $INFILETMP tree.root
+fi
+
 mv tree.root ${OUTPUTNAME}_${IFILE}.root
 
 # Dump contents of log file into stdout
@@ -127,7 +141,7 @@ try:
     t = f1.Get("Events")
     nevts = t.GetEntries()
     print "[SweepRoot] ntuple has %i events." % t.GetEntries()
-    if int(t.GetEntries()) <= 0:
+    if int(t.GetEntries()) < 0:
         foundBad = True
     for i in range(0,t.GetEntries(),1):
         if t.GetEntry(i) < 0:
@@ -139,6 +153,17 @@ except Exception as ex:
     print "Encounter error during SweepRoot:"
     print msg
     foundBad = True
+
+if int(os.environ["ISDATA"])==0:
+    try:
+        hist = f1.Get("genEventSumw")
+        if hist.Integral() < 0: foundBad = True
+    except Exception as ex:
+        msg = traceback.format_exc()
+        print "Encounter error during SweepRoot:"
+        print msg
+        foundBad = True
+
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
     os.system("rm ${OUTPUTNAME}_${IFILE}.root")

@@ -1,5 +1,9 @@
 import numpy as np
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 import re
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 
@@ -23,7 +27,7 @@ def mask_or(ev, collection, masks):
     for t in masks:
         try:
             decision = decision | getattr(coll, t)
-        except KeyError:
+        except AttributeError:
             continue
     return decision
 
@@ -47,13 +51,14 @@ def mask_and(ev, collection, masks):
     for t in masks:
         try:
             decision = decision & getattr(coll, t)
-        except KeyError:
+        except AttributeError:
             continue
     return decision
 
 
-def getFilters(ev, year=2018, dataset='None'):
-    #filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
+def getFilters(ev, year=2018, dataset='None', UL=True):
+    # filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
+    #FIXME Flag_BadPFMuonDzFilter missing in EOY UL?? Should be added.
     if year == 2018:
         filters_MC = [\
             "goodVertices",
@@ -62,7 +67,7 @@ def getFilters(ev, year=2018, dataset='None'):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2"
+            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
         ]
         
         filters_data = filters_MC + ["eeBadScFilter"]
@@ -75,7 +80,7 @@ def getFilters(ev, year=2018, dataset='None'):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2"
+            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
         ]
         
         filters_data = filters_MC + ["eeBadScFilter"]
@@ -97,32 +102,44 @@ def getFilters(ev, year=2018, dataset='None'):
     else:
         return mask_and(ev, "Flag", filters_MC)
         
-def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
+def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None', era=None):
     # these are the MET triggers from the MT2 analysis
     
     triggers = {}
     
-    same_flavor = (abs(leading_pdg) == abs(subleading_pdg))
-    leading_ele = (abs(leading_pdg) == 11)
-    leading_mu  = (abs(leading_pdg) == 13)
+    #same_flavor = (abs(leading_pdg) == abs(subleading_pdg))
+    #leading_ele = (abs(leading_pdg) == 11)
+    #leading_mu  = (abs(leading_pdg) == 13)
 
+
+    # lepton triggers from here: https://indico.cern.ch/event/718554/contributions/3027981/attachments/1667626/2674497/leptontriggerreview.pdf
+    # TOP triggers are here: https://indico.cern.ch/event/995560/contributions/4189577/attachments/2174069/3671077/Dilepton_TriggerSF_TOPPAG.pdf
+    #FIXME how to include single lepton triggers / PDs without introducing overlap?
     if year == 2018:
         triggers['MuonEG'] = [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
-            "Mu27_Ele37_CaloIdL_MW",
-            "Mu37_Ele27_CaloIdL_MW",
+            "Mu27_Ele37_CaloIdL_MW",  #FIXME this is not in the TOP list
+            "Mu37_Ele27_CaloIdL_MW",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleMuon'] = [\
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
-            "Mu37_TkMu27",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
+            "Mu37_TkMu27",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",  #FIXME not in the TOP list
+            "DoubleEle25_CaloIdL_MW",
+            "Ele32_WPTight_Gsf",
+        ]
+
+        triggers['SingleMuon'] = [\
+            "IsoMu24",
+        ]
+
+        triggers['SingleElectron'] = [\
         ]
 
         triggers['MET'] = [\
@@ -133,49 +150,113 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ]
         
     elif year == 2017:
+        triggers['MuonEG'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+        ]
+
+        triggers['DoubleMuon'] = [\
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8",
+        ]
+
+        triggers['DoubleEG'] = [\
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "DoubleEle33_CaloIdL_MW",
+        ]
+
+        triggers['SingleMuon'] = [\
+            "IsoMu27",
+        ]
+
+        triggers['SingleElectron'] = [\
+            "Ele35_WPTight_Gsf",
+        ]
+
         triggers['MET'] = [\
             "PFMET120_PFMHT120_IDTight",
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
         ]
         
     elif year == 2016:
+        if not era=='APV':
+            triggers['MuonEG'] = [\
+                "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+                "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",  
+            ]
+        else:
+            triggers['MuonEG'] = []
+
+        triggers['MuonEG'] += [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL",
+        ]
+
+        triggers['DoubleMuon'] = [\
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",
+            "Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL",
+            "Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ",
+        ]
+
+        triggers['DoubleEG'] = [\
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "DoubleEle33_CaloIdL_MW",
+            "DoubleEle33_CaloIdL_GsfTrkIdVL",
+        ]
+
+        triggers['SingleMuon'] = [\
+            "IsoMu24",
+            #"IsoTkMu24",  #FIXME should go in with v0.4.1 or higher
+        ]
+
+        triggers['SingleElectron'] = [\
+            "Ele27_WPTight_Gsf",
+        ]
+
         triggers['MET'] = [\
             "PFMET120_PFMHT120_IDTight",
             "PFMETNoMu120_PFMHTNoMu120_IDTight",
         ]
         
-    #print (dataset)
-    if re.search(re.compile("MuonEG"), dataset):
-        #print ("In MuonEG branch")
-        trigger = mask_or(ev, "HLT", triggers["MuonEG"])
-        #print (sum(trigger & ~same_flavor))
-        return (trigger & ~same_flavor)
-        #return trigger
-
-    elif re.search(re.compile("DoubleMuon"), dataset):
-        #print ("In DoubleMuon branch")
+    if re.search(re.compile("DoubleMuon"), dataset):
         trigger = mask_or(ev, "HLT", triggers["DoubleMuon"])
-        #print (sum(trigger & same_flavor & leading_mu))
-        return (trigger & same_flavor & leading_mu)
-        #return trigger
+        return trigger
 
-    elif re.search(re.compile("DoubleEG|EGamma"), dataset):
-        #print ("In EGamma branch")
-        trigger = mask_or(ev, "HLT", triggers["DoubleEG"])
-        #print (sum(trigger & same_flavor & leading_ele))
-        return (trigger & same_flavor & leading_ele)
+    elif re.search(re.compile("SingleMuon"), dataset):
+        trigger = (mask_or(ev, "HLT", triggers["SingleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleMuon"]))
+        return trigger
+
+    elif re.search(re.compile("DoubleEG|EGamma"), dataset):  # 
+        trigger = (mask_or(ev, "HLT", triggers["DoubleEG"]) & \
+                  ~mask_or(ev, "HLT", triggers["SingleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleMuon"]))
+        return trigger
+
+    elif re.search(re.compile("SingleElectron"), dataset):
+        trigger = (mask_or(ev, "HLT", triggers["SingleElectron"]) & \
+                  ~mask_or(ev, "HLT", triggers["SingleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleEG"]))
+        return trigger
+
+    elif re.search(re.compile("MuonEG"), dataset):
+        trigger = (mask_or(ev, "HLT", triggers["MuonEG"]) & \
+                  ~mask_or(ev, "HLT", triggers["SingleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleMuon"]) & \
+                  ~mask_or(ev, "HLT", triggers["DoubleEG"]) & \
+                  ~mask_or(ev, "HLT", triggers["SingleElectron"]))
+        return trigger
+
+
 
     else:
-        #print ("In MC branch")
-        # these triggers aren't fully efficient yet. check if we're missing something.
-        mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) & same_flavor & leading_mu)
-        ee = (mask_or(ev, "HLT", triggers['DoubleEG']) & same_flavor & leading_ele)
-        em = (mask_or(ev, "HLT", triggers['MuonEG']) & ~same_flavor)
-        return (mm | ee | em)
 
-
-    #if re.search(re.compile("MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleElectron"), dataset):  #  dataset.lower().count('muon') or dataset.lower().count('electron'):
-    #    return mask_or(ev, "HLT", triggers[dataset])
-    #else:
-    #    return mask_or(ev, "HLT", triggers['MuonEG'] + triggers['DoubleMuon'] + triggers['DoubleEG'])  # should be OR of all dilepton triggers
+        mm = (mask_or(ev, "HLT", triggers['DoubleMuon']) )
+        ee = (mask_or(ev, "HLT", triggers['DoubleEG']) )
+        em = (mask_or(ev, "HLT", triggers['MuonEG']) )
+        m = (mask_or(ev, "HLT", triggers['SingleMuon']) )
+        e = (mask_or(ev, "HLT", triggers['SingleElectron']) )
+        trig = (mm | ee | em | m | e)
+        return trig
 

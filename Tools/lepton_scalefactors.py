@@ -1,5 +1,9 @@
 import os
-import awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 from coffea.lookup_tools import extractor
 
 class LeptonSF:

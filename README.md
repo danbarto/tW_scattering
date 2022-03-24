@@ -8,18 +8,17 @@ Prerequisite: if you haven't, add this line to your `~/.profile`:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 ```
 
-### Setting up the environment
+## Setting up miniconda
+
+Skip this part if you already have conda running on uaf.
 
 From within your home directory on the uaf, follow the below instructions to set up the tools to run coffea.
 We do this in a virtual environment, using the miniconda environment management package.
 You might get some error messages about packages that couldn't get uninstalled that you (usually) can ignore.
 
 ```
-mkdir daskucsd
-cd daskucsd
 curl -O -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b 
-
 ```
 
 Add conda to the end of ~/.bashrc, so relogin after executing this line
@@ -38,27 +37,52 @@ Install package to tarball environments
 conda install --name base conda-pack -y
 ```
 
+## Setting up a environment for our work
+
 Create environments with as much stuff from anaconda
 ```
-conda create --name daskworkerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr yahist -y
-conda create --name daskanalysisenv uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr yahist -y
+conda create --name coffeadev uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr -y
 ```
 And then install residual packages with pip
 ```
-conda run --name daskworkerenv pip install coffea
-conda run --name daskanalysisenv pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto
+conda run --name coffeadev pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto yahist
 ```
 
-Make the tarball for the worker nodes (this will be needed for DASK only)
+## Setting up an environment for the DASK workers
+
 ```
-conda pack -n daskworkerenv --arcroot daskworkerenv -f --format tar.gz \
-    --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
+conda deactivate
+conda create --name workerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime -y
+conda run --name workerenv pip install coffea yahist
+conda activate workerenv
 ```
 
-I had to update my python version, so you might have to run
+Pack it
+```
+conda pack -n workerenv --arcroot workerenv -f --format tar.gz --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
+```
+
+### DASK trouble shooting
+
+I had to update my (local) python version, so you might have to run
 ```
 conda install python=3.8.6
 ```
+
+### Coffea developer mode
+
+If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository.
+This gives instructions for our private fork that fixes the root export for our needs.
+Based on coffea 0.7.0.
+```
+git clone https://github.com/CoffeaTeam/coffea
+cd coffea
+git remote add upstream git@github.com:danbarto/coffea.git
+git fetch upstream
+git checkout upstream/root_export
+pip install --editable .[dev]
+```
+Full instructions are given [here](https://coffeateam.github.io/coffea/installation.html#for-developers).
 
 ### Setting up CMS software and analysis code
 
@@ -92,7 +116,7 @@ source activate_conda.sh
 
 To start a jupyter server just do
 ```
-( conda activate daskanalysisenv && jupyter notebook --no-browser )
+( conda activate coffeadev && jupyter notebook --no-browser )
 ```
 In order to use jupyter you need to establish another ssh connection from your computer:
 ```
@@ -122,8 +146,15 @@ To deactivate the environment, just type `conda deactivate`
 
 Uninstall the jupyter kernel if you're having problems with it:
 ```
-jupyter kernelspec uninstall daskanalysisenv
+jupyter kernelspec uninstall coffeadev
 ```
+and then reinstall it again
+```
+python -m ipykernel install --user --name=coffeadev
+jupyter nbextension install --py widgetsnbextension --user
+jupyter nbextension enable widgetsnbextension --user --py
+```
+
 
 If you already have a jupyter server running **on the uaf**, a different port than 8893 might be used. In this case, alter the `ssh -N -f ...` command so that it matches the ports. To stop a running jupyter server that is running but you can't find anymore, run `ps aux | grep $USER`. This will return you the list of processes attributed to your user. You should also find sth like
 ```
@@ -141,11 +172,15 @@ Similarly, you can stop the process by running `kill 27709`.
 ## Get combine (experts only)
 Latest recommendations at https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#setting-up-the-environment-and-installation
 ```
+cmsRel CMSSW_10_2_13
+cd CMSSW_10_2_13/src
+cmsenv
+git cms-init
 cd $CMSSW_BASE/src
 git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
 cd HiggsAnalysis/CombinedLimit
 git fetch origin
-git checkout v8.0.1
+git checkout v8.1.0
 scramv1 b clean; scramv1 b # always make a clean build
 ```
 

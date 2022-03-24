@@ -8,40 +8,34 @@ Helpes for the use of raw NanoAOD
 #    from yaml import Loader, Dumper
 from metis.Sample import DBSSample
 from Tools.helpers import get_samples
-from Tools.config_helpers import redirector_ucsd
+from Tools.config_helpers import redirector_ucsd, load_yaml, data_path
 
-nano_mapping = {
-    'top':[
-        '/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
-        ],
-    'DY': [
-        '/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
-        ],
-    'TTW': [
-        '/TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
-        '/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext1-v1/NANOAODSIM',
-        ],
-    'TTZ': [
-        '/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext1-v1/NANOAODSIM',
-        '/TTZToLL_M-1to10_TuneCP5_13TeV-amcatnlo-pythia8/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21-v1/NANOAODSIM',
-        ],
-}
+import uproot
 
+nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
-def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False):
+def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018, skim=False):
+    '''
+    This was supposed to give a NanoAOD samples based fileset. Can also be used for skims now.
+    '''
     fileset = {}
     for dataset in datasets:
-        for nano_sample in nano_mapping[dataset]:
-            files = [ redirector+x.name for x in DBSSample(dataset=nano_sample).get_files() ]
+        for nano_sample in nano_mapping[year][dataset]:
+            if skim:
+                files = samples[nano_sample]['files']
+            else:
+                dbs_files = DBSSample(dataset=nano_sample).get_files()
+                files = [ redirector+x.name for x in dbs_files ]
             if not small:
                 fileset.update({nano_sample: files})
             else:
-                fileset.update({nano_sample: files[:1]})
+                fileset.update({nano_sample: files[:n_max]})
 
     return fileset
-
 
 if __name__ == '__main__':
 
     samples = get_samples()
-    fileset = make_fileset(['TTW', 'TTZ'], samples)
+    samples.update(get_samples('samples_QCD.yaml'))
+
+    fileset = make_fileset(['TTW', 'TTZ', 'QCD'], samples, year=2018)

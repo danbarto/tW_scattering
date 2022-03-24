@@ -11,9 +11,9 @@ quantile_dict = {
 }
 
 class dataCard:
-    def __init__(self):
+    def __init__(self, releaseLocation='.'):
         self.reset()
-        self.releaseLocation = os.path.abspath('.')
+        self.releaseLocation = os.path.abspath(releaseLocation)
 
     def reset(self):
         self.bins = []
@@ -231,7 +231,7 @@ class dataCard:
         print("[cardFileWrite] Written card file %s"%fname)
         return fname
 
-    def combineCards(self, cards):
+    def combineCards(self, cards, name='combined_card.txt'):
 
         import uuid, os
         ustr          = str(uuid.uuid4())
@@ -252,7 +252,7 @@ class dataCard:
         combineCommand  = "cd "+uniqueDirname+"; eval `scramv1 runtime -sh`; combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
         print ("Executing %s"%combineCommand)
         os.system(combineCommand)
-        resFile = cards[years[0]].replace(str(years[0]), 'COMBINED')
+        resFile = '/'+os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
         f = resFile.split('/')[-1]
         resPath = resFile.replace(f, '')
         if not os.path.isdir(resPath):
@@ -338,14 +338,22 @@ class dataCard:
         else:
           filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
           self.writeToFile(filename)
-
-        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --freezeParameters r %s %s"%(options,filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --expectSignal=1 --freezeParameters r --setParameters r=1 --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 %s"%filename
+        #combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine -M MultiDimFit -n Nominal --saveNLL --forceRecreateNLL --X-rtd REMOVE_CONSTANT_ZERO_POINT=1 --freezeParameters r %s %s"%(options,filename)
         os.system(combineCommand)
-        nll = self.readNLLFile(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root")
-        nll["bestfit"] = nll["nll"]
-        #shutil.rmtree(uniqueDirname)
 
-        return nll
+        #nll = self.readNLLFile(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root")
+        #nll["bestfit"] = nll["nll"]
+        ##shutil.rmtree(uniqueDirname)
+
+        import uproot
+        import copy
+        #with uproot.open(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root") as f:
+        with uproot.open(uniqueDirname+"/higgsCombineNominal.MultiDimFit.mH120.root") as f:
+            tree = f['limit']
+            result = copy.deepcopy( tree.arrays() )
+
+        return result
 
     def nllScan(self, fname=None, rmin=0, rmax=5, npoints=11, options=""):
         import uuid, os
@@ -373,6 +381,77 @@ class dataCard:
 
         return result
 
+    def fit_diagnostics(self, fname=None, options=""):
+        '''
+        Does max likelihood fits, both with r=1 and a best-fit value
+        '''
+        import uuid, os
+        import uproot
+        from plots.helpers import get_yahist, finalizePlotDir
+        import matplotlib.pyplot as plt
+        import mplhep as hep
+        plt.style.use(hep.style.CMS)
+
+        ustr          = str(uuid.uuid4())
+        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        print("Creating %s"%uniqueDirname)
+        os.makedirs(uniqueDirname)
+        if fname is not None:  # Assume card is already written when fname is not none
+          filename = os.path.abspath(fname)
+        else:
+          filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
+          self.writeToFile(filename)
+        combineCommand  = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine --robustHesse 1 --forceRecreateNLL -M FitDiagnostics --saveShapes --saveNormalizations --saveOverall --saveWithUncertainties %s %s"%(options,filename)
+        os.system(combineCommand)
+
+        fit_list = ['shapes_prefit', 'shapes_fit_s', 'shapes_fit_b']
+
+        res = uproot.open(uniqueDirname+'/fitDiagnostics.root')
+
+        for fit in fit_list:
+            histos = res[fit].keys()
+            histos = [ x.replace(';1','') for x in histos if (x.count('data')==0 and x.count('covar')==0 and x.count('/')>0)]
+
+            new_histos = { x:get_yahist(res['%s/%s'%(fit, x)], overflow=False) for x in histos }
+
+            for new_hist in new_histos:
+
+                region, process = new_hist.split('/')
+
+                fig, ax = plt.subplots(1,1,figsize=(10,10))#, gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+                hep.cms.label(
+                    "Preliminary",
+                    data=True,
+                    #lumi=60.0,
+                    loc=0,
+                    ax=ax,
+                )
+
+                hep.histplot(
+                    new_histos[new_hist].counts,
+                    new_histos[new_hist].edges,
+                    w2=new_histos[new_hist].errors,
+                    histtype="step",
+                    stack=False,
+                    label='%s (%.0f)'%(new_hist, sum(new_histos[new_hist].counts)),
+                    ax=ax)
+
+                ax.set_ylabel(r'Events')
+                ax.legend()
+
+                plot_dir = os.path.expandvars('/home/users/$USER/public_html/tW_scattering/fitDiagnostics/%s/'%fit)
+                finalizePlotDir(plot_dir)
+                if not os.path.isdir(plot_dir):
+                    os.makedirs(plot_dir)
+
+                ext = ['png', 'pdf']
+                for e in ext:
+                    fig.savefig(plot_dir + '/%s_%s.'%(region, process)+e)
+
+                del fig, ax
+
+        return filename
 
     def calcNuisances(self, fname=None, options="", outputFileAddon = "", bonly=False):
         import uuid, os
@@ -443,5 +522,58 @@ class dataCard:
     def cleanUp(self):
         for d in os.listdir(self.releaseLocation):
             if len(d) == len('43a8a7c4-0086-4ae8-94df-b1162165ddf4'):
-                print ("Deleting: ", d)
-                shutil.rmtree(d)
+                print ("Deleting: ", self.releaseLocation+'/'+d)
+                shutil.rmtree(self.releaseLocation+'/'+d)
+
+
+    def run_impacts(self, fname="", bkgOnly=False, observed=False, cores=8, plot_dir='./'):
+        import uuid, os
+        ustr          = str(uuid.uuid4())
+        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        print("Creating %s"%uniqueDirname)
+        os.makedirs(uniqueDirname)
+
+        shutil.copyfile(fname, uniqueDirname+'/'+fname.split('/')[-1])
+
+        fname = uniqueDirname+'/'+fname.split('/')[-1]
+        
+        prepWorkspace   = "text2workspace.py %s -m 125"%fname
+        workspace = fname.replace('.txt', '.root')
+
+        print ('datacard: %s --> workspace %s'%(fname, workspace))
+
+        if bkgOnly:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 0 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 0 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        elif observed:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        else:
+            robustFit       = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 1 --doInitialFit --robustFit 1 --rMin -10 --rMax 10"%workspace
+            impactFits      = "combineTool.py -M Impacts -d %s -m 125 -t -1 --expectSignal 1 --robustFit 1 --doFits --parallel %s --rMin -10 --rMax 10"%(workspace, str(cores))
+        extractImpact   = "combineTool.py -M Impacts -d %s -m 125 -o impacts.json"%workspace
+        plotImpacts     = "plotImpacts.py -i impacts.json -o impacts"
+        combineCommand  = "cd %s;eval `scramv1 runtime -sh`;%s;%s;%s;%s;%s"%(uniqueDirname,prepWorkspace,robustFit,impactFits,extractImpact,plotImpacts)
+        
+        print ("Running the following command:")
+        print (combineCommand)
+
+        os.system(combineCommand)
+        
+        #if args.expected:
+        #    s.name += '_expected'
+        #if args.bkgOnly:
+        #    s.name += '_bkgOnly'
+        #if args.observed:
+        #    s.name += '_observed'
+        if not os.path.isdir(plot_dir): os.makedirs(plotDir)
+        shutil.copyfile(uniqueDirname+'/impacts.pdf', "%s/impacts.pdf"%(plot_dir))
+        #elif args.year:
+        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s_%s%s.pdf"%(plotDir,s.name,args.year,'_signalInjected' if args.signalInjection else ''))
+        #else:
+        #    shutil.copyfile(combineDirname+'/impacts.pdf', "%s/%s.pdf"%(plotDir,s.name))
+        #logger.info("Copied result to %s"%plotDir)
+    
+        #if args.removeDir:
+        #    logger.info("Removing directory in release location")
+        #    rmtree(combineDirname)

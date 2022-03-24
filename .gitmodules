@@ -1,3 +1,6 @@
 [submodule "postProcessing/ProjectMetis"]
 	path = postProcessing/ProjectMetis
 	url = https://github.com/aminnj/ProjectMetis.git
+[submodule "jsonpog-integration"]
+	path = jsonpog-integration
+	url = https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration.git

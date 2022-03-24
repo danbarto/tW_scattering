@@ -4,16 +4,16 @@ Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
-#mport awkward1 as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
 
-#import yaml
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-
-#from yaml import Loader, Dumper
 
 import os
 import shutil
@@ -24,8 +24,8 @@ import glob
 
 data_path = os.path.expandvars('$TWHOME/data/')
 
-def get_samples():
-    with open(data_path+'samples.yaml') as f:
+def get_samples(f_in='samples.yaml'):
+    with open(data_path+f_in) as f:
         return load(f, Loader=Loader)
 
 def loadConfig():
@@ -52,23 +52,20 @@ def getName( DAS ):
         return '_'.join(DAS.split('/')[-3:-1])
         #return'dummy'
 
+def dasWrapper(DASname, query='file'):
+    sampleName = DASname.rstrip('/')
+
+    dbs='dasgoclient -query="%s dataset=%s"'%(query, sampleName)
+    dbsOut = os.popen(dbs).readlines()
+    dbsOut = [ l.replace('\n','') for l in dbsOut ]
+    return dbsOut
+
 def finalizePlotDir( path ):
     path = os.path.expandvars(path)
     if not os.path.isdir(path):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
     
-
-def doAwkwardLookup(h, ar):
-    '''
-    takes a ya_hist histogram (which has a lookup function) and an awkward array.
-    '''
-    return ak.unflatten(
-        h.lookup(
-            ak.to_numpy(
-                ak.flatten(ar)
-            ) 
-        ), ak.num(ar) )
 
 def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
@@ -204,9 +201,108 @@ def mt(pt1, phi1, pt2, phi2):
     return np.sqrt( 2*pt1*pt2 * (1 - np.cos(phi1-phi2)) )
 
 def pad_and_flatten(val): 
-    import awkward1 as ak
+    import awkward as ak
     try:
         return ak.flatten(ak.fill_none(ak.pad_none(val, 1, clip=True), 0))
         #return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
     except ValueError:
         return ak.flatten(val)
+
+
+def yahist_1D_lookup(h, ar):
+    '''
+    takes a yahist 1D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar)) 
+        ), ak.num(ar) )
+
+def yahist_2D_lookup(h, ar1, ar2):
+    '''
+    takes a yahist 2D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar1)),
+            ak.to_numpy(ak.flatten(ar2)),
+        ), ak.num(ar1) )
+
+def build_weight_like(weight, selection, like):
+    return ak.flatten(weight[selection] * ak.ones_like(like[selection]))
+
+def fill_multiple(hist, datasets=[], arrays={}, selections=[], weights=[], systematic=None):
+    for i, dataset in enumerate(datasets):
+        kw_dict = {'dataset': dataset, 'weight':weights[i]}
+        kw_dict.update({x:arrays[x][selections[i]] for x in arrays.keys()})
+        try:
+            eft_axis = hist.axis('eft')
+            kw_dict['eft'] = 'central'  # NOTE: remember this for plotting!
+        except KeyError:
+            # if there's no EFT axis we don't do anything.
+            pass
+        if systematic is not None:
+            kw_dict['systematic'] = systematic
+        hist.fill(**kw_dict)
+
+def get_four_vec(cand):
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": cand.pt,
+            "eta": cand.eta,
+            "phi": cand.phi,
+            "mass": cand.mass,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    vec4.__dict__.update(cand.__dict__)
+    return vec4
+
+def get_four_vec_fromPtEtaPhiM(cand, pt, eta, phi, M, copy=True):
+    '''
+    Get a LorentzVector from a NanoAOD candidate with custom pt, eta, phi and mass
+    All other properties are copied over from the original candidate
+    '''
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": pt,
+            "eta": eta,
+            "phi": phi,
+            "mass": M,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    if copy:
+        vec4.__dict__.update(cand.__dict__)
+    return vec4
+
+
+def scale_four_vec(vec, pt=1, eta=1, phi=1, mass=1):
+    from coffea.nanoevents.methods import vector
+    ak.behavior.update(vector.behavior)
+
+    vec4 = ak.zip(
+        {
+            "pt": vec.pt*pt,
+            "eta": vec.eta*eta,
+            "phi": vec.phi*phi,
+            "mass": vec.mass*mass,
+        },
+        with_name="PtEtaPhiMLorentzVector",
+    )
+    vec4.__dict__.update(cand.__dict__)
+    return vec4
+
+def zip_run_lumi_event(output, dataset):
+    return ak.to_numpy(
+        ak.zip([
+            output['%s_run'%dataset].value.astype(int),
+            output['%s_lumi'%dataset].value.astype(int),
+            output['%s_event'%dataset].value.astype(int),
+            ]))

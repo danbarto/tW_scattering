@@ -1,5 +1,5 @@
 caches:
-  base: $TWHOME/caches/
+  base: $TWHOME/outputs/
   diLepOS: diLepOS
   diLepOS_small: diLepOS_small
   doublemuonProcessor: doublemuonProcessor
@@ -14,13 +14,14 @@ caches:
   WH: WH
   WH_small: WH_small
 lumi:
-  2016: 35.9
-  2017: 41.9
-  2018: 60.0
+  2016APV: 19.5
+  2016: 16.8
+  2017: 41.48
+  2018: 59.83
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
   localSkim: /hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/
   plots: /home/users/$USER/public_html/tW_scattering/
-  version: 0.1.12
+  version: 0.4.0
 signalSelection:
   met: 50
