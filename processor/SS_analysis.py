@@ -44,7 +44,7 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transfo
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]], weights=[]):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]], weights=[], reweight=1):
         self.variations = variations
 
         print (variations)
@@ -65,6 +65,8 @@ class SS_analysis(processor.ProcessorABC):
         self.hyperpoly = hyperpoly
         self.points = points
         self.weights = weights
+
+        self.reweight = reweight
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -117,22 +119,18 @@ class SS_analysis(processor.ProcessorABC):
         
         if not re.search(data_pattern, dataset):
             gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
-            #el_t_p  = prompt(el_t)
+
             el_t_p  = prompt_no_conv(el_t, gen_photon)
             el_t_np = nonprompt_no_conv(el_t, gen_photon)
             el_t_conv = external_conversion(el_t, gen_photon)
-            #el_t_np = nonprompt(el_t)
             el_f_p  = prompt(el_f)
             el_f_np = nonprompt_no_conv(el_f, gen_photon)
-            #el_f_np = nonprompt(el_f)
-            #mu_t_p  = prompt(mu_t)
+
             mu_t_p  = prompt_no_conv(mu_t, gen_photon)
             mu_t_np = nonprompt_no_conv(mu_t, gen_photon)
             mu_t_conv = external_conversion(mu_t, gen_photon)
-            #mu_t_np = nonprompt(mu_t)
             mu_f_p  = prompt(mu_f)
             mu_f_np = nonprompt_no_conv(mu_f, gen_photon)
-            #mu_f_np = nonprompt(mu_f)
 
             is_flipped = ( (el_t_p.matched_gen.pdgId*(-1) == el_t_p.pdgId) & (abs(el_t_p.pdgId) == 11) )
             el_t_p_cc  = el_t_p[~is_flipped]  # this is tight, prompt, and charge consistent
@@ -172,7 +170,6 @@ class SS_analysis(processor.ProcessorABC):
         tau       = tau[~match(tau, electron, deltaRCut=0.4)]
 
         track     = getIsoTracks(ev)
-
 
         # this is where the real JEC dependent stuff happens
 
@@ -234,11 +231,18 @@ class SS_analysis(processor.ProcessorABC):
             if not re.search(data_pattern, dataset):
                 # lumi weight
                 weight.add("weight", ev.genWeight)
-                
+
+                if isinstance(self.reweight[dataset], int) or isinstance(self.reweight[dataset], float):
+                    pass  # NOTE: this can be implemented later
+                    #if self.reweight != 1:
+                    #    weight.add("reweight", self.reweight[dataset])
+                else:
+                    weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
+
                 # PU weight
                 weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
                 
-                # b-tag SFs # FIXME this is not super sophisticated rn, but we need more than two shifts
+                # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
                     weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='up'))
                 elif var['name'] == 'l_down':
@@ -249,7 +253,7 @@ class SS_analysis(processor.ProcessorABC):
                     weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='down', c_direction='central'))
                 else:
                     weight.add("btag", self.btagSF.Method1a(btag, light_central))
-                
+
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
             
@@ -257,13 +261,6 @@ class SS_analysis(processor.ProcessorABC):
                 for point in self.points:
                     point['weight'] = Weights( len(ev) )
                     point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
-
-                
-
-
-            #print (weight.variations())
-
-            cutflow     = Cutflow(output, ev, weight=weight)
 
             # slightly restructured
             # calculate everything from loose, require two tights on top
@@ -286,9 +283,14 @@ class SS_analysis(processor.ProcessorABC):
                 jet_light = light,
                 met = met,
             )
-            
-            baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
-            baseline_OS = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
+
+            if var['name'] == 'central':
+                # Only fill the cutflow onece :)
+                cutflow     = Cutflow(output, ev, weight=weight)
+                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
+            else:
+                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
+            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
             
             # this defines all the dedicated selections for charge flip, nonprompt, conversions
             if not re.search(data_pattern, dataset):
@@ -386,6 +388,7 @@ class SS_analysis(processor.ProcessorABC):
                     'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
                     'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
                     'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
+                    'event':            ak.to_numpy(ev.event),
                 }
 
                 if self.dump and var['name'] == 'central':
@@ -598,7 +601,7 @@ class SS_analysis(processor.ProcessorABC):
                     )
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
-                if not re.search(data_pattern, dataset) and var['name'] == 'central' and dataset.count('rare')==0 and dataset.count('diboson')==0 and dataset.count('topW')==0:  # FIXME: rare excluded because of missing samples
+                if not re.search(data_pattern, dataset) and var['name'] == 'central':
                     for i in range(1,101):
                         pdf_ext = "pdf_%s"%i
 
@@ -760,14 +763,9 @@ class SS_analysis(processor.ProcessorABC):
                 #del NN_inputs
                 #del NN_inputs_scaled, NN_pred
 
-            labels = {'topW_v3': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
-            if dataset in labels:
-                label_mult = labels[dataset]
-            else:
-                label_mult = 8  # data or anything else
 
             if self.dump and var['name']=='central':
-                output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
+                #output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
                 output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
                 output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
                 output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
@@ -982,50 +980,25 @@ if __name__ == '__main__':
     # load the config
     cfg = loadConfig()
 
-    #in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.6.0_dilep/'
-
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
+    # NOTE we could also rescale processes here?
+    reweight = {}
+    renorm   = {}
+    for dataset in mapping[ul][args.sample]:
+        if samples[dataset]['reweight'] == 1:
+            reweight[dataset] = 1
+            renorm[dataset] = 1
+        else:
+            # Currently only supporting a single reweight.
+            weight, index = samples[dataset]['reweight'].split(',')
+            index = int(index)
+            renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
+            reweight[dataset] = (weight, index)
+
     from Tools.nano_mapping import make_fileset
     fileset = make_fileset([args.sample], samples, year=ul, skim=True, small=small, n_max=1)
-
-    #fileset_all = get_babies(in_path, year=f'UL{year}{era}')
-    ##fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.3/', year=2018)
-    #
-    #fileset = {
-    #    'topW_v3': fileset_all['topW_NLO'],
-    #    ##'topW_v3': fileset_all['topW_v3'],
-    #    ###'topW_EFT_mix': fileset_all['topW_EFT'],
-    #    ##'topW_EFT_cp8': fileset_all['topW_EFT_cp8'],
-    #    ##'topW_EFT_mix': fileset_all['topW_EFT_mix'],
-    #    'TTW': fileset_all['TTW'],
-    #    'TTZ': fileset_all['TTZ'],
-    #    'TTH': fileset_all['TTH'],
-    #    'diboson': fileset_all['diboson'],
-    #    #'rare': fileset_all['TTTT']+fileset_all['triboson'],
-    #    'rare': fileset_all['rare']+fileset_all['triboson'],
-    #    #'ttbar': fileset_all['ttbar1l'],
-    #    #'ttbar': fileset_all['ttbar2l'],
-    #    'ttbar': fileset_all['top'],
-    #    'XG': fileset_all['XG'],
-    #    'MuonEG': fileset_all['MuonEG'],
-    #    'DoubleMuon': fileset_all['DoubleMuon'],
-    #    'EGamma': fileset_all['EGamma'],
-    #    'DoubleEG': fileset_all['DoubleEG'],
-    #    'SingleElectron': fileset_all['SingleElectron'],
-    #    'SingleMuon': fileset_all['SingleMuon'],
-    #    ####'topW_full_EFT': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_UL17_v7/*.root'),
-    #    ####'topW_NLO': glob.glob('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.2.5/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL17_v7/*.root'),
-    #}
-
-    #if args.sample == 'all':
-    #    pass
-    #else:
-    #    fileset.update(fileset_all)  # NOTE: this way we can also run sub-samples for tests
-    #    fileset = {args.sample: fileset[args.sample]}
-    #
-    #fileset = make_small(fileset, small, n_max=10)
 
     add_processes_to_output(fileset, desired_output)
 
@@ -1081,6 +1054,7 @@ if __name__ == '__main__':
             'conv',
             'label',
             'total_charge',
+            'event',
         ]
 
         for var in variables:
@@ -1167,29 +1141,38 @@ if __name__ == '__main__':
             processor_instance=SS_analysis(
                 year=year,
                 variations=variations,
+                #variations=variations[:1],
                 accumulator=desired_output,
                 evaluate=args.evaluate,
                 training=args.training,
                 dump=args.dump,
                 era=era,
+                reweight=reweight,
             ),
         )
 
         util.save(output, cache)
 
     ## output for DNN training
-    if args.dump:
+    labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
+    if args.sample in labels:
+        label_mult = labels[args.sample]
+    else:
+        label_mult = 8  # data or anything else
+
+    if args.dump:  # FIXME needs the new scaling
         if overwrite:
             df_dict = {}
             for var in variables:
                 df_dict.update({var: output[var].value})
+            df_dict.update({"label": label_mult*np.ones_like(output[var].value)})
 
             df_out = pd.DataFrame( df_dict )
             if not args.small:
-                df_out.to_hdf('multiclass_input_%s_v2.h5'%args.year, key='df', format='table', mode='w')
+                df_out.to_hdf(f"multiclass_input_{args.sample}_{args.year}.h5", key='df', format='table', mode='w')
         else:
             print ("Loading DF")
-            df_out = pd.read_hdf('multiclass_input_%s_v2.h5'%args.year)
+            df_out = pd.read_hdf(f"multiclass_input_{args.sample}_{args.year}.h5")
 
     print ("\nNN debugging:")
     print (output['node'].sum('multiplicity').values())
@@ -1218,10 +1201,16 @@ if __name__ == '__main__':
     cutflow_output = {}
     cutflow_output[args.sample] = {}
     dataset_0 = mapping[ul][args.sample][0]
+
+    print ("Scaling to {}/fb".format(cfg['lumi'][year]))
+    for dataset in mapping[ul][args.sample]:
+        print ("Sample {}".format(dataset))
+        print ("sigma*BR: {}".format(float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000))
+
     for key in output[dataset_0]:
         cutflow_output[args.sample][key] = 0.
         for dataset in mapping[ul][args.sample]:
-            cutflow_output[args.sample][key] += (output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+            cutflow_output[args.sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
 
     from Tools.helpers import getCutFlowTable
     processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'all' else [args.sample]
