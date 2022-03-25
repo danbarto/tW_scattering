@@ -157,12 +157,12 @@ NEVENTS=$(getjobad param_nevents)
 echo -e "\n--- end header output ---\n" #                       <----- section division
 
 
-gencfg="psets/UL18/gen_cfg.py"
-simcfg="psets/UL18/sim_cfg.py"
-premixcfg="psets/UL18/premix_cfg.py"
-hltcfg="psets/UL18/hlt_cfg.py"
-minicfg="psets/UL18/maodv2_cfg.py"
-nanocfg="psets/UL18/nanov9_cfg.py"
+gencfg="psets/UL17/gen_cfg.py"
+simcfg="psets/UL17/sim_cfg.py"
+premixcfg="psets/UL17/premix_cfg.py"
+hltcfg="psets/UL17/hlt_cfg.py"
+minicfg="psets/UL17/maodv2_cfg.py"
+nanocfg="psets/UL17/nanov9_cfg.py"
 
 setup_chirp
 setup_environment
@@ -184,11 +184,11 @@ echo -e "\n--- begin running ---\n" #                           <----- section d
 
 chirp ChirpMetisStatus "before_cmsRun"
 
-setup_cmssw CMSSW_10_6_19_patch3 slc7_amd64_gcc700 
-mkdir -p CMSSW_10_6_19_patch3/src/Configuration/GenProduction/python/
-cp psets/tW_scattering.py CMSSW_10_6_19_patch3/src/Configuration/GenProduction/python/
+setup_cmssw CMSSW_10_6_20 slc7_amd64_gcc820
+mkdir -p CMSSW_10_6_20/src/Configuration/GenProduction/python/
+cp psets/tW_scattering.py CMSSW_10_6_20/src/Configuration/GenProduction/python/
 
-echo "Running the following configs in CMSSW_10_6_19_patch3:"
+echo "Running the following configs in CMSSW_10_6_20:"
 echo $gencfg
 echo $simcfg
 echo $premixcfg
@@ -197,29 +197,23 @@ cmsRun $gencfg
 cmsRun $simcfg
 cmsRun $premixcfg
 
-setup_cmssw CMSSW_10_2_16_UL slc7_amd64_gcc700 
+setup_cmssw CMSSW_9_4_14_UL_patch1 slc7_amd64_gcc700 
 
-echo "Running the following configs in CMSSW_10_2_16_UL:"
+echo "Running the following configs in CMSSW_9_4_14_UL_patch1:"
 echo $hltcfg
-
 cmsRun $hltcfg
 
-setup_cmssw CMSSW_10_6_20 slc7_amd64_gcc820
 activate_cmssw CMSSW_10_6_20 slc7_amd64_gcc820
 
 echo "Running the following configs in CMSSW_10_6_20:"
 echo $minicfg
-
 cmsRun $minicfg
 
 setup_cmssw CMSSW_10_6_27 slc7_amd64_gcc820
-activate_cmssw CMSSW_10_6_27 slc7_amd64_gcc820
 
-echo "Running the following configs in CMSSW_10_6_27:"
+echo "Running the following configs in CMSSW_10_6_20:"
 echo $nanocfg
-
 cmsRun $nanocfg
-
 
 CMSRUN_STATUS=$?
 

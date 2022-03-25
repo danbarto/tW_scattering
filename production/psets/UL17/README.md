@@ -52,3 +52,21 @@ cmsDriver.py --python_filename maod_cfg.py --filein file:output_hlt.root --fileo
 cmsDriver.py --python_filename nano_cfg.py --filein file:miniAOD.root --fileout file:nanoAOD.root --mc --eventcontent NANOAODSIM --datatier NANOAODSIM --conditions 106X_mc2017_realistic_v8 --step NANO --era Run2_2017 -n 10 --no_exec
 ```
 
+
+## Reco -> MAOD for MiniAODv2
+
+In CMSSW_10_6_20
+from [McM](https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_test/TOP-RunIISummer20UL17MiniAODv2-00138)
+
+```
+cmsDriver.py --python_filename maod_cfg.py --filein file:output_hlt.root --fileout file:miniAOD.root --mc --eventcontent MINIAODSIM --datatier MINIAODSIM --runUnscheduled --conditions 106X_mc2017_realistic_v9 --procModifiers run2_miniAOD_UL --geometry DB:Extended --step RAW2DIGI,L1Reco,RECO,RECOSIM,PAT --nThreads 8 --era Run2_2017 -n 10 --no_exec
+```
+
+## NanoAOD v9
+
+In CMSSW_10_6_27
+from [McM](https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_test/TOP-RunIISummer20UL17NanoAODv9-00102)
+
+``` shell
+cmsDriver.py step3 --mc --filein file:miniAOD.root --fileout file:nanoAOD.root --conditions 106X_mc2017_realistic_v9 --step NANO --era Run2_2017,run2_nanoAOD_106Xv2 --eventcontent NANOAODSIM --datatier NANOAODSIM --customise_commands="process.add_(cms.Service('InitRootHandlers', EnableIMT = cms.untracked.bool(False)));process.MessageLogger.cerr.FwkReport.reportEvery=100" --nThreads 8 --python_filename nanov9_cfg.py -n -1 --no_exec
+```

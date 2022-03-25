@@ -23,7 +23,7 @@ def submit():
         #'TTWJetsToLNuEWK_5f_EFT_cpq3_4_myNLO_full':    '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks//TTWJetsToLNuEWK_5f_EFT_myNLO_cpq3_4_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',  # C_pq3 = 4
         #'TTWJetsToLNuEWK_5f_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_NLO_slc7_amd64_gcc730_CMSSW_9_3_16_tarball.tar.xz',
         #'TTWJetsToLNuEWK_5f_SMEFTatNLO_weight': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
-        'TTW_5f_EFT_NLO': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        'TTW_5f_EFT_NLO': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
 
     total_summary = {}
@@ -32,18 +32,18 @@ def submit():
 
     # v6+ is UL
 
-    campaign = 'UL18'
-    #campaign = 'UL16_preVFP'
+    #campaign = 'UL17'
+    campaign = 'UL16_postVFP'
     #campaign = 'UL16_postVFP'
-    tag = "v11"
+    tag = "v11_pre1"
     #tag = "v8_pre"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
-    events_per_point = 4000000
-    events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
-    #events_per_point = 200
-    #events_per_job = 40
+    #events_per_point = 4000000
+    #events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
+    events_per_point = 200
+    events_per_job = 40
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
