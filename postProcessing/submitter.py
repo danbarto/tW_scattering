@@ -55,6 +55,7 @@ APV_pattern = re.compile('|'.join(APV_identifiers))
 
 
 def getYearFromDAS(DASname):
+    print (DASname)
     isData = True if DASname.count('Run20') else False
     isUL = True if (DASname.count('UL1') or DASname.count('UL2')) else False
     isFastSim = False if not DASname.count('Fast') else True
@@ -128,18 +129,6 @@ for s in sample_list:
         sample = DBSSample(dataset = s, filelist=samples[s]['files']) # should we make use of the files??
 
     year, era, isData, isFastSim, isUL, isAPV = getYearFromDAS(s)
-
-    #if samples[s]['path'] is None:
-    #    n_events_query = sample.get_nevents()
-    #    try:
-    #        assert n_events_query == int(samples[s]['nEvents'])
-    #    except AssertionError:
-    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    #        print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    #        print ("Problem with sample %s -> number of events in yaml and from dbs query don't match. Not submitting for now."%s)
-    #        print (n_events_query, int(samples[s]['nEvents']), "ratio %.2f"%(n_events_query/float(samples[s]['nEvents'])))
-    #        continue
 
     print ("Now working on sample: %s"%s)
     print ("- has %s files"%len(sample.get_files()))

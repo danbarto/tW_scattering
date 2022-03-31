@@ -99,7 +99,18 @@ scram b
 echo "Input:"
 echo $INPUTFILENAMES
 
+#export REP="root\:\/\/redirector\.t2\.ucsd\.edu\:1095\/\/store"
+#INPUTFILENAMES="${INPUTFILENAMES/\/ceph\/cms\/store/$REP}"
+
+INPUTFILENAMES=$(echo "$INPUTFILENAMES" | sed 's/\/ceph\/cms\/store/root\:\/\/redirector\.t2\.ucsd\.edu\:1095\/\/store/g')
+
 INPUTLIST="${INPUTFILENAMES//,/$' '}"
+
+# root://redirector.t2.ucsd.edu:1095/
+
+echo "Running the following hadd command:"
+echo "python PhysicsTools/NanoAODTools/scripts/haddnano.py ${OUTPUTNAME}_${IFILE}.root ${INPUTLIST}"
+
 python PhysicsTools/NanoAODTools/scripts/haddnano.py ${OUTPUTNAME}_${IFILE}.root $INPUTLIST
 
 # Rigorous sweeproot which checks ALL branches for ALL events.
@@ -143,13 +154,13 @@ echo "Local output dir"
 echo ${OUTPUTDIR}
 
 export REP="/store"
-OUTPUTDIR="${OUTPUTDIR/\/hadoop\/cms\/store/$REP}"
+OUTPUTDIR="${OUTPUTDIR/\/ceph\/cms\/store/$REP}"
 
 echo "Final output path for xrootd:"
 echo ${OUTPUTDIR}
 
 COPY_SRC="file://`pwd`/${OUTPUTNAME}_${IFILE}.root"
-COPY_DEST=" davs://redirector.t2.ucsd.edu:1094/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+COPY_DEST=" davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 

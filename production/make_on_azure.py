@@ -33,53 +33,56 @@ def submit():
     # v6+ is UL
 
     #campaign = 'UL17'
-    campaign = 'UL16_postVFP'
     #campaign = 'UL16_postVFP'
-    tag = "v11_pre1"
+    #campaign = 'UL16_postVFP'
+    tag = "v11"
     #tag = "v8_pre"
     #events_per_point = 250000
     #events_per_job = 250
     #events_per_point = 2000000
     #events_per_point = 4000000
-    #events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
-    events_per_point = 200
-    events_per_job = 40
-    njobs = int(events_per_point)//events_per_job
+    events_per_job = 5000  ## 2000 -> 4h runtime, 4000 -> 8h runtime
+    #events_per_point = 200
+    #events_per_job = 40
 
-    for reqname in requests:
-        gridpack = requests[reqname]
+    campaigns = [("UL17", 3000000), ("UL16_preVFP", 1000000), ("UL16_postVFP", 1000000)]
 
-        task = CondorTask(
-                sample = DummySample(dataset="/%s/RunIISummer20%s_NanoAODv9/NANO"%(reqname, campaign),N=njobs,nevents=int(events_per_point)),
-                output_name = "nanoAOD.root",
-                executable = "executables/condor_executable_%s_NanoAODv9.sh"%campaign,
-                tarfile = "package.tar.gz",
-                additional_input_files = [gridpack],
-                open_dataset = False,
-                files_per_output = 1,
-                arguments = gridpack.split('/')[-1],
-                condor_submit_params = {
-                    "sites":"T2_US_UCSD", #
-                    #"memory": 1950,
-                    #"cpus": 1,
-                    "memory": 15600,
-                    "cpus": 8,
-                    "classads": [
-                        ["param_nevents",events_per_job],
-                        ["metis_extraargs",""],
-                        ["JobBatchName",reqname],
-                        #["IS_CLOUD_JOB", "yes"],
-                        ],
-                    "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True)'
-                    },
-                tag = tag,
-                min_completion_fraction = 0.90,
-                )
+    for campaign, events_per_point in campaigns:
+        njobs = int(events_per_point)//events_per_job
+        for reqname in requests:
+            gridpack = requests[reqname]
 
-        task.process()
-        total_summary[task.get_sample().get_datasetname()] = task.get_task_summary()
+            task = CondorTask(
+                    sample = DummySample(dataset="/%s/RunIISummer20%s_NanoAODv9/NANO"%(reqname, campaign),N=njobs,nevents=int(events_per_point)),
+                    output_name = "nanoAOD.root",
+                    executable = "executables/condor_executable_%s_NanoAODv9.sh"%campaign,
+                    tarfile = "package.tar.gz",
+                    additional_input_files = [gridpack],
+                    open_dataset = False,
+                    files_per_output = 1,
+                    arguments = gridpack.split('/')[-1],
+                    condor_submit_params = {
+                        "sites":"T2_US_UCSD", #
+                        #"memory": 1950,
+                        #"cpus": 1,
+                        "memory": 15600,
+                        "cpus": 8,
+                        "classads": [
+                            ["param_nevents",events_per_job],
+                            ["metis_extraargs",""],
+                            ["JobBatchName",reqname],
+                            #["IS_CLOUD_JOB", "yes"],
+                            ],
+                        "requirements_line": 'Requirements = (HAS_SINGULARITY=?=True)'
+                        },
+                    tag = tag,
+                    min_completion_fraction = 0.90,
+                    )
 
-        StatsParser(data=total_summary, webdir="~/public_html/dump/tW_gen/").do()
+            task.process()
+            total_summary[task.get_sample().get_datasetname()] = task.get_task_summary()
+
+            StatsParser(data=total_summary, webdir="~/public_html/dump/tW_gen/").do()
 
 if __name__ == "__main__":
 

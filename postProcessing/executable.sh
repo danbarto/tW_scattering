@@ -114,12 +114,13 @@ echo "Adding sum of weights to output file"
 cp ../../run_macro.py .
 cp ../../counter_macro.C .
 
-REP="/store/mc/"
-RED="root://cmsxrootd.fnal.gov//store/mc/"
-INFILETMP="${INPUTFILENAMES/$REP/$RED}"
+#REP="/store/mc/"
+#RED="root://cmsxrootd.fnal.gov//store/mc/"
+#INFILETMP="${INPUTFILENAMES/$REP/$RED}"
 
 if [ "$ISDATA" -eq 0 ]; then
-    python run_macro.py $INFILETMP tree.root
+    #python run_macro.py $INFILETMP tree.root
+    python run_macro.py $INPUTFILENAMES tree.root
 fi
 
 mv tree.root ${OUTPUTNAME}_${IFILE}.root
@@ -179,13 +180,13 @@ echo "Local output dir"
 echo ${OUTPUTDIR}
 
 export REP="/store"
-OUTPUTDIR="${OUTPUTDIR/\/hadoop\/cms\/store/$REP}"
+OUTPUTDIR="${OUTPUTDIR/\/ceph\/cms\/store/$REP}"
 
 echo "Final output path for xrootd:"
 echo ${OUTPUTDIR}
 
 COPY_SRC="file://`pwd`/${OUTPUTNAME}_${IFILE}.root"
-COPY_DEST=" davs://redirector.t2.ucsd.edu:1094/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+COPY_DEST=" davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 

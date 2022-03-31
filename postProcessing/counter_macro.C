@@ -58,5 +58,5 @@ void counter_macro(TString file_path="", TString skim_path="") // was void
 
     skim_file.Write();
 
-    return ;
+    return genEventCount;
 }

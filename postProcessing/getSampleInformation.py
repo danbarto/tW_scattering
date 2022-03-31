@@ -32,24 +32,31 @@ def getSplitFactor(sample, target=1e6):
         fin = sample.get_files()[0].name
     else:
         average_events = sample.get_nevents()/len(sample.get_files())
-        fin = redirector_ucsd + sample.get_files()[0].name
+        fin = sample.get_files()[0].name
 
     print (fin)
-    tree = uproot.open(fin)["Events"]
-    print (len(tree))
-    if len(tree['event'].array())<1:
-        print ("Empty file")
-        return 1
-    met = tree['MET_pt'].array()
-    muon_pt = tree['Muon_pt'].array()
-    nMuon = ak.num(muon_pt[( (muon_pt>10) & (np.abs(tree['Muon_eta'].array())<2.4) )])
-    electron_pt = tree['Electron_pt'].array()
-    nElectron = ak.num(electron_pt[( (electron_pt>10) & (np.abs(tree['Electron_eta'].array())<2.4) )])
-    lepton_filter = (nMuon+nElectron)>1
-    jet_pt = tree['Jet_pt'].array()
-    jet_filter = ( ak.num(jet_pt[ ( (jet_pt>25) & (np.abs(tree['Jet_eta'].array())<2.4) ) ]) > 1 )
-    nEvents_all  = len(met)
-    nEvents_pass = len(met[lepton_filter & jet_filter])
+    if fin.count('ceph'): redirectors = ['/']
+    else: redirectors = [redirector_ucsd, redirector_fnal]
+    for red in redirectors:
+        try:
+            with uproot.open(f"{red}/{fin}") as f:
+                tree = f["Events"]
+                print (len(tree))
+                if len(tree['event'].array())<1:
+                    print ("Empty file")
+                    return 1
+                met = tree['MET_pt'].array()
+                muon_pt = tree['Muon_pt'].array()
+                nMuon = ak.num(muon_pt[( (muon_pt>10) & (np.abs(tree['Muon_eta'].array())<2.4) )])
+                electron_pt = tree['Electron_pt'].array()
+                nElectron = ak.num(electron_pt[( (electron_pt>10) & (np.abs(tree['Electron_eta'].array())<2.4) )])
+                lepton_filter = (nMuon+nElectron)>1
+                jet_pt = tree['Jet_pt'].array()
+                jet_filter = ( ak.num(jet_pt[ ( (jet_pt>25) & (np.abs(tree['Jet_eta'].array())<2.4) ) ]) > 1 )
+                nEvents_all  = len(met)
+                nEvents_pass = len(met[lepton_filter & jet_filter])
+        except OSError:
+            print( "Something failed with redirector", red )
 
     filter_eff = nEvents_pass/nEvents_all
     print ("Average number of events in file:", average_events)
@@ -127,12 +134,10 @@ def getDict(sample):
 
         year, era, isData, isFastSim = getYearFromDAS(sample[0])
 
-        # local/private sample?
-        local = (sample[0].count('hadoop') + sample[0].count('home'))
-        #print ("Is local?", local)
-        #print (sample[0])
+        local = (sample[0].count('ceph') + sample[0].count('home') + sample[0].count('hadoop'))
 
         if local:
+            print ("local sample")
             sample_dict['path'] = sample[0]
             metis_sample = DirectorySample(dataset=name, location = sample[0])
             
@@ -143,17 +148,16 @@ def getDict(sample):
         allFiles = [ f.name for f in metis_sample.get_files() ]
 
         split_factor = getSplitFactor(metis_sample, target=1e6)
-        # 
-        #print (allFiles)
+
         sample_dict['files'] = len(allFiles)
 
-        #if not isData:
-        #    nEvents, sumw, sumw2, good_files = getSampleNorm(allFiles, local=local, redirector=redirector_ucsd)
-        #else:
         nEvents, sumw, sumw2, good_files = metis_sample.get_nevents(),0,0, []  # [redirector_ucsd+f.get_name() for f in metis_sample.get_files()]
 
-        #print (nEvents, sumw, sumw2)
         sample_dict.update({'sumWeight': float(sumw), 'nEvents': int(nEvents), 'xsec': float(sample[1]), 'name':name, 'split':split_factor, 'files': good_files})
+        try:
+            sample_dict['reweight'] = int(sample[2])
+        except ValueError:
+            sample_dict['reweight'] = sample[2]
 
         print ("Done with: %s"%name)
         
@@ -167,6 +171,7 @@ def main():
     argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
     argParser.add_argument('--version',  action='store', default=None, help='Skim version')
     argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
+    argParser.add_argument('--overwrite',  action='store_true', help='Overwrite')
     args = argParser.parse_args()
 
     config = loadConfig()
@@ -174,7 +179,7 @@ def main():
     name = args.name
 
     if args.version is not None:
-        skim_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/%s/'%args.version
+        skim_path = '{}/{}'.format(config['meta']['localSkim'], args.version)
 
     # get list of samples
     sampleList = readSampleNames( data_path+'%s.txt'%name )
@@ -188,9 +193,12 @@ def main():
     sampleList_missing = []
     # check which samples are already there
     for sample in sampleList:
-        print ("Checking if sample info for sample: %s is here already"%sample[0])
-        if sample[0] in samples.keys(): continue
-        sampleList_missing.append(sample)
+        if args.overwrite:
+            sampleList_missing.append(sample)
+        else:
+            print ("Checking if sample info for sample: %s is here already"%sample[0])
+            if sample[0] in samples.keys(): continue
+            sampleList_missing.append(sample)
 
     workers = 1
     # then, run over the missing ones
@@ -200,8 +208,10 @@ def main():
     sample_tmp = []
     with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
         for sample, result in zip(sampleList_missing, executor.map(getDict, sampleList_missing)):
+            print ("Working on now", sample[0])
             try:
                 samples.update({str(sample[0]): result})
+                print ("Success.")
             except:
                 print ("Failed, will try again next time...")
             #sample_tmp += [{str(sample[0]): result}]
@@ -213,6 +223,7 @@ def main():
             print ("Done with the heavy lifting. Dumping results to yaml file now.")
 
             with open(data_path+'%s.yaml'%name, 'w') as f:
+                print ("Dumping info into yaml file.")
                 yaml.dump(samples, f, Dumper=Dumper)
 
     for sample in samples.keys():
@@ -224,10 +235,22 @@ def main():
             samples[sample]['files'] = glob.glob(skim_path_total+"*.root")
             if samples[sample]['xsec'] > 0:  # NOTE: identifier for data / MC
                 samples[sample]['sumWeight'] = 0
+                first = True
                 for f_in in samples[sample]['files']:
                     with uproot.open(f_in) as f:
-                        #print (f['genEventSumw'].counts()[0])
                         samples[sample]['sumWeight'] += float(f['genEventSumw'].counts()[0])
+                        if first:
+                            first = False
+                            samples[sample]['LHEPdfWeight'] = f['LHEPdfSumw'].counts()
+                            samples[sample]['LHEScaleWeight'] = f['LHEScaleSumw'].counts()
+                            if 'LHEReweightingSumw' in f:
+                                samples[sample]['LHEReweightingWeight'] = f['LHEReweightingSumw'].counts()
+                        else:
+                            samples[sample]['LHEPdfWeight'] += f['LHEPdfSumw'].counts()
+                            samples[sample]['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
+                            if 'LHEReweightingSumw' in f:
+                                samples[sample]['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
+
 
         with open(data_path+'%s.yaml'%name, 'w') as f:
             yaml.dump(samples, f, Dumper=Dumper)
