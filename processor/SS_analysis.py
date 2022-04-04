@@ -1073,7 +1073,7 @@ if __name__ == '__main__':
         scheduler_address = get_scheduler_address()
         c = Client(scheduler_address)
 
-        exe = processor.DaskExecutor(client=c, status=True)
+        exe = processor.DaskExecutor(client=c, status=True, retries=3)
 
     # add some histograms that we defined in the processor
     # everything else is taken the default_accumulators.py
@@ -1119,11 +1119,16 @@ if __name__ == '__main__':
     print ("I'm running now")
 
     runner = processor.Runner(
-        executor=exe,
+        exe,
+        #retries=3,
         schema=NanoAODSchema,
         chunksize=50000,
         maxchunks=None,
     )
+    print ("Runner properties")
+    print (runner.retries)
+    #runner.automatic_retries(3)
+    #print (runner.retries)
 
     # define the cache name
     cache_name = f'SS_analysis_{args.sample}_{year}{era}'
@@ -1135,6 +1140,7 @@ if __name__ == '__main__':
         cache_name += f'_{timestamp}.coffea'
         if small: cache_name += '_small'
         cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+
         output = runner(
             fileset,
             treename="Events",

@@ -30,6 +30,7 @@ argParser.add_argument('--dryRun', action='store_true', default=None, help="Don'
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 argParser.add_argument('--input', action='store', default='', help="Which set of input samples?")
+argParser.add_argument('--mcfraction', action='store', default=0.95, help="Min completion of MC")
 argParser.add_argument('--once', action='store_true',  help="Just run once?")
 argParser.add_argument('--merge', action='store_true',  help="Run merge step")
 args = argParser.parse_args()
@@ -37,6 +38,7 @@ args = argParser.parse_args()
 merge = args.merge
 tag = str(args.tag)
 skim = str(args.skim)
+mcfraction = float(args.mcfraction)
 
 tag_skim = "%s_%s"%(tag, skim)
 
@@ -49,6 +51,7 @@ APV_identifiers = [
     "Run2016D",
     "Run2016E",
     "Run2016F-HIPM",
+    "RunIISummer20UL16_preVFP",
 ]
 
 APV_pattern = re.compile('|'.join(APV_identifiers))
@@ -66,7 +69,7 @@ def getYearFromDAS(DASname):
         return 2017, era, isData, isFastSim, isUL, False
     elif re.search(APV_pattern, DASname):
         return 2016, era, isData, isFastSim, isUL, True
-    elif DASname.count('Summer16') or DASname.count('Summer20UL16NanoAOD') or DASname.count('Run2016'):
+    elif DASname.count('Summer16') or DASname.count('Summer20UL16NanoAOD') or DASname.count('Run2016') or DASname.count('Summer20UL16_NanoAOD'):
         return 2016, era, isData, isFastSim, isUL, False
     else:
         ### our private samples right now are all Autumn18 but have no identifier.
@@ -147,7 +150,8 @@ for s in sample_list:
     if isUL:
         year = "UL%s"%year
         if isAPV:
-            year += "APV"
+            #year += "APV"
+            year += "_preVFP"
         print ("- samples are UL, this is the used year: %s"%year)
 
     maker_task = CondorTask(
@@ -164,7 +168,7 @@ for s in sample_list:
         condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
         cmssw_version = "CMSSW_10_2_9",
         scram_arch = "slc6_amd64_gcc700",
-        min_completion_fraction = 1.00 if isData else 0.95,
+        min_completion_fraction = 1.00 if isData else mcfraction,
     )
     
     maker_tasks.append(maker_task)

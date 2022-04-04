@@ -9,7 +9,7 @@
 #include "TH1F.h"
 //#include "TSeq.h"
 
-void counter_macro(TString file_path="", TString skim_path="") // was void
+int counter_macro(TString file_path="", TString skim_path="") // was void
 {
     TString dir = file_path;
 

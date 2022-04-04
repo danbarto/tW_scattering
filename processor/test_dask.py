@@ -37,6 +37,15 @@ if __name__ == '__main__':
         from Tools.cutflow import Cutflow
         return x**2
 
+    def get_coffea_version(x):
+        import yahist
+        import coffea
+        import awkward
+        #import sklearn
+        import onnxruntime
+        from Tools.cutflow import Cutflow
+        return coffea.__version__
+
     print ("Local")
     for res in map(test, range(5)):
         print (res)
@@ -47,4 +56,8 @@ if __name__ == '__main__':
     results = c.gather(futures)
 
     print ("DASK")
+    print (results)
+
+    futures = c.map(get_coffea_version, range(1))
+    results = c.gather(futures)
     print (results)
