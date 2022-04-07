@@ -3,6 +3,7 @@ import awkward as ak
 import numpy as np
 
 from yahist import Hist1D
+# FIXME there should be a correctionlib version of this now
 
 class pileup:
     

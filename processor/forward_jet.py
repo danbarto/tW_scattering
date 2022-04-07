@@ -33,10 +33,18 @@ warnings.filterwarnings("ignore")
 
 from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
 
-
-
 class forward_jet_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, reweight=1):
+    def __init__(self,
+                 year=2016,
+                 variations=[],
+                 accumulator={},
+                 evaluate=False,
+                 training='v8',
+                 dump=False,
+                 era=None,
+                 reweight=1,
+                 ):
+
         self.variations = variations
         self.year = year
         self.era = era
@@ -100,66 +108,14 @@ class forward_jet_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.p4.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
         
-        
         dilepton_mass = (leading_lepton+trailing_lepton).mass
         dilepton_pt = (leading_lepton+trailing_lepton).pt
         dilepton_dR = delta_r(leading_lepton, trailing_lepton)
         
-        ## Jets
-        jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
-        jet       = jet[ak.argsort(jet.p4.pt, ascending=False)] # need to sort wrt smeared and recorrected jet pt
-        jet       = jet[~match(jet, muon, deltaRCut=0.4)] # remove jets that overlap with muons
-        jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
-        
-        central   = jet[(abs(jet.eta)<2.4)]
-        btag      = getBTagsDeepFlavB(jet, era=era, year=self.year) # should study working point for DeepJet
-        light     = getBTagsDeepFlavB(jet, era=era, year=self.year, invert=True)
-        light_central = light[(abs(light.eta)<2.5)]
-        fwd       = getFwdJet(light)
-        fwd_noPU  = getFwdJet(light, puId=False)
-        
-        ## forward jets
-        high_p_fwd   = fwd[ak.singletons(ak.argmax(fwd.p, axis=1))] # highest momentum spectator
-        high_pt_fwd  = fwd[ak.singletons(ak.argmax(fwd.p4.pt, axis=1))]  # highest transverse momentum spectator
-        high_eta_fwd = fwd[ak.singletons(ak.argmax(abs(fwd.p4.eta), axis=1))] # most forward spectator
-        
-        ## Get the two leading b-jets in terms of btag score
-        high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
-        
-        jf          = cross(high_p_fwd, jet)
-        mjf         = (jf['0'].p4+jf['1'].p4).mass
-        deltaEta    = abs(high_p_fwd.eta - jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'].p4.eta)
-        deltaEtaMax = ak.max(deltaEta, axis=1)
-        mjf_max     = ak.max(mjf, axis=1)
-        
-        jj          = choose(jet, 2)
-        mjj_max     = ak.max((jj['0'].p4+jj['1'].p4).mass, axis=1)
-        
-        ## MET -> can switch to puppi MET
-        #met_pt  = ev.MET.T1_pt
-        #met_phi = ev.MET.phi
-        met = getMET(ev, pt_var='pt_nom')
-        met_pt = met.pt
-        met_phi = met.phi
-
-        ## other variables
-        ht = ak.sum(jet.p4.pt, axis=1)
-        st = met_pt + ht + ak.sum(muon.p4.pt, axis=1) + ak.sum(electron.p4.pt, axis=1)
-        ht_central = ak.sum(central.p4.pt, axis=1)
-        
         tau       = getTaus(ev)
-        track     = getIsoTracks(ev)
         tau       = tau[~match(tau, muon, deltaRCut=0.4)] # remove taus that overlap with muons
         tau       = tau[~match(tau, electron, deltaRCut=0.4)] # remove taus that overlap with electrons
-        
-        bl          = cross(lepton, high_score_btag)
-        bl_dR       = delta_r(bl['0'], bl['1'])
-        min_bl_dR   = ak.min(bl_dR, axis=1)
 
-        #mt_lep_met = mt(lepton.p4.pt, lepton.phi, ev.MET.T1_pt, ev.MET.phi)
-        mt_lep_met = mt(lepton.p4.pt, lepton.phi, met_pt, met_phi)
-        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-        
         if not re.search(data_pattern, dataset):
             gen = ev.GenPart
             gen_photon = gen[gen.pdgId==22]
@@ -176,47 +132,12 @@ class forward_jet_analysis(processor.ProcessorABC):
                
         # define the weight
         weight = Weights( len(ev) )
-        
-        if not re.search(data_pattern, dataset):
-            # lumi weight
-            weight.add("weight", ev.weight*cfg['lumi'][self.year])
-            
-            # PU weight - not in the babies...
-            weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
-
-            # b-tag SFs
-            weight.add("btag", self.btagSF.Method1a(btag, light_central))
-
-            # lepton SFs
-            weight.add("lepton", self.leptonSF.get(electron, muon))
-
-            weight.add("trigger", self.triggerSF.get(electron, muon))
-            
-        
-        cutflow     = Cutflow(output, ev, weight=weight)
-
-        sel = Selection(
-            dataset = dataset,
-            events = ev,
-            year = self.year,
-            era = self.era,
-            ele = electron,
-            ele_veto = vetoelectron,
-            mu = muon,
-            mu_veto = vetomuon,
-            jet_all = jet,
-            jet_central = central,
-            jet_btag = btag,
-            jet_fwd = fwd,
-            jet_light = light,
-            met = met,
-            #met = ev.MET,
-        )
 
         n_ele = ak.num(electron, axis=1)  # This is useful to split into ee/emu/mumu
 
         if re.search(data_pattern, dataset):
             #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
+            # FIXME: reintegrate this into the loop
             run_ = ak.to_numpy(ev.run)
             lumi_ = ak.to_numpy(ev.luminosityBlock)
             event_ = ak.to_numpy(ev.event)
@@ -323,7 +244,11 @@ class forward_jet_analysis(processor.ProcessorABC):
                 met = met,
             )
 
-            BL = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['N_fwd>0', 'N_central>2'])
+            if var_name == 'central':
+                cutflow = Cutflow(output, ev, weight=weight)
+                BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
+
+            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'])
             BL = add_conversion_req(dataset, BL)
             output['N_jet'].fill(
                 dataset=dataset,
@@ -510,15 +435,14 @@ class forward_jet_analysis(processor.ProcessorABC):
 
 if __name__ == '__main__':
     
-    from klepto.archives import dir_archive
-    from Tools.samples import get_babies
-    from processor.default_accumulators import *
+    #from processor.default_accumulators import *
 
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
+    argParser.add_argument('--central', action='store_true', default=None, help="Only run the central value (no systematics)")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
@@ -571,6 +495,8 @@ if __name__ == '__main__':
             reweight[dataset] = (weight, index)
 
     from Tools.nano_mapping import make_fileset
+    from default_accumulators import add_processes_to_output, desired_output
+
     fileset = make_fileset([args.sample], samples, year=ul, skim=True, small=small, n_max=1)
 
     add_processes_to_output(fileset, desired_output)
@@ -586,6 +512,8 @@ if __name__ == '__main__':
         {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
         {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
     ]
+
+    if args.central: variations = variations[:1]
 
     if local:# and not profile:
         exe = processor.FuturesExecutor(workers=10)

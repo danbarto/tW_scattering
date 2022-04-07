@@ -39,6 +39,12 @@ ls -lrth
 export PYTHONPATH=`pwd`:$PYTHONPATH
 export PATH=`pwd`/workerenv/bin:$PATH
 
+echo "setting MALLOC business"
+export MALLOC_TRIM_THRESHOLD_=1024
+export MALLOC_MMAP_THRESHOLD_=1024
+echo $MALLOC_TRIM_THRESHOLD_
+echo $MALLOC_MMAP_THRESHOLD_
+
 echo "I'm currently here:"
 pwd
 cd tW_scattering/

@@ -51,6 +51,9 @@ ls -lrth
 export PYTHONPATH=`pwd`:$PYTHONPATH
 export PATH=`pwd`/workerenv/bin:$PATH
 
+export MALLOC_TRIM_THRESHOLD_=1024
+export MALLOC_MMAP_THRESHOLD_=1024
+
 echo $PATH
 echo $PYTHONPATH
 

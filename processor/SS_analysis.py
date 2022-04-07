@@ -44,7 +44,19 @@ warnings.filterwarnings("ignore")
 
 
 class SS_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, hyperpoly=None, points=[[]], weights=[], reweight=1):
+    def __init__(self,
+                 year=2016,
+                 era=None,
+                 variations=[],
+                 accumulator={},
+                 evaluate=False,
+                 training='v8',
+                 dump=False,
+                 hyperpoly=None,  # maybe can go?
+                 points=[[]],  # maybe can go?
+                 weights=[],
+                 reweight=1,
+                 ):
         self.variations = variations
 
         print (variations)
