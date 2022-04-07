@@ -40,7 +40,7 @@ from Tools.chargeFlip import charge_flip
 import warnings
 warnings.filterwarnings("ignore")
 
-from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
+#from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
 
 
 class SS_analysis(processor.ProcessorABC):
@@ -56,7 +56,6 @@ class SS_analysis(processor.ProcessorABC):
         self.dump = dump
         
         self.btagSF = btag_scalefactor(year, era=era)
-        
         self.leptonSF = LeptonSF(year=year)  # NOTE no era specific lepton SFs yet
 
         self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split
@@ -406,9 +405,8 @@ class SS_analysis(processor.ProcessorABC):
                     model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
 
                     try:
-                        NN_inputs_scaled = scaler.transform(NN_inputs)
-
-                        NN_pred    = predict_onnx(model, NN_inputs_scaled)
+                        #NN_inputs_scaled = scaler.transform(NN_inputs)
+                        #NN_pred    = predict_onnx(model, NN_inputs_scaled)
 
                         best_score = np.argmax(NN_pred, axis=1)
 

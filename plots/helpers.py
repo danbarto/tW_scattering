@@ -118,7 +118,33 @@ signal_fill_opts = {
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, is_data=True, y_axis_label='Events', rescale={}, obs_label='Observation'):
+def makePlot(output,
+             histo,
+             axis,
+             bins=None,
+             data=[],
+             normalize=True,
+             log=False,
+             save=False,
+             axis_label=None,
+             ratio_range=None,
+             upHists=[],
+             downHists=[],
+             shape=False,
+             ymax=False,
+             new_colors=colors,
+             new_labels=my_labels,
+             order=None,
+             signals=[],
+             omit=[],
+             lumi=60.0,
+             binwnorm=None,
+             overlay=None,
+             is_data=True,
+             y_axis_label='Events',
+             rescale={},
+             obs_label='Observation',
+             ):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -130,14 +156,26 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     if histo is None:
         processes = [ p[0] for p in output.values().keys() if not p[0] in data ]
         histogram = output.copy()
+        syst_histogram = output.copy()
+
     else:
         processes = [ p[0] for p in output[histo].values().keys() if not p[0] in data ]
+        syst_histogram = output[histo].copy()
         histogram = output[histo].copy()
 
-    histogram = histogram.project(axis, 'dataset')
+    #histogram.integrate('systematic', 'central').integrate('n_ele')
+    syst_histogram =  (syst_histogram
+        .integrate('n_ele')
+        .project(axis, 'dataset', 'systematic'))
+    histogram = (histogram
+        .integrate('systematic', 'central')
+        .integrate('n_ele')
+        .project(axis, 'dataset'))
+
     if overlay: overlay = overlay.project(axis, 'dataset')
     if bins:
         histogram = histogram.rebin(axis, bins)
+        syst_histogram = syst_histogram.rebin(axis, bins)
         if overlay: overlay = overlay.rebin(axis, bins)
 
     y_max = histogram[bkg_sel].sum("dataset").values(overflow='over')[()].max()
@@ -228,10 +266,18 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     
     if not binwnorm:
         if not shape:
-            addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+            addUncertainties(ax, axis, histogram, bkg_sel,
+                             [syst_histogram.integrate('systematic', x) for x in upHists],
+                             [syst_histogram.integrate('systematic', x)  for x in downHists],
+                             overflow='over', ratio=False,
+                             )
 
         if data:
-            addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+            addUncertainties(rax, axis, histogram, bkg_sel,
+                             [syst_histogram.integrate('systematic', x) for x in upHists],
+                             [syst_histogram.integrate('systematic', x) for x in downHists],
+                             overflow='over', ratio=True,
+                             )
     
     if log:
         ax.set_yscale('log')
@@ -271,33 +317,32 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         print ("Figure saved in:", save)
 
 
-def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
-    
-    if rebin:
-        h = h.project(axis, 'dataset').rebin(axis, rebin)
-    
+def addUncertainties(
+        ax,
+        axis,
+        h,
+        selection,
+        up_vars,
+        down_vars,
+        overflow='over',
+        ratio=False,
+    ):
+
+    # h is the central histogram, up and down the variations
+
     bins = h[selection].axis(axis).edges(overflow=overflow)
     
-    values = h[selection].project(axis, 'dataset').sum('dataset').values(overflow=overflow, sumw2=True)[()]
+    values = h[selection].sum('dataset').values(overflow=overflow, sumw2=True)[()]
     central = values[0]
     stats = values[1]
-    
-    #print (central)
     
     up = np.zeros_like(central)
     down = np.zeros_like(central)
     
     for up_var in up_vars:
-        if rebin:
-            up_var = up_var.project(axis, 'dataset').rebin(axis, rebin)
-            up_var.scale(scales, axis='dataset')
-        #print (up_var[selection].values())
         up += (up_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
     
     for down_var in down_vars:
-        if rebin:
-            down_var = down_var.project(axis, 'dataset').rebin(axis, rebin)
-            down_var.scale(scales, axis='dataset')
         down += (down_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
     
     up   += stats 

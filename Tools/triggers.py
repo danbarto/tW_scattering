@@ -58,7 +58,6 @@ def mask_and(ev, collection, masks):
 
 def getFilters(ev, year=2018, dataset='None', UL=True):
     # filters, recommendations in https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
-    #FIXME Flag_BadPFMuonDzFilter missing in EOY UL?? Should be added.
     if year == 2018:
         filters_MC = [\
             "goodVertices",
@@ -67,10 +66,13 @@ def getFilters(ev, year=2018, dataset='None', UL=True):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",  # NOTE: this is still optional
+            "eeBadScFilter",
+            "ecalBadCalibFilter",
         ]
         
-        filters_data = filters_MC + ["eeBadScFilter"]
+        filters_data = filters_MC + []
         
     elif year == 2017:
         filters_MC = [\
@@ -80,10 +82,13 @@ def getFilters(ev, year=2018, dataset='None', UL=True):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
-            "ecalBadCalibFilterV2" if not UL else "ecalBadCalibFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",  # NOTE: this is still optional
+            "eeBadScFilter",
+            "ecalBadCalibFilter",
         ]
         
-        filters_data = filters_MC + ["eeBadScFilter"]
+        filters_data = filters_MC + []
 
     elif year == 2016:
         filters_MC = [\
@@ -93,9 +98,12 @@ def getFilters(ev, year=2018, dataset='None', UL=True):
             "HBHENoiseIsoFilter",
             "EcalDeadCellTriggerPrimitiveFilter",
             "BadPFMuonFilter",
+            "BadPFMuonDzFilter",
+            #"hfNoisyHitsFilter",  # FIXME: still being studied
+            "eeBadScFilter",
         ]
         
-        filters_data = filters_MC + ["eeBadScFilter"]
+        filters_data = filters_MC + []
         
     if dataset.lower().count('muon') or dataset.lower().count('electron'):
         return mask_and(ev, "Flag", filters_data)
