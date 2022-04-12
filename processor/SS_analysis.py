@@ -404,7 +404,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 if self.dump and var['name'] == 'central':
                     for k in NN_inputs_d.keys():
-                        output[k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
+                        output['dump_'+dataset][k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
 
                 if self.evaluate:
                 
@@ -776,15 +776,15 @@ class SS_analysis(processor.ProcessorABC):
 
             if self.dump and var['name']=='central':
                 #output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
-                output['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
-                output['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
-                output['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
-                output['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
-                output['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
-                output['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
-                output['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
-                output['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
-                output['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
+                output['dump_'+dataset]['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
+                output['dump_'+dataset]['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
+                output['dump_'+dataset]['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
+                output['dump_'+dataset]['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
+                output['dump_'+dataset]['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
+                output['dump_'+dataset]['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
+                output['dump_'+dataset]['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
+                output['dump_'+dataset]['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
+                output['dump_'+dataset]['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
 
             # first, make a few super inclusive plots
 
@@ -954,7 +954,6 @@ class SS_analysis(processor.ProcessorABC):
 
 if __name__ == '__main__':
 
-    from Tools.samples import get_babies
     from processor.default_accumulators import *
 
     import argparse
@@ -962,6 +961,7 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
+    argParser.add_argument('--central', action='store_true', default=None, help="Only run the central value (no systematics)")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
@@ -993,243 +993,269 @@ if __name__ == '__main__':
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    # NOTE we could also rescale processes here?
-    reweight = {}
-    renorm   = {}
-    for dataset in mapping[ul][args.sample]:
-        if samples[dataset]['reweight'] == 1:
-            reweight[dataset] = 1
-            renorm[dataset] = 1
+
+    if args.sample == 'MCall':
+        if year == 2018:
+            sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
         else:
-            # Currently only supporting a single reweight.
-            weight, index = samples[dataset]['reweight'].split(',')
-            index = int(index)
-            renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
-            reweight[dataset] = (weight, index)
-
-    from Tools.nano_mapping import make_fileset
-    fileset = make_fileset([args.sample], samples, year=ul, skim=True, small=small, n_max=1)
-
-    add_processes_to_output(fileset, desired_output)
-
-    variations = [
-        {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
-        {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
-        {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
-        {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
-        {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
-        {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
-    ]
-
-    if args.dump:
-        variables = [
-            'n_jet',
-            'n_b',
-            'n_fwd',
-            'n_tau',
-            #'n_track',
-            'st',
-            'met',
-            'mjj_max',
-            'delta_eta_jj',
-            'lead_lep_pt',
-            'lead_lep_eta',
-            'sublead_lep_pt',
-            'sublead_lep_eta',
-            'dilepton_mass',
-            'dilepton_pt',
-            'fwd_jet_pt',
-            'fwd_jet_p',
-            'fwd_jet_eta',
-            'lead_jet_pt',
-            'sublead_jet_pt',
-            'lead_jet_eta',
-            'sublead_jet_eta',
-            'lead_btag_pt',
-            'sublead_btag_pt',
-            'lead_btag_eta',
-            'sublead_btag_eta',
-            'min_bl_dR',
-            'min_mt_lep_met',
-            'weight',
-            'weight_np',
-            'weight_cf',
-            'SS',
-            'OS',
-            'AR',
-            'LL',
-            'conv',
-            'label',
-            'total_charge',
-            'event',
-        ]
-
-        for var in variables:
-            desired_output.update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
-
-    if local:# and not profile:
-        exe = processor.FuturesExecutor(workers=10)
-
-    elif iterative:
-        exe = processor.IterativeExecutor()
-
+            sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
+    elif args.sample == 'data':
+        if year == 2018:
+            sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
+        else:
+            sample_list = ['DoubleMuon', 'MuonEG', 'DoubleEG', 'SingleMuon', 'SingleElectron']
     else:
-        from Tools.helpers import get_scheduler_address
-        from dask.distributed import Client, progress
+        sample_list = [args.sample]
 
-        scheduler_address = get_scheduler_address()
-        c = Client(scheduler_address)
+    cutflow_output = {}
 
-        exe = processor.DaskExecutor(client=c, status=True, retries=3)
+    for sample in sample_list:
+        # NOTE we could also rescale processes here?
+        #
+        print (f"Working on samples: {sample}")
 
-    # add some histograms that we defined in the processor
-    # everything else is taken the default_accumulators.py
-    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis
-    desired_output.update({
-        "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
-        "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
-        "LT_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
-        "LT_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
-        "node": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
-        "node0_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node1_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node2_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node3_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node4_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node0_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node1_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node2_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node3_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node4_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node0_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node0_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node1_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "node1_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-        "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-        "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-        "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-        "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-    })
+        # NOTE we could also rescale processes here?
+        reweight = {}
+        renorm   = {}
+        for dataset in mapping[ul][sample]:
+            if samples[dataset]['reweight'] == 1:
+                reweight[dataset] = 1
+                renorm[dataset] = 1
+            else:
+                # Currently only supporting a single reweight.
+                weight, index = samples[dataset]['reweight'].split(',')
+                index = int(index)
+                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
+                reweight[dataset] = (weight, index)
 
-    for rle in ['run', 'lumi', 'event']:
+        from Tools.nano_mapping import make_fileset
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+
+        add_processes_to_output(fileset, desired_output)
+
+        variations = [
+            {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+            {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
+            {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
+            {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
+            {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
+            {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+           ]
+
+        if args.central: variations = variations[:1]
+
+        if args.dump:
+            variables = [
+                'n_jet',
+                'n_b',
+                'n_fwd',
+                'n_tau',
+                #'n_track',
+                'st',
+                'met',
+                'mjj_max',
+                'delta_eta_jj',
+                'lead_lep_pt',
+                'lead_lep_eta',
+                'sublead_lep_pt',
+                'sublead_lep_eta',
+                'dilepton_mass',
+                'dilepton_pt',
+                'fwd_jet_pt',
+                'fwd_jet_p',
+                'fwd_jet_eta',
+                'lead_jet_pt',
+                'sublead_jet_pt',
+                'lead_jet_eta',
+                'sublead_jet_eta',
+                'lead_btag_pt',
+                'sublead_btag_pt',
+                'lead_btag_eta',
+                'sublead_btag_eta',
+                'min_bl_dR',
+                'min_mt_lep_met',
+                'weight',
+                'weight_np',
+                'weight_cf',
+                'SS',
+                'OS',
+                'AR',
+                'LL',
+                'conv',
+                'label',
+                'total_charge',
+                'event',
+            ]
+
+            for dataset in mapping[ul][sample]:
+
+                desired_output.update({
+                    'dump_%s'%dataset: processor.dict_accumulator({})
+                })#processor.column_accumulator(np.zeros(shape=(0,))),
+                for var in variables:
+                    desired_output['dump_%s'%dataset].update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
+                    #'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    #'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    #})
+
+        if local:# and not profile:
+            exe = processor.FuturesExecutor(workers=10)
+
+        elif iterative:
+            exe = processor.IterativeExecutor()
+
+        else:
+            from Tools.helpers import get_scheduler_address
+            from dask.distributed import Client, progress
+
+            scheduler_address = get_scheduler_address()
+            c = Client(scheduler_address)
+
+            exe = processor.DaskExecutor(client=c, status=True, retries=3)
+
+        # add some histograms that we defined in the processor
+        # everything else is taken the default_accumulators.py
+        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis
         desired_output.update({
-                'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-        })
+            "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
+            "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
+            "LT_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
+            "LT_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
+            "node": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
+            "node0_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node1_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node2_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node3_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node4_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node0_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node1_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node2_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node3_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node4_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node0_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node0_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node1_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "node1_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+            "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+            "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+            "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+           })
 
-    print ("I'm running now")
 
-    runner = processor.Runner(
-        exe,
-        #retries=3,
-        schema=NanoAODSchema,
-        chunksize=50000,
-        maxchunks=None,
-    )
-    print ("Runner properties")
-    print (runner.retries)
-    #runner.automatic_retries(3)
-    #print (runner.retries)
 
-    # define the cache name
-    cache_name = f'SS_analysis_{args.sample}_{year}{era}'
-    # find an old existing output
-    output = get_latest_output(cache_name, cfg)
+        for rle in ['run', 'lumi', 'event']:
+            desired_output.update({
+                    'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+            })
 
-    if overwrite or output is None:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        cache_name += f'_{timestamp}.coffea'
-        if small: cache_name += '_small'
-        cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
 
-        output = runner(
-            fileset,
-            treename="Events",
-            processor_instance=SS_analysis(
-                year=year,
-                variations=variations,
-                #variations=variations[:1],
-                accumulator=desired_output,
-                evaluate=args.evaluate,
-                training=args.training,
-                dump=args.dump,
-                era=era,
-                reweight=reweight,
-            ),
-        )
+        
+        print ("I'm running now")
 
-        util.save(output, cache)
+        runner = processor.Runner(
+            exe,
+            #retries=3,
+            schema=NanoAODSchema,
+            chunksize=50000,
+            maxchunks=None,
+           )
+        print ("Runner properties")
+        print (runner.retries)
+        #runner.automatic_retries(3)
+        #print (runner.retries)
 
-    ## output for DNN training
-    labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
-    if args.sample in labels:
-        label_mult = labels[args.sample]
-    else:
-        label_mult = 8  # data or anything else
+        # define the cache name
+        cache_name = f'SS_analysis_{sample}_{year}{era}'
+        # find an old existing output
+        output = get_latest_output(cache_name, cfg)
 
-    if args.dump:  # FIXME needs the new scaling
-        if overwrite:
-            df_dict = {}
-            for var in variables:
-                df_dict.update({var: output[var].value})
-            df_dict.update({"label": label_mult*np.ones_like(output[var].value)})
+        if overwrite or output is None:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            cache_name += f'_{timestamp}.coffea'
+            if small: cache_name += '_small'
+            cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+
+            output = runner(
+                fileset,
+                treename="Events",
+                processor_instance=SS_analysis(
+                    year=year,
+                    variations=variations,
+                    #variations=variations[:1],
+                    accumulator=desired_output,
+                    evaluate=args.evaluate,
+                    training=args.training,
+                    dump=args.dump,
+                    era=era,
+                    reweight=reweight,
+                ),
+            )
+
+            util.save(output, cache)
+
+        ## output for DNN training
+        labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
+        if sample in labels:
+            label_mult = labels[sample]
+        else:
+            label_mult = 8  # data or anything else
+
+        if args.dump:
+            df_dict = {var: np.zeros(shape=(0,)) for var in variables}
+            df_dict['label'] = np.zeros(shape=(0,))
+            for dataset in mapping[ul][sample]:
+                for var in variables:
+                    if var == 'weight':
+                        # NOTE: not modifying the CF/NP weights
+                        lumi_fac = renorm[dataset] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight'])
+                        df_dict[var] = np.concatenate([df_dict[var], (output['dump_'+dataset][var].value * lumi_fac)])
+                    else:
+                        df_dict[var] = np.concatenate([df_dict[var], output['dump_'+dataset][var].value])
+
+                df_dict['label'] = np.concatenate([df_dict['label'], label_mult*np.ones_like(output['dump_'+dataset][var].value)])
 
             df_out = pd.DataFrame( df_dict )
+
             if not args.small:
-                df_out.to_hdf(f"multiclass_input_{args.sample}_{args.year}.h5", key='df', format='table', mode='w')
-        else:
-            print ("Loading DF")
-            df_out = pd.read_hdf(f"multiclass_input_{args.sample}_{args.year}.h5")
+                df_out.to_hdf(f"multiclass_input_{sample}_{args.year}.h5", key='df', format='table', mode='w')
 
-    print ("\nNN debugging:")
-    print (output['node'].sum('multiplicity').values())
+        print ("\nNN debugging:")
+        print (output['node'].sum('multiplicity').values())
 
+        # Scale the cutflow output. This should be packed into a function?
+        cutflow_output[sample] = {}
+        dataset_0 = mapping[ul][sample][0]
 
-    ## Data double counting checks
-    if args.check_double_counting:
-        em = zip_run_lumi_event(output, 'MuonEG')
-        e  = zip_run_lumi_event(output, 'EGamma')
-        mm = zip_run_lumi_event(output, 'DoubleMuon')
+        print ("Scaling to {}/fb".format(cfg['lumi'][year]))
+        for dataset in mapping[ul][sample]:
+            print ("Sample {}".format(dataset))
+            print ("sigma*BR: {}".format(float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000))
 
-        print ("Total events from MuonEG:", len(em))
-        print ("Total events from EGamma:", len(e))
-        print ("Total events from DoubleMuon:", len(mm))
+        for key in output[dataset_0]:
+            cutflow_output[sample][key] = 0.
+            for dataset in mapping[ul][sample]:
+                cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
 
-        em_mm = np.intersect1d(em, mm)
-        print ("Overlap MuonEG/DoubleMuon:", len(em_mm))
-
-        e_mm = np.intersect1d(e, mm)
-        print ("Overlap EGamma/DoubleMuon:", len(e_mm))
-
-        em_e = np.intersect1d(em, e)
-        print ("Overlap MuonEG/EGamma:", len(em_e))
-
-    # Scale the cutflow output. This should be packed into a function?
-    cutflow_output = {}
-    cutflow_output[args.sample] = {}
-    dataset_0 = mapping[ul][args.sample][0]
-
-    print ("Scaling to {}/fb".format(cfg['lumi'][year]))
-    for dataset in mapping[ul][args.sample]:
-        print ("Sample {}".format(dataset))
-        print ("sigma*BR: {}".format(float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000))
-
-    for key in output[dataset_0]:
-        cutflow_output[args.sample][key] = 0.
-        for dataset in mapping[ul][args.sample]:
-            cutflow_output[args.sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+        if not local:
+            # clean up the DASK workers. this partially frees up memory on the workers
+            c.cancel(output)
+            # NOTE: this really restarts the cluster, but is the only fully effective
+            # way of deallocating all the accumulated memory...
+            c.restart()
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'all' else [args.sample]
+    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'MCall' else [args.sample]
     lines= [
             'filter',
             'dilep',
@@ -1254,6 +1280,25 @@ if __name__ == '__main__':
                            #signal='topW_v3',
                            total=False,
                            ))
+
+    ## Data double counting checks
+    if args.check_double_counting:
+        em = zip_run_lumi_event(output, 'MuonEG')
+        e  = zip_run_lumi_event(output, 'EGamma')
+        mm = zip_run_lumi_event(output, 'DoubleMuon')
+
+        print ("Total events from MuonEG:", len(em))
+        print ("Total events from EGamma:", len(e))
+        print ("Total events from DoubleMuon:", len(mm))
+
+        em_mm = np.intersect1d(em, mm)
+        print ("Overlap MuonEG/DoubleMuon:", len(em_mm))
+
+        e_mm = np.intersect1d(e, mm)
+        print ("Overlap EGamma/DoubleMuon:", len(e_mm))
+
+        em_e = np.intersect1d(em, e)
+        print ("Overlap MuonEG/EGamma:", len(em_e))
 
     make_plots = False
     if make_plots:

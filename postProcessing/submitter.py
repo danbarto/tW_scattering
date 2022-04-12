@@ -69,7 +69,7 @@ def getYearFromDAS(DASname):
         return 2017, era, isData, isFastSim, isUL, False
     elif re.search(APV_pattern, DASname):
         return 2016, era, isData, isFastSim, isUL, True
-    elif DASname.count('Summer16') or DASname.count('Summer20UL16NanoAOD') or DASname.count('Run2016') or DASname.count('Summer20UL16_NanoAOD'):
+    elif DASname.count('Summer16') or DASname.count('Summer20UL16NanoAOD') or DASname.count('Run2016') or DASname.count('Summer20UL16_NanoAOD') or DASname.count('Summer20UL16_postVFP'):
         return 2016, era, isData, isFastSim, isUL, False
     else:
         ### our private samples right now are all Autumn18 but have no identifier.

@@ -10,6 +10,7 @@ BASEDIR = os.path.dirname(os.path.realpath(__file__))
 
 blacklisted_machines = [
         "sdsc-1.t2.ucsd.edu",
+        "sdsc-27.t2.ucsd.edu",
         "sdsc-37.t2.ucsd.edu",
         "sdsc-49.t2.ucsd.edu",
         "sdsc-50.t2.ucsd.edu",
@@ -25,13 +26,17 @@ blacklisted_machines = [
         "cabinet-3-3-2.t2.ucsd.edu",
         "cabinet-4-4-16.t2.ucsd.edu"
         "cabinet-4-4-18.t2.ucsd.edu",
+        "cabinet-4-4-26.t2.ucsd.edu",
+        "cabinet-5-5-8.t2.ucsd.edu",
         "cabinet-7-7-36.t2.ucsd.edu",
         "cabinet-8-8-1.t2.ucsd.edu",
         "cabinet-11-11-0.t2.ucsd.edu",
-        "cabinet-11-11-3.t2.ucsd.edu",
         "cabinet-11-11-2.t2.ucsd.edu",
+        "cabinet-11-11-3.t2.ucsd.edu",
         "cabinet-11-11-6.t2.ucsd.edu",
         "cabinet-11-11-9.t2.ucsd.edu",
+        "cabinet-11-11-10.t2.ucsd.edu"
+        "cabinet-11-11-13.t2.ucsd.edu",
 ]
 
 def submit_workers(scheduler_url, dry_run=False, num_workers=1, blacklisted_machines=blacklisted_machines, memory=4000, disk=20000, whitelisted_machines=[]):

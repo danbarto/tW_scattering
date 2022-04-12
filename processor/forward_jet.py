@@ -135,15 +135,15 @@ class forward_jet_analysis(processor.ProcessorABC):
 
         n_ele = ak.num(electron, axis=1)  # This is useful to split into ee/emu/mumu
 
-        if re.search(data_pattern, dataset):
-            #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
-            # FIXME: reintegrate this into the loop
-            run_ = ak.to_numpy(ev.run)
-            lumi_ = ak.to_numpy(ev.luminosityBlock)
-            event_ = ak.to_numpy(ev.event)
-            output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
-            output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
-            output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
+        # FIXME: reintegrate this into the loop
+        #if re.search(data_pattern, dataset):
+        #    #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
+        #    run_ = ak.to_numpy(ev.run)
+        #    lumi_ = ak.to_numpy(ev.luminosityBlock)
+        #    event_ = ak.to_numpy(ev.event)
+        #    output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
+        #    output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
+        #    output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
 
 
         if re.search(data_pattern, dataset):
@@ -249,7 +249,8 @@ class forward_jet_analysis(processor.ProcessorABC):
                 BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
 
             BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'])
-            BL = add_conversion_req(dataset, BL)
+            if not re.search(data_pattern, dataset):
+                BL = add_conversion_req(dataset, BL)
             output['N_jet'].fill(
                 dataset=dataset,
                 systematic = var_name,
@@ -305,7 +306,8 @@ class forward_jet_analysis(processor.ProcessorABC):
             #output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
 
             BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'])
-            BL_minusNb = add_conversion_req(dataset, BL_minusNb)
+            if not re.search(data_pattern, dataset):
+                BL_minusNb = add_conversion_req(dataset, BL_minusNb)
             output['N_b'].fill(
                 dataset=dataset,
                 systematic = var_name,
@@ -316,7 +318,8 @@ class forward_jet_analysis(processor.ProcessorABC):
 
             # This is the real baseline, although N_fwd is removed for training. FIXME: decide what to call "baseline"
             BL = sel.dilep_baseline(SS=False)
-            BL = add_conversion_req(dataset, BL)
+            if not re.search(data_pattern, dataset):
+                BL = add_conversion_req(dataset, BL)
 
             output['mjf_max'].fill(
                 dataset=dataset,
@@ -406,7 +409,8 @@ class forward_jet_analysis(processor.ProcessorABC):
             )
 
             BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'])
-            BL_minusMET = add_conversion_req(dataset, BL_minusMET)
+            if not re.search(data_pattern, dataset):
+                BL_minusMET = add_conversion_req(dataset, BL_minusMET)
             output['MET'].fill(
                 dataset = dataset,
                 systematic = var_name,
@@ -451,7 +455,6 @@ if __name__ == '__main__':
     argParser.add_argument('--year', action='store', default='2016', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
-    argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
     args = argParser.parse_args()
@@ -480,127 +483,146 @@ if __name__ == '__main__':
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    # NOTE we could also rescale processes here?
-    reweight = {}
-    renorm   = {}
-    for dataset in mapping[ul][args.sample]:
-        if samples[dataset]['reweight'] == 1:
-            reweight[dataset] = 1
-            renorm[dataset] = 1
+    if args.sample == 'MCall':
+        #sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
+    elif args.sample == 'data':
+        if year == 2018:
+            sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
         else:
-            # Currently only supporting a single reweight.
-            weight, index = samples[dataset]['reweight'].split(',')
-            index = int(index)
-            renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
-            reweight[dataset] = (weight, index)
-
-    from Tools.nano_mapping import make_fileset
-    from default_accumulators import add_processes_to_output, desired_output
-
-    fileset = make_fileset([args.sample], samples, year=ul, skim=True, small=small, n_max=1)
-
-    add_processes_to_output(fileset, desired_output)
-
-    variations = [
-        {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
-        {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
-        {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
-        {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
-        {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
-        {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
-        {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
-    ]
-
-    if args.central: variations = variations[:1]
-
-    if local:# and not profile:
-        exe = processor.FuturesExecutor(workers=10)
-
-    elif iterative:
-        exe = processor.IterativeExecutor()
-
+            sample_list = ['DoubleMuon', 'MuonEG', 'DoubleEG', 'SingleMuon', 'SingleElectron']
     else:
-        from Tools.helpers import get_scheduler_address
-        from dask.distributed import Client, progress
+        sample_list = [args.sample]
 
-        scheduler_address = get_scheduler_address()
-        c = Client(scheduler_address)
+    for sample in sample_list:
+        # NOTE we could also rescale processes here?
+        #
+        print (f"Working on samples: {sample}")
+        reweight = {}
+        renorm   = {}
+        for dataset in mapping[ul][sample]:
+            if samples[dataset]['reweight'] == 1:
+                reweight[dataset] = 1
+                renorm[dataset] = 1
+            else:
+                # Currently only supporting a single reweight.
+                weight, index = samples[dataset]['reweight'].split(',')
+                index = int(index)
+                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
+                reweight[dataset] = (weight, index)
 
-        exe = processor.DaskExecutor(client=c, status=True, retries=3)
+        from Tools.nano_mapping import make_fileset
+        from default_accumulators import add_processes_to_output, desired_output
 
-    # add some histograms that we defined in the processor
-    # everything else is taken the default_accumulators.py
-    from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, mass_axis
-    from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis
-    desired_output.update({
-        "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-        "N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-        "N_b": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-        "N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-        "N_tau": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
-        "dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
-        "dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-        "mjf_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-        "mjj_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-        "deltaEta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
-        "min_bl_dR": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
-        "min_mt_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
-        "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-        "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-        "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-        "sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-        "fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
 
-    })
+        add_processes_to_output(fileset, desired_output)
 
-    for rle in ['run', 'lumi', 'event']:
+        variations = [
+            {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+            {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
+            {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
+            {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
+            {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
+            {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+           ]
+
+        if args.central: variations = variations[:1]
+
+        if local:# and not profile:
+            exe = processor.FuturesExecutor(workers=10)
+
+        elif iterative:
+            exe = processor.IterativeExecutor()
+
+        else:
+            from Tools.helpers import get_scheduler_address
+            from dask.distributed import Client, progress
+
+            scheduler_address = get_scheduler_address()
+            c = Client(scheduler_address)
+
+            exe = processor.DaskExecutor(client=c, status=True, retries=3)
+
+        # add some histograms that we defined in the processor
+        # everything else is taken the default_accumulators.py
+        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, mass_axis
+        from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis
         desired_output.update({
-                'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-        })
+            "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            "N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_b": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_tau": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
+            "dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            "mjf_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            "mjj_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            "deltaEta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
+            "min_bl_dR": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
+            "min_mt_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
 
-    print ("I'm running now")
+           })
 
-    runner = processor.Runner(
-        exe,
-        #retries=3,
-        schema=NanoAODSchema,
-        chunksize=50000,
-        maxchunks=None,
-    )
+        for rle in ['run', 'lumi', 'event']:
+            desired_output.update({
+                    'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+            })
 
-    # define the cache name
-    cache_name = f'OS_analysis_{args.sample}_{year}{era}'
-    # find an old existing output
-    output = get_latest_output(cache_name, cfg)
+        print ("I'm running now")
 
-    if overwrite or output is None:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        cache_name += f'_{timestamp}.coffea'
-        if small: cache_name += '_small'
-        cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+        runner = processor.Runner(
+            exe,
+            #retries=3,
+            schema=NanoAODSchema,
+            chunksize=50000,
+            maxchunks=None,
+           )
 
-        print (variations)
+        # define the cache name
+        cache_name = f'OS_analysis_{sample}_{year}{era}'
+        # find an old existing output
+        output = get_latest_output(cache_name, cfg)
 
-        output = runner(
-            fileset,
-            treename="Events",
-            processor_instance=forward_jet_analysis(
-                year=year,
-                variations=variations,
-                #variations=variations[:1],
-                accumulator=desired_output,
-                evaluate=args.evaluate,
-                training=args.training,
-                dump=args.dump,
-                era=era,
-                reweight=reweight,
-            ),
-        )
+        if overwrite or output is None:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            cache_name += f'_{timestamp}.coffea'
+            if small: cache_name += '_small'
+            cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
 
-        util.save(output, cache)
+            print (variations)
+
+            output = runner(
+                fileset,
+                treename="Events",
+                processor_instance=forward_jet_analysis(
+                    year=year,
+                    variations=variations,
+                    accumulator=desired_output,
+                    evaluate=args.evaluate,
+                    training=args.training,
+                    era=era,
+                    reweight=reweight,
+                ),
+            )
+
+            util.save(output, cache)
+
+        if not local:
+            # clean up the DASK workers. this partially frees up memory on the workers
+            c.cancel(output)
+            # NOTE: this really restarts the cluster, but is the only fully effective
+            # way of deallocating all the accumulated memory...
+            c.restart()

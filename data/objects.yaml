@@ -93,7 +93,7 @@ Electron:
         max: 0.3040
       2018:
         max: 0.2783
-    mvaTTH:
+    mvaTTHUL:
       max: 0.80
 
   fakeableSSTTH:
@@ -131,7 +131,7 @@ Electron:
         max: 0.3040
       2018:
         max: 0.2783
-    mvaTTH:
+    mvaTTHUL:
       max: 0.80
     tightCharge: 2
 
@@ -168,7 +168,7 @@ Electron:
         max: 0.3040
       2018:
         max: 0.2783
-    mvaTTH:
+    mvaTTHUL:
       min: 0.80
 
   tightSSTTH:
@@ -204,7 +204,7 @@ Electron:
         max: 0.3040
       2018:
         max: 0.2783
-    mvaTTH:
+    mvaTTHUL:
       min: 0.80
     tightCharge: 2
 
@@ -287,7 +287,7 @@ Muon:
       extra: abs
     miniPFRelIso_all:
       max: 0.4
-    mvaTTH:
+    mvaTTHUL:
       max: 0.85
     jetRelIso:
       max: 0.5
@@ -310,7 +310,7 @@ Muon:
       extra: abs
     miniPFRelIso_all:
       max: 0.4
-    mvaTTH:
+    mvaTTHUL:
       max: 0.85
     ptErrRel:
       max: 0.2
@@ -336,7 +336,7 @@ Muon:
       extra: abs
     miniPFRelIso_all:
       max: 0.4
-    mvaTTH:
+    mvaTTHUL:
       min: 0.85
     deepJet:
       2016:
@@ -365,7 +365,7 @@ Muon:
       extra: abs
     miniPFRelIso_all:
       max: 0.4
-    mvaTTH:
+    mvaTTHUL:
       min: 0.85
     deepJet:
       2016:

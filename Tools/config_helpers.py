@@ -81,6 +81,9 @@ def get_latest_output(cache_name, cfg):
     cache_dir = os.path.expandvars(cfg['caches']['base'])
     all_caches = glob.glob(cache_dir+'/*.coffea')
     filtered = [f for f in all_caches if f.count(cache_name)]
+    if not cache_name.count('APV'):
+        # manually filter out everything with APV if it's not APV
+        filtered = [f for f in filtered if not f.count('APV')]
     filtered.sort(reverse=True)
     try:
         latest = filtered[0]

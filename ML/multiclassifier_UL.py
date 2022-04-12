@@ -184,7 +184,13 @@ if __name__ == '__main__':
     # This data frame is produced with the SS_analysis processor:
     # ipython -i SS_analysis.py -- --dump
     #df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
-    df = pd.read_hdf('../processor/multiclass_input_%s_v2.h5'%args.year)
+
+    sample_list =  ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+    df = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{args.year}.h5") for sample in sample_list])
+
+    # FIXME combine years, too!
+
+#    df = pd.read_hdf('../processor/multiclass_input_%s_v2.h5'%args.year)
 
     variables = [
         ## best results with all variables, but should get pruned at some point...
@@ -285,6 +291,7 @@ if __name__ == '__main__':
 
     # Now, merge all the separate dataframes into one again
     df_in = pd.concat([df_signal, df_prompt, df_LL, df_NP, df_CF])
+    df_in = df_in[(df_in['event']%2 == 1)]  # NOTE: only use events with odd event number.
     labels = df_in['label'].values
     df_train, df_test, y_train_int, y_test_int = train_test_split(df_in, labels, train_size= int( 0.9*labels.shape[0] ), random_state=42 )
 
@@ -299,12 +306,12 @@ if __name__ == '__main__':
     out_dim = len(y_train[0])
 
     # Adjust the weights of every category so that they have equal importance
-    # FIXME: We can try to increase e.g. the importance of prompt or lost lepton backgrounds vs others by multiplying
+    # NOTE: We can try to increase e.g. the importance of prompt or lost lepton backgrounds vs others by multiplying
     # their weight by a constant factor. get_class_weight is imported from ML.multiclassifier_tools
     class_weight = get_class_weight(df_train, dim=out_dim)
 
     '''
-    # Can't use pipelines, unfortunately
+    # NOTE: Can't use pipelines, unfortunately.
     pipeline = Pipeline([
         ('scaler', RobustScaler()),
         ('NN', baseline_model()),
