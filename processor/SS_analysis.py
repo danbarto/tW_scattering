@@ -269,6 +269,7 @@ class SS_analysis(processor.ProcessorABC):
                 weight.add("lepton", self.leptonSF.get(electron, muon))
             
             if dataset=='topW_full_EFT':
+                # FIXME legacy code ready to be retired
                 for point in self.points:
                     point['weight'] = Weights( len(ev) )
                     point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
@@ -402,6 +403,10 @@ class SS_analysis(processor.ProcessorABC):
                     'event':            ak.to_numpy(ev.event),
                 }
 
+                if dataset.count('TTW_5f_EFT'):
+                    for w in self.weights:
+                        NN_inputs_d.update({w: ak.to_numpy(getattr(ev.LHEWeight, w))})
+
                 if self.dump and var['name'] == 'central':
                     for k in NN_inputs_d.keys():
                         output['dump_'+dataset][k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
@@ -510,9 +515,10 @@ class SS_analysis(processor.ProcessorABC):
                 CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
 
 
-                if dataset=='topW_full_EFT':
+                if dataset.count('TTW_5f_EFT'):
 
                     for point in self.points:
+                        # FIXME this is legacy EFT stuff and can go?
                         output['lead_lep_SR_pp'].fill(
                             dataset = dataset,
                             systematic = var_name,
@@ -995,10 +1001,7 @@ if __name__ == '__main__':
 
 
     if args.sample == 'MCall':
-        if year == 2018:
-            sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
-        else:
-            sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
+        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
     elif args.sample == 'data':
         if year == 2018:
             sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
@@ -1045,6 +1048,16 @@ if __name__ == '__main__':
             {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
            ]
 
+        # inclusive EFT weights
+        eft_weights = [\
+            'cpt_0p_cpQM_0p_nlo',
+            'cpt_0p_cpQM_3p_nlo',
+            'cpt_0p_cpQM_6p_nlo',
+            'cpt_3p_cpQM_0p_nlo',
+            'cpt_6p_cpQM_0p_nlo',
+            'cpt_3p_cpQM_3p_nlo',
+        ]
+
         if args.central: variations = variations[:1]
 
         if args.dump:
@@ -1089,6 +1102,8 @@ if __name__ == '__main__':
                 'total_charge',
                 'event',
             ]
+            if sample.count('topW'):
+                variables += eft_weights
 
             for dataset in mapping[ul][sample]:
 
@@ -1198,6 +1213,7 @@ if __name__ == '__main__':
                     training=args.training,
                     dump=args.dump,
                     era=era,
+                    weights=eft_weights,
                     reweight=reweight,
                 ),
             )
@@ -1205,7 +1221,7 @@ if __name__ == '__main__':
             util.save(output, cache)
 
         ## output for DNN training
-        labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'ttbar': 4, 'rare':5, 'diboson':6, 'XG': 7}
+        labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'top': 4, 'rare':5, 'diboson':6, 'XG': 7}
         if sample in labels:
             label_mult = labels[sample]
         else:
@@ -1255,7 +1271,7 @@ if __name__ == '__main__':
             c.restart()
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'ttbar'] if args.sample == 'MCall' else [args.sample]
+    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'top'] if args.sample == 'MCall' else [args.sample]
     lines= [
             'filter',
             'dilep',
