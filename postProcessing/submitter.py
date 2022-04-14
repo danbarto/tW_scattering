@@ -31,6 +31,7 @@ argParser.add_argument('--small', action='store_true', default=None, help="Only 
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")
 argParser.add_argument('--input', action='store', default='', help="Which set of input samples?")
 argParser.add_argument('--mcfraction', action='store', default=0.95, help="Min completion of MC")
+argParser.add_argument('--datafraction', action='store', default=1.00, help="Don't do it unless you're very sure.")
 argParser.add_argument('--once', action='store_true',  help="Just run once?")
 argParser.add_argument('--merge', action='store_true',  help="Run merge step")
 args = argParser.parse_args()
@@ -39,6 +40,7 @@ merge = args.merge
 tag = str(args.tag)
 skim = str(args.skim)
 mcfraction = float(args.mcfraction)
+datafraction = float(args.datafraction)
 
 tag_skim = "%s_%s"%(tag, skim)
 
@@ -168,7 +170,7 @@ for s in sample_list:
         condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
         cmssw_version = "CMSSW_10_2_9",
         scram_arch = "slc6_amd64_gcc700",
-        min_completion_fraction = 1.00 if isData else mcfraction,
+        min_completion_fraction = datafraction if isData else mcfraction,
     )
     
     maker_tasks.append(maker_task)
