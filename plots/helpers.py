@@ -144,11 +144,24 @@ def makePlot(output,
              y_axis_label='Events',
              rescale={},
              obs_label='Observation',
+             channel='all',
              ):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
-    
+
+    if channel == 'ee':
+        ch_sel = slice(1.5, 2.5)
+    elif channel == 'em':
+        ch_sel = slice(0.5, 1.5)
+    elif channel == 'mm':
+        ch_sel = slice(-0.5, 0.5)
+    elif channel == 'all':
+        ch_sel = slice(-0.5, 2.5)
+    else:
+        raise NotImplementedError
+
+
     mc_sel   = re.compile('(?!(%s))'%('|'.join(data+omit))) if len(data+omit)>0 else re.compile('')
     data_sel = re.compile('('+'|'.join(data)+')(?!.*incl)')
     bkg_sel  = re.compile('(?!(%s))'%('|'.join(data+signals+omit))) if len(data+signals+omit)>0 else re.compile('')
@@ -164,13 +177,22 @@ def makePlot(output,
         histogram = output[histo].copy()
 
     #histogram.integrate('systematic', 'central').integrate('n_ele')
-    syst_histogram =  (syst_histogram
-        .integrate('n_ele')
-        .project(axis, 'dataset', 'systematic'))
-    histogram = (histogram
-        .integrate('systematic', 'central')
-        .integrate('n_ele')
-        .project(axis, 'dataset'))
+    try:
+        syst_histogram =  (syst_histogram
+                           .integrate('n_ele', ch_sel)
+                           .project(axis, 'dataset', 'systematic'))
+        histogram = (histogram
+                     .integrate('systematic', 'central')
+                     .integrate('n_ele', ch_sel)
+                     .project(axis, 'dataset'))
+    except KeyError:
+        # fallback if there's no n_ele axis
+        syst_histogram =  (syst_histogram
+                           .project(axis, 'dataset', 'systematic'))
+        histogram = (histogram
+                     .integrate('systematic', 'central')
+                     .project(axis, 'dataset'))
+
 
     if overlay: overlay = overlay.project(axis, 'dataset')
     if bins:
@@ -360,33 +382,20 @@ def addUncertainties(
     
     ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
-
-def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
+def scale_and_merge(histogram, scales, nano_mapping):
     """
     Scale NanoAOD samples to a physical cross section.
     Merge NanoAOD samples into categories, e.g. several ttZ samples into one ttZ category.
-    
+
     histogram -- coffea histogram
-    samples -- samples dictionary that contains the x-sec and sumWeight
-    fileset -- fileset dictionary used in the coffea processor
+    scales -- scales to apply to each dataset
     nano_mapping -- dictionary to map NanoAOD samples into categories
-    lumi -- integrated luminosity in 1/fb
     """
     temp = histogram.copy()
 
-    # scale according to cross sections    
-    scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
     temp.scale(scales, axis='dataset')
-
-    
-    # merge according to categories:
-    # merge categorical axes (example from coffea tutorial)
-    #mapping = {
-    #    'all samples': ['sample 1', 'sample 2'],
-    #    'just sample 1': ['sample 1'],
-    #}
     temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
-                
+
     return temp
 
 def compute_darkness(r, g, b, a=1.0):
