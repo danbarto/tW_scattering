@@ -3,3 +3,5 @@
 *.png
 *.pdf
 *.cmd
+*.h5
+*.tar*
