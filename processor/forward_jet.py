@@ -209,8 +209,9 @@ class forward_jet_analysis(processor.ProcessorABC):
                 else:
                     weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
 
-                # PU weight
-                weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
+                ## PU weight
+                ## FIXME: removed because of 2016 problems
+                #weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
 
                 # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
@@ -484,8 +485,8 @@ if __name__ == '__main__':
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
     if args.sample == 'MCall':
-        #sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
-        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
+        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+        #sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
     elif args.sample == 'data':
         if year == 2018:
             sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
