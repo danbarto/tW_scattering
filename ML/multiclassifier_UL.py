@@ -163,9 +163,9 @@ if __name__ == '__main__':
     argParser.add_argument('--load', action='store_true', default=None, help="Load weights?")
     argParser.add_argument('--cat', action='store_true', default=None, help="Use categories?")
     argParser.add_argument('--fit', action='store_true', default=None, help="Do combine fit?")
-    argParser.add_argument('--version', action='store', default='v21', help="Version number")
+    argParser.add_argument('--version', action='store', default='v1', help="Version number")
     argParser.add_argument('--year', action='store', default='2018', help="Which year?")
-    argParser.add_argument('--seed', action='store', default=-1, help="Fix the random seed in numpy?")
+    argParser.add_argument('--seed', action='store', default=-1, type=int, help="Fix the random seed in numpy?")
     argParser.add_argument('--optimize', action='store_true', help="Run grid search for hyper parameters?")
     # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
@@ -186,11 +186,13 @@ if __name__ == '__main__':
     #df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
 
     sample_list =  ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
-    df = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{args.year}.h5") for sample in sample_list])
-
-    # FIXME combine years, too!
-
-#    df = pd.read_hdf('../processor/multiclass_input_%s_v2.h5'%args.year)
+    years = ['2016APV', '2016', '2017', '2018']
+    #years = ['2018']
+    df = pd.DataFrame()
+    for year in years:
+        tmp = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
+        df = pd.concat([df, tmp])
+    del tmp
 
     variables = [
         ## best results with all variables, but should get pruned at some point...
@@ -237,16 +239,23 @@ if __name__ == '__main__':
     df_signal       = df[((df['label']==0)&(df['SS']==1)&baseline)]
     df_signal['label'] = np.ones(len(df_signal))*0
 
+    n_max = 200000
+
     # Prompt backgrounds from the various processes that contribute.
     # We only take events from the SS category that are not labeled as containing a lost lepton (LL).
     # Asigned label: 1
-    df_prompt       = df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']==0)&(df['SS'])&baseline)] # every prompt background except ttbar (which shouldn't have prompt anyway)
+    rescaler        = len(df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']==0)&(df['SS'])&baseline)])/n_max
+    df_prompt       = resample(df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']==0)&(df['SS'])&baseline)], n_samples=n_max)
+    #df_prompt       = df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']==0)&(df['SS'])&baseline)] # every prompt background except ttbar (which shouldn't have prompt anyway)
+    df_prompt['weight'] = df_prompt['weight']*rescaler
     df_prompt['label'] = np.ones(len(df_prompt))*1
 
     # Lost lepton backgrounds from the various processes that contribute.
     # Very similar to above, but now requiring a lost lepton
     # Asigned label: 2
-    df_LL           = df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']>0)&(df['SS'])&baseline)]
+    rescaler        = len(df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']>0)&(df['SS'])&baseline)])/n_max
+    df_LL           = resample(df[((df['label']<7)&(df['label']>0)&(df['label']!=4)&(df['LL']>0)&(df['SS'])&baseline)], n_samples=n_max)
+    df_LL['weight'] = df_LL['weight']*rescaler
     df_LL['label']  = np.ones(len(df_LL))*2
 
     # Nonprompt leptons, taken from top quark process (input label 4).
@@ -259,8 +268,8 @@ if __name__ == '__main__':
     # Charge flip category. We don't use all the events to train because they are just too many
     # We adjust the weight according to our background prediction, the rescaling, and only take events from the OS category: df['OS']==1
     # Asigned label: 4
-    rescaler        = len(df[((df['label']==4)&(df['OS']==1)&baseline)])/100000
-    df_CF           = resample(df[((df['label']==4)&(df['OS']==1)&baseline)], n_samples=100000)
+    rescaler        = len(df[((df['label']==4)&(df['OS']==1)&baseline)])/n_max
+    df_CF           = resample(df[((df['label']==4)&(df['OS']==1)&baseline)], n_samples=n_max)
     df_CF['weight'] = df_CF['weight']*df_CF['weight_cf']*rescaler
     df_CF['label']  = np.ones(len(df_CF))*4
 
@@ -287,6 +296,7 @@ if __name__ == '__main__':
     for name, df in df_list:
         print ("{:30}{:10.2f}{:10}".format(name, sum(df['weight']), len(df)))
 
+    del df_TTW, df_TTZ, df_TTH, df
     print ()
 
     # Now, merge all the separate dataframes into one again
