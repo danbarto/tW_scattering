@@ -1,5 +1,5 @@
 export TWHOME=$PWD
-export PYTHONPATH=${PYTHONPATH}:$PWD:$PWD/coffea/:$PWD/postProcessing/ProjectMetis/
+export PYTHONPATH=${PYTHONPATH}:$PWD:$PWD/coffea/:$PWD/postProcessing/ProjectMetis/:$PWD/BIT/
 
 #conda activate coffeadev4
 conda activate workerenv
