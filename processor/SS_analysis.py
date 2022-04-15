@@ -401,6 +401,7 @@ class SS_analysis(processor.ProcessorABC):
                     'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
                     'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
                     'event':            ak.to_numpy(ev.event),
+                    'nLepFromTop':      ak.to_numpy(ev.nLepFromTop),
                 }
 
                 if dataset.count('TTW_5f_EFT'):
@@ -1098,6 +1099,7 @@ if __name__ == '__main__':
                 'AR',
                 'LL',
                 'conv',
+                'nLepFromTop',
                 'label',
                 'total_charge',
                 'event',
