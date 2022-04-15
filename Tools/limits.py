@@ -1,7 +1,7 @@
 import os
 import re
 from coffea import hist
-import uproot3
+import uproot
 import numpy as np
 from Tools.dataCard import *
 
@@ -353,7 +353,7 @@ def makeCardFromHist(
             data_hist.fill(**{'dataset': 'data', data_hist_bins.name: edge+0.0001})
 
 
-    fout = uproot3.recreate(shape_file)
+    fout = uproot.recreate(shape_file)
 
     processes = [ p[0] for p in list(histogram.values().keys()) if p[0] != 'signal']  # ugly conversion
 
@@ -362,14 +362,17 @@ def makeCardFromHist(
     #
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
-            fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
+            #fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
+            fout[process] = signal_hist.integrate('dataset').to_hist()
         elif (bsm_vals is not None) and process=='signal':
             fout[process] = yahist_to_root(bsm_vals, 'signal', 'signal', overflow='all')
         else:
-            fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
+            #fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
+            fout[process] = histogram[process].integrate('dataset').to_hist()
 
     if integer:
-        fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
+        #fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
+        fout["data_obs"]  = data_hist.integrate('dataset').to_hist()
     else:
         if sm_vals is not None:
             bkg_tmp = histogram_sm.integrate('dataset').values(overflow=overflow)[()]
@@ -380,7 +383,8 @@ def makeCardFromHist(
             )
             fout["data_obs"]  = yahist_to_root(tmp_hist, 'data_obs', 'data_obs', overflow=overflow)
         else:
-            fout["data_obs"]  = hist.export1d(histogram_sm.integrate('dataset'), overflow=overflow)
+            #fout["data_obs"]  = hist.export1d(histogram_sm.integrate('dataset'), overflow=overflow)
+            fout["data_obs"]  = histogram_sm.integrate('dataset').to_hist()
 
     
     # Get the total yields to write into a data card
