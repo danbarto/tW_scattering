@@ -223,7 +223,7 @@ if __name__ == '__main__':
         X, Y = np.meshgrid(x, y)
 
         raise NotImplementedError
-
+        
         z = []
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [0, y, x, 0, 0, 0]
