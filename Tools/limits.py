@@ -4,9 +4,8 @@ from coffea import hist
 import uproot
 import numpy as np
 from Tools.dataCard import *
+from Tools.helpers import make_bh
 
-from yahist import Hist1D
-from Tools.yahist_to_root import yahist_to_root
 
 def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True):
     '''
@@ -38,15 +37,8 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
 
     pdf_unc = np.sqrt(pdf_unc)
 
-    up_hist = Hist1D.from_bincounts(
-        (central+pdf_unc)/central,
-        edges,
-    )
-    
-    down_hist = Hist1D.from_bincounts(
-        (central-pdf_unc)/central,
-        edges,
-    )
+    up_hist = make_bh((central+pdf_unc)/central, (central+pdf_unc)/central, edges)
+    down_hist = make_bh((central-pdf_unc)/central, (central-pdf_unc)/central, edges)
 
     if not quiet:
         print ("Rel. uncertainties:")
@@ -107,16 +99,9 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
         )
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
-    
-    up_hist = Hist1D.from_bincounts(
-        (central+scale_unc)/central,
-        edges,
-    )
-    
-    down_hist = Hist1D.from_bincounts(
-        (central-scale_unc)/central,
-        edges,
-    )
+
+    up_hist = make_bh((central+scale_unc)/central, (central+scale_unc)/central, edges)
+    down_hist = make_bh((central-scale_unc)/central, (central-scale_unc)/central, edges)
 
     if not quiet:
         print ("Rel. uncertainties:")
@@ -154,16 +139,9 @@ def get_ISR_unc(output, hist_name, process, rebin=None, quiet=True):
             down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
-    
-    up_hist = Hist1D.from_bincounts(
-        up_unc/central,
-        edges,
-    )
-    
-    down_hist = Hist1D.from_bincounts(
-        down_unc/central,
-        edges,
-    )
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
 
     return  up_hist, down_hist
 
@@ -196,16 +174,9 @@ def get_FSR_unc(output, hist_name, process, rebin=None, quiet=True):
             down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
-    
-    up_hist = Hist1D.from_bincounts(
-        up_unc/central,
-        edges,
-    )
-    
-    down_hist = Hist1D.from_bincounts(
-        down_unc/central,
-        edges,
-    )
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
 
     return  up_hist, down_hist
 
@@ -231,16 +202,9 @@ def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
     down_unc = tmp_down[process].sum('dataset').values(overflow='all')[()]   
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
 
-    up_hist = Hist1D.from_bincounts(
-        up_unc/central,
-        edges,
-    )
-    
-    down_hist = Hist1D.from_bincounts(
-        down_unc/central,
-        edges,
-    )
-    
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
+
     if not quiet:
         print (process)
         print ("Rel. uncertainties:")
@@ -309,7 +273,6 @@ def makeCardFromHist(
         hist_name,
         scales={'nonprompt':1, 'signal':1},  # this scales everything, also the expected observation
         bsm_scales={'TTZ':1},  # this only scales the expected background + signal, but leaves expected observation at 1
-        overflow='all',
         ext='',
         systematics={},
         signal_hist=None,
@@ -343,11 +306,12 @@ def makeCardFromHist(
     histogram.scale(bsm_scales, axis='dataset')
     
     ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option
-    data_counts = np.asarray(np.round(histogram_sm.integrate('dataset').values(overflow=overflow)[()], 0), int)
+    ## FIXME: this should be handled with boost histogram too
+    data_counts = np.asarray(np.round(histogram_sm.integrate('dataset').values()[()], 0), int)
     data_hist = histogram['signal']
     data_hist.clear()
     data_hist_bins = data_hist.axes()[1]
-    for i, edge in enumerate(data_hist_bins.edges(overflow=overflow)):
+    for i, edge in enumerate(data_hist_bins.edges()):
         if i >= len(data_counts): break
         for y in range(data_counts[i]):
             data_hist.fill(**{'dataset': 'data', data_hist_bins.name: edge+0.0001})
@@ -362,28 +326,26 @@ def makeCardFromHist(
     #
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
-            #fout[process] = hist.export1d(signal_hist.integrate('dataset'), overflow=overflow)
             fout[process] = signal_hist.integrate('dataset').to_hist()
         elif (bsm_vals is not None) and process=='signal':
-            fout[process] = yahist_to_root(bsm_vals, 'signal', 'signal', overflow='all')
+            fout[process] = bsm_vals
         else:
-            #fout[process] = hist.export1d(histogram[process].integrate('dataset'), overflow=overflow)
             fout[process] = histogram[process].integrate('dataset').to_hist()
 
-    if integer:
-        #fout["data_obs"]  = hist.export1d(data_hist.integrate('dataset'), overflow=overflow)
+    if integer:  # not sure anymore what this would do?
         fout["data_obs"]  = data_hist.integrate('dataset').to_hist()
     else:
         if sm_vals is not None:
-            bkg_tmp = histogram_sm.integrate('dataset').values(overflow=overflow)[()]
-            sig_tmp = histogram_sm['signal'].integrate('dataset').values(overflow=overflow)[()]
-            tmp_hist = Hist1D.from_bincounts(
-                bkg_tmp+sm_vals.counts-sig_tmp,
-                data_hist_bins.edges(overflow=overflow),
+            bkg_tmp = histogram_sm.integrate('dataset').values()[()]
+            sig_tmp = histogram_sm['signal'].integrate('dataset').values()[()]
+            tmp_hist = make_bh(
+                sumw = bkg_tmp+sm_vals.values()-sig_tmp,
+                sumw2 = bkg_tmp+sm_vals.values()-sig_tmp,
+                edges = data_hist_bins.edges(),
             )
-            fout["data_obs"]  = yahist_to_root(tmp_hist, 'data_obs', 'data_obs', overflow=overflow)
+
+            fout["data_obs"]  = tmp_hist
         else:
-            #fout["data_obs"]  = hist.export1d(histogram_sm.integrate('dataset'), overflow=overflow)
             fout["data_obs"]  = histogram_sm.integrate('dataset').to_hist()
 
     
@@ -394,22 +356,22 @@ def makeCardFromHist(
     
     for process in processes + ['signal']:
         if (signal_hist is not None) and process=='signal':
-            totals[process] = signal_hist.integrate('dataset').values(overflow=overflow)[()].sum()
+            totals[process] = signal_hist.integrate('dataset').values()[()].sum()
         elif (bsm_vals is not None) and process=='signal':
-            print ("sum in limit tool", sum(bsm_vals.counts))
-            totals[process] = sum(bsm_vals.counts)
+            print ("sum in limit tool", sum(bsm_vals.values()))
+            totals[process] = sum(bsm_vals.values())
         else:
-            totals[process] = histogram[process].integrate('dataset').values(overflow=overflow)[()].sum()
+            totals[process] = histogram[process].integrate('dataset').values()[()].sum()
     
     if integer:
-        totals['observation'] = data_hist.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+        totals['observation'] = data_hist.integrate('dataset').values()[()].sum()  # this is always with the SM signal
     else:
         if sm_vals is not None:
-            totals['observation'] = histogram_sm.integrate('dataset').values(overflow=overflow)[()].sum() \
-                + sum(sm_vals.counts) \
-                - histogram['signal'].integrate('dataset').values(overflow=overflow)[()].sum()
+            totals['observation'] = histogram_sm.integrate('dataset').values()[()].sum() \
+                + sum(sm_vals.values()) \
+                - histogram['signal'].integrate('dataset').values()[()].sum()
         else:
-            totals['observation'] = histogram_sm.integrate('dataset').values(overflow=overflow)[()].sum()  # this is always with the SM signal
+            totals['observation'] = histogram_sm.integrate('dataset').values()[()].sum()  # this is always with the SM signal
     
     if not quiet:
         for process in processes + ['signal']:
@@ -431,6 +393,7 @@ def makeCardFromHist(
     # add the uncertainties (just flat ones for now)
     card.addUncertainty('lumi', 'lnN')
     if systematics:
+        # FIXME: update to boost histogram :(
         for systematic, mag, proc in systematics:
             if isinstance(mag, type(())):
                 # if systematics are shapes we need to scale them similar to the expectations
@@ -449,40 +412,25 @@ def makeCardFromHist(
                     # NOTE need to make a new yahist with scaled counts. fuck
                     # However, here at least I don't care about the unceratinties
                     if proc == 'signal' and bsm_vals:
-                        central = bsm_vals.counts
+                        central = bsm_vals.values()
                     else:
-                        central = histogram[proc].integrate('dataset').values(overflow=overflow)[()]
+                        central = histogram[proc].integrate('dataset').values()[()]
                     val = np.nan_to_num(mag[0].counts, nan=1.0) * scale * central
-                    val_h = Hist1D.from_bincounts(val, mag[0].edges)
+                    val_h = make_bh(val, val, mag[0].edges)
                     incl_rel = sum(val_h.counts)/sum(central)
                     print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
                     print (" - central prediction: %.2f"%sum(central))
                     print (" - relative uncertainty: %.2f"%incl_rel)
 
-                    fout[proc+'_'+systematic+'Up']   = yahist_to_root(
-                        #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
-                        val_h,
-                        systematic+'Up',
-                        systematic+'Up',
-                    )
+                    fout[proc+'_'+systematic+'Up']   = val_h
                     val = np.nan_to_num(mag[1].counts, nan=1.0) * scale * central
-                    val_h = Hist1D.from_bincounts(val, mag[1].edges)
+                    val_h = make_bh(val, val, mag[1].edges)
                     #incl_rel = sum(val_h.counts)/sum(central)
-                    fout[proc+'_'+systematic+'Down'] = yahist_to_root(
-                        #mag[1]*scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
-                        val_h,
-                        systematic+'Down',
-                        systematic+'Down',
-                    )
+                    fout[proc+'_'+systematic+'Down'] = val_h
                 else:
-                    val = np.nan_to_num(mag[0].counts, nan=1.0) * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()]
-                    val_h = Hist1D.from_bincounts(val, mag[0].edges)
-                    fout[proc+'_'+systematic] = yahist_to_root(
-                        #mag[0] * scale * histogram[process].integrate('dataset').values(overflow=overflow)[()],
-                        val_h,
-                        systematic,
-                        systematic,
-                    )
+                    val = np.nan_to_num(mag[0].counts, nan=1.0) * scale * histogram[process].integrate('dataset').values()[()]
+                    val_h = make_bh(val, val, mag[0].edges)
+                    fout[proc+'_'+systematic] = val_h
 
                 card.specifyUncertainty(systematic, 'Bin0', proc, 1)
             else:
@@ -509,8 +457,6 @@ if __name__ == '__main__':
     This is probably broken, but an example of how to use the above functions
 
     '''
-
-    from Tools.helpers import export1d
 
     year = 2018
 
