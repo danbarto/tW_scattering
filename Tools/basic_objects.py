@@ -27,6 +27,8 @@ def getTaus(ev, WP='veto'):
     if WP == 'veto':
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2#Tau_Identification
         # I guess we can use Tau_idDeepTau2017v2p1VSjet >= 16. This corresponds to loose
+        # https://github.com/cms-tau-pog/TauFW/tree/master/PicoProducer/python/analysis#accessing-nanoaod
+        #
         return ev.Tau[(ev.Tau.pt > 20) & (abs(ev.Tau.eta) < 2.3) & (ev.Tau.idDeepTau2017v2p1VSjet>=16)]
 
 def getIsoTracks(ev, WP='veto'):
