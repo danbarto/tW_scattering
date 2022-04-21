@@ -1,6 +1,5 @@
 # Measuring tW scattering
 
-
 ## Setting up the code
 
 Prerequisite: if you haven't, add this line to your `~/.profile`:
@@ -37,52 +36,50 @@ Install package to tarball environments
 conda install --name base conda-pack -y
 ```
 
-## Setting up a environment for our work
+## Setting up the environments
 
 Create environments with as much stuff from anaconda
 ```
-conda create --name coffeadev uproot dask dask-jobqueue matplotlib pandas jupyter hdfs3 pyarrow fastparquet numba numexpr -y
-```
-And then install residual packages with pip
-```
-conda run --name coffeadev pip install jupyter-server-proxy coffea autopep8 jupyter_nbextensions_configurator klepto yahist
-```
-
-## Setting up an environment for the DASK workers
-
-```
-conda deactivate
-conda create --name workerenv uproot dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime -y
-conda run --name workerenv pip install coffea yahist
-conda activate workerenv
-```
+conda create --name workerenv python=3.9.7 ipython uproot dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime coffea -y
+``` 
 
 Pack it
 ```
 conda pack -n workerenv --arcroot workerenv -f --format tar.gz --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
 ```
+and then move the tarball into the `Tools` directory.
+This environment will be used when running on a (local) DASK cluster.
 
-### DASK trouble shooting
+Depending on what you want to work on you might need more packages that you can preferentially install from anaconda, or with pip.
+E.g.:
 
-I had to update my (local) python version, so you might have to run
-```
-conda install python=3.8.6
+``` shell
+conda activate workerenv
+pip install yahist
+pip install keras, tensorflow, sklearn
+conda deactivate
 ```
 
-### Coffea developer mode
+In order to use jupyter you need to run the following:
 
-If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository.
-This gives instructions for our private fork that fixes the root export for our needs.
-Based on coffea 0.7.0.
 ```
-git clone https://github.com/CoffeaTeam/coffea
-cd coffea
-git remote add upstream git@github.com:danbarto/coffea.git
-git fetch upstream
-git checkout upstream/root_export
-pip install --editable .[dev]
+python -m ipykernel install --user --name=workerenv
+jupyter nbextension install --py widgetsnbextension --user
+jupyter nbextension enable widgetsnbextension --user --py
 ```
-Full instructions are given [here](https://coffeateam.github.io/coffea/installation.html#for-developers).
+
+In order to use jupyter notebooks, log into uaf with
+
+``` shell
+ssh YOUR_USER@uaf-10.t2.ucsd.edu -L 8007:localhost:8007
+```
+
+Then on the uaf
+
+``` shell
+( conda activate workerenv && jupyter notebook --no-browser --port 8007 )
+```
+
 
 ### Setting up CMS software and analysis code
 
@@ -114,31 +111,54 @@ You should be set up now. The following steps have to be repeated everytime you 
 source activate_conda.sh
 ```
 
-To start a jupyter server just do
+### Coffea developer mode
+
+If you want to fix bugs, get the very latest version of coffea or are just adventurous you can install coffea direct from the github repository.
+This gives instructions for our private fork that fixes the root export for our needs.
+The current analysis software is based on coffea v0.7.14
 ```
-( conda activate coffeadev && jupyter notebook --no-browser )
+git clone https://github.com/CoffeaTeam/coffea
+cd coffea
+git remote add upstream git@github.com:danbarto/coffea.git
+git fetch upstream
+git checkout upstream/root_export
+pip install --editable .[dev]
 ```
-In order to use jupyter you need to establish another ssh connection from your computer:
-```
-ssh -N -f -L localhost:8893:localhost:8893 johndoe@uaf-10.t2.ucsd.edu
-```
-Where 8893 represents the port (check the output of the jupyter server, uaf-10 should be replaced with the uaf you're working on, and johndoe by your user name, of course
+Full instructions are given [here](https://coffeateam.github.io/coffea/installation.html#for-developers).
+
 
 ## Using DASK
 
-When you ran the above setup you should have created a `daskworkerenv.tar.gz` file. Move this into `tW_scattering/Tools/`. If you lost the tarball, just rerun
+When you ran the above setup you should have created a `workerenv.tar.gz` file. Move this into `tW_scattering/Tools/`. If you lost the tarball, just rerun
 ```
-conda pack -n daskworkerenv --arcroot daskworkerenv -f --format tar.gz \
+conda pack -n workerenv --arcroot workerenv -f --format tar.gz \
     --compress-level 9 -j 8 --exclude "*.pyc" --exclude "*.js.map" --exclude "*.a"
 ```
 
 Then, run `packCode.sh`, which is located in `tW_scattering`. This script downloads the latest version of the tW_scattering code and creates a tarball that's shipped to the DASK workers.
 
 ```
-ipython -i start_cluster.py
+ipython -i start_cluster.py -- --scale 10
 ```
-Starts a cluster with 50 workers. The scheduler address is automatically dumped into a text file so that it can be picked up easily in any notebook using coffea. You can get the status of the cluster by just typing `c` into the ipython prompt.
+Starts a cluster with 10 workers, where `--scale` sets the number of workers (default is 5). The scheduler address is automatically dumped into a text file so that it can be picked up easily in any notebook using coffea.
+The status of the cluster will be shown as a progress bar.
+It can take a few minutes for the cluster to start.
 
+Keep this job running (background or different terminal).
+You can submit a test job with
+
+``` shell
+ipython -i processor/test_dask.py
+```
+
+You can get the dashboard of the DASK cluster by connecting to the cluster with
+
+``` shell
+ssh -N -f -L localhost:13349:localhost:13349 {YOUR_USER}@{CLUSTER_IP}
+```
+
+Then navigate to the status page in your browser: http://localhost:13349/status
+or look at the worker status: http://localhost:13349/info/main/workers.html
 
 ## Troubleshooting
 
@@ -146,11 +166,11 @@ To deactivate the environment, just type `conda deactivate`
 
 Uninstall the jupyter kernel if you're having problems with it:
 ```
-jupyter kernelspec uninstall coffeadev
+jupyter kernelspec uninstall workerenv
 ```
 and then reinstall it again
 ```
-python -m ipykernel install --user --name=coffeadev
+python -m ipykernel install --user --name=workerenv
 jupyter nbextension install --py widgetsnbextension --user
 jupyter nbextension enable widgetsnbextension --user --py
 ```
@@ -169,7 +189,7 @@ daniel           27709   0.0  0.0  4318008    604   ??  Ss    8:11AM   0:00.00 s
 Similarly, you can stop the process by running `kill 27709`.
 
 
-## Get combine (experts only)
+## Get combine
 Latest recommendations at https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#setting-up-the-environment-and-installation
 ```
 cmsRel CMSSW_10_2_13
@@ -191,9 +211,3 @@ wget https://raw.githubusercontent.com/cms-analysis/CombineHarvester/master/Comb
 scram b -j 8
 ```
 
-## Sample version history
-
-- v0p1p12: data processing (no MC submitted yet)
-- v0p1p11: **dilep/trilep skim only!** added variables for ttH lepton ID
-- v0p1p10: intermediate version
-- v0p1p9: used for initial tW scattering studies presented in SnT
