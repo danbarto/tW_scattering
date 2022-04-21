@@ -1,0 +1,2926 @@
+/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - &id001 !!python/name:numpy.ndarray ''
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      os+qS0EPpUuObq5LVmuoS/tVqUsf5qlLIMqsSz/Uqkvu+qhLucirS9QWq0v/LKtLCmGqSyQUq0uD
+      SKpLD4uqS/TNqkuFcqpL2PmqSwnKqkuA3apLVRurS1YTq0sloapLv6+qSwAZq0s4eapLqQmrSzrL
+      qku8PqtLQNOqS4wCq0tU4KpLlaOqS+/uqktbxKpLvOKqSwHEqkuuIKtLtPuqS2ztqksi4qpL+aiq
+      S8rKqkvzyapLMd2qSxf0qkv72KpLMbCqSzvVqkvB/6pLOcuqSwe5qkvowqpLjPCqS1j+qkv4zapL
+      CL6qS5TTqkuVyapLoayqSynqqkv2tapL+NeqS17aqkttvapLPd2qS3HQqksBxqpLXcyqSwDEqku4
+      xKpLw+iqSzTBqkvUzapLXLuqS33Iqkv916pLuLSqSzbNqksP06pLFMqqS2K+qkvwrqpLVdiqSx7S
+      qkt60KpLjMCqSxveqkuCxapLbdKqS/zPqkul16pLbeOqSxHEqkusyapLVdeqS8rlqkvM1KpLDNGq
+      S6LPqkuNC6hLxICuSw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      j8RmS0eVq0tA7etLkWdlS6LPqkvrE+tLJGFkS/86qktlcOpL
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 22388550
+  name: DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 34
+  sumWeight: 22388548.0
+  xsec: 18610.0
+/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      FEKdTGJqnUyNV51MhxadTKAcnUyERp1MZhidTD8xnUxEGp1MyjCdTNZDnUzjXJ1MbBSdTG9TnUxS
+      D51MZDidTEpInUy0Lp1MOFGdTNg7nUw7k51MNWedTEZRnUx5LJ1Ma3edTEZgnUzUHJ1MkqSdTChN
+      nUwcdp1MvUSdTCmTnUw0Vp1MEjCdTMdenUwCO51MDCidTH9MnUxSeZ1M1TSdTPlCnUyJbZ1Myyad
+      TL0lnUxNIJ1MbkWdTH48nUxaLp1MGFOdTOU/nUxGOJ1MDEGdTKZDnUz+RZ1MM0OdTDtVnUyZXJ1M
+      mjydTEQ6nUyvV51MeUGdTCpHnUzGSZ1MPj+dTABbnUy1PZ1MOledTF5UnUwWRJ1MhEydTItAnUx2
+      UJ1McUedTAFDnUxyRp1MsDidTApCnUxMVp1MIj+dTGY6nUzfQJ1M6DqdTHFHnUyTOZ1MwkmdTCY+
+      nUwUP51MT0adTJhLnUyWR51MFESdTJ1EnUzfQZ1MaUKdTN03nUxmP51MmT2dTBVBnUwoRJ1MqUSd
+      TBRCnUxcl5pMe2yfTA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      izCNTMLmnUzF56xMX4+MTBRCnUwCQaxMUwuMTCa7nExfuKtM
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 82448537
+  name: DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 82448537.0
+  xsec: 6077.0
+/DoubleEG/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  nEvents: 4360689
+  name: DoubleEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 0.0
+  xsec: -1.0
+/DoubleEG/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 78797031
+  name: DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 0.0
+  xsec: -1.0
+/DoubleEG/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 85388673
+  name: DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 3
+  sumWeight: 0.0
+  xsec: -1.0
+/DoubleMuon/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  nEvents: 2429162
+  name: DoubleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 1
+  sumWeight: 0.0
+  xsec: -1.0
+/DoubleMuon/Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_4.root
+  nEvents: 45235604
+  name: DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2
+  path: null
+  reweight: 1
+  split: 1
+  sumWeight: 0.0
+  xsec: -1.0
+/DoubleMuon/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 48912812
+  name: DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 1
+  sumWeight: 0.0
+  xsec: -1.0
+/MuonEG/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  nEvents: 1901339
+  name: MuonEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 3
+  sumWeight: 0.0
+  xsec: -1.0
+/MuonEG/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 33854612
+  name: MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 0.0
+  xsec: -1.0
+/MuonEG/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 29236516
+  name: MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 1
+  sumWeight: 0.0
+  xsec: -1.0
+/SSWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      gAluSYVYbkl6P25JKUJuSZLZbUmBYG5JkMFtSU4BbknKqm1JNWluSRkRbkksHG5J3NhtScEebknX
+      KW5JM9RtSU0mbkk1Im5J97ptSQWtbUkl+m1JPt5tSZx2bkkTAW5JJ3luSc8Vbkkdgm5J2hRuSeQP
+      bkl+8G5JymVuSSL+bkns+G1JMcRuSYJkbknvum1J8YhtSagmbkmfQm5J9lhtSX/zbUlen25JAfps
+      SaySbUm8lG1JklptSaIebUk8q21JRmpuSc/bbUkr1m1J40FuSdXfbUkIUG5JYRFuSRg4bkk2Qm5J
+      m8BtSRwcbkmDPm5J5hJuSfIEbklQ/21JnuJtSU9ebkkW9m1JVt9tSfdDbkmmD25JLhVuSSjFbUnU
+      EG5JSDRuSQMTbknzJW5JLPRtSSHkbUkyI25Jmv9tSXz2bUkSAG5JADFuSev2bUndwG1JKg9uSb8L
+      bkltCW5JrPptSRA4bkkbGm5JNRhuSWYNbklFAW5Jpx1uSWECbkmL921JyPdtScH4bUmx/G1JmO9t
+      SYAJbkk=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      Qbt9SYAJbklyVmBJQbt9SYAJbklyVmBJQbt9SYAJbklyVmBJ
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 975000
+  name: SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 23
+  sumWeight: 975000.0
+  xsec: 0.02794
+? /ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      3jfqytV75so8J+jKdsHrymVp68pzMuzKHjXtymbf6MoXxOfK/GTsyvHU7crNCO7KtMvmygbh6Moj
+      0ubKHdruypUB78rKZO/KV6Xpys+t6MrgpevKIOvjyk7958pHBOjKFhTnyoy95sqMBevKdxboynWj
+      5sqq6u3Kaf7tylXb6cp9POvK7h7oyitC58pcOO/Kp9voygd07Mq5fOrKd/jnysXZ6coTIevK52bl
+      yuTx6cr0EufKcV3rygu/68rKYuTKEkrlymoE68on5u3K5Efnyijd5srqAOrKE5rnyiNf58psI+jK
+      xOXoyrZc5sp7JvHKJqXqysNi6coJ0OjK2a3oygHd6MqAeunKPKbqygS45MrXE+3KKLjoyhGw5Mpn
+      Vu/KUPbsyuQK7cqqfu/KxlPtymjP78otIOnKgUTrygI+68pmQejKQ8nkypUB78qmn+jKyj7ryu9E
+      7sqq7eLKVhzsyow37Mrrm/DKqDDnyi6558q21+7K6NDsyiLC6soIOOjKgaPnyhVc5srY2+3KG3jq
+      yk1n68o=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      wunoTEKQ7UwKEfNMyUbcTCOX4kwhzuhMsHXQTLXS10wJb95M
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3654510
+  name: ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 7
+  sumWeight: 118799344.0
+  xsec: 19.47
+? /ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      hqLVynRX08pT79PKVIPXyv4n18rmP9fKVuvXylUa08rNYNPKUW3YysL418qH3dnKh6HSytHC08q6
+      +9LKbnzZykiE2cqi2tnKvrbUytVS08rOOtbKP7bPytqN08oncdPKBa/Sykil0crnqdbK7P7TyvhH
+      0spvFNnK9nLYyqk21spPhdbKplXTygeh08p2jdrKRbLUynod18pigdXK+pPSynBk1MoyLdfK1g7R
+      ym1V1coChtHKpYbWyio518q6L9DKKJbSyu8D2MrwhtjKRzfUyokE0sqOSdXKsKbTyggn08rYCdTK
+      XlXUyp6O0crqYNvKoj/XygLM1MqQR9XKJofTym131coGZdTK+FXWypnSz8omh9nKrPPTynVk0Mpw
+      89nKYjnZysdS2cpmrtnK2SDYyreY2srrWtTKSFjWyiXz1soFW9PKvknQykiE2crtgtLKeKzWyrbz
+      2MqpTc/KJ4HYyrCZ1sqS+NvKc2rSyio808peINrKzXzYyuaB1spHCdTKBj7TykJk0sozZdjKxy3W
+      ympz18o=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      YU3WTPaN2kwrmd9MNarKTN1z0ExlKNZMC8m/TGOLxkzIncxM
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3368375
+  name: ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 9
+  sumWeight: 109290184.0
+  xsec: 19.47
+/SingleElectron/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  nEvents: 8858206
+  name: SingleElectron_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 0.0
+  xsec: -1.0
+/SingleElectron/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 153363109
+  name: SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 0.0
+  xsec: -1.0
+/SingleElectron/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 129021893
+  name: SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 0.0
+  xsec: -1.0
+/SingleMuon/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  nEvents: 8024195
+  name: SingleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 0.0
+  xsec: -1.0
+/SingleMuon/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 149916849
+  name: SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 3
+  sumWeight: 0.0
+  xsec: -1.0
+/SingleMuon/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  nEvents: 174035164
+  name: SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  path: null
+  reweight: 1
+  split: 3
+  sumWeight: 0.0
+  xsec: -1.0
+/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      uuBdS0z4XUuOyV1LUPddSzgXXks25l1LSBNeS0f1XUsi9V1LoPddS17VXUvN2V1LCf5dS7gaXkuU
+      RF5LzAxeSyYEXktxBF5LcptdS46lXUvc3V1L5qVdS67nXUtd+l1Lqs9dS4TeXUuABF5LiL9dSx7i
+      XUsYzV1LsxpeS/HEXUvw4V1LVD9eS5imXUtVul1LqOddS1DLXUtWEF5L9U1dS4mVXUv8I15LgkVd
+      S9WAXUuSpl1LEFtdSxIQXUtsr11LbDNeS/yNXUtGq11LHgJeS3PjXUt4GV5LDt5dSzHjXUuH6V1L
+      Vr5dS8z9XUvqC15L3PBdS7LNXUt8/V1L5dZdS+oIXkuQ+F1LDLNdS2D+XUsy911LoOFdS6LEXUum
+      0l1L2O9dS5npXUst5V1LwMtdS4/DXUsE/11LkOFdS8DQXUsM3F1L4PRdS17ZXUuszF1LmuBdS0fk
+      XUs33F1LedtdS6n0XUuT411LUO9dS1blXUsw6V1LUuJdS2XhXUu13l1L5tFdS+rgXUuc2V1LZ9Vd
+      S7rgXUs=
+  LHEReweightingWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 69
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      x55YTCan9EvO76pLGjmLSzcrLEunUQFLF6i6SgtqgEq8sidKcRfUSQqpj0k+GoJJEWurScLNBUrP
+      JpxKwqJ5S0SfiUz1GChMMaD5S0x800tgxrBLb36RS+xIa0vycDpL3HgQS6ip2kpmIaJKFaJuSjBx
+      NEoYsBVKzl4SSqgLXkrEqC9LVQYmTAQrqUsanFhLDwkmS+6j9Eqr7apKmN5dSqxRAUqic4BJ6TnU
+      SNxNgkgj8AVJSTycSRAwFkrLsXlKKsEESwPdsUtR1kpL3Zc4S09IJ0uA6RZLZ3gHSwTw8UqSxtZK
+      8Yy9Sq4qpkoxrZBKXAl6St+BVkpYrzZKuq8aSvRkAkqOtNtJuBa6SUX4n0mqU41J
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      5o2IS6JIfEv9vWlLxD1wS7rgXUsYi01L5q1WS1Y9RktaoDdL
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 14939986
+  name: THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  path: null
+  reweight: LHEReweightingWeight,11
+  split: 14
+  sumWeight: 14540986.0
+  xsec: 0.0742
+/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      4MKOSsi0jkpBf45KBL+OSiISj0rKkY5K3QWPSoDKjkoA1o5KmMuOSk+bjkpZvY5KzO6OSmb+jkon
+      Do9KLiePSnfbjkpS5o5Kq3COSiegjkrArI5KTYmOSiXDjkpc1I5KAF6OStW6jkqkoY5KqbaOSkrF
+      jkoMdI5KgsyOSoN9jkp7u45KQaaOSoGEjkpuyo5KjPGOSq2xjkqawo5KjLWOSpiqjkq8q45K19OO
+      Sriyjkqfzo5K3buOSgmcjkrmwo5KCcaOSsOVjkoDsY5KUsCOSmDkjkpPvI5KMryOSq6zjkqDv45K
+      kNSOStLTjkokz45K48KOSpO/jkpM245KjtKOSjPGjkqA245KJsGOSl66jkoj2I5Kfb6OSnvSjkoh
+      to5KZrGOSljKjkprso5Ki72OSozBjkoY145K8cqOSna0jkrLxY5K8rmOSl/Ijkrg245K7sOOSnvE
+      jkrYvI5KPsqOSpS7jkobvI5KMsmOSjjJjkpO0I5KWreOSunEjkozzY5Kbr6OSsvKjkonxY5KusmO
+      SuDCjkrOfItK5UeSSg==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      xJy3SqYorUqGWKNKCmWXSuDCjkrmqIZKMx5+Sl6bb0p9/mFK
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 4678000
+  name: TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 5
+  sumWeight: 4678000.0
+  xsec: 2.22
+/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      8E4TS0FAE0tECRNLmEoTS5SgE0sAHBNLXpMTSz9VE0tJYBNLglkTS2AlE0vNShNL8noTS/qME0uM
+      nBNLn7cTS1JoE0t+cxNL4vgSSzgrE0sTOBNLGBITSw5QE0t6YBNLhuUSS3JGE0tXLRNLmEMTSwlS
+      E0vI/xJLTFkTS24KE0taRxNLoTITS3APE0v8VRNLVn0TS7I9E0tRTxNL0kATSxk2E0tTNxNLyl4T
+      S449E0vUWRNLKEcTSzYmE0sUTxNLKlMTSxQgE0v+PBNL/kwTSyBxE0tKSBNL4EcTSwI/E0sBTBNL
+      iGETS4hgE0uQWxNLIE8TS7RLE0v/ZxNLSF8TS3xSE0sTaBNLPk0TS1ZGE0uCZBNLPUoTS0xfE0uA
+      QRNLsDwTS6NWE0sSPhNLi0kTS65NE0ueYxNLVFcTS9A/E0s0UhNL3EUTS3xUE0vLaBNLNlATS2JQ
+      E0uzSBNLllYTS0FHE0s3SBNLTlUTS61VE0vLXBNL/0ITSypRE0uWWRNLYkoTSzBXE0tkURNLGFYT
+      S/BOE0sB6w9LPPIWSw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      rGw9S4yoMkskjyhLgDMcS/BOE0sw+ApLUxoDS8RB90pkPulK
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 9654000
+  name: TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 9654000.0
+  xsec: 7.51
+/TTTT_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      4tn0Rt8t9EaxM/RGlOr0RjRo9UYCcfNGPp31Rl6S80ZYW/NGVvD0RlZ99EYCdfZGTav0RvyK9UYA
+      1vVGrNf1Rm4k9kYiAvZGopXzRhmn80YoI/VG7p7zRhh99EZHbPVGwBnzRrkC9UZquvRG0Dj1RjRG
+      9EYJ3PNGHHD0RngJ9EaS8vRG4M70Rrj380Yq5PRG0F71RvP080ZWKvVG0Kb0Rmx79EZtIvRGOAP1
+      Rjis9EaBiPRGy4b0Rhbd80Y2GPVGmhn1Rill9EbJyPRGeu70Rs4x9UY56vRGZJ/0Rtzm80ZA2vRG
+      KCT1RsA59Ub29PRG8rj0RiL09Ea+CfVG+Hv1Rv6I9EY89fRGS6v0Rksm9EZWSfVGnq70Ri559UYK
+      VfRGTSH0RlS29EaiXfRGOuL0Rn4U9UZ2+vRGqPz0RkC59Eaj4vRGoKn0Rgfd9Eami/VGXbf0Rgzq
+      9EZ01/RGtvv0RhqY9EbkkPRGhvj0RrgK9UZ+HPVGIo30RrTv9EZtGPVGfMb0RigQ9UYwAfVGdPn0
+      RuPZ9EZAqudG1v4BRw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      RSYeR+rvFUejpQ5HoIgDR+LZ9EYGTeVG9vPXRiaVxkafALhG
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 4544000
+  name: TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  path: null
+  reweight: 1
+  split: 6
+  sumWeight: 31340.94140625
+  xsec: 0.009103
+/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      WCo7T53/Ok9mVztPbDs7T2SfO0/HDDtP0Lc6T63gOk89vDpPjoE7T1IGO0/6wzpPOjU7TzvtOk+w
+      VztPY0Q7T2VoO0+SCjtPbRw7T5Y4O0/MSjtPozg7TzErO0+aWztPneU6T7dGO0+ycztPPeM6T0je
+      Ok8QDjxPHzc7TyRQO0/vSDtPgU07TzZPO09WKTtPnB87T11MO09gMztP3A87T2A1O0+2HDtPeeE6
+      T08sO0/ZVDtPFBg7T1piO0/+WTtPv/U6TxMVO0+CPTtPs0g7T+YWO09bNDtPYjw7T2QxO0/ZKjtP
+      oCo7T5ozO0+ZHDtPiCg7T2MYO09zJTtPnyo7T4QeO09KMztPOzI7TzUmO09nODtPczk7T1wEO09R
+      DTtPjDA7TxETO0/qETtPjhQ7T2o/O0979jpPwjQ7T3Y4O094PDtPqzY7T24+O0+SLztPsiE7TwQ3
+      O0+4NDtPFhM7T3gxO088IDtPNzM7TzUkO0+3JTtPPzg7T58mO08MOztPThk7T8ZQO08JHDtPvi47
+      TzYqO0+mDDZPS4pATw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      0NJST2kpT08UzExPTMU/T1gqO0/OnzdPI4stT5eQKE+OeSRP
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 43546000
+  name: TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 3140127224.0
+  xsec: 87.315
+/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      CzIcUf0NHFExVxxR4j8cUVqTHFH4GBxRFdIbUSP0G1G61RtRdXocUZ0THFFH3BtRxTocUbP+G1GL
+      VxxRWUccUXZlHFEoFxxRCSYcUYs9HFGyTBxRij0cUWkyHFG/WhxRT/gbUVdJHFHmbhxRYPYbUTjy
+      G1Gk7xxRSzwcUS9RHFEnSxxRU08cUWpQHFHXMBxRsigcUSFOHFGGORxRlBscUeE6HFFMJhxR6/Qb
+      UTQzHFElVRxRbiIcUW1gHFFyWRxRwAUcUdkfHFGrQRxRBEscUW8hHFEQOhxRvEAcUak3HFFKMhxR
+      zDEcUV05HFE7JhxRNTAcUaYiHFGTLRxR+DEcUagnHFEkORxRXDgcUTkuHFF5PRxRRj4cUecRHFE+
+      GRxR3DYcUS4eHFFNHRxRhh8cUUBDHFFGBhxRSjocUWs9HFHCQBxR3zscUWtCHFHZNRxRciocUQ88
+      HFG2ORxRSB4cUZg3HFH7KBxRATkcUZcsHFHVLRxR2jwcUZouHFEGPxxRcSMcURlRHFG4JRxRVjUc
+      UYoxHFGt7BdR6K0gUQ==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      vPAvUZbiLFGb6SpRWAkgUQsyHFFSPRlRwdIQUVOrDFG9QQlR
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_30.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_31.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_18.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_17.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_24.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_25.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_34.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_22.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_23.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_19.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_29.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_21.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_33.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_27.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_28.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_20.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_32.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_26.root
+  nEvents: 144722000
+  name: TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 41928133760.0
+  xsec: 364.35
+? /TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      9OGHSbfnh0k+2odJTOmHSeULiEmnpodJh9OHSVyWh0kNVodJ4G2ISYinh0k1MohJLcyHSXxeiEld
+      14dJZMWISeu4h0kX3odJGjyHSRbYh0lXBIhJkmWHSfNFiEnWr4dJ726HSaLRh0m45IdJB0yIScfu
+      h0nEoYhJ3EqISSOSiEm0wodJJ1GISf0LiEmXqodJ+peHSaIhiElzGIhJkpKHSR7Kh0lg8IdJxFiH
+      SfGvh0lfuIdJK96HSYevh0mI2odJbQ+ISUWRh0m2yYdJpBeISbDHh0nx2YdJAumHSWASiEnM7YdJ
+      I8+HSQPrh0nm/4dJhhCISdL5h0lz5YdJfa6HSUIBiEls5IdJLgeISe0GiEkC3YdJOsCHSbbVh0k8
+      4odJUuKHSYXyh0lnyodJ8tOHSf3Sh0m474dJ0fSHSUO9h0kn4YdJePCHSYD1h0k3yIdJn/GHSTTU
+      h0la4odJ5feHSbrih0kp6odJDduHSWfth0ls0YdJdd2HST7eh0mZ3odJ/daHSTnih0mx4odJIeOH
+      SfThh0mwiYJJo/6MSQ==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      wtmVSbdolEkxopNJB4WKSfThh0kK4oVJfv16SXPOdEmfyG9J
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3322643
+  name: TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 6
+  sumWeight: 1113150.5
+  xsec: 0.2043
+? /TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      wDRMSBI/TEiKJExIvDxMSJB0TEjt20tITRlMSNzAS0gLXktI9wZNSCPdS0hmqExIUhVMSLLuTEiw
+      I0xID4FNSNH8S0h+LUxI2DpLSNEhTEhGXExIgHtLSCvKTEgE6EtI6YhLSC0OTEhxPUxI/NRMSJVF
+      TEioS01ISchMSKZNTUhB/0tId9FMSFt1TEhy8UtIR8RLSF2WTEi/fkxI7chLSBEVTEhqP0xIPWhL
+      SArzS0j+9UtIzC1MSDbzS0jNLUxIZnlMSA3ES0hcDkxI+IRMSL0HTEjaKUxITTpMSB54TEi7SExI
+      DhpMSA5CTEhgX0xIanxMSLhbTEguPkxIpe1LSHRlTEgEOkxIl2tMSMZmTEhALExIsgNMSPogTEiY
+      MUxIXDJMSGlMTEjREkxIxx5MSAEbTEg/TExIm1FMSGv+S0iRNExI9ktMSI1STEgiDkxIektMSEsf
+      TEhFNkxI5VVMSAk4TEh2QExIvCtMSO5GTEiAHExIdC5MSMIwTEhEMExIQCRMSFg0TEipNkxIxjdM
+      SMA0TEjnKERIEfJTSA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      D8dhSMpYX0iJ9F1IAlhQSMA0TEjwDElITIk8SIbFN0gs5TNI
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 308983
+  name: TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 8
+  sumWeight: 209107.0
+  xsec: 0.4062
+/TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      AOGWSCCzlkh6t5ZInQWXSIwyl0hGYZZIOPSWSERQlkhQIZZIpEyXSNirlkgKmZdIyLiWSGSAl0gg
+      8pZIkumXSJoBl0j8HZdIBAWWSBqblkiHHZdITiaWSGgjl0i77JZIvS+WSJb6lkhA1pZIrj+XSCK6
+      lkhVVpdIYkSXSAAgl0hF1JZIHDOXSCTNlkjyn5ZIKNCWSIDtlkiYKZdIRYaWSMShlkisvJZIaYqW
+      SDielkjMq5ZI6MaWSAh9lkiSwJZIDCCXSBVslkic0pZInAuXSEbwlkh805ZIlOyWSJz4lkgM/JZI
+      FOCWSG7ylkgYBZdIEAmXSFQLl0gI65ZIEqiWSIHilkjn45ZIPA+XSGrilkgzBJdI1baWSKTulkiH
+      wZZIOcKWSB72lkjMopZINdSWSDvqlkg58ZZIpAqXSBaxlkig6ZZI79+WSArylkiV7pZI5PCWSDHN
+      lkgJ25ZI4QSXSAvGlkju25ZIAN+WSEr4lkj41pZI6s+WSFXtlkg48ZZIrdWWSILulkhz7pZIcvKW
+      SADhlkjEL5NIfYuaSA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      isLFSJUCtUgcv6ZIPtqkSADhlkgR+4pISJ6LSDqNf0joYmtI
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 309000
+  name: TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 13
+  sumWeight: 309000.0
+  xsec: 0.007829
+/TTWZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      AEYbSLw7G0izURtI8pgbSEyLG0gN6xpIsxYbSE/HGki+XxpIo08cSGMGG0jnChxItecaSDcPHEjt
+      3hpIgOccSJ/7Gkh6PRtI1FQaSAM6G0hurhtIwVwaSC7rG0h8DhtIw50aSHGMG0gADBtIwd8bSAY3
+      G0hU5xxIpmocSB0oHEhxMRtIYkwcSPCSG0jBqBpIbu0aSCa9G0ie4BtIOZ0aSPUJG0g4ehtIUWQa
+      SGe8Gkgy5BpInpAbSNo2G0iTLhtIEHQbSL29Gkj8MxtIPZ8bSK8XG0j+DhtI7G4bSOLFG0jGSRtI
+      vBEbSGkeG0ifdBtIcpQbSCycG0jPNRtIG6saSKV3G0jWLxtIjsQbSLGCG0hJLhtIBuMaSDUiG0jV
+      TxtIDU4bSAtmG0gN8xpIYiobSGpBG0igTRtIrIwbSIvqGkiCUhtIxXIbSLJwG0hlERtIsW0bSKMS
+      G0iaTxtInYwbSL8xG0hoVBtIFzAbSLplG0idAhtI0i8bSCZDG0h/QBtIqiEbSNxLG0jqTxtIDlQb
+      SABGG0j8OhdI5rkeSA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      medESOMaOkhwSzBI5E0kSABGG0iCEhNI4EQLSMKZA0jfRvlH
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 159000
+  name: TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 159000.0
+  xsec: 0.002919
+/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      kDqzSbkVs0mu7LJJ5ECzSWmSs0la1bJJanazSaHZskkr17JJLWmzSeb9skmtl7NJQk6zSRC3s0mX
+      lLNJ3fazSZxxs0kKhrNJ+ICySYzjskkaTbNJI7SySTRes0m3U7NJdJGySfQus0mhKLNJg2uzSTwq
+      s0mJGbNJS2GzSeQns0nXIbNJsEOzSQ79sklhPLNJY0ezSWohs0mGT7NJYxCzSfENs0ndDbNJNyGz
+      SRIfs0mIMrNJWCSzSZHpsklSPLNJPF+zSSXvskk4IbNJUEuzSQhgs0mBN7NJSjOzSRsls0lMQLNJ
+      5D+zST5Ws0ldVrNJOk2zSUhCs0lXWLNJ0j6zSc5As0lfU7NJLEOzSe4ws0nxYbNJ4iazSatas0kV
+      J7NJGhazScJCs0mOELNJEDOzSTM+s0kQVbNJ+E2zSYEhs0nqO7NJNTOzSfNJs0lCWrNJSzuzSYI1
+      s0mEN7NJvlSzSWIts0lCLLNJYESzSbRIs0nMRrNJ6yazSepAs0mXSrNJwS2zSatHs0mDRbNJH0qz
+      SZA6s0nJYq5JnHK4SQ==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      xQ7ESX8cwUlG7r5JdiG4SZA6s0lUPa9JfXuqSWGbpEnmsp9J
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 6017000
+  name: TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 12
+  sumWeight: 1468242.0625
+  xsec: 0.2728
+/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      TGEoShQ+KErBFyhKZWooShizKEosAihK4pgoSukAKEr+/ydKlI0oSs4nKErKuihKvXIoSnzYKErk
+      tShK9BMpSmWWKEqKqShKfrAnSrMOKEqHdihKVOEnSjSEKEqIeihKzMInSlRWKEoyUShK9JEoSghS
+      KEq9QyhKtoYoShRSKErOSShK9m0oSsUnKEoeYihK42koSv9GKEoxdShKFjgoSnw3KEoYNyhKZEYo
+      St1GKEo0WChKL0woSvIUKEqgZShKGIUoSoYbKEq1SShKJXEoSkKEKEo/XyhKXVooSoZLKEoGZihK
+      AGUoSrB6KEqWeyhKcnMoSiNqKEpOfihKIWQoShxnKEoaeShK5WkoSrFXKEoxhyhK5E0oSmKAKErS
+      TyhKRz4oSo1oKEqJNyhKq1koSo5lKEpDeihKQXQoSqxJKEqVYShKb1ooSjtxKEpofyhKpWEoSptb
+      KEqEXyhKonsoSqxUKErrUihKAGsoSvluKErYbChKoE4oSmFnKEr1cChKmlQoSpdtKEpBbChKanAo
+      SkxhKErk1iNKWEMtSg==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      ZFs4SsWPNUokeDNKagEtSkxhKEpgmiRKHyIgShqYGkqx9RVK
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 5401000
+  name: TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 7
+  sumWeight: 2758739.0
+  xsec: 0.5297
+/TTZZ_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      AHAUSDZaFEg5PRRIDr0USM6wFEhsMhRIkmQUSHnFE0jMsxNIeOMUSCFKFEjeARVIGU4USHkPFUhe
+      axRI6X4VSDx6FEgUjBRItKATSPw/FEjsxxRI/cETSBzeFEiedhRIbOITSEVqFEirgxRIse8USCRf
+      FEh8HhVItfwUSEr5FEjVSxRISuwUSG6BFEi2RRRIxBAUSDKJFEiaxxRIBgkUSO04FEhAZBRI7eQT
+      SJcjFEhKMBRIhGIUSE4gFEhdYBRIMsUUSNAYFEhGWRRIsqkUSDR6FEiXdBRI+HkUSCeXFEj4hxRI
+      /zkUSEBxFEhuohRItqgUSMenFEgwfxRITRwUSCyLFEj3cxRI/K0USECMFEi4lRRIXjUUSLCAFEio
+      cxRIKlcUSBx9FEjNIBRIjlkUSPJ6FEh8hRRI6JwUSA5AFEgqcRRIKYUUSFaTFEjyaRRICXsUSCZL
+      FEggfhRI+rgUSFNfFEhAYxRIZHgUSEaKFEgsVhRIH1wUSKp4FEj3eRRIrFAUSE99FEhqixRIWY0U
+      SABwFEhYfBBInNUXSA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      QoRASC76MUi2bCVIVpIgSABwFEhT9glI5Q0ISASJ+0eDxulH
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 152000
+  name: TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 8
+  sumWeight: 152000.0
+  xsec: 0.001573
+? /TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      q9stRZqdLUUZaS1FotMtRcpVLkWaXS1FRV4uRdurLUV/0y1FAsItRdWsLUWVIi5FTBQuRRg0LkXg
+      eS5FCk8uReRPLkWxVS5Fy1EtRYRaLUWJxS1Fo3QtRZ6rLUUSJS5FESItRercLUWmmS1FBLYtRSG7
+      LUWs+SxFvMgtRcj+LEVW3i1FhpEtRRI7LUUV/y1FOlguRQKFLUXk0S1FGc4tRdygLUW0ly1Fth4u
+      RYXALUWa8C1FtMotRcaJLUVm8S1F9NotRTedLUVyvC1FncstRf0cLkW22y1FrcUtRZSPLUW3wS1F
+      m/wtRXsDLkXp5i1FdsstRZfRLUXlCS5FshQuRS/NLUVGDS5FD8MtRQmqLUWsCy5FJdEtRbwNLkXg
+      ty1FIactRUvaLUVgty1FDNYtRd/jLUXM+y1FXugtRafPLUXa4y1F0MctRW7iLUVmIi5FItEtRQDn
+      LUUt1C1F+OUtRd/ILUV2xC1F3+otRcvnLUVU/C1Fl78tRefgLUXH9C1FQNEtRY/vLUVC4y1FJOot
+      RavbLUWXFShFbXI0RQ==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      gcUzRfl6NEVo3zZFyKwsRavbLUUTAjBFolglRXbXJkUuyyhF
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 926000
+  name: TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 2781.729248046875
+  xsec: 0.003004
+? /TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      hIo6RYhHOkV4DzpFUoE6RcUMO0X3BDpFsBU7RepWOkXugjpFKG06RctYOkWK2DpFPsY6RSboOkVH
+      NjtFhAc7ReoFO0XDCjtFrvk5RTgAOkWkczpFwBs6RbJTOkWv2DpF3sM5RRSNOkWTRTpF5mI6RWBl
+      OkVulTlFEHk6RUOZOUX7jjpFoT86RTLdOUUmsjpF9A47RQ0qOkX6gzpFMHU6ReJGOkVeQzpFvs06
+      Re1oOkXanTpFinc6RSEtOkXonzpF+oo6RT9FOkUIaTpFSXo6RcjROkUcjDpFDHM6RcI5OkV8bzpF
+      SK86Rcq2OkUilzpFqHs6Rf59OkUIvTpF1sc6RYR7OkW4vDpFpXA6RXhUOkXPvDpFcoA6RX7COkXs
+      YjpFElA6RUCHOkUKZTpF64Q6Ra6SOkXKrDpFVpY6Rah9OkVQlDpFqHU6RR+ROkW+1jpFSn86RfKV
+      OkXigTpFvJU6Rax1OkUhcTpFh5s6RRuXOkU0rTpFwms6RayQOkVApTpFzn86ReafOkWGkjpFApo6
+      RYWKOkWMVzRFPZRBRQ==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      SNdARSK1QUWfVURFTC85RYSKOkXI5TxFR0sxRYT4MkVSGzVF
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 992000
+  name: TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 2984.6572265625
+  xsec: 0.003004
+? /TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      gF7wQ0YJ8EPSu+9DP1PwQw0H8UMZte9D7xPxQ1wY8EOGU/BDFDrwQ54d8ENPwfBDnajwQ7vV8EOi
+      QPFDhP7wQx4C8UP2AvFD2aXvQ5au70P4PPBDwMzvQ8QU8EPsw/BDTlzvQ/Fd8EP0B/BD0i3wQ/8w
+      8EPyHO9D6EbwQxor70NUZPBD+v3vQwp+70PBkvBDTwPxQ0zc70P3U/BDwj/wQ/kH8EPBAfBD1K7w
+      Q5Yu8EN4cvBDGETwQ+3k70OrfvBDzWDwQxwI8EPDNfBD/kzwQy648EMFZPBDOT7wQ5bx70OsO/BD
+      /JHwQ72W8EPhavBD/knwQ/FP8EOrofBDlLLwQytI8EP6oPBDhTzwQw0X8EPfnfBDyE/wQ3yo8EMH
+      K/BD5BDwQytZ8ENeLPBDMVjwQ6Vr8EMSivBDiW7wQ3JN8EMHa/BDq0LwQ01m8EPgwvBDqU/wQ0pt
+      8EO6VPBDI27wQ1dC8EMePPBDbnTwQ+Zv8EOzjPBDHDbwQ45m8EP3gfBDbFHwQ2B68EMAafBDVXPw
+      Q31e8ENbZuhDl2r5Qw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      tSf4Q44t+UOocfxDFa7uQ4Be8EN0UfNDJ8fkQ7Dn5kPVl+lD
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 320000
+  name: TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 8
+  sumWeight: 480.73828125
+  xsec: 0.001501
+/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      FK1MSiroTEoloUxKxp1MSkieTEqHwExKapRMSt6vTEormUxKNZlMSv+ZTErDwExKf4FMSq+8TEoM
+      dUxKsc1MSu6eTErDl0xKe8ZMSgK1TEpdLE1KW9JMSqejTEptg0xKAOdMSmG7TEogbkxK9UNNSu3I
+      TErS1UxK3ppMSiTwTEqQ0ExKSXxMSuTITEqIo0xKK5dMSk29TEpZ3UxKJKhMSqauTErI3ExKt7FM
+      SluWTEoBhExK08ZMSp7JTErpl0xKWadMSlmkTEpnsExK46xMSkyoTEoiq0xKf7FMSmXHTEq0ukxK
+      FLRMSninTEq6ukxK8J1MSnyyTErZq0xKt7pMSs/DTEqCrExKSM1MSjy0TEqKoUxK87RMSnmjTEqm
+      tkxKuLhMSkujTErwvUxKbJtMSlarTErFxkxKOp9MSregTEq0sExKcJpMSqerTEqZoExK37dMShSu
+      TEptpkxKcqVMStO6TEoVuUxKIrBMSi60TErorUxKja5MSu+PTErkokxKF69MSmSuTEoksUxKRKxM
+      ShStTEq4YElKqXhPSg==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      jes2Ss+0TkrZVmRKE+00ShStTEoxSmJKpFMzSiAMS0o3pWBK
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3353413
+  name: WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 6
+  sumWeight: 3353413.0
+  xsec: 412.7
+/WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      INLzS8+C+0sqt/RLHoPxSyVx8kuEx/FL2jv2S71b9EtMM/JLcmHxS5l570v+KPNLkD/yS7hD80tW
+      s/VLO4P0S3GX80vxzfVLNmXzS3Rv90tACvFLTyL0S51W+EtJp/ZLlG3yS/Qb9UtIvvVLXOb4Sxwa
+      9Uvna/RLmi31S2Rm9Uu3YvNLULD4Sxf08Eu3C/RLIvn0S+xk80tFF/JLmovyS3J/80tq6fZLzpb1
+      S4Vq9ktDePRLMMvzS3aF9Uvm8fZLzD/zS97m9ks72/NLXNLzS9A080vYmPVLbEj4S8Jj90vh1/RL
+      k/v3S7Dv9Uv8zvNLCs72Syp/8ksPi/RLO8DzS/ke8ktSL/dLmFH1S50l9ktVY/VL5DH1S8Jf8kuE
+      1/JLUhfzS3Ha7kuOEvBLlhHyS6Go+EvdF/BLjkj1S+3G9EuVxvNL8BP1S3GX80veqPJLTr3yS9ze
+      8UuAMfdLbB3ySyfC9UudfexLv17zSyx79UsqgO9Lyb3xS2zj80vW0vFLS9/1S7TW9EvPV/NLwiH0
+      Sxdn80s=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      xiz4S4oy+0tVrP1Lft3xS/VE9Uv0CPhLFpzsSxFR8EvVVfNL
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 2900000
+  name: WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 7
+  sumWeight: 32147078.0
+  xsec: 12.178
+/WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      QPhaSWcOW0nh4lpJkcxaSe9AW0kGpFpJWOhaSRWlWkmwOVpJmcFbSciGWkkGP1tJIO9aSTykW0lc
+      8VpJxFtcSeyiWknd21pJdBRaSWADW0mBTFtJcVZaSUSVW0mbjFpJU1paSTrAWklV7VpJ78BbSVsv
+      W0m691tJyG1bSZITXEmfyFpJfnBbST1OW0m6qlpJyndaSUhnW0kkP1tJ9ZhaServWkm0GFtJVk1a
+      SXS6Wkk2wlpJXvpaSenCWkl36VpJrSNbSdaNWkn20FpJtTlbSTreWkmU6VpJlfpaST9FW0mzE1tJ
+      Ju9aSZkGW0muK1tJxytbSdMQW0lQ+lpJ5cNaSbIpW0kw+FpJUjVbSZYsW0ms5VpJvdJaST7pWkkB
+      A1tJZ/1aSbQMW0mM41pJl+daSWXkWkk0C1tJJAhbSf7IWknt81pJwgJbSSoRW0kM0lpJAhBbSS3m
+      Wknw9VpJRA9bSe/+WklXCFtJ2u1aSScGW0lo41pJAfRaSZfrWklB71pJYu9aSbz3Wklq91pJofpa
+      SUD4Wkk=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      ThdmSQdZY0nZJmFJ0HJdSUD4Wknn7VhJ+ExWSYIKVEl6IVJJ
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4159000
+  name: WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  path: null
+  reweight: 1
+  split: 19
+  sumWeight: 896900.0
+  xsec: 0.2086
+/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      mpQ/SaueP0m6fD9JGY8/SaLIP0lOZz9JJnQ/SSQ8P0mW8z5JKytASeM+P0lL2D9JrYI/SaQrQEln
+      kT9JSadASRxbP0kefz9JO8U+Sd2aP0lKzD9JGwU/Sb0qQElwVz9JPRw/Sb15P0nErj9JISpASf60
+      P0n8cUBJTQRASU6PQEmIZj9JLABASdTcP0k3Uz9JoBo/STfnP0k93z9JWTs/SSSGP0m8rz9Jxfw+
+      SfVgP0mQYT9JIm4/SVI6P0mzaj9J6OU/SQEwP0m8fD9J8sQ/SbKRP0nSiz9J1KE/SSTXP0nS0T9J
+      54U/ScuZP0mSzj9J2Ms/SZisP0lLmz9J51M/STW/P0kSjj9J9sk/SSXIP0nkoD9Jkn0/SRqNP0nG
+      nD9JA5Y/STKwP0nmez9JAIk/SdKJP0kBqT9JbK0/Sf1pP0nUkj9Jxpw/STOoP0lEeT9J8qo/SQp9
+      P0nIjj9JFrY/SdSSP0lloD9JdJA/SQaiP0mdhj9JYZQ/SQCYP0l3lD9J0Ys/SRyUP0kCmz9J7p8/
+      SZqUP0k=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      yhhLScCFR0k/mkRJEvBCSZqUP0nYyTxJgCw8SXD/OElPUDZJ
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4595000
+  name: WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  path: null
+  reweight: 1
+  split: 5
+  sumWeight: 784713.625
+  xsec: 0.1651
+/WZG_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      2oQ4Rw+dOEcZZzhH1Ww4R/64OEewZjhHEIo4RxtqOEeHNThHstk4R6Y2OEfogjhHvpU4R1jjOEdy
+      hzhHFkE5R3hbOEcadjhHTwo4R3yMOEe8vjhH7Tg4R0bdOEcqUThHJDk4RylkOEcqhThHGPw4R2Wp
+      OEde+jhHgLU4R6EkOUcMZThH0LA4R/7COEeIbzhHsjY4R3u0OEcVnzhHomg4RxyIOEcVjzhHuz44
+      R8d0OEdrbjhHe444R8V/OEftezhHn5I4R2xZOEckdThHiKA4R4SCOEcbeThHMIQ4R0+sOEenmzhH
+      W4I4R9eJOEcvozhH85s4RwiSOEfbiThHk244R6+mOEfahDhHrK84R6ugOEf3gThHnHo4RxKFOEfR
+      kDhHe4I4R7uPOEdudThHt3s4R0uCOEdSmjhHw4c4RwttOEd0fzhH8n84R0qWOEcodThH4pM4R055
+      OEfhgzhHfJY4R7eKOEeqjDhHaYI4R2KMOEcFfThHKoI4R7J5OEeygThHsH44R9uEOEc4hjhHF4o4
+      R9qEOEc=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      T3hFRzylQ0cCk0FH/vI5R9qEOEdjzjZHqH8wR/xjL0eQ+C1H
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 598000
+  name: WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 8
+  sumWeight: 47236.8515625
+  xsec: 0.04345
+/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      htSlTJb2pUzc6KVMTnylTBTvpUxYnKVMZtWlTI/MpUwslaVMQOOlTOiYpUw656VM8MulTOINpkzE
+      uaVMYjymTJ60pUz+wKVMX7alTGjipUy8QKZMxNKlTP73pUwqoKVM6tylTP7JpUyPs6VM4kymTC72
+      pUxaIqZMdN6lTANCpkzM3KVMit+lTPj5pUyzu6VMLKOlTJr0pUweAqZMJralTFvSpUydAKZM2qKl
+      TMa2pUz1q6VMuM+lTOrGpUyewaVMM+OlTG6/pUy4yKVMgt2lTJTOpUyU2aVM3tilTGvypUyW5KVM
+      +s+lTGLWpUx26KVMYtelTLbapUxy16VMDNGlTBTupUyh0aVMyuqlTB7opUzgzaVMXNelTO7HpUy4
+      3aVMQuClTJDUpUzw2aVMTcelTPjNpUzx5aVM3M2lTFjGpUzU0qVMZM+lTCbXpUz1wqVMAN6lTFLQ
+      pUxs0qVMxdOlTM7hpUyd3aVMJtalTB7ZpUzd0KVMXdalTPrEpUyUzKVMbdGlTDPUpUyG1KVMcNKl
+      TIbUpUzC5qJM0lOoTA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      NYenTDq6q0x+V65MubigTIbUpUwtT6lMPCWbTC7woEwaFaVM
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 10441724
+  name: WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 10
+  sumWeight: 86942768.0
+  xsec: 4.666
+/WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      o7WASiXSgErMyYBKhG+ASoa5gEpXkoBKQquASguogEpvhIBKI7mASuyNgEpuyoBK6KWASvHdgEpn
+      nYBKx/iASgqkgEpsp4BK+aWASom/gErXC4FKobeASg3NgErWj4BKDcOASsiygEp7nIBK+RGBSmzN
+      gEpD8YBKgL2ASgMQgUosv4BK8L2ASqzSgEqjqIBKgo+ASrDOgEqO2YBKLKeASki1gEoC1oBKe5SA
+      SvKlgEqEl4BK0bSASgy1gEqYqoBK7MCASr6pgEovroBKabyASlmwgEoNuoBKALmAShPNgEoYwoBK
+      9LKASlG2gEpXxIBK57aASnm7gEq8t4BKbLSASnjKgEoNs4BKtMeASvbDgEqgsIBKkLiASnesgEqi
+      vYBK/r6AShO1gEpEuoBK9KqASnaxgEqMw4BK0K+ASi2rgEqLtIBK1rCASja3gEpAqIBKF72ASoWy
+      gEqMtIBK5LSASoHAgErRvIBKgLeAStW5gErssoBKaLeASvGogEqLr4BKerOASr+1gEoWtoBKH7SA
+      SqO1gEpZt31K4S+CSg==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      ozCASrsahErugYZKtpZ4SqO1gEo6roNKajBySmjUe0rWV4FK
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 904000
+  name: WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  path: null
+  reweight: 1
+  split: 18
+  sumWeight: 4217572.0
+  xsec: 4.664
+/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      5ig5T4JYOU/bGjlPFjs5TxALOU8FTjlPrgA5T5clOU+dDDlPISg5T+8jOU/kRDlP5vM4T946OU9t
+      9DhPKyQ5T2g8OU8EIDlPXCc5T78POU+LfjlPT0Y5T9Y9OU/cCzlPjl45T+xQOU+J9jhPa7c5T7Y2
+      OU9baDlP0S45T4uDOU//QDlPGfk4T/ROOU9nJTlPYhQ5T5I5OU+mbTlPEyw5T703OU9pWDlPPSY5
+      T40LOU/yBTlP/kQ5T2g6OU9/FDlPGSw5TzonOU80JjlPuiE5TzUrOU81HzlPCSk5T8M+OU9zSzlP
+      2DI5T7gXOU9BRDlP0SE5T1kuOU/gLzlPezE5T8ZBOU9gITlPHU85T6I2OU9kJTlPXjY5T2srOU+T
+      OTlPeis5T5IrOU8gNTlPNR85T5orOU++QjlPvCE5Tx8eOU/CKDlP0Bo5TzUvOU+jIzlPjjQ5Ty8l
+      OU+mITlPnCo5T5cxOU8vMzlP/iY5Tx4tOU8+KTlPVig5TyYWOU/6IzlPkig5TzMnOU94LDlPRyw5
+      T+YoOU8PyjVPhTM8Tw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      5h05T/WHPk/YWEFPNDYyT+YoOU8ujT1Pg4MsT4qbNE9tMjpP
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 31562465
+  name: ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 2
+  sumWeight: 3106465312.0
+  xsec: 55.48
+/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      OItmSzAhbUunl2dLU/FjS/cZZUuMfWRLjVpoS9wwZ0v2QmVLiCRkS6SpYkvKvWVLwA5lSw5ZZku0
+      KGhLkgtnS8QqZksgJmhL6x9mS+Q5akuYcGRLUOVmS8LaaktTUGlLkk1lS/7DZ0sCCGhLrgBsSxLF
+      Z0soAmdLJgJoS5i3Z0vGO2ZLXPlqSyL5Y0syVGZLG1BnS2LZZUvN2GRLCjVlS6MjZkvoSWlLtFlo
+      Szz7aEvME2dLuP9lS530Z0v20mlLrVFmSyLAaUvtm2ZLIp1mSy4XZkv1hGhLutdqSzifaUvza2dL
+      Um5qS253aEtsRGZLvq9oSzN6ZUs0TWdLh65mS0IOZUsMimlL4o1nS77GaEtCFmhLa+xnS0qpZUuQ
+      qmVLh2dmS+3YYUsUZmNLVfVkS8CfaktyX2NLEeJnS3ooZ0tUJmZL1eZnS8QqZkuIo2VL16RlSzfB
+      ZEt27mlLEzFlS5RqaEv4yV9L7uhlSxoAaEs6sGJLXrVkS5L+ZkuKpGRLxIdoS7cCZ0sd9mVL+ONm
+      S7YLZks=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      U3lsSzbscEsIQnRLx5VnS8SpbEtllXBLKohjS3QgaUuUhm1L
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 15928000
+  name: ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 4
+  sumWeight: 15509970.5
+  xsec: 0.564
+/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      lIeQTNGekExHepBMdmmQTNKpkEyJb5BMEHuQTGN+kExmPJBM0sKQTCNOkEzylJBMmIGQTEzDkEwI
+      gZBMFOyQTNpxkEwCgJBMuz6QTIZ3kEyOupBMM3OQTCnSkEy1VpBMcXaQTGqBkEyAd5BMqvaQTFGk
+      kExz6JBMRq2QTNcNkUy2gZBMzpeQTBOzkEx/dpBM90+QTLywkEyZwJBMkm+QTDqXkEz6spBMIlaQ
+      TJZmkEyjZpBMQn+QTKlqkEzidJBMR6KQTHx0kEydeJBM6I6QTMCNkEwGhZBMvoiQTHKgkExSr5BM
+      6IKQTN6BkEyIppBMipCQTOGMkEycjZBMaIGQTGKikEwrgZBMnqCQTGKhkEyxiZBMZ42QTMOEkEyk
+      lpBMWYyQTAaPkEwvipBM0n+QTPyDkExEmJBMl4iQTAZ6kEyghZBMcISQTPmOkEzcepBMyJGQTNJ/
+      kEzahJBM04+QTLGOkExqj5BMJIiQTO6KkEzchZBMloiQTFCAkEwqhZBMBISQTJyFkEzXiZBMl4uQ
+      TJSHkExFLo5MIZ2STA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 8
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      OYKSTENGlUwVVpdMOy6NTJwPk0ziq4hMz3SMTAdZj0w=
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 13740600
+  name: ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 3
+  sumWeight: 75775133.0
+  xsec: 3.689
+/ZZZ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      nBJHRwglR0fM6kZH9hNHRwM1R0d3DUdHSeJGRxN9RkfMTkZH95xHRyasRkeUQ0dHGAtHR6DDR0e6
+      AEdHnkxIR7nKRkeN7EZHUCpGRxYkR0f0nUdHd4ZGRxjTR0fdykZH66tGR6HWRkexR0dHj/dHR3BH
+      R0dPD0hHhINHRxZjSEed0kZHv5BHR7KJR0fs7UZHOURGRwhjR0cvZkdHDrxGR/oLR0emJUdHh1xG
+      R0HsRke310ZHFvtGR3zORkc+AkdHWnZHR9LLRkd57UZHQ0ZHR9wUR0egC0dHuh5HR/9WR0d+VkdH
+      PeBGR1UPR0ckZkdHkl9HRxIzR0dFJEdHUcNGR8hRR0dhCUdH6GFHR2pWR0fZKEdHLfhGR6gmR0d2
+      PUdHzQZHRyEmR0eL5UZHTQdHRxIUR0eZLkdHjyxHR07uRkdiB0dHeRlHR2I+R0el8kZHKyRHR+Ht
+      RkcDGEdHoFNHR94UR0f9FEdHjBRHR0gfR0fJ/EZHvg1HR8ESR0efE0dHy/pGR6wRR0cGJkdHxS1H
+      R54SR0euyEVH3eJHRw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      moBMR+yhS0dQYktHzuhHR5wSR0dovUZHfxJER3tDQ0ek3EJH
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4534000
+  name: ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  path: null
+  reweight: 1
+  split: 16
+  sumWeight: 50962.609375
+  xsec: 0.01398
+/ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      tSMzRyghM0efGjNHLjozR9ZJM0eu9DJH1z4zR1HoMkfAyTJH4mAzRyAPM0cTeTNH7hwzR/Z4M0cv
+      fTNHhHgzR8tXM0fTZDNHsaEyR+bCMkf+NTNHE70yR8w/M0fCNDNHm+QyR7kdM0f4STNHKTIzR9oR
+      M0cdPjNHEmMzR281M0f0GjNHqZUzR+fvMkcz+DJH+xkzR48NM0dqXTNHo5QyR/3dMkfeUTNHg4My
+      RzHPMke74DJHY6QyR2hOMkd/AjNH5H4zR6fKMkc18jJHqk4zRyMfM0cYVzNHqx8zR5YaM0cQLTNH
+      uwIzR35GM0enTjNH4DszRygWM0enOjNHoBkzR0o/M0cpNTNHDfcyR9Q4M0fCPDNHKBozR7QQM0fQ
+      CzNHDiczR1spM0caHjNHDREzR30IM0eGOTNHlSozR94PM0elHTNHLTozR34gM0eOEzNHuSAzR3sm
+      M0cvITNHaSMzR3swM0c5ITNHMzAzRzksM0ceLDNHOR8zR9UoM0fIJDNHPRQzR5YlM0cNITNHchgz
+      R7UjM0dPgDBHA1w0Rw==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 8
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      7cdVRw3OQkeFvTJHbodER+dpJEc6ETZHNwImR+1nGEc=
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/merged/nanoSkim_1.root
+  nEvents: 0
+  name: ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11
+  path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/
+  reweight: 1
+  split: 172
+  sumWeight: 45859.70703125
+  xsec: 0.0526
+/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 101
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      F76OSP3Ljkj+r45I6s2OSObhjkhrto5ICeWOSBXFjkidwY5IYM+OSNevjkhivY5IyNKOSM/njkg/
+      +I5ISdyOSKDWjkhn345IE4eOSHmUjkhGuY5IGpSOSK/DjkjMz45IIquOSO68jkj+z45IhauOSEa6
+      jkhRso5IatuOSN2tjkgwuo5ItPGOSGOcjkiypI5If8iOSOSsjkiH0o5INHWOSOCVjkhs345I8nKO
+      SMCSjki9no5IMnmOSHZNjkgvp45IkOqOSMCPjkgOpI5Iz82OSHC+jkgs2Y5IMsGOSDW7jkhgvo5I
+      pKuOSMLOjkjy0Y5ITMiOSGqwjkiO0I5IH7+OSIrQjkifzI5IQaKOSJzLjkiFzY5ItMCOSJewjkgw
+      so5IwMiOSBnCjkhevY5ISrSOSNisjkgt0I5IVL+OSKm0jkhZuo5IwMaOSAG6jkj7tY5IZL2OSG3A
+      jkiMu45IxriOSPzJjkjTvo5IucWOSO/BjkjfxI5IBL2OSHG+jkj7vI5I3rSOSETAjkgru45INLeO
+      SBe+jkg=
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      GsGZSN7el0hLoZZInJuRSBe+jkgni4xIDuiJSPpphkgzmINI
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3967000
+  name: tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 19
+  sumWeight: 292336.7109375
+  xsec: 0.09418
+? /ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
+: LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      XKt0SgVxdEpLRXRK+qp0SnUrdUpKDHRKbAl1Ss09dEoQOXRK5+F0SgRZdEohM3VKssR0St1KdUo7
+      P3VKgJN1StAKdUrcKHVKnrhzSiIhdEpJtHRKtvdzSti+dEog2HRKE8NzSoSvdEq+gHRK38h0SuSL
+      dEqZUnRKSNl0SvRRdErLmHRKZLd0SgE3dEqho3RKaul0SsB7dEq7xXRKQ2Z0SgNodEqhdnRKVZR0
+      Ssh/dErJpHRK/Xp0SmMndEqKp3RKkNl0SpI8dEqZhHRKdbh0SqzfdEofqXRKtJ50SgB/dErMq3RK
+      q8B0SpzTdEp3zHRKr7R0ShuxdEp01XRKAcN0SoSudEoC1HRKqqR0SoSPdEqb4nRKNpZ0SiXRdEo3
+      g3RKx3h0Snu2dEoVfXRKiaF0SvyqdEq/znRKPsN0SjKJdEo0rnRKQpx0Sli4dErd3nRKBqt0Sv+s
+      dEqmonRKEr90SvqXdEo+m3RKAbl0StC9dErTw3RKBJN0Sq2zdEr4w3RKNqB0Sm28dErjsnRKGrl0
+      Sl6rdEpfCGxKS9R9Sg==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 9
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      CY9uSsqPdkpcoH1KvmR2SlyrdEpGaHNK761rSn5DZUqp9l9K
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 4941250
+  name: ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  path: null
+  reweight: 1
+  split: 8
+  sumWeight: 4008662.875
+  xsec: 0.215
