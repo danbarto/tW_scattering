@@ -4,6 +4,7 @@ Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
+import boost_histogram as bh
 try:
     import awkward1 as ak
 except ImportError:
@@ -306,3 +307,9 @@ def zip_run_lumi_event(output, dataset):
             output['%s_lumi'%dataset].value.astype(int),
             output['%s_event'%dataset].value.astype(int),
             ]))
+
+def make_bh(sumw, sumw2, edges):
+    h = bh.Histogram(bh.axis.Variable(edges),storage=bh.storage.Weight())
+    h.view().value = sumw
+    h.view().variance = sumw2
+    return h
