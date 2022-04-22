@@ -267,10 +267,10 @@ class dataCard:
         import uproot
         f = uproot.open(fname)
         t = f["limit"]
-        limits = t.array("limit")
-        quantiles = t.array("quantileExpected")
-        quantiles = quantiles.astype(str)
-        limit = { quantile_dict[q]:limits[i] for i,q in enumerate(quantiles) }
+        limits = t.arrays("limit")["limit"]
+        quantiles = t.arrays("quantileExpected")["quantileExpected"]
+        quantiles = quantiles.to_numpy().astype(str)
+        limit = { q:limits[i] for i,q in enumerate(quantiles) }
         print (limit)
         return limit
 
@@ -501,21 +501,32 @@ class dataCard:
         return
 
 
-    def calcSignif(self, fname="", options=""):
+    def calcSignif(self, fname="", options="", verbose=False):
         import uuid, os
         ustr          = str(uuid.uuid4())
         uniqueDirname = os.path.join(self.releaseLocation, ustr)
-        print("Creating %s"%uniqueDirname)
+        if verbose: print("Creating %s"%uniqueDirname)
         os.makedirs(uniqueDirname)
-        combineCommand = "cd "+uniqueDirname+";combine --saveWorkspace -M ProfileLikelihood --uncapped 1 --significance --rMin -5 %s %s"%(options,fname)
+
+        if fname is not None:  # Assume card is already written when fname is not none
+          filename = os.path.abspath(fname)
+        else:
+          filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
+          self.writeToFile(filename)
+        resultFilename = filename.replace('.txt','')+'.root'
+
+        assert os.path.exists(filename), "File not found: %s"%filename
+        #combineCommand = "cd "+uniqueDirname+";combine --saveWorkspace -M ProfileLikelihood --uncapped 1 --significance --rMin -5 %s %s"%(options,fname)
+        combineCommand = "cd "+uniqueDirname+";eval `scramv1 runtime -sh`;combine --saveWorkspace -M Significance --rMin -5 %s %s"%(options,fname)
+        print (combineCommand)
         os.system(combineCommand)
         try:
-            res= self.readResFile(uniqueDirname+"/higgsCombineTest.ProfileLikelihood.mH120.root")
-            os.system("rm -rf "+uniqueDirname+"/higgsCombineTest.ProfileLikelihood.mH120.root")
+            res= self.readResFile(uniqueDirname+"/higgsCombineTest.Significance.mH120.root")
+            #os.system("rm -rf "+uniqueDirname+"/higgsCombineTest..mH120.root")
         except:
             res=None
             print("Did not succeed.")
-        shutil.rmtree(uniqueDirname)
+        #shutil.rmtree(uniqueDirname)
 
         return res
 

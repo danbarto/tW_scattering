@@ -37,11 +37,12 @@ def histo_values(histo, weight):
 
 def get_bit_score(df, cpt=0, cpqm=0, trans=None):
     tmp = (
+        df['pred_0'].values + \
         df['pred_1'].values*cpt + \
         df['pred_2'].values*cpqm + \
-        #0.5*df['pred_3'].values*cpt**2 + \
-        #0.5*df['pred_4'].values*cpt*cpqm + \
-        #0.5*df['pred_5'].values*cpqm**2 + \
+        0.5*df['pred_3'].values*cpt**2 + \
+        0.5*df['pred_4'].values*cpt*cpqm + \
+        0.5*df['pred_5'].values*cpqm**2 + \
         0
     )
     if trans:
@@ -363,6 +364,12 @@ if __name__ == '__main__':
     dataset_axis = hist.Cat("dataset", "Primary dataset")
     eft_axis = hist.Cat("eft", "EFT point")
 
+    #x = np.arange(-10,11,4)
+    #y = np.arange(-10,11,4)
+    x = np.array([-6,6])
+    y = np.array([-6,6])
+    X, Y = np.meshgrid(x, y)
+
     run_LT = True
     if run_LT:
         # First run the classical LT analysis.
@@ -405,19 +412,16 @@ if __name__ == '__main__':
 
         pp_val, pp_unc = sig_lt_hist_SM.sum('dataset').values(sumw2=True)[()]
 
-        x = np.arange(-10,11,4)
-        y = np.arange(-10,11,4)
-        X, Y = np.meshgrid(x, y)
         z = []
 
         sm_hist = make_bh(pp_val, pp_unc, lt_axis.edges())
         res_bsm = {}
 
         for x, y in zip(X.flatten(), Y.flatten()):
+            print (f"Working on cpt {x} and cpqm {y} for classical LT analysis")
             point = [x, y]
 
             bsm_vals = hp.eval(hist_coeff, point)
-            print (sum(bsm_vals))
             bsm_hist = make_bh(
                 sumw = bsm_vals,
                 sumw2 = (np.sqrt(pp_unc)/pp_val)*bsm_vals,
@@ -469,7 +473,9 @@ if __name__ == '__main__':
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
                 res_tmp = res_bsm[(x,y)]['nll0'][0]+res_bsm[(x,y)]['nll'][0]
-                z.append((-2*(res_sm_ll-res_tmp)))
+                nll = -2*(res_sm_ll-res_tmp)
+                z.append(nll)
+                print ('NLL: {:.2f}'.format(nll))
 
         if args.fit:
             Z = np.array(z)
@@ -503,15 +509,54 @@ if __name__ == '__main__':
 
     run_BIT = True
     if run_BIT:
-        x = np.arange(-10,11,4)
-        y = np.arange(-10,11,4)
-        X, Y = np.meshgrid(x, y)
         z = []
 
         res_bsm = {}
 
         ## BIT results
         bit_axis = hist.Bin("bit", r"BIT score",  [0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+
+        # this is just plotting the predicted coefficients
+        for i in range(6):
+            bit_hist = hist.Hist("bit", dataset_axis, bit_axis)
+            bit_hist.fill(dataset="TTW", bit=ttW['pred_%s'%i].values, weight=ttW['weight']*2)
+            bit_hist.fill(dataset="TTZ", bit=ttZ['pred_%s'%i].values, weight=ttZ['weight']*2)
+            bit_hist.fill(dataset="TTH", bit=ttH['pred_%s'%i].values, weight=ttH['weight']*2)
+            bit_hist.fill(dataset="signal", bit=sig_test['pred_%s'%i].values, weight=sig_test['weight'])
+
+            fig, ax = plt.subplots(figsize=(10,10))
+
+            hep.histplot(
+                [
+                    bit_hist['TTW'].sum('dataset').values()[()],
+                    bit_hist['TTZ'].sum('dataset').values()[()],
+                    bit_hist['TTH'].sum('dataset').values()[()],
+                ],
+                bit_axis.edges(),
+                histtype="fill",
+                stack=True,
+                density=False,
+                label = ["ttW", "ttZ", "ttH"],
+                color = ["#FF595E", "#8AC926", "#1982C4"],
+                ax=ax)
+
+            hep.histplot(
+                [ bit_hist['signal'].sum('dataset').values()[()] ],
+                bit_axis.edges(),
+                histtype="step",
+                stack=False,
+                density=False,
+                linestyle="--",
+                color = ["black"],
+                label = ["top-W scattering (BSM)"],
+                ax=ax)
+
+            ax.set_yscale('log')
+            ax.legend()
+
+            fig.savefig(f"{plot_dir}/pred_coeff_{i}.png")
+
+
 
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [x, y]
@@ -562,8 +607,6 @@ if __name__ == '__main__':
 
             sm_hist = bh.Histogram(bh.axis.Regular(10, 0, 1))
             sm_hist.fill(q_event_cdf, weight=sig_test['weight'])
-
-            print (sum(sig_test['weight']*eft_weight))
 
             if args.plot:
                 fig, ax = plt.subplots(figsize=(10,10))
@@ -642,7 +685,9 @@ if __name__ == '__main__':
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
                 res_tmp = res_bsm[(x,y)]['nll0'][0]+res_bsm[(x,y)]['nll'][0]
-                z.append((-2*(res_sm_ll-res_tmp)))
+                nll = -2*(res_sm_ll-res_tmp)
+                z.append(nll)
+                print ('NLL: {:.2f}'.format(nll))
 
         if args.fit:
             Z = np.array(z)
