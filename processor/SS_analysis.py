@@ -404,7 +404,7 @@ class SS_analysis(processor.ProcessorABC):
                     'nLepFromTop':      ak.to_numpy(ev.nLepFromTop),
                 }
 
-                if dataset.count('TTW_5f_EFT'):
+                if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
                     for w in self.weights:
                         NN_inputs_d.update({w: ak.to_numpy(getattr(ev.LHEWeight, w))})
 
@@ -1051,12 +1051,12 @@ if __name__ == '__main__':
 
         # inclusive EFT weights
         eft_weights = [\
-            'cpt_0p_cpQM_0p_nlo',
-            'cpt_0p_cpQM_3p_nlo',
-            'cpt_0p_cpQM_6p_nlo',
-            'cpt_3p_cpQM_0p_nlo',
-            'cpt_6p_cpQM_0p_nlo',
-            'cpt_3p_cpQM_3p_nlo',
+            'cpt_0p_cpqm_0p_nlo',
+            'cpt_0p_cpqm_3p_nlo',
+            'cpt_0p_cpqm_6p_nlo',
+            'cpt_3p_cpqm_0p_nlo',
+            'cpt_6p_cpqm_0p_nlo',
+            'cpt_3p_cpqm_3p_nlo',
         ]
 
         if args.central: variations = variations[:1]
@@ -1105,6 +1105,7 @@ if __name__ == '__main__':
                 'event',
             ]
             if sample.count('topW'):
+                print ("topW sample")
                 variables += eft_weights
 
             for dataset in mapping[ul][sample]:
@@ -1223,7 +1224,7 @@ if __name__ == '__main__':
             util.save(output, cache)
 
         ## output for DNN training
-        labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'top': 4, 'rare':5, 'diboson':6, 'XG': 7}
+        labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'top': 4, 'rare':5, 'diboson':6, 'XG': 7, 'topW_lep': 0}
         if sample in labels:
             label_mult = labels[sample]
         else:
