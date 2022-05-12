@@ -112,9 +112,13 @@ if __name__ == '__main__':
     # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
 
+    bit_file = f'bits_{args.version}.pkl'  # list of all trees
+    signal_bit_file = f'bit_{args.version}.pkl'  # Signal only tree
+
     # load data
     sample_list =  ['TTW', 'TTZ','TTH']
-    years = ['2016APV', '2016', '2017', '2018']
+    #years = ['2016APV', '2016', '2017', '2018']
+    years = ['2018']
 
     df_bkg = pd.DataFrame()
     for year in years:
@@ -123,12 +127,26 @@ if __name__ == '__main__':
         df_bkg = df_bkg[df_bkg['SS']==1]
     del tmp
 
-    df_signal = pd.concat([pd.read_hdf(f"../processor/multiclass_input_topW_{year}.h5") for year in years])
+
+    df_signal = pd.DataFrame()
+    #for year in years:
+    #    tmp = pd.read_hdf(f"../processor/multiclass_input_topW_{year}.h5")
+    #    if year == '2018':
+    #        tmp['weight'] = tmp['weight']/2
+    #    df_signal = pd.concat([df_signal, tmp])
+    #    df_signal = df_signal[df_signal['SS']==1]
+    #del tmp
+
+    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2018.h5")
+    df_signal_lep['weight'] = df_signal_lep['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
+    df_signal = pd.concat([df_signal, df_signal_lep])
+
+#    df_signal = pd.concat([pd.read_hdf(f"../processor/multiclass_input_topW_{year}.h5") for year in years])
 
 
     # Prepare hyper poly inputs
-    samples = get_samples("samples_UL17.yaml")
-    f_in    = samples['/ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL17_NanoAODv9_NANO_v11/']['files'][0]
+    samples = get_samples("samples_UL18.yaml")
+    f_in    = samples['/ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/']['files'][0]
     tree    = uproot.open(f_in)['Events']
 
     hp = HyperPoly(2)
@@ -179,8 +197,8 @@ if __name__ == '__main__':
     train_scaled = scaler.fit_transform(sig_train[variables])
     params = scaler.get_params()
 
-    if os.path.isfile('bit.pkl') and not args.retrain:
-        with open('bit.pkl', 'rb') as f:
+    if os.path.isfile(signal_bit_file) and not args.retrain:
+        with open(signal_bit_file, 'rb') as f:
             bit = pickle.load(f)
 
     else:
@@ -196,7 +214,7 @@ if __name__ == '__main__':
 
         bit.boost()
 
-        with open('bit.pkl', 'wb') as f:
+        with open(signal_bit_file, 'wb') as f:
             pickle.dump(bit, f)
 
     # Plots
@@ -303,9 +321,9 @@ if __name__ == '__main__':
 
     # Train all the trees!
 
-    n_trees       = 50
+    n_trees       = 100
     learning_rate = 0.3
-    max_depth     = 2
+    max_depth     = 3
     min_size      = 20
 
     training_features = train[variables].values
@@ -314,8 +332,8 @@ if __name__ == '__main__':
     training_features_scaled = scaler.fit_transform(training_features)
     params = scaler.get_params()
 
-    if os.path.isfile('bits.pkl') and not args.retrain:
-        with open('bits.pkl', 'rb') as f:
+    if os.path.isfile(bit_file) and not args.retrain:
+        with open(bit_file, 'rb') as f:
             bits = pickle.load(f)
 
     else:
@@ -337,7 +355,7 @@ if __name__ == '__main__':
 
             bits[-1].boost()
 
-        with open('bits.pkl', 'wb') as f:
+        with open(bit_file, 'wb') as f:
             pickle.dump(bits, f)
 
 
@@ -364,10 +382,10 @@ if __name__ == '__main__':
     dataset_axis = hist.Cat("dataset", "Primary dataset")
     eft_axis = hist.Cat("eft", "EFT point")
 
-    #x = np.arange(-10,11,4)
-    #y = np.arange(-10,11,4)
-    x = np.array([-6,6])
-    y = np.array([-6,6])
+    x = np.arange(-9,12,3)
+    y = np.arange(-9,12,3)
+    #x = np.array([-6,6])
+    #y = np.array([-6,6])
     X, Y = np.meshgrid(x, y)
 
     run_LT = True
@@ -514,7 +532,9 @@ if __name__ == '__main__':
         res_bsm = {}
 
         ## BIT results
-        bit_axis = hist.Bin("bit", r"BIT score",  [0.,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+        #bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        bit_bins = [0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
+        bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
         # this is just plotting the predicted coefficients
         for i in range(6):
@@ -602,10 +622,12 @@ if __name__ == '__main__':
 
             eft_weight = hp.eval(coeffs.transpose(), [x,y])
 
-            bsm_hist = bh.Histogram(bh.axis.Regular(10, 0, 1))
+            #bsm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
+            bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins))  # FIXME this needs to also take irregular!
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
 
-            sm_hist = bh.Histogram(bh.axis.Regular(10, 0, 1))
+            #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
+            sm_hist = bh.Histogram(bh.axis.Variable(bit_bins))
             sm_hist.fill(q_event_cdf, weight=sig_test['weight'])
 
             if args.plot:
@@ -617,7 +639,7 @@ if __name__ == '__main__':
                         bit_hist['TTZ'].sum('dataset').values()[()],
                         bit_hist['TTH'].sum('dataset').values()[()],
                     ],
-                    h.edges,
+                    bit_hist.axes()[1].edges(),
                     histtype="fill",
                     stack=True,
                     density=False,
@@ -627,7 +649,7 @@ if __name__ == '__main__':
 
                 hep.histplot(
                     [ bsm_hist.values() ],
-                    h.edges,
+                    bsm_hist.axes[0].edges,
                     histtype="step",
                     stack=False,
                     density=False,
@@ -650,7 +672,7 @@ if __name__ == '__main__':
                         bit_hist['TTZ'].sum('dataset').values()[()],
                         bit_hist['TTH'].sum('dataset').values()[()],
                     ],
-                    h.edges,
+                    bit_hist.axes()[1].edges(),
                     histtype="fill",
                     stack=True,
                     density=False,
@@ -660,7 +682,7 @@ if __name__ == '__main__':
 
                 hep.histplot(
                     [ sm_hist.values() ],
-                    h.edges,
+                    sm_hist.axes[0].edges,
                     histtype="step",
                     stack=False,
                     density=False,
