@@ -141,7 +141,9 @@ process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
     #args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWJetsToLNuEWK_5f_EFT_myNLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
     #args = cms.vstring('/home/users/dspitzba/TTW/MG_test/genproductions/bin/MadGraph5_aMCatNLO/TTZJetsToLL_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
     #args = cms.vstring('/home/users/dspitzba/TTW/MG_SMEFTNLO103/genproductions/bin/MadGraph5_aMCatNLO/TTZ_5f_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
-    args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_NLO_fixed_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'), 
+    #args = cms.vstring('/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_NLO_fixed_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'),
+    #args = cms.vstring('/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_test_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'),
+    args = cms.vstring('/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz'),
     nEvents = cms.untracked.uint32(maxN),
     numberOfParameters = cms.uint32(1),
     outputFile = cms.string('cmsgrid_final.lhe'),
@@ -181,6 +183,8 @@ process = customizeNanoGEN(process)
 ###################
 
 ## postfix _nlo for NLO samples, nothing for LO samples
+## cpt_0p_cpQM_0p_nlo for generatuon without madspin
+## needs to be all lower case for madspin!!
 
 named_weights = [
     "cpt_0p_cpQM_0p_nlo",
