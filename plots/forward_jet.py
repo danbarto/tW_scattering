@@ -57,7 +57,7 @@ if __name__ == '__main__':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    order = ['topW', 'diboson', 'TTW', 'TTH', 'DY', 'top', 'XG']
+    order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
 
     datasets = data + order
 
@@ -99,6 +99,7 @@ if __name__ == '__main__':
             try:
                 output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
             except:
+                print ("Scale and merge failed for:",key)
                 print ("At least I tried.")
 
     output = output_scaled
@@ -713,4 +714,15 @@ if __name__ == '__main__':
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              save=os.path.expandvars(plot_dir+'min_mt_lep_met'),
              )
-    
+
+    makePlot(output, 'min_mt_lep_met', 'pt',
+             data=data,
+             bins=pt_bins, log=True, normalize=TFnormalize, axis_label='min_mt_lep_met (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             save=os.path.expandvars(plot_dir+'min_mt_lep_met_log'),
+             )
