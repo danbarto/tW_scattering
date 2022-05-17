@@ -24,6 +24,7 @@ from Tools.triggers import getFilters, getTriggers
 from Tools.trigger_scalefactors import triggerSF
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
+from Tools.pileup import pileup
 from Tools.selections import Selection, get_pt
 from Tools.nonprompt_weight import NonpromptWeight
 from Tools.chargeFlip import charge_flip
@@ -52,6 +53,7 @@ class forward_jet_analysis(processor.ProcessorABC):
         self.btagSF = btag_scalefactor(year)
         self.leptonSF = LeptonSF(year=year)
         self.triggerSF = triggerSF(year=year)
+        self.pu = pileup(year=year, UL=True, era=era)
 
         self.reweight = reweight
         
@@ -210,8 +212,12 @@ class forward_jet_analysis(processor.ProcessorABC):
                     weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
 
                 ## PU weight
-                ## FIXME: removed because of 2016 problems
-                #weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
+                weight.add("PU",
+                           self.pu.reweight(ev.Pileup.nTrueInt.to_numpy()),
+                           weightUp = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='up'),
+                           weightDown = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='down'),
+                           shift=False,
+                           )
 
                 # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
