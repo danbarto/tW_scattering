@@ -200,11 +200,15 @@ echo "Local output dir"
 echo ${OUTPUTDIR}
 
 export REP="/store"
-OUTPUTDIR="${OUTPUTDIR/\/hadoop\/cms\/store/$REP}"
+OUTPUTDIR="${OUTPUTDIR/\/ceph\/cms\/store/$REP}"
 
-COPY_SRC="file://`pwd`/${OUTPUTNAME}.root"
+echo "Final output path for xrootd:"
+echo ${OUTPUTDIR}
+
+COPY_SRC="file://`pwd`/output.root"
 COPY_DEST=" davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
+
 
 echo -e "\n--- end copying output ---\n" #                      <----- section division
 
