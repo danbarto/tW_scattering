@@ -35,7 +35,7 @@ plt.style.use(hep.style.CMS)
 def histo_values(histo, weight):
     return histo.integrate('eft', weight).sum('dataset').values()[()]
 
-def get_bit_score(df, cpt=0, cpqm=0, trans=None):
+def get_bit_score_oirig(df, cpt=0, cpqm=0, trans=None):
     tmp = (
         df['pred_0'].values + \
         df['pred_1'].values*cpt + \
@@ -43,6 +43,22 @@ def get_bit_score(df, cpt=0, cpqm=0, trans=None):
         0.5*df['pred_3'].values*cpt**2 + \
         0.5*df['pred_4'].values*cpt*cpqm + \
         0.5*df['pred_5'].values*cpqm**2 + \
+        0
+    )
+    if trans:
+        return trans.transform(tmp.reshape(-1,1)).flatten()
+    else:
+        return tmp
+
+def get_bit_score(df, cpt=0, cpqm=0, trans=None):
+    tmp = (
+        #df['pred_0'].values + \
+        df['pred_1'].values + \
+        #df['pred_2'].values + \
+        0.5*df['pred_3'].values*cpt + \
+        #df['pred_4'].values*cpt + \
+        #df['pred_4'].values*cpqm + \
+        #df['pred_5'].values*cpqm + \
         0
     )
     if trans:
@@ -108,6 +124,9 @@ if __name__ == '__main__':
     argParser.add_argument('--retrain', action='store_true', default=None, help="Retrain the BDT?")
     argParser.add_argument('--fit', action='store_true', default=None, help="Run combine fit?")
     argParser.add_argument('--plot', action='store_true', default=None, help="Make all the plots")
+    argParser.add_argument('--signalOnly', action='store_true', default=None, help="Use only signal for training / evaluation")
+    argParser.add_argument('--allBkg', action='store_true', default=None, help="Use all backgrounds (not just ttW)")
+    argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
     argParser.add_argument('--version', action='store', default='v1', help="Version number")
     # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
@@ -127,6 +146,8 @@ if __name__ == '__main__':
         df_bkg = df_bkg[df_bkg['SS']==1]
     del tmp
 
+    plot_dir = f'/home/users/dspitzba/public_html/tW_scattering/BIT/{args.version}/'
+    finalizePlotDir(plot_dir)
 
     df_signal = pd.DataFrame()
     #for year in years:
@@ -180,11 +201,46 @@ if __name__ == '__main__':
     # bkg
     bkg_train_sel   = (df_bkg['event']%2)==1
     bkg_test_sel    = ~bkg_train_sel
-    bkg_train       = df_bkg[bkg_train_sel]
-    bkg_test        = df_bkg[bkg_test_sel]
+    if args.signalOnly:
+        bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']==10))]
+        bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']==10))]
+    else:
+        if args.allBkg:
+            bkg_train       = df_bkg[(bkg_train_sel)]
+            bkg_test        = df_bkg[(bkg_test_sel)]
+        else:
+            bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']==1))]
+            bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']==1))]
 
     train = pd.concat([sig_train, bkg_train])
-    train = shuffle(train)
+    #train = shuffle(train)
+
+
+    #coeff_bins = [-0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
+    coeff_bins = "20,-1,12"
+    for i in range(6):
+
+        h_signal = Hist1D(sig_train[f'coeff_{i}'].values, bins=coeff_bins)
+
+        fig, ax = plt.subplots(figsize=(10,10))
+
+        hep.histplot(
+            [ h_signal.counts ],
+            h_signal.edges,
+            #w2 = [ h_train.errors**2, h_rew_train.errors**2, h_rew2_train.errors**2 ],
+            histtype="step",
+            stack=False,
+            density=True,
+            #linestyle="--",
+            label= ["Signal"],
+            color = ["#FF595E"],
+            ax=ax)
+
+        ax.set_yscale('log')
+        ax.legend()
+
+        fig.savefig(f"{plot_dir}/diff_weight_{i}.png")
+
 
     # Train the tree for signal only
     n_trees       = 50
@@ -218,8 +274,6 @@ if __name__ == '__main__':
             pickle.dump(bit, f)
 
     # Plots
-    plot_dir = f'/home/users/dspitzba/public_html/tW_scattering/BIT/{args.version}/'
-    finalizePlotDir(plot_dir)
     bins = "10,0.0,1.0"
 
     sig_test_scaled = scaler.transform(sig_test[variables].values)
@@ -239,7 +293,35 @@ if __name__ == '__main__':
     h_rew_train = Hist1D(pred_train, weights=hp.eval(coeffs_train.transpose(), [4.,0.]), bins=bins)
     h_rew2_train = Hist1D(pred_train, weights=hp.eval(coeffs_train.transpose(), [8.,0.]), bins=bins)
 
-    if args.plot:
+    # Make plots of input variables
+    eft_weight = hp.eval(coeffs_train.transpose(), [6,0])
+    for var in variables:
+
+        h_signal = Hist1D(sig_train[var].values, bins=20, overflow=True)
+        h_bkg = Hist1D(bkg_train[var].values, bins=h_signal.edges, overflow=True)
+        h_bsm = Hist1D(sig_train[var].values, bins=h_signal.edges, weights=eft_weight, overflow=True)
+
+        fig, ax = plt.subplots(figsize=(10,10))
+
+        hep.histplot(
+            [ h_signal.counts, h_bkg.counts, h_bsm.counts ],
+            h_signal.edges,
+            #w2 = [ h_train.errors**2, h_rew_train.errors**2, h_rew2_train.errors**2 ],
+            histtype="step",
+            stack=False,
+            density=True,
+            #linestyle="--",
+            label= ["Signal", "Background", "Signal, cpt=6"],
+            color = ["#FF595E", "#8AC926", "#1982C4"],
+            ax=ax)
+
+        ax.set_yscale('log')
+        ax.legend()
+
+        fig.savefig(f"{plot_dir}/input_{var}.png")
+
+
+    if args.plot or True:
         fig, ax = plt.subplots(figsize=(10,10))
 
         # solid - testing
@@ -321,15 +403,17 @@ if __name__ == '__main__':
 
     # Train all the trees!
 
-    n_trees       = 100
+    n_trees       = 300  # from 100
     learning_rate = 0.3
-    max_depth     = 3
-    min_size      = 20
+    max_depth     = 7  # v21: 3, v22: 5, v23: 7, v24: signal only
+    min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
 
     training_features = train[variables].values
-    training_weights = abs(train['weight'].values)
+    #training_weights = abs(train['weight'].values)
+    training_weights = np.ones_like(train['weight'].values)
     scaler = RobustScaler()
     training_features_scaled = scaler.fit_transform(training_features)
+    #training_features_scaled = training_features
     params = scaler.get_params()
 
     if os.path.isfile(bit_file) and not args.retrain:
@@ -350,7 +434,7 @@ if __name__ == '__main__':
                     n_trees               = n_trees,
                     max_depth             = max_depth,
                     min_size              = min_size,
-                    calibrated            = True)
+                    calibrated            = False)
             )
 
             bits[-1].boost()
@@ -361,10 +445,16 @@ if __name__ == '__main__':
 
     # Evaluate all the BITS and store results
     scaled_test = scaler.transform(sig_test[variables].values)
-    scaled_bkg_test = scaler.transform(bkg_test[variables].values)
+    #scaled_test = sig_test[variables].values
+    if len(bkg_test[variables].values)==0:
+        scaled_bkg_test = bkg_test[variables].values
+    else:
+        scaled_bkg_test = scaler.transform(bkg_test[variables].values)
 
     for i in range(6):
         sig_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_test)
+        sig_train['pred_%s'%i] = bits[i].vectorized_predict(scaler.transform(sig_train[variables].values))
+        #sig_train['pred_%s'%i] = bits[i].vectorized_predict(sig_train[variables].values)
         bkg_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_bkg_test)
 
     ttW = bkg_test[bkg_test['label']==1]
@@ -382,23 +472,40 @@ if __name__ == '__main__':
     dataset_axis = hist.Cat("dataset", "Primary dataset")
     eft_axis = hist.Cat("eft", "EFT point")
 
-    x = np.arange(-9,12,3)
-    y = np.arange(-9,12,3)
-    #x = np.array([-6,6])
-    #y = np.array([-6,6])
+    #x = np.arange(-9,12,3)
+    #y = np.arange(-9,12,3)
+    x = np.array([6])
+    y = np.array([0])
     X, Y = np.meshgrid(x, y)
 
-    run_LT = True
-    if run_LT:
+    res_LT = {}
+
+    #runLT = True
+    if args.runLT:
         # First run the classical LT analysis.
         # We can use histogram based reweighting here?
-        lt_axis      = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,6500])
+        #lt_axis      = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,6500])
+        lt_axis      = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,1.0])
+
+        q_event = sig_test['lt'].values
+
+        q_event_argsort     = np.argsort(q_event)
+        q_event_argsort_inv = np.argsort(q_event_argsort)
+        cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
+        #cdf_sm = np.cumsum(sig_train['weight'].values[q_event_argsort])
+        cdf_sm/=cdf_sm[-1]
+
+        # map to the SM CDF of q
+        cdf_map = make_cdf_map( q_event[q_event_argsort], cdf_sm )
+
+        #q_event_cdf = cdf_sm[q_event_argsort_inv] #uniformly distributed under the SM hypothesis
+        q_event_cdf = cdf_map( q_event )
 
         lt_hist = hist.Hist("lt", dataset_axis, lt_axis)
-        lt_hist.fill(dataset="TTW", lt=ttW['lt'].values, weight=ttW['weight']*2)
-        lt_hist.fill(dataset="TTZ", lt=ttZ['lt'].values, weight=ttZ['weight']*2)
-        lt_hist.fill(dataset="TTH", lt=ttH['lt'].values, weight=ttH['weight']*2)
-        lt_hist.fill(dataset="signal", lt=sig_test['lt'].values, weight=sig_test['weight'])
+        lt_hist.fill(dataset="TTW", lt=cdf_map(ttW['lt'].values), weight=ttW['weight']*2)
+        lt_hist.fill(dataset="TTZ", lt=cdf_map(ttZ['lt'].values), weight=ttZ['weight']*2)
+        lt_hist.fill(dataset="TTH", lt=cdf_map(ttH['lt'].values), weight=ttH['weight']*2)
+        lt_hist.fill(dataset="signal", lt=cdf_map(sig_test['lt'].values), weight=sig_test['weight'])
 
         hist_dict = {'SR': lt_hist}
 
@@ -406,7 +513,7 @@ if __name__ == '__main__':
         for weight in weights:
             sig_lt_hist.fill(
                 dataset='signal',
-                lt=sig_test['lt'].values,
+                lt=cdf_map(sig_test['lt'].values),
                 eft=weight,
                 weight=sig_test['weight']*sig_test[weight],
             )
@@ -417,8 +524,12 @@ if __name__ == '__main__':
             sm_card = makeCardFromHist(
                         hist_dict,
                         'SR',
-                        ext='_SM',
+                        ext='_SM_LT',
                         signal_hist=sig_lt_hist_SM,
+                        systematics= [
+                            ('signal_norm', 1.2, 'signal'),
+                            ('TTW_norm', 1.15, 'TTW'),
+                        ],
                     )
             res_sm = card.calcNLL(sm_card)
             res_sm_ll = res_sm['nll0'][0]+res_sm['nll'][0]
@@ -475,7 +586,7 @@ if __name__ == '__main__':
                     ax=ax)
 
                 ax.set_yscale('log')
-                ax.set_xscale('log')
+                ax.set_xscale('linear')
                 ax.legend()
 
                 fig.savefig(f"{plot_dir}/lt_cpt_{x}_cpqm_{y}_bsm.png")
@@ -484,18 +595,29 @@ if __name__ == '__main__':
                 bsm_card = makeCardFromHist(
                     hist_dict,
                     'SR',
-                    ext='_BSM',
+                    ext='_BSM_LT',
                     bsm_vals = bsm_hist,
                     sm_vals = sm_hist,
+                    systematics= [
+                        ('signal_norm', 1.2, 'signal'),
+                        ('TTW_norm', 1.15, 'TTW'),
+                    ],
                     )
+
+                simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
+                print ("### Sanity checks ###")
+                print ("- SM integral", sum(sm_hist.counts()))
+                print ("- BSM integral", sum(bsm_hist.counts()))
+                print (f"Robert NLL:", simple_NLL)
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
                 res_tmp = res_bsm[(x,y)]['nll0'][0]+res_bsm[(x,y)]['nll'][0]
                 nll = -2*(res_sm_ll-res_tmp)
                 z.append(nll)
                 print ('NLL: {:.2f}'.format(nll))
+                res_LT[(x,y)] = nll
 
-        if args.fit:
+        if args.fit and args.plot and len(X)>1:
             Z = np.array(z)
             Z = np.reshape(Z, X.shape)
 
@@ -525,6 +647,8 @@ if __name__ == '__main__':
             fig.savefig(f'{plot_dir}/lt_scan_test.pdf')
 
 
+    res_BIT = {}
+
     run_BIT = True
     if run_BIT:
         z = []
@@ -532,17 +656,20 @@ if __name__ == '__main__':
         res_bsm = {}
 
         ## BIT results
-        #bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        bit_bins = [0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
+        bit_bins = [-0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
+        #bit_bins = [0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
         bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
         # this is just plotting the predicted coefficients
+        eft_weight = hp.eval(coeffs.transpose(), [6,0])
         for i in range(6):
             bit_hist = hist.Hist("bit", dataset_axis, bit_axis)
             bit_hist.fill(dataset="TTW", bit=ttW['pred_%s'%i].values, weight=ttW['weight']*2)
             bit_hist.fill(dataset="TTZ", bit=ttZ['pred_%s'%i].values, weight=ttZ['weight']*2)
             bit_hist.fill(dataset="TTH", bit=ttH['pred_%s'%i].values, weight=ttH['weight']*2)
             bit_hist.fill(dataset="signal", bit=sig_test['pred_%s'%i].values, weight=sig_test['weight'])
+            bit_hist.fill(dataset="signal_bsm", bit=sig_test['pred_%s'%i].values, weight=sig_test['weight']*eft_weight)
+            bit_hist.fill(dataset="signal_train", bit=sig_train['pred_%s'%i].values, weight=sig_train['weight'])
 
             fig, ax = plt.subplots(figsize=(10,10))
 
@@ -555,28 +682,56 @@ if __name__ == '__main__':
                 bit_axis.edges(),
                 histtype="fill",
                 stack=True,
-                density=False,
+                density=True,
                 label = ["ttW", "ttZ", "ttH"],
                 color = ["#FF595E", "#8AC926", "#1982C4"],
                 ax=ax)
 
             hep.histplot(
-                [ bit_hist['signal'].sum('dataset').values()[()] ],
+                [ bit_hist['signal'].sum('dataset').values()[()], bit_hist['signal_bsm'].sum('dataset').values()[()] ],
                 bit_axis.edges(),
                 histtype="step",
                 stack=False,
-                density=False,
+                density=True,
                 linestyle="--",
-                color = ["black"],
-                label = ["top-W scattering (BSM)"],
+                color = ["black", "green"],
+                label = ["top-W scattering (SM)", "top-W (cpt=6,cpQM=0)" ],
                 ax=ax)
 
             ax.set_yscale('log')
             ax.legend()
 
+            print (f"Saving plot for coeff {i}")
             fig.savefig(f"{plot_dir}/pred_coeff_{i}.png")
 
+            fig, ax = plt.subplots(figsize=(10,10))
 
+            h_test = Hist1D(sig_test[f'pred_{i}'].values, bins=coeff_bins, overflow=True)
+            h_train = Hist1D(sig_train[f'pred_{i}'].values, bins=coeff_bins, overflow=True)
+            h_signal = Hist1D(sig_train[f'coeff_{i}'].values, bins=coeff_bins, overflow=True)
+
+            hep.histplot(
+                [ h_test.counts, h_train.counts, h_signal.counts ],
+                h_signal.edges,
+                histtype="step",
+                stack=False,
+                density=True,
+                #linestyle="--",
+                color = ["black", "green", "red"],
+                label = ["Signal, test", "Signal, training", "Theory (reference)" ],
+                ax=ax)
+
+            ax.set_yscale('log')
+            ax.legend()
+
+            print (f"Saving plot for coeff {i}")
+            fig.savefig(f"{plot_dir}/train_test_pred_coeff_{i}.png")
+
+
+
+        #bit_bins = [0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
+        bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0]
+        bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [x, y]
@@ -585,11 +740,13 @@ if __name__ == '__main__':
             bit_hist = hist.Hist("bit", dataset_axis, bit_axis)
 
             sig_bit = get_bit_score(sig_test, cpt=x, cpqm=y, trans=None)
+            #sig_bit = get_bit_score(sig_train, cpt=x, cpqm=y, trans=None)
             q_event = sig_bit
 
             q_event_argsort     = np.argsort(q_event)
             q_event_argsort_inv = np.argsort(q_event_argsort)
             cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
+            #cdf_sm = np.cumsum(sig_train['weight'].values[q_event_argsort])
             cdf_sm/=cdf_sm[-1]
 
             # map to the SM CDF of q
@@ -606,6 +763,7 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="TTZ", bit=cdf_map(get_bit_score(ttZ, cpt=x, cpqm=y, trans=None)), weight=ttZ['weight']*2)
             bit_hist.fill(dataset="TTH", bit=cdf_map(get_bit_score(ttH, cpt=x, cpqm=y, trans=None)), weight=ttH['weight']*2)
             bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
+            #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_train['weight'])
 
             hist_dict = {'SR': bit_hist}
 
@@ -615,20 +773,27 @@ if __name__ == '__main__':
                     'SR',
                     ext='_SM',
                     signal_hist=bit_hist['signal'],
+                    systematics= [
+                        ('signal_norm', 1.2, 'signal'),
+                        ('TTW_norm', 1.15, 'TTW'),
+                    ],
                    )
 
                 res_sm = card.calcNLL(sm_card)
                 res_sm_ll = res_sm['nll0'][0]+res_sm['nll'][0]
 
             eft_weight = hp.eval(coeffs.transpose(), [x,y])
+            #eft_weight = hp.eval(coeffs_train.transpose(), [x,y])
 
             #bsm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
             bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins))  # FIXME this needs to also take irregular!
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
+            #bsm_hist.fill(q_event_cdf, weight=sig_train['weight']*eft_weight)
 
             #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
             sm_hist = bh.Histogram(bh.axis.Variable(bit_bins))
             sm_hist.fill(q_event_cdf, weight=sig_test['weight'])
+            #sm_hist.fill(q_event_cdf, weight=sig_train['weight'])
 
             if args.plot:
                 fig, ax = plt.subplots(figsize=(10,10))
@@ -703,15 +868,27 @@ if __name__ == '__main__':
                     ext='_BSM',
                     bsm_vals = bsm_hist,
                     sm_vals = sm_hist,
+                    systematics= [
+                        ('signal_norm', 1.2, 'signal'),
+                        ('TTW_norm', 1.15, 'TTW'),
+                    ],
                 )
+
+                simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
+                print ("### Sanity checks ###")
+                print ("- SM integral", sum(sm_hist.counts()))
+                print ("- BSM integral", sum(bsm_hist.counts()))
+                print (f"Robert NLL:", simple_NLL)
+
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
                 res_tmp = res_bsm[(x,y)]['nll0'][0]+res_bsm[(x,y)]['nll'][0]
                 nll = -2*(res_sm_ll-res_tmp)
                 z.append(nll)
                 print ('NLL: {:.2f}'.format(nll))
+                res_BIT[(x,y)] = nll
 
-        if args.fit:
+        if args.fit and args.plot and len(X)>1:
             Z = np.array(z)
             Z = np.reshape(Z, X.shape)
 
