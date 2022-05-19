@@ -61,6 +61,24 @@ def submit():
                 min_completion_fraction = 0.90,
                 )
 
+        # FIXME this would be useful
+        #merge_task = CondorTask(
+        #    sample = DirectorySample(
+        #        dataset="merge_"+sample.get_datasetname(),
+        #        location=maker_task.get_outputdir(),
+        #    ),
+        #    executable = "merge_executable.sh",
+        #    arguments = " ".join([ str(x) for x in [tag, lumiWeightString, 1 if isData else 0, year, era, 1 if isFastSim else 0, args.skim, args.user ]] ),  # just use the same arguments for simplicity
+        #    files_per_output = 20,
+        #    output_dir = os.path.join(maker_task.get_outputdir(), 'merged'),
+        #    #output_name = "output.root",
+        #    output_is_tree = True,
+        #    tag = tag_skim,
+        #    condor_submit_params = {"sites":"T2_US_UCSD,UAF"},
+        #    cmssw_version = "CMSSW_10_2_9",
+        #    scram_arch = "slc6_amd64_gcc700",
+        #)
+
         task.process()
         total_summary[task.get_sample().get_datasetname()] = task.get_task_summary()
 
