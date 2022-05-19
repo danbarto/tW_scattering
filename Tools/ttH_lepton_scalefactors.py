@@ -9,83 +9,136 @@ import numpy as np
 
 class LeptonSF:
 
-    def __init__(self, year=2016):
+    def __init__(self, year=2016, era=None):
         self.year = year
+        self.era = era
+        self.base = os.path.expandvars("$TWHOME/data/leptons/ttH/")
 
-        ele_2016_loose      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_ele_2016.root")
-        ele_2016_looseTTH   = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loosettH_ele_2016.root")
-        ele_2016_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2016_2lss/passttH/egammaEffi_txt_EGM2D.root")
-        ele_2016_reco       = os.path.expandvars("$TWHOME/data/leptons/2016_EGM2D_BtoH_GT20GeV_RecoSF_Legacy2016.root")
-        ele_2016_reco_low   = os.path.expandvars("$TWHOME/data/leptons/2016_EGM2D_BtoH_low_RecoSF_Legacy2016.root")
-        
-        ele_2017_loose      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_ele_2017.root")
-        ele_2017_looseTTH   = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loosettH_ele_2017.root")
-        ele_2017_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2017_2lss/passttH/egammaEffi_txt_EGM2D.root")
-        ele_2017_reco       = os.path.expandvars("$TWHOME/data/leptons/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO.root")
-        ele_2017_reco_low   = os.path.expandvars("$TWHOME/data/leptons/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO_lowEt.root")
-        
-        ele_2018_loose      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_ele_2018.root")
-        ele_2018_looseTTH   = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loosettH_ele_2018.root")
-        ele_2018_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2018_2lss/passttH/egammaEffi_txt_EGM2D.root")
-        ele_2018_tight_pt   = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_ele_pt.root")
-        ele_2018_tight_eta  = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_ele_eta.root")
-        ele_2018_reco       = os.path.expandvars("$TWHOME/data/leptons/2018_egammaEffi_txt_EGM2D_updatedAll.root")
-
-
-        muon_2016_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2016.root")
-        muon_2016_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2016_2lss/passttH/egammaEffi_txt_EGM2D.root")
-
-        muon_2017_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2017.root")
-        muon_2017_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2017_2lss/passttH/egammaEffi_txt_EGM2D.root")
-
-        muon_2018_loose     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2018.root")
-        muon_2018_tight     = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2018_2lss/passttH/egammaEffi_txt_EGM2D.root")
-        muon_2018_tight_pt  = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_muon_pt.root")
-        muon_2018_tight_eta = os.path.expandvars("$TWHOME/data/leptons/ttH/error/SFttbar_2018_muon_eta.root")
-
-        
         self.ext = extractor()
         self.ext1D = extractor()
         # several histograms can be imported at once using wildcards (*)
         if self.year == 2016:
-            self.ext.add_weight_sets([
-                "mu_2016_loose EGamma_SF2D %s"%muon_2016_loose,
-                "mu_2016_tight EGamma_SF2D %s"%muon_2016_tight,
-       
-                "ele_2016_reco EGamma_SF2D %s"%ele_2016_reco,
-                "ele_2016_reco_low EGamma_SF2D %s"%ele_2016_reco_low,
-                "ele_2016_loose EGamma_SF2D %s"%ele_2016_loose,
-                "ele_2016_looseTTH EGamma_SF2D %s"%ele_2016_looseTTH,
-                "ele_2016_tight EGamma_SF2D %s"%ele_2016_tight,
-            ])
-        
+            if era == "APV":
+                self.ext.add_weight_sets([
+                    "mu_2016APV_reco NUM_TrackerMuons_DEN_genTracks/abseta_pt_value %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2016preVFP_UL_trackerMuon.json"),
+                    "mu_2016APV_reco_err NUM_TrackerMuons_DEN_genTracks/abseta_pt_error %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2016preVFP_UL_trackerMuon.json"),
+
+                    "mu_2016APV_loose NUM_LooseID_DEN_TrackerMuons/abseta_pt_value %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ID.json"),
+                    "mu_2016APV_loose_stat NUM_LooseID_DEN_TrackerMuons/abseta_pt_stat %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ID.json"),
+                    "mu_2016APV_loose_syst NUM_LooseID_DEN_TrackerMuons/abseta_pt_syst %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_HIPM_ID.json"),
+
+                    "mu_2016APV_iso EGamma_SF2D %s"%(self.base+"muon/egammaEffi2016APV_iso_EGM2D.root"),
+                    "mu_2016APV_iso_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2016APV_iso_EGM2D.root"),
+
+                    "mu_2016APV_tight EGamma_SF2D %s"%(self.base+"muon/egammaEffi2016APV_EGM2D.root"),
+                    "mu_2016APV_tight_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2016APV_EGM2D.root"),
+
+                    "ele_2016APV_reco EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016APV_ptAbove20_EGM2D.root'),
+                    "ele_2016APV_reco_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016APV_ptAbove20_EGM2D.root'),
+
+                    "ele_2016APV_reco_low EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016APV_ptBelow20_EGM2D.root'),
+                    "ele_2016APV_reco_low_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016APV_ptBelow20_EGM2D.root'),
+
+                    "ele_2016APV_loose EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016APV_recoToloose_EGM2D.root'),
+                    "ele_2016APV_loose_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016APV_recoToloose_EGM2D.root'),
+
+                    "ele_2016APV_iso EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016APV_iso_EGM2D.root'),
+                    "ele_2016APV_iso_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016APV_iso_EGM2D.root'),
+
+                    "ele_2016APV_tight EGamma_SF2D %s"%(self.base+'elecNEWmva/egammaEffi2016APV_2lss_EGM2D.root'),
+                    "ele_2016APV_tight_err EGamma_SF2D_error %s"%(self.base+'elecNEWmva/egammaEffi2016APV_2lss_EGM2D.root'),
+                ])
+            else:
+                self.ext.add_weight_sets([
+                    "mu_2016_reco NUM_TrackerMuons_DEN_genTracks/abseta_pt_value %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2016postVFP_UL_trackerMuon.json"),
+                    "mu_2016_reco_err NUM_TrackerMuons_DEN_genTracks/abseta_pt_error %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2016postVFP_UL_trackerMuon.json"),
+
+                    "mu_2016_loose NUM_LooseID_DEN_TrackerMuons/abseta_pt_value %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_ID.json"),
+                    "mu_2016_loose_stat NUM_LooseID_DEN_TrackerMuons/abseta_pt_stat %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_ID.json"),
+                    "mu_2016_loose_syst NUM_LooseID_DEN_TrackerMuons/abseta_pt_syst %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2016_UL_ID.json"),
+
+                    "mu_2016_iso EGamma_SF2D %s"%(self.base+"muon/egammaEffi2016_iso_EGM2D.root"),
+                    "mu_2016_iso_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2016_iso_EGM2D.root"),
+
+                    "mu_2016_tight EGamma_SF2D %s"%(self.base+"muon/egammaEffi2016_EGM2D.root"),
+                    "mu_2016_tight_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2016_EGM2D.root"),
+
+                    "ele_2016_reco EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016_ptAbove20_EGM2D.root'),
+                    "ele_2016_reco_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016_ptAbove20_EGM2D.root'),
+
+                    "ele_2016_reco_low EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016_ptBelow20_EGM2D.root'),
+                    "ele_2016_reco_low_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016_ptBelow20_EGM2D.root'),
+
+                    "ele_2016_loose EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016_recoToloose_EGM2D.root'),
+                    "ele_2016_loose_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016_recoToloose_EGM2D.root'),
+
+                    "ele_2016_iso EGamma_SF2D %s"%(self.base+'elec/egammaEffi2016_iso_EGM2D.root'),
+                    "ele_2016_iso_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2016_iso_EGM2D.root'),
+
+                    "ele_2016_tight EGamma_SF2D %s"%(self.base+'elecNEWmva/egammaEffi2016_2lss_EGM2D.root'),
+                    "ele_2016_tight_err EGamma_SF2D_error %s"%(self.base+'elecNEWmva/egammaEffi2016_2lss_EGM2D.root'),
+                ])
+
         elif self.year == 2017:
             self.ext.add_weight_sets([
-                "mu_2017_loose EGamma_SF2D %s"%muon_2017_loose,
-                "mu_2017_tight EGamma_SF2D %s"%muon_2017_tight,
-       
-                "ele_2017_reco EGamma_SF2D %s"%ele_2017_reco,
-                "ele_2017_reco_low EGamma_SF2D %s"%ele_2017_reco_low,
-                "ele_2017_loose EGamma_SF2D %s"%ele_2017_loose,
-                "ele_2017_looseTTH EGamma_SF2D %s"%ele_2017_looseTTH,
-                "ele_2017_tight EGamma_SF2D %s"%ele_2017_tight,
+                "mu_2017_reco NUM_TrackerMuons_DEN_genTracks/abseta_pt_value %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.json"),
+                "mu_2017_reco_err NUM_TrackerMuons_DEN_genTracks/abseta_pt_error %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.json"),
+
+                "mu_2017_loose NUM_LooseID_DEN_TrackerMuons/abseta_pt_value %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.json"),
+                "mu_2017_loose_stat NUM_LooseID_DEN_TrackerMuons/abseta_pt_stat %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.json"),
+                "mu_2017_loose_syst NUM_LooseID_DEN_TrackerMuons/abseta_pt_syst %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.json"),
+
+                "mu_2017_iso EGamma_SF2D %s"%(self.base+"muon/egammaEffi2017_iso_EGM2D.root"),
+                "mu_2017_iso_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2017_iso_EGM2D.root"),
+
+                "mu_2017_tight EGamma_SF2D %s"%(self.base+"muon/egammaEffi2017_EGM2D.root"),
+                "mu_2017_tight_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2017_EGM2D.root"),
+
+                "ele_2017_reco EGamma_SF2D %s"%(self.base+'elec/egammaEffi2017_ptAbove20_EGM2D.root'),
+                "ele_2017_reco_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2017_ptAbove20_EGM2D.root'),
+
+                "ele_2017_reco_low EGamma_SF2D %s"%(self.base+'elec/egammaEffi2017_ptBelow20_EGM2D.root'),
+                "ele_2017_reco_low_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2017_ptBelow20_EGM2D.root'),
+
+                "ele_2017_loose EGamma_SF2D %s"%(self.base+'elec/egammaEffi2017_recoToloose_EGM2D.root'),
+                "ele_2017_loose_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2017_recoToloose_EGM2D.root'),
+
+                "ele_2017_iso EGamma_SF2D %s"%(self.base+'elec/egammaEffi2017_iso_EGM2D.root'),
+                "ele_2017_iso_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2017_iso_EGM2D.root'),
+
+                "ele_2017_tight EGamma_SF2D %s"%(self.base+'elecNEWmva/egammaEffi2017_2lss_EGM2D.root'),
+                "ele_2017_tight_err EGamma_SF2D_error %s"%(self.base+'elecNEWmva/egammaEffi2017_2lss_EGM2D.root'),
             ])
 
         elif self.year == 2018:
             self.ext.add_weight_sets([
-                "mu_2018_loose EGamma_SF2D %s"%muon_2018_loose,
-                "mu_2018_tight EGamma_SF2D %s"%muon_2018_tight,
+                "mu_2018_reco NUM_TrackerMuons_DEN_genTracks/abseta_pt_value %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2018_UL_trackerMuon.json"),
+                "mu_2018_reco_err NUM_TrackerMuons_DEN_genTracks/abseta_pt_error %s"%(self.base+"muon/Efficiency_muon_generalTracks_Run2018_UL_trackerMuon.json"),
 
-                "ele_2018_reco EGamma_SF2D %s"%ele_2018_reco,
-                "ele_2018_loose EGamma_SF2D %s"%ele_2018_loose,
-                "ele_2018_looseTTH EGamma_SF2D %s"%ele_2018_looseTTH,
-                "ele_2018_tight EGamma_SF2D %s"%ele_2018_tight,
+                "mu_2018_loose NUM_LooseID_DEN_TrackerMuons/abseta_pt_value %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json"),
+                "mu_2018_loose_stat NUM_LooseID_DEN_TrackerMuons/abseta_pt_stat %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json"),
+                "mu_2018_loose_syst NUM_LooseID_DEN_TrackerMuons/abseta_pt_syst %s"%(self.base+"muon/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json"),
 
-                "ele_2018_tight_pt histo_eff_data %s"%ele_2018_tight_pt,
-                "ele_2018_tight_eta histo_eff_data %s"%ele_2018_tight_eta,
+                "mu_2018_iso EGamma_SF2D %s"%(self.base+"muon/egammaEffi2018_iso_EGM2D.root"),
+                "mu_2018_iso_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2018_iso_EGM2D.root"),
 
-                "mu_2018_tight_pt histo_eff_data %s"%muon_2018_tight_pt,
-                "mu_2018_tight_eta histo_eff_data %s"%muon_2018_tight_eta,
+                "mu_2018_tight EGamma_SF2D %s"%(self.base+"muon/egammaEffi2018_EGM2D.root"),
+                "mu_2018_tight_err EGamma_SF2D_error %s"%(self.base+"muon/egammaEffi2018_EGM2D.root"),
+
+                "ele_2018_reco EGamma_SF2D %s"%(self.base+'elec/egammaEffi2018_ptAbove20_EGM2D.root'),
+                "ele_2018_reco_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2018_ptAbove20_EGM2D.root'),
+
+                "ele_2018_reco_low EGamma_SF2D %s"%(self.base+'elec/egammaEffi2018_ptBelow20_EGM2D.root'),
+                "ele_2018_reco_low_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2018_ptBelow20_EGM2D.root'),
+
+                "ele_2018_loose EGamma_SF2D %s"%(self.base+'elec/egammaEffi2018_recoToloose_EGM2D.root'),
+                "ele_2018_loose_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2018_recoToloose_EGM2D.root'),
+
+                "ele_2018_iso EGamma_SF2D %s"%(self.base+'elec/egammaEffi2018_iso_EGM2D.root'),
+                "ele_2018_iso_err EGamma_SF2D_error %s"%(self.base+'elec/egammaEffi2018_iso_EGM2D.root'),
+
+                "ele_2018_tight EGamma_SF2D %s"%(self.base+'elecNEWmva/egammaEffi2018_2lss_EGM2D.root'),
+                "ele_2018_tight_err EGamma_SF2D_error %s"%(self.base+'elecNEWmva/egammaEffi2018_2lss_EGM2D.root'),
             ])
         
         
@@ -93,67 +146,59 @@ class LeptonSF:
         
         self.evaluator = self.ext.make_evaluator()
 
-    def get(self, ele, mu, variation='central'):
-        
-        if self.year == 2016:
-            ele_sf_reco     = self.evaluator["ele_2016_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
-            ele_sf_reco_low = self.evaluator["ele_2016_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
-            ele_sf_loose    = self.evaluator["ele_2016_loose"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_looseTTH = self.evaluator["ele_2016_looseTTH"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_tight    = self.evaluator["ele_2016_tight"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+    def get(self, ele, mu, variation='central', collection='elemu'):
+        sign_mu = 0
+        sign_ele = 0
+        if variation == 'up':
+            if collection.count('ele'):
+                sign_ele = 1
+            if collection.count('mu'):
+                sign_mu = 1
+        if variation == 'down':
+            if collection.count('ele'):
+                sign_ele = -1
+            if collection.count('mu'):
+                sign_mu = -1
+        yearstr = str(self.year)
+        if self.era == 'APV':
+            yearstr += 'APV'
 
-            mu_sf_loose     = self.evaluator["mu_2016_loose"](abs(mu.eta), mu.pt)
-            mu_sf_tight     = self.evaluator["mu_2016_tight"](abs(mu.eta), mu.pt)
+        # central values
+        ele_sf_reco     = self.evaluator[f"ele_{yearstr}_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
+        ele_sf_reco_low = self.evaluator[f"ele_{yearstr}_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
+        ele_sf_loose    = self.evaluator[f"ele_{yearstr}_loose"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+        ele_sf_iso      = self.evaluator[f"ele_{yearstr}_iso"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+        ele_sf_tight    = self.evaluator[f"ele_{yearstr}_tight"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
 
-            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_reco_low, axis=1) * ak.prod(ele_sf_loose, axis=1) * ak.prod(ele_sf_looseTTH, axis=1) * ak.prod(ele_sf_tight, axis=1) * ak.prod(mu_sf_loose, axis=1) * ak.prod(mu_sf_tight, axis=1)
+        mu_sf_reco      = self.evaluator[f"mu_{yearstr}_reco"](abs(mu.eta), mu.pt)[mu.pt<20]
+        mu_sf_loose     = self.evaluator[f"mu_{yearstr}_loose"](abs(mu.eta), mu.pt)
+        mu_sf_iso       = self.evaluator[f"mu_{yearstr}_iso"](abs(mu.eta), mu.pt)
+        mu_sf_tight     = self.evaluator[f"mu_{yearstr}_tight"](abs(mu.eta), mu.pt)
 
-        elif self.year == 2017:
-            ele_sf_reco     = self.evaluator["ele_2017_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
-            ele_sf_reco_low = self.evaluator["ele_2017_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
-            ele_sf_loose    = self.evaluator["ele_2017_loose"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_looseTTH = self.evaluator["ele_2017_looseTTH"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_tight    = self.evaluator["ele_2017_tight"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+        # errors
+        ele_sf_reco_err     = self.evaluator[f"ele_{yearstr}_reco_err"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
+        ele_sf_reco_low_err = self.evaluator[f"ele_{yearstr}_reco_low_err"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
+        ele_sf_loose_err    = self.evaluator[f"ele_{yearstr}_loose_err"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+        ele_sf_iso_err      = self.evaluator[f"ele_{yearstr}_iso_err"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
+        ele_sf_tight_err    = self.evaluator[f"ele_{yearstr}_tight_err"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
 
-            mu_sf_loose     = self.evaluator["mu_2017_loose"](abs(mu.eta), mu.pt)
-            mu_sf_tight     = self.evaluator["mu_2017_tight"](abs(mu.eta), mu.pt)
+        mu_sf_reco_err      = self.evaluator[f"mu_{yearstr}_reco_err"](abs(mu.eta), mu.pt)[mu.pt<20]
+        mu_sf_loose_syst    = self.evaluator[f"mu_{yearstr}_loose_syst"](abs(mu.eta), mu.pt)
+        mu_sf_loose_stat    = self.evaluator[f"mu_{yearstr}_loose_syst"](abs(mu.eta), mu.pt)
+        mu_sf_iso_err       = self.evaluator[f"mu_{yearstr}_iso_err"](abs(mu.eta), mu.pt)
+        mu_sf_tight_err     = self.evaluator[f"mu_{yearstr}_tight_err"](abs(mu.eta), mu.pt)
 
-            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_reco_low, axis=1) * ak.prod(ele_sf_loose, axis=1) * ak.prod(ele_sf_looseTTH, axis=1) * ak.prod(ele_sf_tight, axis=1) * ak.prod(mu_sf_loose, axis=1) * ak.prod(mu_sf_tight, axis=1)
+        mu_sf_loose_err = np.sqrt(mu_sf_loose_syst*mu_sf_loose_syst + mu_sf_loose_stat*mu_sf_loose_stat)
 
-        elif self.year == 2018:
-            ele_sf_reco     = self.evaluator["ele_2018_reco"](ele.eta, ele.pt)
-            ele_sf_loose    = self.evaluator["ele_2018_loose"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_looseTTH = self.evaluator["ele_2018_looseTTH"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-            ele_sf_tight    = self.evaluator["ele_2018_tight"](abs(ele.eta + ele.deltaEtaSC), ele.pt)
-
-            mu_sf_loose     = self.evaluator["mu_2018_loose"](abs(mu.eta), mu.pt)
-            mu_sf_tight     = self.evaluator["mu_2018_tight"](abs(mu.eta), mu.pt)
-
-            if not variation=='central':
-
-                ele_sf_tight_err1 = self.evaluator["ele_2018_tight_eta"](abs(ele.eta + ele.deltaEtaSC))
-                ele_sf_tight_err2 = self.evaluator["ele_2018_tight_pt"](ele.pt)
-
-                ele_sf_tight_err1 = ak.from_regular(ele_sf_tight_err1[:,:,np.newaxis])
-                ele_sf_tight_err2 = ak.from_regular(ele_sf_tight_err2[:,:,np.newaxis])
-                ele_sf_tight_err  = ak.max(ak.concatenate([ele_sf_tight_err1, ele_sf_tight_err2], axis=2), axis=2)
-
-                mu_sf_tight_err1 = self.evaluator["mu_2018_tight_eta"](abs(mu.eta))
-                mu_sf_tight_err2 = self.evaluator["mu_2018_tight_pt"](mu.pt)
-
-                mu_sf_tight_err1 = ak.from_regular(mu_sf_tight_err1[:,:,np.newaxis])
-                mu_sf_tight_err2 = ak.from_regular(mu_sf_tight_err2[:,:,np.newaxis])
-                mu_sf_tight_err  = ak.max(ak.concatenate([mu_sf_tight_err1, mu_sf_tight_err2], axis=2), axis=2)
-
-                if variation=='up':
-                    ele_sf_tight = ele_sf_tight*ele_sf_tight_err
-                    mu_sf_tight = mu_sf_tight*mu_sf_tight_err
-                if variation=='down':
-                    ele_sf_tight = ele_sf_tight/ele_sf_tight_err
-                    mu_sf_tight = mu_sf_tight/mu_sf_tight_err
-
-
-            sf = ak.prod(ele_sf_reco, axis=1) * ak.prod(ele_sf_loose, axis=1) * ak.prod(ele_sf_looseTTH, axis=1) * ak.prod(ele_sf_tight, axis=1) * ak.prod(mu_sf_loose, axis=1) * ak.prod(mu_sf_tight, axis=1)
-
+        sf = ak.prod(ele_sf_reco    + sign_ele*ele_sf_reco_err, axis=1) *\
+            ak.prod(ele_sf_reco_low + sign_ele*ele_sf_reco_low_err, axis=1) *\
+            ak.prod(ele_sf_loose    + sign_ele*ele_sf_loose_err, axis=1) *\
+            ak.prod(ele_sf_iso      + sign_ele*ele_sf_iso_err, axis=1) *\
+            ak.prod(ele_sf_tight    + sign_ele*ele_sf_tight_err, axis=1) *\
+            ak.prod(mu_sf_reco      + ak.sum(sign_mu*mu_sf_reco_err, axis=1), axis=1) *\
+            ak.prod(mu_sf_loose     + sign_mu*mu_sf_loose_err, axis=1) *\
+            ak.prod(mu_sf_iso       + sign_mu*mu_sf_iso_err, axis=1) *\
+            ak.prod(mu_sf_tight     + sign_mu*mu_sf_tight_err, axis=1)
 
         return sf
 
@@ -167,6 +212,7 @@ if __name__ == '__main__':
     import warnings
     warnings.filterwarnings("ignore")
 
+    sf16APV = LeptonSF(year=2016, era='APV')
     sf16 = LeptonSF(year=2016)
     sf17 = LeptonSF(year=2017)
     sf18 = LeptonSF(year=2018)
@@ -212,10 +258,19 @@ if __name__ == '__main__':
 
     sel = ((ak.num(el)==1)&(ak.num(mu)==1))
 
-    sf_central  = sf18.get(el[sel], mu[sel], variation='central')
+    sf_central  = sf16.get(el[sel], mu[sel], variation='central')
     print ("Mean value of SF (central): %.3f"%ak.mean(sf_central))
-    sf_up       = sf18.get(el[sel], mu[sel], variation='up')
-    print ("Mean value of SF (up): %.3f"%ak.mean(sf_up))
-    sf_down     = sf18.get(el[sel], mu[sel], variation='down')
-    print ("Mean value of SF (down): %.3f"%ak.mean(sf_down))
+    sf_up       = sf16.get(el[sel], mu[sel], variation='up')
+    print ("Mean value of SF (up, all): %.3f"%ak.mean(sf_up))
+    sf_down     = sf16.get(el[sel], mu[sel], variation='down')
+    print ("Mean value of SF (down, all): %.3f"%ak.mean(sf_down))
 
+    sf_up       = sf16.get(el[sel], mu[sel], variation='up', collection='ele')
+    print ("Mean value of SF (up, ele): %.3f"%ak.mean(sf_up))
+    sf_down     = sf16.get(el[sel], mu[sel], variation='down', collection='ele')
+    print ("Mean value of SF (down, ele): %.3f"%ak.mean(sf_down))
+
+    sf_up       = sf16.get(el[sel], mu[sel], variation='up', collection='mu')
+    print ("Mean value of SF (up, mu): %.3f"%ak.mean(sf_up))
+    sf_down     = sf16.get(el[sel], mu[sel], variation='down', collection='mu')
+    print ("Mean value of SF (down, mu): %.3f"%ak.mean(sf_down))
