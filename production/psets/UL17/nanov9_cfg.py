@@ -86,12 +86,12 @@ from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeMC
 process = nanoAOD_customizeMC(process)
 
 named_weights = [
-    "cpt_0p_cpQM_0p_nlo",
-    "cpt_3p_cpQM_0p_nlo",
-    "cpt_0p_cpQM_3p_nlo",
-    "cpt_6p_cpQM_0p_nlo",
-    "cpt_3p_cpQM_3p_nlo",
-    "cpt_0p_cpQM_6p_nlo",
+    "cpt_0p_cpqm_0p_nlo",
+    "cpt_3p_cpqm_0p_nlo",
+    "cpt_0p_cpqm_3p_nlo",
+    "cpt_6p_cpqm_0p_nlo",
+    "cpt_3p_cpqm_3p_nlo",
+    "cpt_0p_cpqm_6p_nlo",
 ]
 
 process.genWeightsTable.namedWeightIDs = named_weights

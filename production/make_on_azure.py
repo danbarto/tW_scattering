@@ -42,7 +42,7 @@ def submit():
     #events_per_job = 2500
     events_per_job = 4000
 
-    campaigns = [("UL18", 1000000)] #, ("UL17", 3000000), ("UL16_preVFP", 1000000), ("UL16_postVFP", 1000000)]
+    campaigns = [("UL18", 1000000), ("UL17", 500000), ("UL16_preVFP", 250000), ("UL16_postVFP", 250000)]
 
     for campaign, events_per_point in campaigns:
         njobs = int(events_per_point)//events_per_job
