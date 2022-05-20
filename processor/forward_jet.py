@@ -50,8 +50,8 @@ class forward_jet_analysis(processor.ProcessorABC):
         self.year = year
         self.era = era
 
-        self.btagSF = btag_scalefactor(year)
-        self.leptonSF = LeptonSF(year=year)
+        self.btagSF = btag_scalefactor(year, era=era)
+        self.leptonSF = LeptonSF(year=year, era=era)
         self.triggerSF = triggerSF(year=year)
         self.pu = pileup(year=year, UL=True, era=era)
 
@@ -233,6 +233,9 @@ class forward_jet_analysis(processor.ProcessorABC):
 
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
+
+                # trigger SFs
+                weight.add("trigger", self.triggerSF.get(electron, muon))
             
             sel = Selection(
                 dataset = dataset,
