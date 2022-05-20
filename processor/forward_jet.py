@@ -15,7 +15,7 @@ import numpy as np
 
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match, delta_phi
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet, getMET
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM, get_samples
@@ -196,6 +196,13 @@ class forward_jet_analysis(processor.ProcessorABC):
             #mt_lep_met = mt(lepton.p4.pt, lepton.phi, ev.MET.T1_pt, ev.MET.phi)
             mt_lep_met = mt(lepton.p4.pt, lepton.phi, met.pt, met.phi)
             min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+            
+            min_mt_idx = ak.singletons(ak.argmin(mt_lep_met, axis=1))
+            min_mt_lep = lepton[min_mt_idx]
+            delta_phi_lep_met = delta_phi(min_mt_lep, met)
+
+            high_mt_lep = ak.any(mt_lep_met>150, axis=1)
+            dilep_mass_high_mt = ak.mask(dilepton_mass, high_mt_lep)
 
             # define the weight
             weight = Weights( len(ev) )
@@ -284,12 +291,21 @@ class forward_jet_analysis(processor.ProcessorABC):
                 pt=ak.flatten(dilepton_pt[BL]),
                 weight=weight.weight()[BL],
             )
+
             output['dilep_mass'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
                 mass=ak.flatten(dilepton_mass[BL]),
                 weight=weight.weight()[BL],
+            )
+
+            output['dilep_mass_high_mt'].fill(
+                dataset=dataset,
+                systematic = var_name,
+                n_ele = n_ele[(BL & high_mt_lep)],
+                mass=ak.flatten(dilep_mass_high_mt[BL]),
+                weight=weight.weight()[BL & high_mt_lep],
             )
 
             output['PV_npvs'].fill(
@@ -368,6 +384,14 @@ class forward_jet_analysis(processor.ProcessorABC):
                 systematic = var_name,
                 n_ele = n_ele[BL],
                 pt=min_mt_lep_met[BL],
+                weight=weight.weight()[BL],
+            )
+
+            output['delta_phi_lep_met'].fill(
+                dataset=dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                delta_phi=ak.flatten(delta_phi_lep_met[BL]),
                 weight=weight.weight()[BL],
             )
 
@@ -560,7 +584,7 @@ if __name__ == '__main__':
         # add some histograms that we defined in the processor
         # everything else is taken the default_accumulators.py
         from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, mass_axis
-        from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis
+        from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis, delta_phi_axis
         desired_output.update({
             "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
             "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
@@ -571,11 +595,13 @@ if __name__ == '__main__':
             "N_tau": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
             "dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
             "dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            "dilep_mass_high_mt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "mjf_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "mjj_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "deltaEta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
             "min_bl_dR": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
             "min_mt_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "delta_phi_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_phi_axis),
             "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
