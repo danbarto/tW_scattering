@@ -32,10 +32,12 @@ from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event
 from Tools.config_helpers import loadConfig, make_small, data_pattern, get_latest_output, load_yaml, data_path
 from Tools.triggers import getFilters, getTriggers
 from Tools.btag_scalefactors import btag_scalefactor
+from Tools.trigger_scalefactors import triggerSF
 from Tools.ttH_lepton_scalefactors import LeptonSF
 from Tools.selections import Selection, get_pt
 from Tools.nonprompt_weight import NonpromptWeight
 from Tools.chargeFlip import charge_flip
+from Tools.pileup import pileup
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -68,7 +70,9 @@ class SS_analysis(processor.ProcessorABC):
         self.dump = dump
         
         self.btagSF = btag_scalefactor(year, era=era)
-        self.leptonSF = LeptonSF(year=year)  # NOTE no era specific lepton SFs yet
+        self.leptonSF = LeptonSF(year=year, era=era)
+        self.triggerSF = triggerSF(year=year)
+        self.pu = pileup(year=year, UL=True, era=era)
 
         self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split
         self.chargeflipWeight = charge_flip(year=year)  # NOTE no era split
@@ -250,9 +254,14 @@ class SS_analysis(processor.ProcessorABC):
                 else:
                     weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
 
-                # PU weight
-                weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
-                
+                ## PU weight
+                weight.add("PU",
+                           self.pu.reweight(ev.Pileup.nTrueInt.to_numpy()),
+                           weightUp = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='up'),
+                           weightDown = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='down'),
+                           shift=False,
+                           )
+
                 # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
                     weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='up'))
@@ -267,6 +276,9 @@ class SS_analysis(processor.ProcessorABC):
 
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
+
+                # trigger SFs
+                weight.add("trigger", self.triggerSF.get(electron, muon))
             
             if dataset=='topW_full_EFT':
                 # FIXME legacy code ready to be retired
