@@ -139,17 +139,23 @@ if __name__ == '__main__':
     ## Load a single file here, get leptons, eval SFs just to be sure everything works
     from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
-    from Tools.samples import get_babies
     from Tools.objects import Collections
+    from Tools.config_helpers import loadConfig, make_small, load_yaml, data_path
+    from Tools.helpers import get_samples
+    from Tools.nano_mapping import make_fileset
     
     import awkward as ak
-    
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2018')
-    
+
+    samples = get_samples("samples_UL18.yaml")
+    mapping = load_yaml(data_path+"nano_mapping.yaml")
+
+    fileset = make_fileset(['TTW'], samples, year='UL18', skim=True, small=True, n_max=1)
+    filelist = fileset[list(fileset.keys())[0]]
+
     # load a subset of events
     n_max = 5000
     events = NanoEventsFactory.from_root(
-        fileset_all['TTW'][0],
+        filelist[0],
         schemaclass = NanoAODSchema,
         entry_stop = n_max).events()
 
