@@ -24,6 +24,7 @@ ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 
 eta_axis                = hist.Bin("eta",           r"$\eta$",          50, -5.0, 5.0)
 delta_eta_axis          = hist.Bin("eta",           r"$\eta$",          150, -5.0, 10.0)
 phi_axis                = hist.Bin("phi",           r"$\phi$",          64, -3.2, 3.2)
+delta_phi_axis          = hist.Bin("delta_phi",     r"$\Delta\phi$",    32, 0, 3.2)
 delta_axis              = hist.Bin("delta",         r"$\delta$",        50, 0, 10)
 multiplicity_axis       = hist.Bin("multiplicity",  r"N",               20, -0.5, 19.5)
 n1_axis                 = hist.Bin("n1",            r"N",               4, -0.5, 3.5)
