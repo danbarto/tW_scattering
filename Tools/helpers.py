@@ -4,7 +4,10 @@ Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
-import boost_histogram as bh
+try:
+    import boost_histogram as bh
+except ImportError:
+    print ("Did not load boost histogram package")
 try:
     import awkward1 as ak
 except ImportError:
