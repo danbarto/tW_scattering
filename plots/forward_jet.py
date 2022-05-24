@@ -32,6 +32,7 @@ if __name__ == '__main__':
     argParser.add_argument('--normalize', action='store_true', default=None, help="Normalize?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--version', action='store', default='v21', help="Version of the NN training. Just changes subdir.")
+    argParser.add_argument('--DY', action='store_true', help="DY")
     argParser.add_argument('--postfix', action='store', default='', help="postfix for plot directory")
     args = argParser.parse_args()
 
@@ -58,6 +59,7 @@ if __name__ == '__main__':
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
     order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    #order = ['topW', 'DY', 'top']
 
     datasets = data + order
 
@@ -71,6 +73,8 @@ if __name__ == '__main__':
 
     for sample in datasets:
         cache_name = f'OS_analysis_{sample}_{year}{era}'
+        if args.DY:
+            cache_name += '_DY'
         print (cache_name)
         outputs.append(get_latest_output(cache_name, cfg))
 
@@ -134,6 +138,7 @@ if __name__ == '__main__':
     #    lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
 
     plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v1/')
+    if args.DY: plot_dir = plot_dir.replace('OS', 'DY')
     if args.postfix:
         plot_dir += '_%s'%args.postfix
     if TFnormalize:
@@ -343,41 +348,42 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+'N_fwd_stat'),
              )
 
-    makePlot(output, 'fwd_jet', 'pt',
-             data=data,
-             bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ selected\ fwd\ jet$ (GeV)',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             omit=omit,
-             signals=signals,
-             lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+'fwd_jet_pt'),
-             )
+    if not args.DY:
+        makePlot(output, 'fwd_jet', 'pt',
+                 data=data,
+                 bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ selected\ fwd\ jet$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 save=os.path.expandvars(plot_dir+'fwd_jet_pt'),
+                 )
 
-    makePlot(output, 'fwd_jet', 'eta',
-             data=data,
-             bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ selected\ fwd\ jet$ (GeV)',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             omit=omit,
-             signals=signals,
-             lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+'fwd_jet_eta'),
-             )
+        makePlot(output, 'fwd_jet', 'eta',
+                 data=data,
+                 bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ selected\ fwd\ jet$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 save=os.path.expandvars(plot_dir+'fwd_jet_eta'),
+                 )
 
-    #makePlot(output, 'fwd_jet', 'phi',
-    #         data=data,
-    #         bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ selected\ fwd\ jet$ (GeV)',
-    #         new_colors=my_colors, new_labels=my_labels,
-    #         order=order,
-    #         omit=omit,
-    #         signals=signals,
-    #         lumi=lumi,
-    #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-    #         save=os.path.expandvars(plot_dir+'fwd_jet_phi'),
-    #         )
+        #makePlot(output, 'fwd_jet', 'phi',
+        #         data=data,
+        #         bins=None, log=False, normalize=TFnormalize, axis_label=r'$\phi\ selected\ fwd\ jet$ (GeV)',
+        #         new_colors=my_colors, new_labels=my_labels,
+        #         order=order,
+        #         omit=omit,
+        #         signals=signals,
+        #         lumi=lumi,
+        #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        #         save=os.path.expandvars(plot_dir+'fwd_jet_phi'),
+        #         )
 
     makePlot(output, 'N_jet', 'multiplicity',
              data=data,
@@ -668,17 +674,18 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+'dilep_mass'),
              )
 
-    makePlot(output, 'deltaEta', 'eta',
-             data=data,
-             bins=deltaEta_bins, log=False, normalize=TFnormalize, axis_label=r'$\Delta \eta $(GeV)',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             omit=omit,
-             signals=signals,
-             lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-             save=os.path.expandvars(plot_dir+'deltaEta'),
-             )
+    if not args.DY:
+        makePlot(output, 'deltaEta', 'eta',
+                 data=data,
+                 bins=deltaEta_bins, log=False, normalize=TFnormalize, axis_label=r'$\Delta \eta $(GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 save=os.path.expandvars(plot_dir+'deltaEta'),
+                 )
     
     #makePlot(output, 'mjf_max', 'mass',
     #         data=data,
