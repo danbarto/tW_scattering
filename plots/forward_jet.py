@@ -150,6 +150,7 @@ if __name__ == '__main__':
     mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
     pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
     pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
+    delta_phi_bins = hist.Bin('delta_phi', r'$\Delta\phi$', 32, 0, 3.2)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
     score_bins = hist.Bin("score",          r"N", 25, 0, 1)
     mjf_bins = hist.Bin('mass', r'$M\ (GeV)$', 50, 0, 2000)
@@ -686,7 +687,18 @@ if __name__ == '__main__':
                  #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                  save=os.path.expandvars(plot_dir+'deltaEta'),
                  )
-    
+    makePlot(output, 'dilep_mass_high_mt', 'mass',
+             data=data,
+             bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'dilep_mass_high_mt'),
+             )
+
+
     #makePlot(output, 'mjf_max', 'mass',
     #         data=data,
     #         bins=mjf_bins, log=False, normalize=TFnormalize, axis_label='mjf_max (GeV)',
@@ -732,4 +744,16 @@ if __name__ == '__main__':
              lumi=lumi,
              #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              save=os.path.expandvars(plot_dir+'min_mt_lep_met_log'),
+             )
+
+    makePlot(output, 'delta_phi_lep_met', 'delta_phi',
+             data=data,
+             bins=delta_phi_bins, log=False, normalize=TFnormalize, axis_label='delta_phi_lep_met',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             save=os.path.expandvars(plot_dir+'delta_phi_lep_met'),
              )

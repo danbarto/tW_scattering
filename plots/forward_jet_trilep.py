@@ -59,7 +59,8 @@ if __name__ == '__main__':
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
     #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
-    order = ['topW', 'DY']
+    order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
+    #order = ['topW', 'DY']
     data = []
 
     datasets = data + order
