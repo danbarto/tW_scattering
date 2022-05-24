@@ -212,7 +212,7 @@ def external_conversion(reco_lep, gen_photon):
 
 class Collections:
 
-    def __init__(self, ev, obj, wp, year=2018, verbose=0):
+    def __init__(self, ev, obj, wp, year=2018, verbose=0, era=''):
         self.obj = obj
         self.wp = wp
         if self.wp == None:
@@ -221,7 +221,7 @@ class Collections:
             self.selection_dict = obj_def[self.obj][self.wp]
 
         self.v = verbose
-        self.year = year
+        self.year = str(year) + era
 
         id_level = None
         if wp.lower().count('veto'):
@@ -447,8 +447,8 @@ class Collections:
         get the deepJet threshold for ttH FO muons. default values are for 2018.
         UL values from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL18
         '''
-        b_low = {2016: 0.3093, 2017: 0.3040, 2018: 0.2783,}
-        b_high = {2016: 0.0614, 2017: 0.0532, 2018: 0.0490,}
+        b_low = {'2016': 0.2489, '2016APV': 0.2598, '2017': 0.3040, '2018': 0.2783,}
+        b_high = {'2016': 0.0480, '2016APV': 0.0508, '2017': 0.0532, '2018': 0.0490,}
         if low is None: low = b_low[self.year]
         if high is None: high = b_high[self.year]
 

@@ -87,14 +87,16 @@ Electron:
     jetRelIso:
       max: 0.7
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
     mvaTTHUL:
-      max: 0.80
+      max: 0.90
 
   fakeableSSTTH:
     pt:
@@ -125,14 +127,16 @@ Electron:
     jetRelIso:
       max: 0.7
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
     mvaTTHUL:
-      max: 0.80
+      max: 0.90
     tightCharge: 2
 
   tightTTH:
@@ -162,14 +166,16 @@ Electron:
     lostHits: 0
     mvaFall17V2noIso_WPL: 1
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
     mvaTTHUL:
-      min: 0.80
+      min: 0.90
 
   tightSSTTH:
     pt:
@@ -198,14 +204,16 @@ Electron:
     lostHits: 0
     mvaFall17V2noIso_WPL: 1
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
     mvaTTHUL:
-      min: 0.80
+      min: 0.90
     tightCharge: 2
 
 
@@ -339,11 +347,13 @@ Muon:
     mvaTTHUL:
       min: 0.85
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
 
   tightSSTTH:
@@ -368,11 +378,13 @@ Muon:
     mvaTTHUL:
       min: 0.85
     deepJet:
-      2016:
-        max: 0.3093
-      2017:
+      '2016':
+        max: 0.2489
+      '2016APV':
+        max: 0.2598
+      '2017':
         max: 0.3040
-      2018:
+      '2018':
         max: 0.2783
     ptErrRel:
       max: 0.2

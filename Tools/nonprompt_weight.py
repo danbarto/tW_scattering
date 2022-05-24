@@ -14,6 +14,7 @@ class NonpromptWeight:
 
         self.ext = extractor()
 
+        # FIXME those need updates! Do we still have MC based FRs for closure tests?
         fr = os.path.expandvars("$TWHOME/data/fakerate/fr_%s.root"%self.year)
         fr_data = os.path.expandvars("$TWHOME/data/fakerate/fr_%s_recorrected.root"%self.year)
 

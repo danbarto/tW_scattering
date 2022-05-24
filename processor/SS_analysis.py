@@ -119,16 +119,16 @@ class SS_analysis(processor.ProcessorABC):
         # The added p4 instance has the corrected pt (conePt for fakeable) and should be used for any following selection or calculation
         # Any additional correction (if we choose to do so) should be added here, e.g. Rochester corrections, ...
         ## Muons
-        mu_v     = Collections(ev, "Muon", "vetoTTH", year=self.year).get()  # these include all muons, tight and fakeable
-        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=self.year).get()
-        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=self.year).get()
+        mu_v     = Collections(ev, "Muon", "vetoTTH", year=self.year, era=self.era).get()  # these include all muons, tight and fakeable
+        mu_t     = Collections(ev, "Muon", "tightSSTTH", year=self.year, era=self.era).get()
+        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=self.year, era=self.era).get()
         muon     = ak.concatenate([mu_t, mu_f], axis=1)
         muon['p4'] = get_four_vec_fromPtEtaPhiM(muon, get_pt(muon), muon.eta, muon.phi, muon.mass, copy=False)
         
         ## Electrons
-        el_v        = Collections(ev, "Electron", "vetoTTH", year=self.year).get()
-        el_t        = Collections(ev, "Electron", "tightSSTTH", year=self.year).get()
-        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year).get()
+        el_v        = Collections(ev, "Electron", "vetoTTH", year=self.year, era=self.era).get()
+        el_t        = Collections(ev, "Electron", "tightSSTTH", year=self.year, era=self.era).get()
+        el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year, era=self.era).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
         
