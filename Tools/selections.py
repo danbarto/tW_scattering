@@ -140,7 +140,7 @@ class Selection:
         return selection
 
 
-    def trilep_baseline(self, omit=[], cutflow=None, tight=False):
+    def trilep_baseline(self, omit=[], add=[], cutflow=None, tight=False):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
@@ -158,7 +158,8 @@ class Selection:
 
         OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
-        
+
+
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
@@ -183,6 +184,12 @@ class Selection:
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
         st_veto = self.met.pt + ht + ak.sum(self.mu_veto.pt, axis=1) + ak.sum(self.ele_veto.pt, axis=1)
 
+        dimu    = choose(self.mu, 2)
+        diele   = choose(self.ele, 2)
+        dilep   = choose(lepton, 2)
+
+        min_mll = ak.all(dilep.mass>12, axis=1)
+
         self.selection.add('trilep',        is_trilep)
         self.selection.add('SS_dilep',      SS_dilep)
         self.selection.add('p_T(lep0)>25',  lep0pt)
@@ -199,6 +206,8 @@ class Selection:
         self.selection.add('ST>600',        (st_veto>600) )
         self.selection.add('offZ',          offZ )
         self.selection.add('onZ',           onZ )
+        self.selection.add('min_mll',       (min_mll) )
+
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
         
@@ -217,7 +226,8 @@ class Selection:
             #'N_btag>0',
             'N_fwd>0',
             #'SFOS>=1',
-            #'charge_sum'
+            #'charge_sum',
+            'min_mll',
         ]
         
         if tight:
@@ -228,6 +238,9 @@ class Selection:
                 #'MET>50',
                 #'delta_eta',
             ]
+
+        for a in add:
+            reqs.append(a)
 
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)
