@@ -44,6 +44,7 @@ class forward_jet_analysis(processor.ProcessorABC):
                  dump=False,
                  era=None,
                  reweight=1,
+                 DY=False,
                  ):
 
         self.variations = variations
@@ -56,6 +57,8 @@ class forward_jet_analysis(processor.ProcessorABC):
         self.pu = pileup(year=year, UL=True, era=era)
 
         self.reweight = reweight
+
+        self.DY = DY  # NOTE maybe there's something better than this?
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -256,9 +259,9 @@ class forward_jet_analysis(processor.ProcessorABC):
 
             if var_name == 'central':
                 cutflow = Cutflow(output, ev, weight=weight)
-                BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
+                BL = sel.dilep_baseline(cutflow=cutflow, SS=False, DY=self.DY)
 
-            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'])
+            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'], DY=self.DY)
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
             output['N_jet'].fill(
@@ -315,7 +318,7 @@ class forward_jet_analysis(processor.ProcessorABC):
 
             #output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
 
-            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'])
+            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'], DY=self.DY)
             if not re.search(data_pattern, dataset):
                 BL_minusNb = add_conversion_req(dataset, BL_minusNb)
             output['N_b'].fill(
@@ -327,17 +330,18 @@ class forward_jet_analysis(processor.ProcessorABC):
             )
 
             # This is the real baseline, although N_fwd is removed for training. FIXME: decide what to call "baseline"
-            BL = sel.dilep_baseline(SS=False)
+            BL = sel.dilep_baseline(SS=False, DY=self.DY)
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
 
-            output['mjf_max'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                mass=mjf_max[BL],
-                weight=weight.weight()[BL],
-            )
+            if not self.DY:
+                output['mjf_max'].fill(
+                    dataset=dataset,
+                    systematic = var_name,
+                    n_ele = n_ele[BL],
+                    mass=mjf_max[BL],
+                    weight=weight.weight()[BL],
+                )
 
             output['mjj_max'].fill(
                 dataset=dataset,
@@ -347,13 +351,14 @@ class forward_jet_analysis(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['deltaEta'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                eta=deltaEtaMax[BL],
-                weight=weight.weight()[BL],
-            )
+            if not self.DY:
+                output['deltaEta'].fill(
+                    dataset=dataset,
+                    systematic = var_name,
+                    n_ele = n_ele[BL],
+                    eta=deltaEtaMax[BL],
+                    weight=weight.weight()[BL],
+                )
 
             output['min_bl_dR'].fill(
                 dataset=dataset,
@@ -409,16 +414,17 @@ class forward_jet_analysis(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['fwd_jet'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt=ak.flatten(high_p_fwd[BL].p4.pt),
-                eta=ak.flatten(high_p_fwd[BL].p4.eta),
-                weight=weight.weight()[BL],
-            )
+            if not self.DY:
+                output['fwd_jet'].fill(
+                    dataset=dataset,
+                    systematic = var_name,
+                    n_ele = n_ele[BL],
+                    pt=ak.flatten(high_p_fwd[BL].p4.pt),
+                    eta=ak.flatten(high_p_fwd[BL].p4.eta),
+                    weight=weight.weight()[BL],
+                )
 
-            BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'])
+            BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'], DY=self.DY)
             if not re.search(data_pattern, dataset):
                 BL_minusMET = add_conversion_req(dataset, BL_minusMET)
             output['MET'].fill(
@@ -464,6 +470,7 @@ if __name__ == '__main__':
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2016', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
+    argParser.add_argument('--DY', action='store_true', default=None, help="DY specific selection?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
@@ -603,6 +610,8 @@ if __name__ == '__main__':
 
         # define the cache name
         cache_name = f'OS_analysis_{sample}_{year}{era}'
+        if args.DY:
+            cache_name += '_DY'
         # find an old existing output
         output = get_latest_output(cache_name, cfg)
 
@@ -625,6 +634,7 @@ if __name__ == '__main__':
                     training=args.training,
                     era=era,
                     reweight=reweight,
+                    DY=args.DY,
                 ),
             )
 
