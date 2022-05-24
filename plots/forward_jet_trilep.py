@@ -4,12 +4,14 @@ try:
 except ImportError:
     import awkward as ak
 
-from coffea import processor, hist
+from coffea import processor, hist, util
+from coffea.processor import accumulate
 
 import numpy as np
 import copy
 
-from Tools.config_helpers import loadConfig, make_small
+from Tools.config_helpers import loadConfig, load_yaml, data_path, get_latest_output
+from Tools.helpers import get_samples
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -18,116 +20,332 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-from plots.helpers import makePlot
-
-from klepto.archives import dir_archive
-
+from plots.helpers import makePlot, scale_and_merge
 
 if __name__ == '__main__':
 
 
-    small = False
-    cfg = loadConfig()
+    import argparse
 
-    plot_dir = os.path.expandvars(cfg['meta']['plots']) + 'test' +  '/testtrilep/'
-    
-    cacheName = 'onZ_nobreq_2016'
-    if small: cacheName += '_small'
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
-    cache.load()
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--normalize', action='store_true', default=None, help="Normalize?")
+    argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
+    argParser.add_argument('--version', action='store', default='v21', help="Version of the NN training. Just changes subdir.")
+    argParser.add_argument('--postfix', action='store', default='', help="postfix for plot directory")
+    args = argParser.parse_args()
 
-    output = cache.get('simple_output')
+    small       = args.small
+    verysmall   = args.verysmall
+    if verysmall:
+        small = True
+    TFnormalize = args.normalize
+    year        = args.year
+    cfg         = loadConfig()
 
-    
-    # defining some new axes for rebinning.
+    #year = int(args.year)
+    era = ''
+    ul = f"UL{str(year)[2:]}{era}"
+    #cfg = loadConfig()
+
+    samples = get_samples(f"samples_{ul}.yaml")
+    mapping = load_yaml(data_path+"nano_mapping.yaml")
+
+    renorm   = {}
+
+    if year == '2018':
+        data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
+    else:
+        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
+    #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    order = ['topW', 'DY']
+    data = []
+
+    datasets = data + order
+
+    outputs = []
+
+    try:
+        lumi_year = int(year)
+    except:
+        lumi_year = year
+    lumi = cfg['lumi'][lumi_year]
+
+    for sample in datasets:
+        cache_name = f'trilep_analysis_{sample}_{year}{era}'
+        print (cache_name)
+        outputs.append(get_latest_output(cache_name, cfg))
+
+        # NOTE we could also rescale processes here?
+
+        for dataset in mapping[ul][sample]:
+            if samples[dataset]['reweight'] == 1:
+                renorm[dataset] = 1
+            else:
+                # Currently only supporting a single reweight.
+                weight, index = samples[dataset]['reweight'].split(',')
+                index = int(index)
+                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
+            try:
+                renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
+            except:
+                renorm[dataset] = 1
+    output = accumulate(outputs)
+
+    res = scale_and_merge(output['N_jet'], renorm, mapping[ul])
+
+    output_scaled = {}
+    for key in output.keys():
+        if isinstance(output[key], hist.Hist):
+            #print (key)
+            try:
+                output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
+            except:
+                print ("Scale and merge failed for:",key)
+                print ("At least I tried.")
+
+    output = output_scaled
+    #if year == '2019':
+    #    # load the results
+    #    lumi = 35.9+41.5+60.0
+    #    first = True
+    #    for y in ['2016', '2016APV', '2017', '2018']:
+    #        cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'forward_OS_%s'%y), serialized=True)
+    #        cache.load()
+    #        tmp_output = cache.get('simple_output')
+    #        if first:
+    #            output = copy.deepcopy(tmp_output)
+    #        else:
+    #            for key in tmp_output:
+    #                if type(tmp_output[key]) == hist.hist_tools.Hist:
+    #                    try:
+    #                        output[key].add(tmp_output[key])
+    #                    except KeyError:
+    #                        print ("Key %s not present in all years. Skipping."%key)
+    #        first = False
+    #        del cache
+
+    #else:
+    #    cacheName = 'forward_OS_%s'%year
+    #    if small: cacheName += '_small'
+    #    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
+
+    #    cache.load()
+    #    output = cache.get('simple_output')
+
+    #    lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
+
+    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'trilep/v0.7.0_v1/')
+    if args.postfix:
+        plot_dir += '_%s'%args.postfix
+    if TFnormalize:
+        plot_dir += '/normalized/'
+
     N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
     N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
-    N_bins_red_central = hist.Bin('multiplicity', r'$N$', 8, -0.5, 7.5)
+    N_bins_ele = hist.Bin('n_ele', r'$N$', 4, -0.5, 3.5)
     mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
-    min_mass_bins = hist.Bin('mass', r'$M\ (GeV)$', [0,20,40,60,80,82,84,86,88,90,92,94,96,98])
+    mass_bins_fine = hist.Bin('mass', r'$M\ (GeV)$', 20, 80, 100)
     pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
     pt_bins_coarse = hist.Bin('pt', r'$p_{T}\ (GeV)$', 10, 0, 300)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
-    ht_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 35, 0, 1400)
-    lt_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 25, 0, 500)
-    m3l_bins = hist.Bin('mass', r'$M\ (GeV)$', 30, 100, 700)
-    #m3l_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 70, 110)
-    mll_bins = hist.Bin('mass', r'$M\ (GeV)$', 10, 80, 100)
-    mll_bins = hist.Bin('mass', r'$M\ (GeV)$', 10, 70, 110)
     score_bins = hist.Bin("score",          r"N", 25, 0, 1)
-    st_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 44, 240, 2000)
-    lep_pt_bins =  hist.Bin('pt', r'$p_{T}\ (GeV)$', 45, 0, 450)
-    lead_lep_pt_bins =  hist.Bin('pt', r'$p_{T}\ (GeV)$', 60, 0, 600)
-    onZ_pt_bins =  hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
-    jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 40, 0, 600)
-    phi_bins = hist.Bin('phi', r'$p_{T}\ (GeV)$', 12, -3, 3)
     mjf_bins = hist.Bin('mass', r'$M\ (GeV)$', 50, 0, 2000)
-    deltaEta_bins = hist.Bin('eta', r'$\eta $', 20, 0, 10.0)
-    
-    
+    #mjf_bins = None
+    deltaEta_bins = hist.Bin('eta', r'$\eta $', 20, 0, 10)
+    #deltaEta_bins = None
+    jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
+    m3l_bins = hist.Bin('mass', r'$M\ (GeV)$', 15, 0, 300)
+#ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
+
     my_labels = {
-        'topW_v2': 'top-W scat.',
-        'topW_v3': 'top-W scat.',
+        'topW': 'top-W scat.',
+        'topW_EFT_cp8': 'EFT, cp8',
+        'topW_EFT_mix': 'EFT mix',
         'TTZ': r'$t\bar{t}Z$',
-        'TTXnoW': r'$t\bar{t}Z/H$',
+        'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
         'TTW': r'$t\bar{t}W$',
         'TTH': r'$t\bar{t}H$',
         'diboson': 'VV/VVV',
-        'ttbar': r'$t\bar{t}$',
-        'DY': 'Drell-Yan',
-        'WW': 'WW',
-        'WZ': 'WZ',
-        'XG': 'XG',
+        'rare': 'rare',
+        'top': r'$t\bar{t}$',
+        'XG': 'XG',  # this is bare XG
+        'DY': 'Drell-Yan',  # this is bare XG
+        'conv_mc': 'conversion',
+        'np_obs_mc': 'nonprompt (MC true)',
+        'np_est_mc': 'nonprompt (MC est)',
+        'cf_obs_mc': 'charge flip (MC true)',
+        'cf_est_mc': 'charge flip (MC est)',
+        'np_est_data': 'nonprompt (est)',
+        'cf_est_data': 'charge flip (est)',
     }
-    
+
     my_colors = {
-        'topW_v2': '#FF595E',
-        'topW_v3': '#FF595E',
+        'topW': '#FF595E',
+        'topW_EFT_cp8': '#000000',
+        'topW_EFT_mix': '#0F7173',
         'TTZ': '#FFCA3A',
         'TTXnoW': '#FFCA3A',
         'TTW': '#8AC926',
         'TTH': '#34623F',
         'diboson': '#525B76',
-        'ttbar': '#1982C4',
+        'rare': '#EE82EE',
+        'top': '#1982C4',
+        'XG': '#5bc0de',
+        'conv_mc': '#5bc0de',
         'DY': '#6A4C93',
-        'WW': '#34623F',
-        'WZ': '#525B76',
-        'XG': '#5bc0de'
+        'np_obs_mc': '#1982C4',
+        'np_est_mc': '#1982C4',
+        'np_est_data': '#1982C4',
+        'cf_obs_mc': '#0F7173',
+        'cf_est_mc': '#0F7173',
+        'cf_est_data': '#0F7173',
     }
-    TFnormalize = False
-    version_dir = '/onZ_nobReq_2016/'
-    lumi_year = 16.8
-    data=['DoubleMuon', 'MuonEG', 'EGamma', 'SingleElectron', 'SingleMuon']
-    order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar', 'XG']
-    
-    '''year='2019'
-    if year == '2019':
-        # load the results
-        lumi_year = 35.9+41.5+60.0
-        first = True 
-        for y in ['2016', '2016APV', '2017', '2018']:
-            if y=='2016APV': 
-                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'ttz_2016APV'), serialized=True)
-            elif y=='2016':
-                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'ttz_2016'), serialized=True)
-            elif y=='2017':
-                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'ttz_2017'), serialized=True)
-            elif y=='2018':
-                cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'temporary'), serialized=True)
-                            
-            cache.load()
-            tmp_output = cache.get('simple_output')
-            if first:
-                output = copy.deepcopy(tmp_output)
-            else:
-                for key in tmp_output:
-                    if type(tmp_output[key]) == hist.hist_tools.Hist:
-                        output[key].add(tmp_output[key])
-            first = False
-            del cache'''
 
-    
-    
+    all_processes = [ x[0] for x in output['N_jet'].values().keys() ]
+
+    signals = []
+    omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+    TFnormalize = False
+
+    makePlot(output, 'N_jet_onZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{jet}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_jet_onZ'),
+             )
+
+    makePlot(output, 'N_jet_offZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{jet}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_jet_offZ'),
+             )
+
+
+    makePlot(output, 'N_b_onZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{b}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_b_onZ'),
+             )
+
+    makePlot(output, 'N_b_offZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{b}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_b_offZ'),
+             )
+
+
+    makePlot(output, 'N_fwd_onZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{fwd}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_fwd_onZ'),
+             )
+
+    makePlot(output, 'N_fwd_offZ', 'multiplicity',
+             data=data,
+             bins=N_bins, log=False, normalize=TFnormalize, axis_label=r'$N_{fwd}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             save=os.path.expandvars(plot_dir+'N_fwd_offZ'),
+             )
+
+
+    makePlot(output, 'M3l_onZ', 'mass',
+             data=data,
+             bins=m3l_bins, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             lumi=lumi_year,
+             signals=signals,
+             save=os.path.expandvars(plot_dir+'M3l_onZ'),
+        )
+
+    makePlot(output, 'M3l_offZ', 'mass',
+             data=data,
+             bins=m3l_bins, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             lumi=lumi_year,
+             signals=signals,
+             save=os.path.expandvars(plot_dir+'M3l_offZ'),
+        )
+
+
+    makePlot(output, 'N_jet_onZ', 'n_ele',
+             data=data,
+             bins=N_bins_ele, log=False, normalize=TFnormalize, axis_label=r'$N_{ele}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             save=os.path.expandvars(plot_dir+'N_ele_onZ'),
+             )
+
+    makePlot(output, 'N_jet_offZ', 'n_ele',
+             data=data,
+             bins=N_bins_ele, log=False, normalize=TFnormalize, axis_label=r'$N_{ele}$',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             omit=omit,
+             signals=signals,
+             lumi=lumi,
+             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             save=os.path.expandvars(plot_dir+'N_ele_offZ'),
+             )
+
+
+    makePlot(output, 'best_M_ll_onZ', 'mass',
+             data=data,
+             bins=mass_bins_fine, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'best_M_ll_onZ'),
+        )
+
+    makePlot(output, 'best_M_ll_offZ', 'mass',
+             data=data,
+             bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'best_M_ll_offZ'),
+        )
+
+    raise NotImplementedError
     
     makePlot(output, 'lead_lep', 'pt',
         data=data,
