@@ -58,18 +58,10 @@ if __name__ == '__main__':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-<<<<<<< Updated upstream
+
     order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
     #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
     #order = ['topW', 'DY']
-    #data = []
-=======
-    #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
-    #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
-    #order = ['topW', 'DY']
-    order = ['topW']
-    data = []
->>>>>>> Stashed changes
 
     datasets = data + order
 
@@ -308,7 +300,6 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+'M3l_offZ'),
         )
 
-
     makePlot(output, 'N_jet_onZ', 'n_ele',
              data=data,
              bins=N_bins_ele, log=False, normalize=TFnormalize, axis_label=r'$N_{ele}$',
@@ -333,6 +324,25 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+'N_ele_offZ'),
              )
 
+    makePlot(output, 'dilep_pt_onZ', 'pt',
+             data=data,
+             bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'dilep_pt_onZ'),
+        )
+
+    makePlot(output, 'dilep_eta_onZ', 'eta',
+             data=data,
+             bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'dilep_pt_onZ'),
+        )
 
     makePlot(output, 'best_M_ll_onZ', 'mass',
              data=data,

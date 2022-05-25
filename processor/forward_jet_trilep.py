@@ -143,6 +143,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         OS_dilepton_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.mass, OS_dielectron_bestZee.mass], axis=1), 1, clip=True), -1)
 
         OS_dilepton_pt = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.pt, OS_dielectron_bestZee.pt], axis=1), 1, clip=True), -1)
+        OS_dilepton_eta = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.eta, OS_dielectron_bestZee.eta], axis=1), 1, clip=True), -1)
 
         OS_dilepton_all_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), 1, clip=True), -1)
 
@@ -377,6 +378,14 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
+            output['dilep_eta_onZ'].fill(
+                dataset=dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                eta=ak.flatten(OS_dilepton_eta[BL]),
+                weight=weight.weight()[BL],
+            )
+
             output['M3l_onZ'].fill(
                 dataset=dataset,
                 systematic = var_name,
@@ -545,6 +554,7 @@ if __name__ == '__main__':
             "HT": hist.Hist("Counts", dataset_axis, ht_axis),
             "LT": hist.Hist("Counts", dataset_axis, ht_axis),
             "dilep_pt_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "dilep_eta_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, eta_axis),
             "min_mass_SFOS": hist.Hist("Counts", dataset_axis, mass_axis),
             "best_M_ll_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "best_M_ll_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),

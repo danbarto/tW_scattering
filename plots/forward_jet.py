@@ -58,10 +58,9 @@ if __name__ == '__main__':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
     #order = ['topW', 'DY', 'top']
-    data = []
-    order = ['topW']
+
     datasets = data + order
 
     outputs = []
@@ -539,7 +538,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['jes_up'], downHists=['jes_down'],
              channel='ee',
              save=os.path.expandvars(plot_dir+'MET_pt_ee'),
              )
@@ -552,7 +551,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['jes_up'], downHists=['jes_down'],
              channel='em',
              save=os.path.expandvars(plot_dir+'MET_pt_em'),
              )
@@ -565,7 +564,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['jes_up'], downHists=['jes_down'],
              channel='mm',
              save=os.path.expandvars(plot_dir+'MET_pt_mm'),
              )
@@ -578,7 +577,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['jes_up'], downHists=['jes_down'],
              save=os.path.expandvars(plot_dir+'MET_pt'),
              )
 
