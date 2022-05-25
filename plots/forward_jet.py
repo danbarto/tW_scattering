@@ -58,9 +58,10 @@ if __name__ == '__main__':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
     #order = ['topW', 'DY', 'top']
-
+    data = []
+    order = ['topW']
     datasets = data + order
 
     outputs = []
@@ -211,7 +212,7 @@ if __name__ == '__main__':
     omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 
 
-
+    print(['pt_jesTotalUp'])
     makePlot(output, 'lead_lep', 'pt',
              data=data,
              bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
@@ -538,7 +539,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              channel='ee',
              save=os.path.expandvars(plot_dir+'MET_pt_ee'),
              )
@@ -551,7 +552,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              channel='em',
              save=os.path.expandvars(plot_dir+'MET_pt_em'),
              )
@@ -564,7 +565,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              channel='mm',
              save=os.path.expandvars(plot_dir+'MET_pt_mm'),
              )
@@ -577,7 +578,7 @@ if __name__ == '__main__':
              omit=omit,
              signals=signals,
              lumi=lumi,
-             #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+             upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
              save=os.path.expandvars(plot_dir+'MET_pt'),
              )
 
@@ -697,6 +698,30 @@ if __name__ == '__main__':
              lumi=lumi,
              save=os.path.expandvars(plot_dir+'dilep_mass_high_mt'),
              )
+    for ch in ['ee','mm','em']:
+        makePlot(output, 'dilep_mass_high_mt', 'mass',
+                 data=data,
+                 bins=mass_bins, log=False, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel=ch,
+                 save=os.path.expandvars(plot_dir+'dilep_mass_high_mt_'+ch),
+                 )
+        makePlot(output, 'min_mt_lep_met', 'pt',
+                 data=data,
+                 bins=pt_bins, log=False, normalize=TFnormalize, axis_label='min_mt_lep_met (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel=ch,
+                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 save=os.path.expandvars(plot_dir+'min_mt_lep_met_'+ch),
+                 )
 
 
     #makePlot(output, 'mjf_max', 'mass',

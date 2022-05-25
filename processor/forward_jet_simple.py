@@ -15,7 +15,7 @@ import numpy as np
 
 import pandas as pd
 
-from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match, delta_phi
+from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet, getMET
 from Tools.cutflow import Cutflow
 from Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_lumi_event, get_four_vec_fromPtEtaPhiM, get_samples
@@ -24,7 +24,6 @@ from Tools.triggers import getFilters, getTriggers
 from Tools.trigger_scalefactors import triggerSF
 from Tools.btag_scalefactors import btag_scalefactor
 from Tools.ttH_lepton_scalefactors import LeptonSF
-from Tools.pileup import pileup
 from Tools.selections import Selection, get_pt
 from Tools.nonprompt_weight import NonpromptWeight
 from Tools.chargeFlip import charge_flip
@@ -44,21 +43,17 @@ class forward_jet_analysis(processor.ProcessorABC):
                  dump=False,
                  era=None,
                  reweight=1,
-                 DY=False,
                  ):
 
         self.variations = variations
         self.year = year
         self.era = era
 
-        self.btagSF = btag_scalefactor(year, era=era)
-        self.leptonSF = LeptonSF(year=year, era=era)
+        self.btagSF = btag_scalefactor(year)
+        self.leptonSF = LeptonSF(year=year)
         self.triggerSF = triggerSF(year=year)
-        self.pu = pileup(year=year, UL=True, era=era)
 
         self.reweight = reweight
-
-        self.DY = DY  # NOTE maybe there's something better than this?
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -199,13 +194,6 @@ class forward_jet_analysis(processor.ProcessorABC):
             #mt_lep_met = mt(lepton.p4.pt, lepton.phi, ev.MET.T1_pt, ev.MET.phi)
             mt_lep_met = mt(lepton.p4.pt, lepton.phi, met.pt, met.phi)
             min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-            
-            min_mt_idx = ak.singletons(ak.argmin(mt_lep_met, axis=1))
-            min_mt_lep = lepton[min_mt_idx]
-            delta_phi_lep_met = delta_phi(min_mt_lep, met)
-
-            high_mt_lep = ak.any(mt_lep_met>150, axis=1)
-            dilep_mass_high_mt = ak.mask(dilepton_mass, high_mt_lep)
 
             # define the weight
             weight = Weights( len(ev) )
@@ -222,12 +210,8 @@ class forward_jet_analysis(processor.ProcessorABC):
                     weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
 
                 ## PU weight
-                weight.add("PU",
-                           self.pu.reweight(ev.Pileup.nTrueInt.to_numpy()),
-                           weightUp = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='up'),
-                           weightDown = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='down'),
-                           shift=False,
-                           )
+                ## FIXME: removed because of 2016 problems
+                #weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
 
                 # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
                 if var['name'] == 'l_up':
@@ -243,9 +227,6 @@ class forward_jet_analysis(processor.ProcessorABC):
 
                 # lepton SFs
                 weight.add("lepton", self.leptonSF.get(electron, muon))
-
-                # trigger SFs
-                weight.add("trigger", self.triggerSF.get(electron, muon))
             
             sel = Selection(
                 dataset = dataset,
@@ -264,201 +245,181 @@ class forward_jet_analysis(processor.ProcessorABC):
                 met = met,
             )
 
-            if var_name == 'central':
-                cutflow = Cutflow(output, ev, weight=weight)
-                BL = sel.dilep_baseline(cutflow=cutflow, SS=False, DY=self.DY)
+            #if var_name == 'central':
+            #    cutflow = Cutflow(output, ev, weight=weight)
+            #    BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
 
-            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'], DY=self.DY)
+            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'])
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
-            output['N_jet'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                multiplicity=ak.num(jet)[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['N_jet'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     multiplicity=ak.num(jet)[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['N_fwd'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                multiplicity=ak.num(fwd)[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['N_fwd'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     multiplicity=ak.num(fwd)[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['dilep_pt'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt=ak.flatten(dilepton_pt[BL]),
-                weight=weight.weight()[BL],
-            )
+           # output['dilep_pt'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt=ak.flatten(dilepton_pt[BL]),
+           #     weight=weight.weight()[BL],
+           # )
+           # output['dilep_mass'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     mass=ak.flatten(dilepton_mass[BL]),
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['dilep_mass'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                mass=ak.flatten(dilepton_mass[BL]),
-                weight=weight.weight()[BL],
-            )
+           # output['PV_npvs'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     multiplicity=ev.PV[BL].npvs,
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['dilep_mass_high_mt'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[(BL & high_mt_lep)],
-                mass=ak.flatten(dilep_mass_high_mt[BL]),
-                weight=weight.weight()[BL & high_mt_lep],
-            )
+           # output['PV_npvsGood'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     multiplicity=ev.PV[BL].npvsGood,
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['PV_npvs'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                multiplicity=ev.PV[BL].npvs,
-                weight=weight.weight()[BL],
-            )
-
-            output['PV_npvsGood'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                multiplicity=ev.PV[BL].npvsGood,
-                weight=weight.weight()[BL],
-            )
-
-            output['N_tau'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                multiplicity=ak.num(tau)[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['N_tau'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     multiplicity=ak.num(tau)[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
             #output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
 
-            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'], DY=self.DY)
+            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'])
             if not re.search(data_pattern, dataset):
                 BL_minusNb = add_conversion_req(dataset, BL_minusNb)
-            output['N_b'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_minusNb],
-                multiplicity=ak.num(btag)[BL_minusNb],
-                weight=weight.weight()[BL_minusNb],
-            )
+            #output['N_b'].fill(
+            #    dataset=dataset,
+            #    systematic = var_name,
+            #    n_ele = n_ele[BL_minusNb],
+            #    multiplicity=ak.num(btag)[BL_minusNb],
+            #    weight=weight.weight()[BL_minusNb],
+            #)
 
             # This is the real baseline, although N_fwd is removed for training. FIXME: decide what to call "baseline"
-            BL = sel.dilep_baseline(SS=False, DY=self.DY)
+            BL = sel.dilep_baseline(SS=False)
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
 
-            if not self.DY:
-                output['mjf_max'].fill(
-                    dataset=dataset,
-                    systematic = var_name,
-                    n_ele = n_ele[BL],
-                    mass=mjf_max[BL],
-                    weight=weight.weight()[BL],
-                )
+           # output['mjf_max'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     mass=mjf_max[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['mjj_max'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                mass=mjj_max[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['mjj_max'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     mass=mjj_max[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            if not self.DY:
-                output['deltaEta'].fill(
-                    dataset=dataset,
-                    systematic = var_name,
-                    n_ele = n_ele[BL],
-                    eta=deltaEtaMax[BL],
-                    weight=weight.weight()[BL],
-                )
+           # output['deltaEta'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     eta=deltaEtaMax[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['min_bl_dR'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                eta=min_bl_dR[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['min_bl_dR'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     eta=min_bl_dR[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['min_mt_lep_met'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt=min_mt_lep_met[BL],
-                weight=weight.weight()[BL],
-            )
+           # output['min_mt_lep_met'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt=min_mt_lep_met[BL],
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['delta_phi_lep_met'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                delta_phi=ak.flatten(delta_phi_lep_met[BL]),
-                weight=weight.weight()[BL],
-            )
+           # output['lead_lep'].fill(
+           #     dataset = dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].p4.pt)),
+           #     eta = ak.to_numpy(ak.flatten(leading_lepton[BL].p4.eta)),
+           #     #phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+           #     weight = weight.weight()[BL]
+           #    )
 
-            output['lead_lep'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].p4.pt)),
-                eta = ak.to_numpy(ak.flatten(leading_lepton[BL].p4.eta)),
-                #phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
-                weight = weight.weight()[BL]
-               )
+           # output['trail_lep'].fill(
+           #     dataset = dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].p4.pt)),
+           #     eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].p4.eta)),
+           #     #phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+           #     weight = weight.weight()[BL]
+           #    )
 
-            output['trail_lep'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].p4.pt)),
-                eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].p4.eta)),
-                #phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
-                weight = weight.weight()[BL]
-               )
+           # output['lead_jet'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt=ak.flatten(jet[:, 0:1][BL].p4.pt),
+           #     eta=ak.flatten(jet[:, 0:1][BL].p4.eta),
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['lead_jet'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt=ak.flatten(jet[:, 0:1][BL].p4.pt),
-                eta=ak.flatten(jet[:, 0:1][BL].p4.eta),
-                weight=weight.weight()[BL],
-            )
+           # output['sublead_jet'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt=ak.flatten(jet[:, 1:2][BL].p4.pt),
+           #     eta=ak.flatten(jet[:, 1:2][BL].p4.eta),
+           #     weight=weight.weight()[BL],
+           # )
 
-            output['sublead_jet'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL],
-                pt=ak.flatten(jet[:, 1:2][BL].p4.pt),
-                eta=ak.flatten(jet[:, 1:2][BL].p4.eta),
-                weight=weight.weight()[BL],
-            )
+           # output['fwd_jet'].fill(
+           #     dataset=dataset,
+           #     systematic = var_name,
+           #     n_ele = n_ele[BL],
+           #     pt=ak.flatten(high_p_fwd[BL].p4.pt),
+           #     eta=ak.flatten(high_p_fwd[BL].p4.eta),
+           #     weight=weight.weight()[BL],
+           # )
 
-            if not self.DY:
-                output['fwd_jet'].fill(
-                    dataset=dataset,
-                    systematic = var_name,
-                    n_ele = n_ele[BL],
-                    pt=ak.flatten(high_p_fwd[BL].p4.pt),
-                    eta=ak.flatten(high_p_fwd[BL].p4.eta),
-                    weight=weight.weight()[BL],
-                )
-
-            BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'], DY=self.DY)
-            if not re.search(data_pattern, dataset):
-                BL_minusMET = add_conversion_req(dataset, BL_minusMET)
-            output['MET'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_minusMET],
-                pt  = met[BL_minusMET].pt,
-                phi  = met[BL_minusMET].phi,
-                weight = weight.weight()[BL_minusMET]
-            )
+           # BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'])
+           # if not re.search(data_pattern, dataset):
+           #     BL_minusMET = add_conversion_req(dataset, BL_minusMET)
+           # output['MET'].fill(
+           #     dataset = dataset,
+           #     systematic = var_name,
+           #     #n_ele = n_ele[BL_minusMET],
+           #     pt  = met[BL_minusMET].pt,
+           #     phi  = met[BL_minusMET].phi,
+           #     weight = weight.weight()[BL_minusMET]
+           # )
 
 #            '''
 #            output['b1_'+var].fill(
@@ -487,7 +448,6 @@ if __name__ == '__main__':
     argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
     argParser.add_argument('--central', action='store_true', default=None, help="Only run the central value (no systematics)")
-    argParser.add_argument('--ptjes', action='store_true', default=None, help="Run on central value + jes_up & jes_down")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
@@ -495,7 +455,6 @@ if __name__ == '__main__':
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2016', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
-    argParser.add_argument('--DY', action='store_true', default=None, help="DY specific selection?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
@@ -558,7 +517,7 @@ if __name__ == '__main__':
 
         fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
 
-        add_processes_to_output(fileset, desired_output)
+        #add_processes_to_output(fileset, desired_output)
 
         variations = [
             {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
@@ -573,8 +532,6 @@ if __name__ == '__main__':
            ]
 
         if args.central: variations = variations[:1]
-
-        if args.ptjes: variations = variations[:3]
 
         if local:# and not profile:
             exe = processor.FuturesExecutor(workers=10)
@@ -594,38 +551,40 @@ if __name__ == '__main__':
         # add some histograms that we defined in the processor
         # everything else is taken the default_accumulators.py
         from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, mass_axis
-        from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis, delta_phi_axis
-        desired_output.update({
+        from processor.default_accumulators import systematic_axis, eft_axis, charge_axis, n_ele_axis, eta_axis, delta_eta_axis, pt_axis
+        #desired_output.update({
+        desired_output = {
             "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-            "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-            "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-            "N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_b": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_tau": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
-            "dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
-            "dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-            "dilep_mass_high_mt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-            "mjf_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-            "mjj_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-            "deltaEta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
-            "min_bl_dR": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
-            "min_mt_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
-            "delta_phi_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_phi_axis),
-            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-            "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-            "sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
-            "fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            'skimmedEvents':    processor.defaultdict_accumulator(int),
+            'totalEvents':      processor.defaultdict_accumulator(int),
+        }
+        #add_processes_to_output(fileset, desired_output)
+            #"HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            #"LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
+            #"N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_b": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_tau": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
+            #"dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            #"dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            #"mjf_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            #"mjj_max": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            #"deltaEta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
+            #"min_bl_dR": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, delta_eta_axis),
+            #"min_mt_lep_met": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            #"lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            #"trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            #"lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            #"sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            #"fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+           #})
 
-           })
-
-        for rle in ['run', 'lumi', 'event']:
-            desired_output.update({
-                    'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-            })
+        #for rle in ['run', 'lumi', 'event']:
+        #    desired_output.update({
+        #            'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+        #            'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+        #            'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+        #    })
 
         print ("I'm running now")
 
@@ -639,8 +598,6 @@ if __name__ == '__main__':
 
         # define the cache name
         cache_name = f'OS_analysis_{sample}_{year}{era}'
-        if args.DY:
-            cache_name += '_DY'
         # find an old existing output
         output = get_latest_output(cache_name, cfg)
 
@@ -663,7 +620,6 @@ if __name__ == '__main__':
                     training=args.training,
                     era=era,
                     reweight=reweight,
-                    DY=args.DY,
                 ),
             )
 

@@ -42,7 +42,7 @@ desired_output = {
             "PV_npvs" :         hist.Hist("PV_npvs", dataset_axis, systematic_axis, ext_multiplicity_axis),
             "PV_npvsGood" :     hist.Hist("PV_npvsGood", dataset_axis, systematic_axis, ext_multiplicity_axis),
             
-            "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, phi_axis),
+            "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, phi_axis),
             
             "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
             "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),

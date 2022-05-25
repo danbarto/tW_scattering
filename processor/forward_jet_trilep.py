@@ -282,6 +282,37 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             if not re.search(data_pattern, dataset):
                 BL_offZ = add_conversion_req(dataset, BL_offZ)
 
+
+            output['lead_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
+            output['trail_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
+            output['second_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(second_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(second_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
             output['N_jet_offZ'].fill(
                 dataset=dataset,
                 systematic = var_name,
@@ -331,7 +362,6 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 multiplicity=ak.num(fwd)[BL],
                 weight=weight.weight()[BL],
             )
-
 
             output['min_mass_SFOS'].fill(
                 dataset=dataset,
@@ -500,6 +530,9 @@ if __name__ == '__main__':
 
 
         desired_output.update({
+            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
+            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
+            "second_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
             "N_jet_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
             "N_jet_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
             "N_b_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
