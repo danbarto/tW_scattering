@@ -35,7 +35,7 @@ plt.style.use(hep.style.CMS)
 def histo_values(histo, weight):
     return histo.integrate('eft', weight).sum('dataset').values()[()]
 
-def get_bit_score_oirig(df, cpt=0, cpqm=0, trans=None):
+def get_bit_score(df, cpt=0, cpqm=0, trans=None):
     tmp = (
         df['pred_0'].values + \
         df['pred_1'].values*cpt + \
@@ -50,7 +50,7 @@ def get_bit_score_oirig(df, cpt=0, cpqm=0, trans=None):
     else:
         return tmp
 
-def get_bit_score(df, cpt=0, cpqm=0, trans=None):
+def get_bit_score_simple(df, cpt=0, cpqm=0, trans=None):
     tmp = (
         #df['pred_0'].values + \
         df['pred_1'].values + \
@@ -125,6 +125,7 @@ if __name__ == '__main__':
     argParser.add_argument('--fit', action='store_true', default=None, help="Run combine fit?")
     argParser.add_argument('--plot', action='store_true', default=None, help="Make all the plots")
     argParser.add_argument('--signalOnly', action='store_true', default=None, help="Use only signal for training / evaluation")
+    argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire scan")
     argParser.add_argument('--allBkg', action='store_true', default=None, help="Use all backgrounds (not just ttW)")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
     argParser.add_argument('--version', action='store', default='v1', help="Version number")
@@ -136,6 +137,7 @@ if __name__ == '__main__':
 
     # load data
     sample_list =  ['TTW', 'TTZ','TTH']
+    #sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
     #years = ['2016APV', '2016', '2017', '2018']
     years = ['2018']
 
@@ -191,6 +193,10 @@ if __name__ == '__main__':
 
     df_signal = df_signal[((df_signal['n_fwd']>=1))]
     df_bkg = df_bkg[((df_bkg['SS']==1)&(df_bkg['n_fwd']>=1))]
+
+    print ("Sample sizes:")
+    print ("Bkg: {}".format(len(df_bkg)))
+    print ("Signal: {}".format(len(df_signal)))
 
     # signal
     sig_train_sel   = ((df_signal['OS']==1) & (df_signal['nLepFromTop']==1)) #((df_signal['event']%2)==1).values
@@ -403,9 +409,9 @@ if __name__ == '__main__':
 
     # Train all the trees!
 
-    n_trees       = 300  # from 100
+    n_trees       = 100  # from 100
     learning_rate = 0.3
-    max_depth     = 7  # v21: 3, v22: 5, v23: 7, v24: signal only
+    max_depth     = 4  # v21: 3, v22: 5, v23: 7, v24: signal only
     min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
 
     training_features = train[variables].values
@@ -472,10 +478,12 @@ if __name__ == '__main__':
     dataset_axis = hist.Cat("dataset", "Primary dataset")
     eft_axis = hist.Cat("eft", "EFT point")
 
-    #x = np.arange(-9,12,3)
-    #y = np.arange(-9,12,3)
-    x = np.array([6])
-    y = np.array([0])
+    if args.scan:
+        x = np.arange(-9,12,3)
+        y = np.arange(-9,12,3)
+    else:
+        x = np.array([6])
+        y = np.array([0])
     X, Y = np.meshgrid(x, y)
 
     res_LT = {}
@@ -577,6 +585,7 @@ if __name__ == '__main__':
                 hep.histplot(
                     [ bsm_hist.values() ],
                     lt_axis.edges(),
+                    yerr = [bsm_hist.variances()],
                     histtype="step",
                     stack=False,
                     density=False,
@@ -606,8 +615,8 @@ if __name__ == '__main__':
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
                 print ("### Sanity checks ###")
-                print ("- SM integral", sum(sm_hist.counts()))
-                print ("- BSM integral", sum(bsm_hist.counts()))
+                print ("- SM integral: {:.2f} +/- {:.2f}".format(sm_hist.sum().value, np.sqrt(sm_hist.sum().variance)))
+                print ("- BSM integral: {:.2f} +/- {:.2f}".format(bsm_hist.sum().value, np.sqrt(bsm_hist.sum().variance)))
                 print (f"Robert NLL:", simple_NLL)
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
@@ -785,13 +794,15 @@ if __name__ == '__main__':
             eft_weight = hp.eval(coeffs.transpose(), [x,y])
             #eft_weight = hp.eval(coeffs_train.transpose(), [x,y])
 
-            #bsm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
-            bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins))  # FIXME this needs to also take irregular!
+            bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
+
+            print (bsm_hist.values())
+            print (bsm_hist.variances())
             #bsm_hist.fill(q_event_cdf, weight=sig_train['weight']*eft_weight)
 
             #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
-            sm_hist = bh.Histogram(bh.axis.Variable(bit_bins))
+            sm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
             sm_hist.fill(q_event_cdf, weight=sig_test['weight'])
             #sm_hist.fill(q_event_cdf, weight=sig_train['weight'])
 
@@ -805,6 +816,11 @@ if __name__ == '__main__':
                         bit_hist['TTH'].sum('dataset').values()[()],
                     ],
                     bit_hist.axes()[1].edges(),
+                    yerr=[
+                        np.sqrt(bit_hist['TTW'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['TTZ'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['TTH'].sum('dataset').values(sumw2=True)[()][1]),
+                    ],
                     histtype="fill",
                     stack=True,
                     density=False,
@@ -815,6 +831,7 @@ if __name__ == '__main__':
                 hep.histplot(
                     [ bsm_hist.values() ],
                     bsm_hist.axes[0].edges,
+                    yerr = [np.sqrt(bsm_hist.variances())],
                     histtype="step",
                     stack=False,
                     density=False,
@@ -876,8 +893,8 @@ if __name__ == '__main__':
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
                 print ("### Sanity checks ###")
-                print ("- SM integral", sum(sm_hist.counts()))
-                print ("- BSM integral", sum(bsm_hist.counts()))
+                print ("- SM integral: {:.2f} +/- {:.2f}".format(sm_hist.sum().value, np.sqrt(sm_hist.sum().variance)))
+                print ("- BSM integral: {:.2f} +/- {:.2f}".format(bsm_hist.sum().value, np.sqrt(bsm_hist.sum().variance)))
                 print (f"Robert NLL:", simple_NLL)
 
 
