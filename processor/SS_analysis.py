@@ -1014,7 +1014,7 @@ if __name__ == '__main__':
 
 
     if args.sample == 'MCall':
-        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+        sample_list = ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
     elif args.sample == 'data':
         if year == 2018:
             sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
@@ -1286,7 +1286,7 @@ if __name__ == '__main__':
             c.restart()
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'top'] if args.sample == 'MCall' else [args.sample]
+    processes = ['topW_lep', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'top'] if args.sample == 'MCall' else [args.sample]
     lines= [
             'filter',
             'dilep',
