@@ -281,7 +281,7 @@ class SS_analysis(processor.ProcessorABC):
                 weight.add("trigger", self.triggerSF.get(electron, muon))
             
             if dataset.count('EFT'):
-                print (self.points)
+                #print (self.points)
                 # FIXME legacy code ready to be retired
                 for point in self.points:
                     point['weight'] = Weights( len(ev) )
@@ -421,10 +421,11 @@ class SS_analysis(processor.ProcessorABC):
                         output['dump_'+dataset][k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
                     if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
                         for w in self.weights:
-                            output['dump_'+dataset][k] += ak.to_numpy(getattr(ev.LHEWeight, w))
+                            #print (w)
+                            output['dump_'+dataset][w] += processor.column_accumulator(ak.to_numpy(getattr(ev.LHEWeight, w))[out_sel])
 
-                    output['dump_'+dataset]['event'] += ak.to_numpy(ev.event)
-                    output['dump_'+dataset]['nLepFromTop'] += ak.to_numpy(ev.nLepFromTop),
+                    output['dump_'+dataset]['event'] += processor.column_accumulator(ak.to_numpy(ev.event)[out_sel])
+                    output['dump_'+dataset]['nLepFromTop'] += processor.column_accumulator(ak.to_numpy(ev.nLepFromTop)[out_sel])
                             #NN_inputs_d.update({w: ak.to_numpy(getattr(ev.LHEWeight, w))})
 
                 if self.evaluate:
