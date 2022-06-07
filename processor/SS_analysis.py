@@ -479,9 +479,10 @@ class SS_analysis(processor.ProcessorABC):
                 ],
                 fill_multiple(
                     hist,
-                    datasets=[
-                        dataset, # only prompt contribution from process
-                        dataset+"_incl", # everything from process (inclusive MC truth)
+                    dataset = dataset,
+                    predictions=[
+                        "central", # only prompt contribution from process
+                        "inclusive", # everything from process (inclusive MC truth)
                         "np_est_mc", # MC based NP estimate
                         "np_obs_mc", # MC based NP observation
                         "np_est_data",
@@ -637,7 +638,8 @@ class SS_analysis(processor.ProcessorABC):
                     )
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
-                if not re.search(data_pattern, dataset) and var['name'] == 'central':
+                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                    # if we just run central (len(variations)=1) we don't need the PDF variations either
                     for i in range(1,101):
                         pdf_ext = "pdf_%s"%i
 
@@ -651,6 +653,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node0_score_transform_pp'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
@@ -658,6 +661,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node0_score_transform_mm'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
@@ -665,6 +669,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node1_score'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score = NN_pred[:,1][(BL & (best_score==1))],
                             weight = weight.weight()[(BL & (best_score==1))] * ev.LHEPdfWeight[:,i][(BL & (best_score==1))] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
@@ -672,6 +677,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             multiplicity = best_score[(BL & blind_sel)],
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
                         )
@@ -680,6 +686,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             EFT = 'central',
                             systematic = pdf_ext,
+                            prediction = 'central',
                             ht = lt[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
@@ -688,6 +695,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             EFT = 'central',
                             systematic = pdf_ext,
+                            prediction = 'central',
                             ht = lt[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
@@ -710,6 +718,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node0_score_transform_pp'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
@@ -717,6 +726,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node0_score_transform_mm'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
@@ -724,6 +734,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node1_score'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             score = NN_pred[:,1][(BL & (best_score==1))],
                             weight = weight.weight()[(BL & (best_score==1))] * ev.LHEScaleWeight[:,i][(BL & (best_score==1))] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
                         )
@@ -731,6 +742,7 @@ class SS_analysis(processor.ProcessorABC):
                         output['node'].fill(
                             dataset = dataset,
                             systematic = pdf_ext,
+                            prediction = 'central',
                             multiplicity = best_score[(BL & blind_sel)],
                             weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
                         )
@@ -739,6 +751,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             EFT = 'central',
                             systematic = pdf_ext,
+                            prediction = 'central',
                             ht = lt[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
@@ -747,6 +760,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             EFT = 'central',
                             systematic = pdf_ext,
+                            prediction = 'central',
                             ht = lt[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
@@ -765,6 +779,7 @@ class SS_analysis(processor.ProcessorABC):
                             output['node0_score_transform_pp'].fill(
                                 dataset = dataset,
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 score   = NN_pred_0_trans[(BL & SR_sel_pp)],
                                 weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
                             )
@@ -772,6 +787,7 @@ class SS_analysis(processor.ProcessorABC):
                             output['node0_score_transform_mm'].fill(
                                 dataset = dataset,
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 score   = NN_pred_0_trans[(BL & SR_sel_mm)],
                                 weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
                             )
@@ -779,6 +795,7 @@ class SS_analysis(processor.ProcessorABC):
                             output['node1_score'].fill(
                                 dataset = dataset,
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 score = NN_pred[:,1][(BL & (best_score==1))],
                                 weight = weight.weight()[(BL & (best_score==1))] * ev.PSWeight[:,i][(BL & (best_score==1))],
                             )
@@ -786,6 +803,7 @@ class SS_analysis(processor.ProcessorABC):
                             output['node'].fill(
                                 dataset = dataset,
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 multiplicity = best_score[(BL & blind_sel)],
                                 weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
                             )
@@ -794,6 +812,7 @@ class SS_analysis(processor.ProcessorABC):
                                 dataset = dataset,
                                 EFT = 'central',
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 ht = lt[(BL & SR_sel_pp)],
                                 weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                             )
@@ -802,6 +821,7 @@ class SS_analysis(processor.ProcessorABC):
                                 dataset = dataset,
                                 EFT = 'central',
                                 systematic = pdf_ext,
+                                prediction = 'central',
                                 ht = lt[(BL & SR_sel_mm)],
                                 weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                             )
@@ -1181,39 +1201,46 @@ if __name__ == '__main__':
 
         # add some histograms that we defined in the processor
         # everything else is taken the default_accumulators.py
-        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis
+        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis
         desired_output.update({
-            "ST": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-            "HT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis),
-            "LT": hist.Hist("Counts", dataset_axis, systematic_axis, ht_axis, eft_axis),
-            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
-            "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, pt_axis),
-            "LT_SR_pp": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
-            "LT_SR_mm": hist.Hist("Counts", dataset_axis, systematic_axis, eft_axis, ht_axis),
-            "node": hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
-            "node0_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node1_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node2_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node3_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node4_score_incl": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node0_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node1_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node2_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node3_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node4_score": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node0_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node0_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node1_score_pp": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
-            "node1_score_mm": hist.Hist("Counts", dataset_axis, systematic_axis, score_axis),
+            "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+            "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+            "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
+            "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+            "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+            "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+            "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+            "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+            "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+            "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+            "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
             "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
             "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
             "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
             "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "MET": hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
+            "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
+            "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
            })
 
 
