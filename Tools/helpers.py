@@ -235,9 +235,9 @@ def yahist_2D_lookup(h, ar1, ar2):
 def build_weight_like(weight, selection, like):
     return ak.flatten(weight[selection] * ak.ones_like(like[selection]))
 
-def fill_multiple(hist, datasets=[], arrays={}, selections=[], weights=[], systematic=None, other={}):
-    for i, dataset in enumerate(datasets):
-        kw_dict = {'dataset': dataset, 'weight':weights[i]}
+def fill_multiple(hist, dataset, predictions=[], arrays={}, selections=[], weights=[], systematic=None, other={}):
+    for i, prediction in enumerate(predictions):
+        kw_dict = {'dataset': dataset, 'prediction':prediction, 'weight':weights[i]}
         kw_dict.update({x:arrays[x][selections[i]] for x in arrays.keys()})
         try:
             eft_axis = hist.axis('EFT')
