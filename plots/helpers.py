@@ -24,10 +24,11 @@ colors = {
     'non prompt': '#1982C4',
     'wjets': '#6A4C93',
     'diboson': '#525B76',
-    'rare': '#6A4C93',
     'WZ': '#525B76',
     'WW': '#34623F',
     'DY': '#6A4C93',
+    'rare': '#EE82EE',
+    'XG': '#5bc0de',
     'charge flip': '#6A4C93',
     'MuonEG': '#000000',
 }
