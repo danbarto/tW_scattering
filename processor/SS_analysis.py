@@ -436,7 +436,8 @@ class SS_analysis(processor.ProcessorABC):
 
                     NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
-                    model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
+                    #model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
+                    model, scaler = load_onnx_model(self.training)
 
                     try:
                         NN_inputs_scaled = scaler.transform(NN_inputs)
@@ -619,7 +620,8 @@ class SS_analysis(processor.ProcessorABC):
                 fill_multiple_np(output['node1_score_pp'], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
                 fill_multiple_np(output['node1_score_mm'], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
 
-                transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+                #transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+                transformer = load_transformer(self.training)
 
                 NN_pred_0_trans = transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()
 
@@ -690,7 +692,12 @@ class SS_analysis(processor.ProcessorABC):
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
 
-                    for i in ([0,1,3,5,7,8] if not dataset.count('EFT') else [0,2,4,6,7]):  # FIXME I have no fucking idea why there are less weights in private samples. let's hope those are the right indices... FUCK
+
+                    for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                        # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
+                        # SAMPLES WITH JUST 8 SCALE WEIGHTS: EFT SIGNALS, ZZTo2Q2L_mllmin4p0
+                        # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0"; [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+                        # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
                         pdf_ext = "scale_%s"%i
 
                         #output['scale'].fill(
