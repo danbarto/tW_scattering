@@ -235,18 +235,23 @@ def yahist_2D_lookup(h, ar1, ar2):
 def build_weight_like(weight, selection, like):
     return ak.flatten(weight[selection] * ak.ones_like(like[selection]))
 
-def fill_multiple(hist, datasets=[], arrays={}, selections=[], weights=[], systematic=None):
+def fill_multiple(hist, datasets=[], arrays={}, selections=[], weights=[], systematic=None, other={}):
     for i, dataset in enumerate(datasets):
         kw_dict = {'dataset': dataset, 'weight':weights[i]}
         kw_dict.update({x:arrays[x][selections[i]] for x in arrays.keys()})
         try:
-            eft_axis = hist.axis('eft')
-            kw_dict['eft'] = 'central'  # NOTE: remember this for plotting!
+            eft_axis = hist.axis('EFT')
+            kw_dict['EFT'] = 'central'  # NOTE: remember this for plotting!
         except KeyError:
             # if there's no EFT axis we don't do anything.
             pass
         if systematic is not None:
             kw_dict['systematic'] = systematic
+
+        ## fill additional axes, if any
+        #if other:
+        #    for k in other.keys():
+        #        kw_dict[k] = other[k]
         hist.fill(**kw_dict)
 
 def get_four_vec(cand):
