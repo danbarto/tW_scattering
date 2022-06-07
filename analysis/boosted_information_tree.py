@@ -20,6 +20,7 @@ from Tools.config_helpers import get_samples
 from Tools.helpers import make_bh, finalizePlotDir
 from Tools.HyperPoly import HyperPoly
 from Tools.reweighting import get_coordinates_and_ref, get_coordinates
+from plots.helpers import colors
 
 from BoostedInformationTreeP3 import BoostedInformationTree
 
@@ -136,16 +137,16 @@ if __name__ == '__main__':
     signal_bit_file = f'bit_{args.version}.pkl'  # Signal only tree
 
     # load data
-    sample_list =  ['TTW', 'TTZ','TTH']
-    #sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
+    #sample_list =  ['TTW', 'TTZ','TTH']
+    sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
     #years = ['2016APV', '2016', '2017', '2018']
-    years = ['2018']
+    years = ['2017']
 
-    df_bkg = pd.DataFrame()
+    df_in = pd.DataFrame()
     for year in years:
         tmp = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
-        df_bkg = pd.concat([df_bkg, tmp])
-        df_bkg = df_bkg[df_bkg['SS']==1]
+        df_in = pd.concat([df_in, tmp])
+        df_in = df_in[((df_in['SS']==1) | (df_in['AR']==1))]
     del tmp
 
     plot_dir = f'/home/users/dspitzba/public_html/tW_scattering/BIT/{args.version}/'
@@ -184,15 +185,16 @@ if __name__ == '__main__':
 
     # Preprocessing inputs
     df_signal['lt'] = (df_signal['lead_lep_pt'].values + df_signal['sublead_lep_pt'].values + df_signal['met'].values)
-    df_bkg['lt'] = (df_bkg['lead_lep_pt'].values + df_bkg['sublead_lep_pt'].values + df_bkg['met'].values)
+    df_in['lt'] = (df_in['lead_lep_pt'].values + df_in['sublead_lep_pt'].values + df_in['met'].values)
 
     # this roughly corresponds to labeling
     for i in range(6):
         df_signal['coeff_%s'%i] = coeff[i,:]
-        df_bkg['coeff_%s'%i] = np.zeros(len(df_bkg))
+        df_in['coeff_%s'%i] = np.zeros(len(df_in))
 
     df_signal = df_signal[((df_signal['n_fwd']>=1))]
-    df_bkg = df_bkg[((df_bkg['SS']==1)&(df_bkg['n_fwd']>=1))]
+    df_np  = df_in[((df_in['AR']==1) & (df_in['label']==4) &(df_in['n_fwd']>=1))]
+    df_bkg = df_in[((df_in['SS']==1)&(df_in['n_fwd']>=1))]
 
     print ("Sample sizes:")
     print ("Bkg: {}".format(len(df_bkg)))
@@ -212,13 +214,16 @@ if __name__ == '__main__':
         bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']==10))]
     else:
         if args.allBkg:
-            bkg_train       = df_bkg[(bkg_train_sel)]
-            bkg_test        = df_bkg[(bkg_test_sel)]
+            bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']<100))]
+            bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']<100))]
         else:
             bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']==1))]
             bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']==1))]
 
+    np_test = df_np
+
     train = pd.concat([sig_train, bkg_train])
+    print (len(train))
     #train = shuffle(train)
 
 
@@ -457,15 +462,28 @@ if __name__ == '__main__':
     else:
         scaled_bkg_test = scaler.transform(bkg_test[variables].values)
 
+    scaled_np_test = scaler.transform(np_test[variables].values)
+
     for i in range(6):
         sig_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_test)
         sig_train['pred_%s'%i] = bits[i].vectorized_predict(scaler.transform(sig_train[variables].values))
         #sig_train['pred_%s'%i] = bits[i].vectorized_predict(sig_train[variables].values)
         bkg_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_bkg_test)
+        np_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_np_test)
 
+
+    # Labels are defined assert
+    # labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'top': 4, 'rare':5, 'diboson':6, 'XG': 7, 'topW_lep': 0}
     ttW = bkg_test[bkg_test['label']==1]
     ttZ = bkg_test[bkg_test['label']==2]
     ttH = bkg_test[bkg_test['label']==3]
+    NP = np_test #[bkg_test['label']==4]
+    rare = bkg_test[bkg_test['label']==5]
+    diboson = bkg_test[bkg_test['label']==6]
+    XG = bkg_test[bkg_test['label']==7]
+
+
+    #print (len(ttW), len(ttZ), len(ttH))  # NOTE: can be deleted
 
     # Run the analysis
 
@@ -752,6 +770,9 @@ if __name__ == '__main__':
             #sig_bit = get_bit_score(sig_train, cpt=x, cpqm=y, trans=None)
             q_event = sig_bit
 
+            print (np.mean(sig_bit))
+            # FIXME: does some background leak into this data frame?
+
             q_event_argsort     = np.argsort(q_event)
             q_event_argsort_inv = np.argsort(q_event_argsort)
             cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
@@ -771,6 +792,10 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="TTW", bit=cdf_map(get_bit_score(ttW, cpt=x, cpqm=y, trans=None)), weight=ttW['weight']*2)
             bit_hist.fill(dataset="TTZ", bit=cdf_map(get_bit_score(ttZ, cpt=x, cpqm=y, trans=None)), weight=ttZ['weight']*2)
             bit_hist.fill(dataset="TTH", bit=cdf_map(get_bit_score(ttH, cpt=x, cpqm=y, trans=None)), weight=ttH['weight']*2)
+            bit_hist.fill(dataset="NP", bit=cdf_map(get_bit_score(NP, cpt=x, cpqm=y, trans=None)), weight=NP['weight']*NP['weight_np'])
+            bit_hist.fill(dataset="rare", bit=cdf_map(get_bit_score(rare, cpt=x, cpqm=y, trans=None)), weight=rare['weight']*2)
+            bit_hist.fill(dataset="diboson", bit=cdf_map(get_bit_score(diboson, cpt=x, cpqm=y, trans=None)), weight=diboson['weight']*2)
+            bit_hist.fill(dataset="XG", bit=cdf_map(get_bit_score(XG, cpt=x, cpqm=y, trans=None)), weight=XG['weight']*2)
             bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
             #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_train['weight'])
 
@@ -780,7 +805,7 @@ if __name__ == '__main__':
                 sm_card = makeCardFromHist(
                     hist_dict,
                     'SR',
-                    ext='_SM',
+                    ext='_SM2',
                     signal_hist=bit_hist['signal'],
                     systematics= [
                         ('signal_norm', 1.2, 'signal'),
@@ -809,23 +834,40 @@ if __name__ == '__main__':
             if args.plot:
                 fig, ax = plt.subplots(figsize=(10,10))
 
+                hep.cms.label(
+                    "Preliminary",
+                    data=True,
+                    lumi=60,
+                    com=13,
+                    loc=0,
+                    ax=ax,
+                )
+
                 hep.histplot(
                     [
-                        bit_hist['TTW'].sum('dataset').values()[()],
+                        bit_hist['NP'].sum('dataset').values()[()],
+                        bit_hist['rare'].sum('dataset').values()[()],
+                        bit_hist['XG'].sum('dataset').values()[()],
+                        bit_hist['diboson'].sum('dataset').values()[()],
                         bit_hist['TTZ'].sum('dataset').values()[()],
+                        bit_hist['TTW'].sum('dataset').values()[()],
                         bit_hist['TTH'].sum('dataset').values()[()],
                     ],
                     bit_hist.axes()[1].edges(),
                     yerr=[
-                        np.sqrt(bit_hist['TTW'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['NP'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['rare'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['XG'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['diboson'].sum('dataset').values(sumw2=True)[()][1]),
                         np.sqrt(bit_hist['TTZ'].sum('dataset').values(sumw2=True)[()][1]),
+                        np.sqrt(bit_hist['TTW'].sum('dataset').values(sumw2=True)[()][1]),
                         np.sqrt(bit_hist['TTH'].sum('dataset').values(sumw2=True)[()][1]),
                     ],
                     histtype="fill",
                     stack=True,
                     density=False,
-                    label = ["ttW", "ttZ", "ttH"],
-                    color = ["#FF595E", "#8AC926", "#1982C4"],
+                    label = [ "Nonprompt", "Rare", "XG", "diboson", "ttZ", "ttW", "ttH"],
+                    color = [colors["non prompt"], colors["rare"], colors["XG"], colors["diboson"], colors["TTZ"], colors["TTW"], colors["TTH"]],
                     ax=ax)
 
                 hep.histplot(
@@ -837,11 +879,14 @@ if __name__ == '__main__':
                     density=False,
                     linestyle="--",
                     color = ["black"],
-                    label = ["top-W scattering (BSM)"],
+                    label = ["Signal"],
                     ax=ax)
 
                 ax.set_yscale('log')
-                ax.legend()
+                ax.legend(ncol=3)
+
+                ax.set_xlabel(r'transformed score')
+                ax.set_ylabel(r'Events')
 
                 fig.savefig(f"{plot_dir}/bit_cpt_{x}_cpqm_{y}_transformed_bsm.png")
 
@@ -882,7 +927,7 @@ if __name__ == '__main__':
                 bsm_card = makeCardFromHist(
                     hist_dict,
                     'SR',
-                    ext='_BSM',
+                    ext='_BSM2',
                     bsm_vals = bsm_hist,
                     sm_vals = sm_hist,
                     systematics= [
