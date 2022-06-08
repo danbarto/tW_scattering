@@ -298,7 +298,7 @@ if __name__ == '__main__':
              order=order,
              lumi=lumi_year,
              signals=signals,
-             ymax=10,
+             overflowclip=True,
              save=os.path.expandvars(plot_dir+'M3l_offZ_zoomin'),
         )
 
@@ -320,8 +320,8 @@ if __name__ == '__main__':
                  order=order,
                  lumi=lumi_year,
                  signals=signals,
+                 overflowclip=True,
                  channel=ch,
-                 ymax=10,
                  save=os.path.expandvars(plot_dir+'M3l_offZ_'+ch),
             )
 

@@ -133,6 +133,7 @@ def makePlot(output,
              downHists=[],
              shape=False,
              ymax=False,
+             overflowclip=False,
              new_colors=colors,
              new_labels=my_labels,
              order=None,
@@ -306,6 +307,9 @@ def makePlot(output,
         ax.set_yscale('log')
         
     y_mult = 1.7 if not log else 100
+    if overflowclip:
+        ax.set_xlim(None, bins._hi)
+        y_max = histogram[bkg_sel].sum("dataset").values(overflow='none')[()].max()
     if ymax:
         ax.set_ylim(0.01, ymax)
     else:
