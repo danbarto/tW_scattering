@@ -333,9 +333,9 @@ class SS_analysis(processor.ProcessorABC):
                 cf_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_p_cf))>=1) )  # two tight leptons, at least one electron charge flip
                 cf_est_sel_data = (baseline & ~baseline)  # this has to be false
 
-                if dataset == 'top':
+                if dataset.count("TTTo") or dataset.count("DY"):
                     conv_sel = BL  # anything that has tight, prompt, charge-consistent, non-external-conv, same-sign dileptons has to be internal conversion.
-                elif dataset == 'XG':
+                elif dataset.count("Gamma") or dataset.count("WGTo") or dataset.count("ZGTo") or dataset.count("WZG_"):
                     conv_sel = BL_incl & (((ak.num(el_t_conv)+ak.num(mu_t_conv))>0))
                 else:
                     conv_sel = (baseline & ~baseline)  # this has to be false
@@ -543,6 +543,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
                         )
@@ -551,6 +552,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
                         )
@@ -559,6 +561,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
                         )
@@ -567,6 +570,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
                         )
@@ -576,6 +580,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point,
+                            prediction = 'central',
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
                         )
@@ -584,6 +589,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point,
+                            prediction = 'central',
                             pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
                         )
@@ -592,6 +598,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point,
+                            prediction = 'central',
                             ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
                         )
@@ -600,6 +607,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point,
+                            prediction = 'central',
                             ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
                             weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
                         )
@@ -893,6 +901,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             pt  = met[BL].pt,
                             phi  = met[BL].phi,
                             weight = weight_BL*(point['weight'].weight()[BL])
@@ -902,6 +911,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
                             eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
                             phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
@@ -912,6 +922,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
                             eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
                             phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
@@ -922,6 +933,7 @@ class SS_analysis(processor.ProcessorABC):
                             dataset = dataset,
                             systematic = var_name,
                             EFT = point['name'],
+                            prediction = 'central',
                             ht = ak.to_numpy(lt)[BL],
                             weight = weight_BL*(point['weight'].weight()[BL]),
                         )
