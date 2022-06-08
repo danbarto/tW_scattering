@@ -2816,6 +2816,152 @@
   split: 9
   sumWeight: 78317.0625
   xsec: 0.01398
+/ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      ydCYRLLQmETRzJhEfuOYREbxmESdqJhEtu6YRFidmER8gZhEcgWZRES6mERAG5lEOcuYRJscmUTy
+      HJlE1xaZRDH7mEQGCplEtF6YRPB/mETd4JhEJHqYRGfpmETS4ZhEi5mYRIDNmESX8phELtuYROfC
+      mEQW6JhELQqZRHbjmERWyZhE7zqZRFWhmEQmqZhER8iYRJi+mESBBplEG1eYRJaSmERg/JhEUkaY
+      RI2JmERNlZhEmWKYRCUYmESFuphEpCaZRMqCmETEqZhE8faYRFLKmETw/JhE/NGYRN/EmESx1ZhE
+      G7GYRDbumETU8ZhE4eiYRP3BmESk55hE3cmYRJ3pmER/4phEPKiYRB/kmEQu5phE8smYRM6/mEQt
+      vJhEPdmYRDrTmEQszZhEN8KYRNa5mEQ15JhExNWYROrAmERJyphEw+eYRP7MmERuwphE2MyYRD3S
+      mERSz5hEzM2YRETdmERv0JhEHdqYRODXmER22JhEjs2YRFXVmEQp0JhEycOYRNPSmEQsz5hEzcaY
+      RMrQmETlh5ZELt6ZRA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 8
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      nHG2RI02pkSJd5hEnq+nRMk3jESfUZtEz5aNRF30gUQ=
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
+  nEvents: 0
+  name: ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14
+  path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/
+  reweight: 1
+  split: 61
+  sumWeight: 1222.5245361328125
+  xsec: 0.005521
+/ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/:
+  LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 103
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      QWpNREFpTUS7Y01ELYNNRNWVTUScNE1ECJFNROYlTUSM/kxEOrBNRANMTUSszU1ErGNNRJHOTUT3
+      0E1EFsdNRFGkTUTmt01EJ9JMRMv8TETXfk1E7/ZMRHOMTUSdf01Eph9NRN9jTURtl01E6HdNRPxY
+      TUQviE1E1rVNRPuETUS1YE1EgPVNRDoqTUSOOE1E+F1NRH1TTUQksU1EW8tMRDUZTUTook1EK7NM
+      ROIMTUQ+Gk1E0NZMRMt1TERRTU1EFNxNRBkDTUQyNU1EVJ1NRPpiTUQHpk1EB2lNRGFaTUTUcU1E
+      dkBNRBCTTUTMl01EwYhNRMpWTUToh01EeWBNRIiMTUT6gk1E6zNNRMOETUSchk1ET2BNRHdSTURD
+      T01EU3VNRIluTUQiZU1Es1VNRIFLTURwhE1EznBNRKtUTUQEYk1E3IlNRHJlTUSgVk1E72RNRHJt
+      TURFaE1E42ZNRC17TUSBaU1EjnZNROFzTURbdE1EGGZNRENwTUSAaU1EklhNRM5sTUQ8aE1E1lxN
+      REFqTURRWEpEmtNORA==
+  LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id001
+    - !!python/tuple
+      - 0
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple
+      - 8
+    - !!python/object/apply:numpy.dtype
+      args:
+      - f4
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - false
+    - !!binary |
+      XD91RChsX0RM8ExERmlhRL15PETDyVBEbFM+RGiuLkQ=
+  files:
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
+  nEvents: 0
+  name: ProjectMetis_TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14
+  path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v14/
+  reweight: 1
+  split: 60
+  sumWeight: 821.6602172851562
+  xsec: 0.003732
 /ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL16_preVFP_NanoAODv9_NANO_v11/:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:

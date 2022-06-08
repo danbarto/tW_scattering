@@ -151,7 +151,7 @@ class Selection:
         is_trilep  = ( ((ak.num(self.ele_veto) + ak.num(self.mu_veto))>=3) & ((ak.num(self.ele) + ak.num(self.mu))>=3) )
         lep0pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>25)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>25)]))>0)
         lep1pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>20)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>20)]))>1)
-        # FIXME here we need to have a 10 GeV threshold on the third lepton
+        lep2pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>10)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>10)]))>2)
 
         dimu    = choose(self.mu_veto,2)
         diele   = choose(self.ele_veto,2)
@@ -163,7 +163,8 @@ class Selection:
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
-        onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))
+        #onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))  # FIXME this looks wrong?
+        onZ = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
 
         lepton_tight = ak.concatenate([self.ele, self.mu], axis=1)
         SS_dilep = ( ak.sum(lepton_tight.charge, axis=1)!=0 )  # this makes sure that at least the SS leptons are tight, or all 3 leptons are tight
@@ -194,13 +195,18 @@ class Selection:
         self.selection.add('SS_dilep',      SS_dilep)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
+        self.selection.add('p_T(lep2)>10',  lep2pt)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
+        self.selection.add('N_jet>0',       (ak.num(self.jet_all)>0) )
+        self.selection.add('N_jet>1',       (ak.num(self.jet_all)>1) )
         self.selection.add('N_jet>2',       (ak.num(self.jet_all)>2) )
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
+        self.selection.add('N_central>0',   (ak.num(self.jet_central)>0) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 ))
+        self.selection.add('N_btag=0',      (ak.num(self.jet_btag)==0 ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
@@ -216,6 +222,7 @@ class Selection:
             'trilep',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
+            'p_T(lep2)>10',
             'trigger',
             'SS_dilep',
             #'offZ',

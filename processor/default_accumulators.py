@@ -15,6 +15,7 @@ def add_files_to_output(fileset, output):
 dataset_axis            = hist.Cat("dataset",       "Primary dataset")
 systematic_axis         = hist.Cat("systematic",    "Systematic variation")
 eft_axis                = hist.Cat("EFT",           "EFT point")
+pred_axis               = hist.Cat("prediction",    "Prediction")
 charge_axis             = hist.Bin("charge",        r"$\Sigma_{lep}Q$", 7, -3.5, 3.5)
 pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)",   100, 0, 500)  # 5 GeV is fine enough
 p_axis                  = hist.Bin("p",             r"$p$ (GeV)",       250, 0, 2500)  # 10 GeV is fine enough

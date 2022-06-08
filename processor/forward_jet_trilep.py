@@ -279,7 +279,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 BL = add_conversion_req(dataset, BL)
 
             # Selection for conversion region
-            BL_offZ = sel.trilep_baseline(add=['offZ'], omit=['N_fwd>0', 'onZ', 'MET>50'])
+            BL_offZ = sel.trilep_baseline(
+                add=['offZ', 'N_btag=0', 'N_jet>0', 'N_central>0'],
+                omit=['N_fwd>0', 'onZ', 'MET>50', 'N_jet>2', 'N_central>1'],
+            )
+
             if not re.search(data_pattern, dataset):
                 BL_offZ = add_conversion_req(dataset, BL_offZ)
 

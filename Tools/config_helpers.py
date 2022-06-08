@@ -93,3 +93,68 @@ def get_latest_output(cache_name, cfg):
     print ("Found the following cache: %s"%latest)
     return util.load(filtered[0])
 #    return filtered[0]
+
+def get_merged_output(name, year, postfix=None, quiet=False):
+    '''
+    name: e.g. SS_analysis
+    year: string like 2016APV
+    postfix: string, e.g. _DY
+    '''
+    from coffea.processor import accumulate
+    from coffea import hist
+    from plots.helpers import scale_and_merge
+    ul = "UL"+year[2:]
+    samples = get_samples(f"samples_{ul}.yaml")
+    mapping = load_yaml(data_path+"nano_mapping.yaml")
+
+    renorm   = {}
+
+    if year == '2018':
+        data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
+    else:
+        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
+    order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+
+    datasets = data + order
+
+    cfg = loadConfig()
+
+    outputs = []
+
+    lumi_year = int(year[:4])
+    lumi = cfg['lumi'][lumi_year]
+
+    for sample in datasets:
+        if not quiet: print (f"Loading output for sample {sample}")
+        cache_name = f'{name}_{sample}_{year}'
+        if postfix:
+            cache_name += postfix
+        print (cache_name)
+        outputs.append(get_latest_output(cache_name, cfg))
+
+        for dataset in mapping[ul][sample]:
+            if samples[dataset]['reweight'] == 1:
+                renorm[dataset] = 1
+            else:
+                # Currently only supporting a single reweight.
+                weight, index = samples[dataset]['reweight'].split(',')
+                index = int(index)
+                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
+            try:
+                renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
+            except:
+                renorm[dataset] = 1
+    output = accumulate(outputs)
+
+    #res = scale_and_merge(output['N_jet'], renorm, mapping[ul])
+
+    output_scaled = {}
+    for key in output.keys():
+        if isinstance(output[key], hist.Hist):
+            try:
+                output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
+            except:
+                print ("Scale and merge failed for:",key)
+                print ("At least I tried.")
+
+    return output_scaled
