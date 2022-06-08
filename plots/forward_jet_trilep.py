@@ -158,6 +158,7 @@ if __name__ == '__main__':
     #deltaEta_bins = None
     jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
     m3l_bins = hist.Bin('mass', r'$M\ (GeV)$', 15, 0, 300)
+    m3l_bins_fine = hist.Bin('mass', r'$M\ (GeV)$', 20, 70, 110)
 #ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
 
     my_labels = {
@@ -292,6 +293,17 @@ if __name__ == '__main__':
 
     makePlot(output, 'M3l_offZ', 'mass',
              data=data,
+             bins=m3l_bins_fine, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             lumi=lumi_year,
+             signals=signals,
+             ymax=10,
+             save=os.path.expandvars(plot_dir+'M3l_offZ_zoomin'),
+        )
+
+    makePlot(output, 'M3l_offZ', 'mass',
+             data=data,
              bins=m3l_bins, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
              new_colors=my_colors, new_labels=my_labels,
              order=order,
@@ -299,6 +311,20 @@ if __name__ == '__main__':
              signals=signals,
              save=os.path.expandvars(plot_dir+'M3l_offZ'),
         )
+
+    for ch in ['mm', 'em', 'ee']:
+        makePlot(output, 'M3l_offZ', 'mass',
+                 data=data,
+                 bins=m3l_bins_fine, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 lumi=lumi_year,
+                 signals=signals,
+                 channel=ch,
+                 ymax=10,
+                 save=os.path.expandvars(plot_dir+'M3l_offZ_'+ch),
+            )
+
 
     makePlot(output, 'N_jet_onZ', 'n_ele',
              data=data,
