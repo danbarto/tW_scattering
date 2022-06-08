@@ -341,7 +341,7 @@ if __name__ == '__main__':
              order=order,
              signals=signals,
              lumi=lumi_year,
-             save=os.path.expandvars(plot_dir+'dilep_pt_onZ'),
+             save=os.path.expandvars(plot_dir+'dilep_eta_onZ'),
         )
 
     makePlot(output, 'best_M_ll_onZ', 'mass',

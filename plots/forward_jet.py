@@ -211,7 +211,6 @@ if __name__ == '__main__':
     omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 
 
-    print(['pt_jesTotalUp'])
     makePlot(output, 'lead_lep', 'pt',
              data=data,
              bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
