@@ -14,8 +14,7 @@ import numpy as np
 import pandas as pd
 
 from coffea import hist
-
-from klepto.archives import dir_archive
+from coffea.processor import accumulate
 
 import matplotlib.pyplot as plt
 import mplhep as hep
@@ -52,7 +51,7 @@ def histo_values(histo, weight):
 
 def get_NLL(
         years = ['2016', '2016APV', '2017', '2018'],
-        point = [0,0,0,0,0,0],
+        point = [0,0],
         scales = {},
         bsm_scales = {},
         systematics = True,
@@ -78,11 +77,12 @@ def get_NLL(
         'signal': ['topW_v3'],
     }
 
-    ref_point = 'ctZ_2p_cpt_4p_cpQM_4p_cpQ3_4p_ctW_2p_ctp_2p'
+    ref_point = 'cpt_0p_cpqm_0p'
     ref_values = [ float(x.replace('p','.')) for x in ref_point.split('_')[1::2] ]
 
     res_bsm_data_cards = {}
 
+    from Tools.config_helpers import get_merged_output, load_yaml
     for year in years:
 
         regions = [
@@ -93,14 +93,96 @@ def get_NLL(
         ]
 
         # SM histograms
-        output = get_cache('SS_analysis_%s'%year)
-        all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
-        data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
-        data    = data_all
-        order   = ['topW_v3', 'np_est_mc', 'conv_mc', 'cf_est_mc', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-        no_data_or_signal  = re.compile('(?!(%s))'%('|'.join(omit)))
+
+        output = get_merged_output('SS_analysis', year)
+
+        ##output = get_cache('SS_analysis_%s'%year)
+        #all_processes = [ x[0] for x in output['N_ele'].values().keys() ]  # FIXME this won't work anymore
+        ##data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
+        #data    = data_all
+        #order   = ['topW_lep', 'np_est_mc', 'conv_mc', 'cf_est_mc', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
+        #signals = []
+        #omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+        #no_data_or_signal  = re.compile('(?!(%s))'%('|'.join(omit)))
+
+        # get the more elaborate predictions like
+        # out['LT'].integrate('systematic', 'central').integrate('prediction', 'conv_mc').integrate('EFT', 'central').sum('dataset')
+        # this leaves just the ht axis for the histogram. need to find a good way to plot this
+        #
+
+        # FIXME placeholder systematics....
+        systematics= [
+            ('signal_norm', 1.2, 'signal'),
+            ('TTW_norm', 1.15, 'TTW'),
+            ('TTZ_norm', 1.10, 'TTZ'),
+            ('TTH_norm', 1.20, 'TTH'),
+        ]
+
+        lt_axis      = hist.Bin("ht",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,2000])
+
+        histo_name = 'LT'
+
+        hists_pp = {
+            'signal': output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'cpt_0p_cpqm_0p_nlo').copy(),
+            'TTW': output[histo_name]['TTW'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            'TTH': output[histo_name]['TTH'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            'TTZ': output[histo_name]['TTZ'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            #'rare': output['LT_SR_pp']['rare'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            #'diboson': output['LT_SR_pp']['diboson'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            #'conv': output['LT_SR_pp'].integrate('prediction', 'conv_mc').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+            #'nonprompt': output['LT_SR_pp'].integrate('prediction', 'np_est_mc').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
+        }
+
+        for p in hists_pp.keys():
+            hists_pp[p] = hists_pp[p].rebin("ht", lt_axis)
+
+        sm_card_pp = makeCardFromHist(
+            hists_pp,
+            #'%s_SR_1'%year,
+            #overflow='all',
+            ext='MultiClass_SM',
+            #bsm_vals =  bsm_hist,
+            #sm_vals =  sm_hist,
+            #scales = scales,
+            #bsm_scales = bsm_scales,
+            systematics = systematics,
+        )
+
+        res_sm = card.calcNLL(sm_card_pp)
+        nll_sm = res_sm['nll0'][0] + res_sm['nll'][0]
+
+        bsm_hist = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'cpt_6p_cpqm_0p_nlo').copy()
+        bsm_hist = bsm_hist.rebin("ht", lt_axis)
+
+        print (bsm_hist.values())
+
+        bsm_card_pp = makeCardFromHist(
+            hists_pp,
+            #'%s_SR_1'%year,
+            #overflow='all',
+            ext='MultiClass_BSM',
+            bsm_hist = bsm_hist.sum('dataset').to_hist(),
+            #bsm_vals =  bsm_hist,
+            #sm_vals =  sm_hist,
+            #scales = scales,
+            #bsm_scales = bsm_scales,
+            systematics = systematics,
+        )
+
+        res_bsm = card.calcNLL(bsm_card_pp)
+        nll_bsm = res_bsm['nll0'][0] + res_bsm['nll'][0]
+
+        nll = -2*(nll_sm - nll_bsm)
+
+        print (nll)
+
+        raise NotImplementedError
+
+
+
+
+
+
 
         # then make copies for SR and CR
         new_hists = {}
@@ -214,9 +296,9 @@ if __name__ == '__main__':
     if run_scan:
 
         #years = ['2016', '2016APV', '2017', '2018']
-        years = ['2018']
+        years = ['2017']
 
-        res_sm = get_NLL(years=years, point=[0,0,0,0,0,0])
+        res_sm = get_NLL(years=years, point=[0,0])
 
         x = np.arange(-10,11,4)
         y = np.arange(-10,11,4)
@@ -226,7 +308,7 @@ if __name__ == '__main__':
         
         z = []
         for x, y in zip(X.flatten(), Y.flatten()):
-            point = [0, y, x, 0, 0, 0]
+            point = [x, y]
             z.append((-2*(res_sm-get_NLL(years=years, point=point))))
 
 
