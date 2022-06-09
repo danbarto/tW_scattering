@@ -185,7 +185,7 @@ if __name__ == '__main__':
     # ipython -i SS_analysis.py -- --dump
     #df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
 
-    sample_list =  ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+    sample_list =  ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
     years = ['2016APV', '2016', '2017', '2018']
     #years = ['2018']
     df = pd.DataFrame()
@@ -592,7 +592,7 @@ if __name__ == '__main__':
         hep.histplot(
             [ hist1.counts, hist2.counts ],
             hist1.edges,
-            w2=[ hist1.errors**2, hist2.errors**2 ],
+            yerr=[ hist1.errors, hist2.errors ],
             histtype="step",
             stack=False,
             label=labels,
@@ -601,7 +601,7 @@ if __name__ == '__main__':
         hep.histplot(
             ratio.counts,
             ratio.edges,
-            w2=ratio.errors,
+            yerr=ratio.errors,
             histtype="errorbar",
             color='black',
             ax=rax)

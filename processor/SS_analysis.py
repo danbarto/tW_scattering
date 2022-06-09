@@ -938,6 +938,17 @@ class SS_analysis(processor.ProcessorABC):
                             weight = weight_BL*(point['weight'].weight()[BL]),
                         )
 
+                    for point in self.weights:
+                        #(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]
+                        output['LT'].fill(
+                            dataset = dataset,
+                            systematic = var_name,
+                            EFT = point,
+                            prediction = 'central',
+                            ht = ak.to_numpy(lt)[BL],
+                            weight = weight_BL*(getattr(ev.LHEWeight, point)[BL]),
+                        )
+
                 else:
 
                     fill_multiple_np(output['MET'], {'pt':met.pt, 'phi':met.phi})

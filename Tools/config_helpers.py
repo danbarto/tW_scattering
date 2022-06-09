@@ -113,7 +113,7 @@ def get_merged_output(name, year, postfix=None, quiet=False):
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG', 'rare']
 
     datasets = data + order
 

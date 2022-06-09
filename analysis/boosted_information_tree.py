@@ -142,6 +142,17 @@ if __name__ == '__main__':
     #years = ['2016APV', '2016', '2017', '2018']
     years = ['2017']
 
+    systematics= [
+        ('signal_norm', 1.1, 'signal'),
+        ('TTW_norm', 1.15, 'TTW'),
+        ('TTZ_norm', 1.10, 'TTZ'),
+        ('TTH_norm', 1.20, 'TTH'),
+        ('conv_norm', 1.20, 'conv'),
+        ('diboson_norm', 1.20, 'diboson'),
+        ('nonprompt_norm', 1.30, 'nonprompt'),
+        ('rare_norm', 1.30, 'rare'),
+    ]
+
     df_in = pd.DataFrame()
     for year in years:
         tmp = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
@@ -161,7 +172,7 @@ if __name__ == '__main__':
     #    df_signal = df_signal[df_signal['SS']==1]
     #del tmp
 
-    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2018.h5")
+    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2017.h5")
     df_signal_lep['weight'] = df_signal_lep['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
     df_signal = pd.concat([df_signal, df_signal_lep])
 
@@ -462,7 +473,10 @@ if __name__ == '__main__':
     else:
         scaled_bkg_test = scaler.transform(bkg_test[variables].values)
 
-    scaled_np_test = scaler.transform(np_test[variables].values)
+    if len(np_test[variables].values)==0:
+        scaled_np_test = np_test[variables].values
+    else:
+        scaled_np_test = scaler.transform(np_test[variables].values)
 
     for i in range(6):
         sig_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_test)
@@ -531,10 +545,25 @@ if __name__ == '__main__':
         lt_hist.fill(dataset="TTW", lt=cdf_map(ttW['lt'].values), weight=ttW['weight']*2)
         lt_hist.fill(dataset="TTZ", lt=cdf_map(ttZ['lt'].values), weight=ttZ['weight']*2)
         lt_hist.fill(dataset="TTH", lt=cdf_map(ttH['lt'].values), weight=ttH['weight']*2)
+        lt_hist.fill(dataset="NP", lt=cdf_map(NP['lt'].values), weight=NP['weight']*NP['weight_np'])
+        lt_hist.fill(dataset="rare", lt=cdf_map(rare['lt']), weight=rare['weight']*2)
+        lt_hist.fill(dataset="diboson", lt=cdf_map(diboson['lt']), weight=diboson['weight']*2)
+        lt_hist.fill(dataset="XG", lt=cdf_map(XG['lt']), weight=XG['weight']*2)
         lt_hist.fill(dataset="signal", lt=cdf_map(sig_test['lt'].values), weight=sig_test['weight'])
 
-        hist_dict = {'SR': lt_hist}
+        hist_dict = {
+            'TTW': lt_hist["TTW"],
+            'TTZ': lt_hist["TTZ"],
+            'TTH': lt_hist["TTH"],
+            'nonprompt': lt_hist["NP"],
+            'conv': lt_hist["XG"],
+            'rare': lt_hist["rare"],
+            'diboson': lt_hist["diboson"],
+            'signal': lt_hist["signal"],
+            }
+            #'SR': lt_hist}
 
+        # fill all the signal histograms
         sig_lt_hist = hist.Hist("lt", dataset_axis, eft_axis, lt_axis)
         for weight in weights:
             sig_lt_hist.fill(
@@ -546,16 +575,14 @@ if __name__ == '__main__':
 
         sig_lt_hist_SM = sig_lt_hist.integrate('eft', weights[0])
 
+
         if args.fit:
             sm_card = makeCardFromHist(
                         hist_dict,
-                        'SR',
+                        #'SR',
                         ext='_SM_LT',
-                        signal_hist=sig_lt_hist_SM,
-                        systematics= [
-                            ('signal_norm', 1.2, 'signal'),
-                            ('TTW_norm', 1.15, 'TTW'),
-                        ],
+                        #bsm_hist=sig_lt_hist_SM['signal'].sum('dataset').to_hist(),
+                        systematics=systematics,
                     )
             res_sm = card.calcNLL(sm_card)
             res_sm_ll = res_sm['nll0'][0]+res_sm['nll'][0]
@@ -619,16 +646,16 @@ if __name__ == '__main__':
                 fig.savefig(f"{plot_dir}/lt_cpt_{x}_cpqm_{y}_bsm.png")
 
             if args.fit:
+                print ("Counts and Variances")
+                print (bsm_hist.counts())
+                print (np.sqrt(bsm_hist.variances()))
                 bsm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_BSM_LT',
-                    bsm_vals = bsm_hist,
-                    sm_vals = sm_hist,
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                    ],
+                    bsm_hist = bsm_hist,
+                    #sm_vals = sm_hist,
+                    systematics=systematics,
                     )
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
@@ -799,18 +826,27 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
             #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_train['weight'])
 
-            hist_dict = {'SR': bit_hist}
+            hist_dict = {
+                'TTW': bit_hist['TTW'],
+                'TTZ': bit_hist['TTZ'],
+                'TTH': bit_hist['TTH'],
+                'signal': bit_hist['signal'],
+                'nonprompt': bit_hist['NP'],
+                'rare': bit_hist['rare'],
+                'conv': bit_hist['XG'],
+                'diboson': bit_hist['diboson'],
+                }
+                #'TTW': bit_hist['TTW'],
+                #'TTW': bit_hist['TTW'],
+                #'SR': bit_hist}
 
             if args.fit:
                 sm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_SM2',
-                    signal_hist=bit_hist['signal'],
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                    ],
+                    #bsm_hist=bit_hist['signal'].sum('dataset').to_hist(),
+                    systematics=systematics,
                    )
 
                 res_sm = card.calcNLL(sm_card)
@@ -822,8 +858,8 @@ if __name__ == '__main__':
             bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
 
-            print (bsm_hist.values())
-            print (bsm_hist.variances())
+            #print (bsm_hist.values())
+            #print (bsm_hist.variances())
             #bsm_hist.fill(q_event_cdf, weight=sig_train['weight']*eft_weight)
 
             #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
@@ -924,16 +960,18 @@ if __name__ == '__main__':
                 fig.savefig(f"{plot_dir}/bit_cpt_{x}_cpqm_{y}_transformed_sm.png")
 
             if args.fit:
+
+                print ("Counts and Variances")
+                print (bsm_hist.counts())
+                print (np.sqrt(bsm_hist.variances()))
+
                 bsm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_BSM2',
-                    bsm_vals = bsm_hist,
-                    sm_vals = sm_hist,
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                    ],
+                    bsm_hist = bsm_hist,
+                    #sm_vals = sm_hist,
+                    systematics=systematics,
                 )
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))

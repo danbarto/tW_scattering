@@ -269,114 +269,97 @@ def add_signal_systematics(output, hist, year, correlated=False, systematics=[],
     return systematics
 
 def makeCardFromHist(
-        out_cache,
-        hist_name,
+        histograms,
+        #hist_name,
         scales={'nonprompt':1, 'signal':1},  # this scales everything, also the expected observation
         bsm_scales={'TTZ':1},  # this only scales the expected background + signal, but leaves expected observation at 1
         ext='',
         systematics={},
-        signal_hist=None,
-        bsm_vals=None,
-        sm_vals=None,
+        bsm_hist=None,
+        #signal_hist=None,
+        #bsm_vals=None,
+        #sm_vals=None,
         integer=False,
         quiet=False,
 ):
     
     '''
-    make a card file from a processor output
+    make a card file from histograms
+    histogams: python dictionary with 2D histograms: dataset axis and feature axis
     signal_hist overrides the default signal histogram if provided
     '''
 
     if not quiet:
-        print ("Writing cards using histogram:", hist_name)
+        print ("Writing cards now")
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
     if not os.path.isdir(card_dir):
         os.makedirs(card_dir)
     
-    data_card = card_dir+hist_name+ext+'_card.txt'
-    shape_file = card_dir+hist_name+ext+'_shapes.root'
-    
-    histogram = out_cache[hist_name].copy()
-    histogram_sm = out_cache[hist_name].copy()
-    #histogram = histogram.rebin('mass', bins[hist_name]['bins'])
-    
-    # scale some processes
-    histogram.scale(scales, axis='dataset')
-    histogram_sm.scale(scales, axis='dataset')
-    histogram.scale(bsm_scales, axis='dataset')
-    
-    ## making a histogram for pseudo observation. this hurts, but rn it seems to be the best option
-    ## FIXME: this should be handled with boost histogram too
-    data_counts = np.asarray(np.round(histogram_sm.integrate('dataset').values()[()], 0), int)
-    data_hist = histogram['signal']
-    data_hist.clear()
-    data_hist_bins = data_hist.axes()[1]
-    for i, edge in enumerate(data_hist_bins.edges()):
-        if i >= len(data_counts): break
-        for y in range(data_counts[i]):
-            data_hist.fill(**{'dataset': 'data', data_hist_bins.name: edge+0.0001})
+    data_card = card_dir+ext+'_card.txt'
+    shape_file = card_dir+ext+'_shapes.root'
 
+    processes = [ p for p in histograms.keys() if p != 'signal' ]
+
+    # make a copy of the histograms
+    h_tmp = {}
+    h_tmp_bsm = {}
+    for p in processes + ['signal']:
+        h_tmp[p] = histograms[p].copy()
+        h_tmp[p].scale(scales, axis='dataset')  # scale according to the processes
+        h_tmp[p] = h_tmp[p].sum('dataset')  # reduce to 1D histogram
+
+        h_tmp_bsm[p] = histograms[p].copy()
+        h_tmp_bsm[p].scale(scales, axis='dataset')  # scale according to the processes
+        h_tmp_bsm[p].scale(bsm_scales, axis='dataset')  # scale according to the processes
+        h_tmp_bsm[p] = h_tmp_bsm[p].sum('dataset')  # reduce to 1D histogram
+
+    # get an axis
+    axis = h_tmp["signal"].axes()[0]
+
+    # make observation boost histogram
+    from Tools.helpers import make_bh
+
+    # FIXME: decide on how to handle overflows.
+    #for p in processes + ['signal']:
+    #    print (p)
+    #    print (h_tmp[p].values()[()])
+    total = np.sum([h_tmp[p].values()[()] for p in processes + ['signal']], axis=0)
+    total_int = np.round(total, 0).astype(int)
+
+    pdata_hist = make_bh(
+        sumw  = total,
+        sumw2 = total,
+        edges = axis.edges(),
+    )
+
+    # Now replace processes with BSM, if we have a histogram / values
+    if bsm_hist:
+        h_tmp_bsm['signal'] = bsm_hist
+    else:
+        h_tmp_bsm['signal'] = h_tmp['signal'].to_hist()
 
     fout = uproot.recreate(shape_file)
 
-    processes = [ p[0] for p in list(histogram.values().keys()) if p[0] != 'signal']  # ugly conversion
+    # we write out the BSM histograms!
+    for p in processes:
+        fout[p] = h_tmp_bsm[p].to_hist()
 
-    # Start with making the central value histograms.
-    # NOTE: this works!
-    #
-    for process in processes + ['signal']:
-        if (signal_hist is not None) and process=='signal':
-            fout[process] = signal_hist.integrate('dataset').to_hist()
-        elif (bsm_vals is not None) and process=='signal':
-            fout[process] = bsm_vals
-        else:
-            fout[process] = histogram[process].integrate('dataset').to_hist()
+    fout['signal'] = h_tmp_bsm['signal']
+    fout['data_obs'] = pdata_hist  # this should work directly
 
-    if integer:  # not sure anymore what this would do?
-        fout["data_obs"]  = data_hist.integrate('dataset').to_hist()
-    else:
-        if sm_vals is not None:
-            bkg_tmp = histogram_sm.integrate('dataset').values()[()]
-            sig_tmp = histogram_sm['signal'].integrate('dataset').values()[()]
-            tmp_hist = make_bh(
-                sumw = bkg_tmp+sm_vals.values()-sig_tmp,
-                sumw2 = bkg_tmp+sm_vals.values()-sig_tmp,
-                edges = data_hist_bins.edges(),
-            )
-
-            fout["data_obs"]  = tmp_hist
-        else:
-            fout["data_obs"]  = histogram_sm.integrate('dataset').to_hist()
-
-    
     # Get the total yields to write into a data card
-    # NOTE: this works!
     #
     totals = {}
-    
-    for process in processes + ['signal']:
-        if (signal_hist is not None) and process=='signal':
-            totals[process] = signal_hist.integrate('dataset').values()[()].sum()
-        elif (bsm_vals is not None) and process=='signal':
-            print ("sum in limit tool", sum(bsm_vals.values()))
-            totals[process] = sum(bsm_vals.values())
-        else:
-            totals[process] = histogram[process].integrate('dataset').values()[()].sum()
-    
-    if integer:
-        totals['observation'] = data_hist.integrate('dataset').values()[()].sum()  # this is always with the SM signal
-    else:
-        if sm_vals is not None:
-            totals['observation'] = histogram_sm.integrate('dataset').values()[()].sum() \
-                + sum(sm_vals.values()) \
-                - histogram['signal'].integrate('dataset').values()[()].sum()
-        else:
-            totals['observation'] = histogram_sm.integrate('dataset').values()[()].sum()  # this is always with the SM signal
-    
+
+    for p in processes + ['signal']:
+        totals[p] = h_tmp_bsm[p].values()[()].sum()
+
+    totals['observation'] = pdata_hist.values().sum()
+
     if not quiet:
         for process in processes + ['signal']:
             print ("{:30}{:.2f}".format("Expectation for %s:"%process, totals[process]) )
-        
+
         print ("{:30}{:.2f}".format("Observation:", totals['observation']) )
     
     
