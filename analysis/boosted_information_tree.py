@@ -137,8 +137,8 @@ if __name__ == '__main__':
     signal_bit_file = f'bit_{args.version}.pkl'  # Signal only tree
 
     # load data
-    #sample_list =  ['TTW', 'TTZ','TTH']
-    sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
+    sample_list =  ['TTW', 'TTZ','TTH']
+    #sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
     #years = ['2016APV', '2016', '2017', '2018']
     years = ['2017']
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     #    df_signal = df_signal[df_signal['SS']==1]
     #del tmp
 
-    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2018.h5")
+    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2017.h5")
     df_signal_lep['weight'] = df_signal_lep['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
     df_signal = pd.concat([df_signal, df_signal_lep])
 
@@ -462,7 +462,10 @@ if __name__ == '__main__':
     else:
         scaled_bkg_test = scaler.transform(bkg_test[variables].values)
 
-    scaled_np_test = scaler.transform(np_test[variables].values)
+    if len(np_test[variables].values)==0:
+        scaled_np_test = np_test[variables].values
+    else:
+        scaled_np_test = scaler.transform(np_test[variables].values)
 
     for i in range(6):
         sig_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_test)
@@ -533,8 +536,15 @@ if __name__ == '__main__':
         lt_hist.fill(dataset="TTH", lt=cdf_map(ttH['lt'].values), weight=ttH['weight']*2)
         lt_hist.fill(dataset="signal", lt=cdf_map(sig_test['lt'].values), weight=sig_test['weight'])
 
-        hist_dict = {'SR': lt_hist}
+        hist_dict = {
+            'TTW': lt_hist["TTW"],
+            'TTZ': lt_hist["TTZ"],
+            'TTH': lt_hist["TTH"],
+            'signal': lt_hist["signal"],
+            }
+            #'SR': lt_hist}
 
+        # fill all the signal histograms
         sig_lt_hist = hist.Hist("lt", dataset_axis, eft_axis, lt_axis)
         for weight in weights:
             sig_lt_hist.fill(
@@ -546,15 +556,18 @@ if __name__ == '__main__':
 
         sig_lt_hist_SM = sig_lt_hist.integrate('eft', weights[0])
 
+
         if args.fit:
             sm_card = makeCardFromHist(
                         hist_dict,
-                        'SR',
+                        #'SR',
                         ext='_SM_LT',
-                        signal_hist=sig_lt_hist_SM,
+                        #bsm_hist=sig_lt_hist_SM['signal'].sum('dataset').to_hist(),
                         systematics= [
                             ('signal_norm', 1.2, 'signal'),
                             ('TTW_norm', 1.15, 'TTW'),
+                            ('TTZ_norm', 1.10, 'TTZ'),
+                            ('TTH_norm', 1.20, 'TTH'),
                         ],
                     )
             res_sm = card.calcNLL(sm_card)
@@ -619,15 +632,20 @@ if __name__ == '__main__':
                 fig.savefig(f"{plot_dir}/lt_cpt_{x}_cpqm_{y}_bsm.png")
 
             if args.fit:
+                print ("Counts and Variances")
+                print (bsm_hist.counts())
+                print (np.sqrt(bsm_hist.variances()))
                 bsm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_BSM_LT',
-                    bsm_vals = bsm_hist,
-                    sm_vals = sm_hist,
+                    bsm_hist = bsm_hist,
+                    #sm_vals = sm_hist,
                     systematics= [
                         ('signal_norm', 1.2, 'signal'),
                         ('TTW_norm', 1.15, 'TTW'),
+                        ('TTZ_norm', 1.10, 'TTZ'),
+                        ('TTH_norm', 1.20, 'TTH'),
                     ],
                     )
 
@@ -799,17 +817,27 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
             #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_train['weight'])
 
-            hist_dict = {'SR': bit_hist}
+            hist_dict = {
+                'TTW': bit_hist['TTW'],
+                'TTZ': bit_hist['TTZ'],
+                'TTH': bit_hist['TTH'],
+                'signal': bit_hist['signal'],
+                }
+                #'TTW': bit_hist['TTW'],
+                #'TTW': bit_hist['TTW'],
+                #'SR': bit_hist}
 
             if args.fit:
                 sm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_SM2',
-                    signal_hist=bit_hist['signal'],
+                    #bsm_hist=bit_hist['signal'].sum('dataset').to_hist(),
                     systematics= [
                         ('signal_norm', 1.2, 'signal'),
                         ('TTW_norm', 1.15, 'TTW'),
+                        ('TTZ_norm', 1.10, 'TTZ'),
+                        ('TTH_norm', 1.20, 'TTH'),
                     ],
                    )
 
@@ -822,8 +850,8 @@ if __name__ == '__main__':
             bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
 
-            print (bsm_hist.values())
-            print (bsm_hist.variances())
+            #print (bsm_hist.values())
+            #print (bsm_hist.variances())
             #bsm_hist.fill(q_event_cdf, weight=sig_train['weight']*eft_weight)
 
             #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
@@ -924,15 +952,22 @@ if __name__ == '__main__':
                 fig.savefig(f"{plot_dir}/bit_cpt_{x}_cpqm_{y}_transformed_sm.png")
 
             if args.fit:
+
+                print ("Counts and Variances")
+                print (bsm_hist.counts())
+                print (np.sqrt(bsm_hist.variances()))
+
                 bsm_card = makeCardFromHist(
                     hist_dict,
-                    'SR',
+                    #'SR',
                     ext='_BSM2',
-                    bsm_vals = bsm_hist,
-                    sm_vals = sm_hist,
+                    bsm_hist = bsm_hist,
+                    #sm_vals = sm_hist,
                     systematics= [
                         ('signal_norm', 1.2, 'signal'),
                         ('TTW_norm', 1.15, 'TTW'),
+                        ('TTZ_norm', 1.10, 'TTZ'),
+                        ('TTH_norm', 1.20, 'TTH'),
                     ],
                 )
 
