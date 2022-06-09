@@ -137,10 +137,21 @@ if __name__ == '__main__':
     signal_bit_file = f'bit_{args.version}.pkl'  # Signal only tree
 
     # load data
-    sample_list =  ['TTW', 'TTZ','TTH']
-    #sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
+    #sample_list =  ['TTW', 'TTZ','TTH']
+    sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
     #years = ['2016APV', '2016', '2017', '2018']
     years = ['2017']
+
+    systematics= [
+        ('signal_norm', 1.1, 'signal'),
+        ('TTW_norm', 1.15, 'TTW'),
+        ('TTZ_norm', 1.10, 'TTZ'),
+        ('TTH_norm', 1.20, 'TTH'),
+        ('conv_norm', 1.20, 'conv'),
+        ('diboson_norm', 1.20, 'diboson'),
+        ('nonprompt_norm', 1.30, 'nonprompt'),
+        ('rare_norm', 1.30, 'rare'),
+    ]
 
     df_in = pd.DataFrame()
     for year in years:
@@ -534,12 +545,20 @@ if __name__ == '__main__':
         lt_hist.fill(dataset="TTW", lt=cdf_map(ttW['lt'].values), weight=ttW['weight']*2)
         lt_hist.fill(dataset="TTZ", lt=cdf_map(ttZ['lt'].values), weight=ttZ['weight']*2)
         lt_hist.fill(dataset="TTH", lt=cdf_map(ttH['lt'].values), weight=ttH['weight']*2)
+        lt_hist.fill(dataset="NP", lt=cdf_map(NP['lt'].values), weight=NP['weight']*NP['weight_np'])
+        lt_hist.fill(dataset="rare", lt=cdf_map(rare['lt']), weight=rare['weight']*2)
+        lt_hist.fill(dataset="diboson", lt=cdf_map(diboson['lt']), weight=diboson['weight']*2)
+        lt_hist.fill(dataset="XG", lt=cdf_map(XG['lt']), weight=XG['weight']*2)
         lt_hist.fill(dataset="signal", lt=cdf_map(sig_test['lt'].values), weight=sig_test['weight'])
 
         hist_dict = {
             'TTW': lt_hist["TTW"],
             'TTZ': lt_hist["TTZ"],
             'TTH': lt_hist["TTH"],
+            'nonprompt': lt_hist["NP"],
+            'conv': lt_hist["XG"],
+            'rare': lt_hist["rare"],
+            'diboson': lt_hist["diboson"],
             'signal': lt_hist["signal"],
             }
             #'SR': lt_hist}
@@ -563,12 +582,7 @@ if __name__ == '__main__':
                         #'SR',
                         ext='_SM_LT',
                         #bsm_hist=sig_lt_hist_SM['signal'].sum('dataset').to_hist(),
-                        systematics= [
-                            ('signal_norm', 1.2, 'signal'),
-                            ('TTW_norm', 1.15, 'TTW'),
-                            ('TTZ_norm', 1.10, 'TTZ'),
-                            ('TTH_norm', 1.20, 'TTH'),
-                        ],
+                        systematics=systematics,
                     )
             res_sm = card.calcNLL(sm_card)
             res_sm_ll = res_sm['nll0'][0]+res_sm['nll'][0]
@@ -641,12 +655,7 @@ if __name__ == '__main__':
                     ext='_BSM_LT',
                     bsm_hist = bsm_hist,
                     #sm_vals = sm_hist,
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                        ('TTZ_norm', 1.10, 'TTZ'),
-                        ('TTH_norm', 1.20, 'TTH'),
-                    ],
+                    systematics=systematics,
                     )
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
@@ -822,6 +831,10 @@ if __name__ == '__main__':
                 'TTZ': bit_hist['TTZ'],
                 'TTH': bit_hist['TTH'],
                 'signal': bit_hist['signal'],
+                'nonprompt': bit_hist['NP'],
+                'rare': bit_hist['rare'],
+                'conv': bit_hist['XG'],
+                'diboson': bit_hist['diboson'],
                 }
                 #'TTW': bit_hist['TTW'],
                 #'TTW': bit_hist['TTW'],
@@ -833,12 +846,7 @@ if __name__ == '__main__':
                     #'SR',
                     ext='_SM2',
                     #bsm_hist=bit_hist['signal'].sum('dataset').to_hist(),
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                        ('TTZ_norm', 1.10, 'TTZ'),
-                        ('TTH_norm', 1.20, 'TTH'),
-                    ],
+                    systematics=systematics,
                    )
 
                 res_sm = card.calcNLL(sm_card)
@@ -963,12 +971,7 @@ if __name__ == '__main__':
                     ext='_BSM2',
                     bsm_hist = bsm_hist,
                     #sm_vals = sm_hist,
-                    systematics= [
-                        ('signal_norm', 1.2, 'signal'),
-                        ('TTW_norm', 1.15, 'TTW'),
-                        ('TTZ_norm', 1.10, 'TTZ'),
-                        ('TTH_norm', 1.20, 'TTH'),
-                    ],
+                    systematics=systematics,
                 )
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
