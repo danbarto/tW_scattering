@@ -24,6 +24,7 @@ from coffea.analysis_tools import Weights, PackedSelection
 
 import numpy as np
 import pandas as pd
+import pickle
 
 from Tools.objects import Collections, getNonPromptFromFlavour, getChargeFlips, prompt, nonprompt, choose, cross, delta_r, delta_r2, match, prompt_no_conv, nonprompt_no_conv, external_conversion, fast_match
 from Tools.basic_objects import getJets, getTaus, getIsoTracks, getBTagsDeepFlavB, getFwdJet, getMET
@@ -43,6 +44,10 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
+from BoostedInformationTreeP3 import BoostedInformationTree
+from analysis.boosted_information_tree import get_bit_score
+
+from sklearn.preprocessing import QuantileTransformer
 
 
 class SS_analysis(processor.ProcessorABC):
@@ -52,6 +57,7 @@ class SS_analysis(processor.ProcessorABC):
                  variations=[],
                  accumulator={},
                  evaluate=False,
+                 bit=True,
                  training='v8',
                  dump=False,
                  hyperpoly=None,  # maybe can go?
@@ -68,13 +74,15 @@ class SS_analysis(processor.ProcessorABC):
         self.evaluate = evaluate
         self.training = training
         self.dump = dump
+
+        self.bit = bit
         
         self.btagSF = btag_scalefactor(year, era=era)
         self.leptonSF = LeptonSF(year=year, era=era)
         self.triggerSF = triggerSF(year=year)
         self.pu = pileup(year=year, UL=True, era=era)
 
-        self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split
+        self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split. Does not need it!
         self.chargeflipWeight = charge_flip(year=year)  # NOTE no era split
 
         self.hyperpoly = hyperpoly
@@ -454,6 +462,62 @@ class SS_analysis(processor.ProcessorABC):
                         NN_inputs_scaled = NN_inputs
                         raise
 
+                    del NN_inputs, NN_inputs_d
+
+                if self.bit:
+                    ## Evaluate the BIT ##
+                    BIT_inputs_d = {
+                        'n_jet':            ak.to_numpy(ak.num(jet)),
+                        'n_fwd':            ak.to_numpy(ak.num(fwd)),
+                        'n_b':              ak.to_numpy(ak.num(btag)),
+                        'n_tau':            ak.to_numpy(ak.num(tau)),
+                        'st':               ak.to_numpy(st),
+                        'lt':               ak.to_numpy(lt),
+                        'met':              ak.to_numpy(met.pt),
+                        'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
+                        'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
+                        'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
+                        'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
+                        'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
+                        'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
+                        'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
+                        'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
+                        'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.p4.pt)),
+                        'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p4.p)),
+                        'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.p4.eta)),
+                        'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.pt)),
+                        'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.pt)),
+                        'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.eta)),
+                        'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.eta)),
+                        'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.pt)),
+                        'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.pt)),
+                        'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.eta)),
+                        'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
+                        'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
+                        'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
+                    }
+
+                    #print (sorted(BIT_inputs_d.keys()))  # NOTE: the order is already correct
+                    #BIT_inputs = np.stack( [BIT_inputs_d[k] for k in sorted(BIT_inputs_d.keys())] )
+                    #BIT_inputs = np.nan_to_num(BIT_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+                    #BIT_inputs = np.moveaxis(BIT_inputs, 0, 1)
+                    #
+                    variables = sorted(BIT_inputs_d.keys())
+                    print (variables)
+                    BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
+                    BIT_inputs = BIT_inputs_df[variables].values
+
+                    bit_file = '../analysis/bits_v31.pkl'
+                    with open(bit_file, 'rb') as f:
+                        bits = pickle.load(f)
+
+                    bit_pred = {}
+                    for i in range(6):
+                        bit_pred["pred_%s"%i] = bits[i].vectorized_predict(BIT_inputs)
+
+                    bit_pred = pd.DataFrame(bit_pred)
+                    #print (bit_pred)
+
             weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
             weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
             weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
@@ -461,7 +525,7 @@ class SS_analysis(processor.ProcessorABC):
             #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
             dummy = (np.ones(len(ev))==1)
-            def fill_multiple_np(hist, arrays, add_sel=dummy):
+            def fill_multiple_np(hist, arrays, add_sel=dummy, other=None):
                 #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
                 #print ('len', len(reg_sel[0]))
                 #print ('sel', reg_sel[0])
@@ -507,8 +571,30 @@ class SS_analysis(processor.ProcessorABC):
                         weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
                     ],
                     systematic = var_name,  # NOTE check this.
-                    #other = {'EFT': eft},
+                    other = other,
                 )
+
+            if self.bit:
+                # NOTE Define a scan here?
+
+                x = np.arange(-9,12,3)
+                y = np.arange(-9,12,3)
+                X, Y = np.meshgrid(x, y)
+
+                for x, y in zip(X.flatten(), Y.flatten()):
+                    #print (f"Working on cpt {x} and cpqm {y} for classical LT analysis")
+                    point = [x, y]
+                    #score = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=None)  # NOTE: this is completely inclusive
+                    ## Now get the training sample (OS with one lepton from top, and project the distribution on a 0-1 interval.)
+                    ## FIXME: this needs to be imported, otherwise the scaling function is different for each chunk.
+                    #qt = QuantileTransformer(n_quantiles=40, random_state=0)
+                    ##qt.fit(score[((baseline_OS)&(ev.nLepFromTop==1))].reshape(-1, 1))
+                    #qt.fit(score[BL].reshape(-1, 1))  # FIXME this is wrong anyway
+                    qt = load_transformer(f'v31_cpt_{x}_cpqm_{y}')
+                    #score_trans = qt.transform(score.reshape(-1,1)).flatten()
+                    score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
+
+                    fill_multiple_np(output['bit_score_incl'], {'bit': score_trans}, other={'EFT': f"cpt_{x}_cpqm_{y}"})
 
             #if self.evaluate or self.dump:
             if self.evaluate:
@@ -1224,7 +1310,7 @@ if __name__ == '__main__':
 
         # add some histograms that we defined in the processor
         # everything else is taken the default_accumulators.py
-        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis
+        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis, bit_axis
         desired_output.update({
             "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
             "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
@@ -1236,6 +1322,7 @@ if __name__ == '__main__':
             "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
             "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
             "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
             "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
             "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
