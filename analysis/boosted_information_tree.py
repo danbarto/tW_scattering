@@ -27,6 +27,8 @@ from BoostedInformationTreeP3 import BoostedInformationTree
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.utils import resample, shuffle
 
+from ML.multiclassifier_tools import store_transformer
+
 from yahist import Hist1D
 
 import matplotlib.pyplot as plt
@@ -116,9 +118,9 @@ variables = [
 
 variables = sorted(variables)
 
-
 if __name__ == '__main__':
 
+    #print (variables)
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -128,6 +130,7 @@ if __name__ == '__main__':
     argParser.add_argument('--signalOnly', action='store_true', default=None, help="Use only signal for training / evaluation")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire scan")
     argParser.add_argument('--allBkg', action='store_true', default=None, help="Use all backgrounds (not just ttW)")
+    argParser.add_argument('--max_label', action='store', type=int, default=100, help="Maximum label for backgrounds in training")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
     argParser.add_argument('--version', action='store', default='v1', help="Version number")
     # NOTE: need to add the full Run2 training option back
@@ -140,7 +143,7 @@ if __name__ == '__main__':
     #sample_list =  ['TTW', 'TTZ','TTH']
     sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
     #years = ['2016APV', '2016', '2017', '2018']
-    years = ['2017']
+    years = ['2018']
 
     systematics= [
         ('signal_norm', 1.1, 'signal'),
@@ -172,12 +175,9 @@ if __name__ == '__main__':
     #    df_signal = df_signal[df_signal['SS']==1]
     #del tmp
 
-    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2017.h5")
+    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2018.h5")
     df_signal_lep['weight'] = df_signal_lep['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
     df_signal = pd.concat([df_signal, df_signal_lep])
-
-#    df_signal = pd.concat([pd.read_hdf(f"../processor/multiclass_input_topW_{year}.h5") for year in years])
-
 
     # Prepare hyper poly inputs
     samples = get_samples("samples_UL18.yaml")
@@ -225,7 +225,7 @@ if __name__ == '__main__':
         bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']==10))]
     else:
         if args.allBkg:
-            bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']<100))]
+            bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']<args.max_label))]
             bkg_test        = df_bkg[((bkg_test_sel) & (df_bkg['label']<100))]
         else:
             bkg_train       = df_bkg[((bkg_train_sel) & (df_bkg['label']==1))]
@@ -235,9 +235,8 @@ if __name__ == '__main__':
 
     train = pd.concat([sig_train, bkg_train])
     print (len(train))
-    #train = shuffle(train)
 
-
+    ## Plotting the input coefficients ##
     #coeff_bins = [-0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1]
     coeff_bins = "20,-1,12"
     for i in range(6):
@@ -264,7 +263,7 @@ if __name__ == '__main__':
         fig.savefig(f"{plot_dir}/diff_weight_{i}.png")
 
 
-    # Train the tree for signal only
+    ## Train the tree for signal only ##
     n_trees       = 50
     learning_rate = 0.3
     max_depth     = 2
@@ -295,7 +294,6 @@ if __name__ == '__main__':
         with open(signal_bit_file, 'wb') as f:
             pickle.dump(bit, f)
 
-    # Plots
     bins = "10,0.0,1.0"
 
     sig_test_scaled = scaler.transform(sig_test[variables].values)
@@ -314,34 +312,6 @@ if __name__ == '__main__':
     h_train = Hist1D(pred_train, bins=bins)
     h_rew_train = Hist1D(pred_train, weights=hp.eval(coeffs_train.transpose(), [4.,0.]), bins=bins)
     h_rew2_train = Hist1D(pred_train, weights=hp.eval(coeffs_train.transpose(), [8.,0.]), bins=bins)
-
-    # Make plots of input variables
-    eft_weight = hp.eval(coeffs_train.transpose(), [6,0])
-    for var in variables:
-
-        h_signal = Hist1D(sig_train[var].values, bins=20, overflow=True)
-        h_bkg = Hist1D(bkg_train[var].values, bins=h_signal.edges, overflow=True)
-        h_bsm = Hist1D(sig_train[var].values, bins=h_signal.edges, weights=eft_weight, overflow=True)
-
-        fig, ax = plt.subplots(figsize=(10,10))
-
-        hep.histplot(
-            [ h_signal.counts, h_bkg.counts, h_bsm.counts ],
-            h_signal.edges,
-            #w2 = [ h_train.errors**2, h_rew_train.errors**2, h_rew2_train.errors**2 ],
-            histtype="step",
-            stack=False,
-            density=True,
-            #linestyle="--",
-            label= ["Signal", "Background", "Signal, cpt=6"],
-            color = ["#FF595E", "#8AC926", "#1982C4"],
-            ax=ax)
-
-        ax.set_yscale('log')
-        ax.legend()
-
-        fig.savefig(f"{plot_dir}/input_{var}.png")
-
 
     if args.plot or True:
         fig, ax = plt.subplots(figsize=(10,10))
@@ -423,7 +393,37 @@ if __name__ == '__main__':
         fig.savefig(f"{plot_dir}/1D_signal_only_transformed.png")
 
 
-    # Train all the trees!
+
+    ## Make plots of all the input variables ##
+    eft_weight = hp.eval(coeffs_train.transpose(), [6,0])
+    for var in variables:
+
+        h_signal = Hist1D(sig_train[var].values, bins=20, overflow=True)
+        h_bkg = Hist1D(bkg_train[var].values, bins=h_signal.edges, overflow=True)
+        h_bsm = Hist1D(sig_train[var].values, bins=h_signal.edges, weights=eft_weight, overflow=True)
+
+        fig, ax = plt.subplots(figsize=(10,10))
+
+        hep.histplot(
+            [ h_signal.counts, h_bkg.counts, h_bsm.counts ],
+            h_signal.edges,
+            #w2 = [ h_train.errors**2, h_rew_train.errors**2, h_rew2_train.errors**2 ],
+            histtype="step",
+            stack=False,
+            density=True,
+            #linestyle="--",
+            label= ["Signal", "Background", "Signal, cpt=6"],
+            color = ["#FF595E", "#8AC926", "#1982C4"],
+            ax=ax)
+
+        ax.set_yscale('log')
+        ax.legend()
+
+        fig.savefig(f"{plot_dir}/input_{var}.png")
+
+
+
+    ## Train all the trees! ##
 
     n_trees       = 100  # from 100
     learning_rate = 0.3
@@ -434,8 +434,8 @@ if __name__ == '__main__':
     #training_weights = abs(train['weight'].values)
     training_weights = np.ones_like(train['weight'].values)
     scaler = RobustScaler()
-    training_features_scaled = scaler.fit_transform(training_features)
-    #training_features_scaled = training_features
+    #training_features_scaled = scaler.fit_transform(training_features)
+    training_features_scaled = training_features
     params = scaler.get_params()
 
     if os.path.isfile(bit_file) and not args.retrain:
@@ -466,22 +466,24 @@ if __name__ == '__main__':
 
 
     # Evaluate all the BITS and store results
-    scaled_test = scaler.transform(sig_test[variables].values)
-    #scaled_test = sig_test[variables].values
+    #scaled_test = scaler.transform(sig_test[variables].values)
+    scaled_test = sig_test[variables].values
     if len(bkg_test[variables].values)==0:
         scaled_bkg_test = bkg_test[variables].values
     else:
-        scaled_bkg_test = scaler.transform(bkg_test[variables].values)
+        #scaled_bkg_test = scaler.transform(bkg_test[variables].values)
+        scaled_bkg_test = bkg_test[variables].values
 
     if len(np_test[variables].values)==0:
         scaled_np_test = np_test[variables].values
     else:
-        scaled_np_test = scaler.transform(np_test[variables].values)
+        #scaled_np_test = scaler.transform(np_test[variables].values)
+        scaled_np_test = np_test[variables].values
 
     for i in range(6):
         sig_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_test)
-        sig_train['pred_%s'%i] = bits[i].vectorized_predict(scaler.transform(sig_train[variables].values))
-        #sig_train['pred_%s'%i] = bits[i].vectorized_predict(sig_train[variables].values)
+        #sig_train['pred_%s'%i] = bits[i].vectorized_predict(scaler.transform(sig_train[variables].values))
+        sig_train['pred_%s'%i] = bits[i].vectorized_predict(sig_train[variables].values)
         bkg_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_bkg_test)
         np_test['pred_%s'%i] = bits[i].vectorized_predict(scaled_np_test)
 
@@ -497,8 +499,6 @@ if __name__ == '__main__':
     XG = bkg_test[bkg_test['label']==7]
 
 
-    #print (len(ttW), len(ttZ), len(ttH))  # NOTE: can be deleted
-
     # Run the analysis
 
     from coffea import hist
@@ -511,8 +511,8 @@ if __name__ == '__main__':
     eft_axis = hist.Cat("eft", "EFT point")
 
     if args.scan:
-        x = np.arange(-9,12,3)
-        y = np.arange(-9,12,3)
+        x = np.arange(-7,8,1)
+        y = np.arange(-7,8,1)
     else:
         x = np.array([6])
         y = np.array([0])
@@ -798,33 +798,45 @@ if __name__ == '__main__':
             q_event = sig_bit
 
             print (np.mean(sig_bit))
-            # FIXME: does some background leak into this data frame?
 
-            q_event_argsort     = np.argsort(q_event)
-            q_event_argsort_inv = np.argsort(q_event_argsort)
-            cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
-            #cdf_sm = np.cumsum(sig_train['weight'].values[q_event_argsort])
-            cdf_sm/=cdf_sm[-1]
+            from sklearn.preprocessing import QuantileTransformer
+            qt = QuantileTransformer(n_quantiles=40, random_state=0)
+            qt.fit(q_event.reshape(-1, 1))
 
-            # map to the SM CDF of q
-            cdf_map = make_cdf_map( q_event[q_event_argsort], cdf_sm )
+            q_event_cdf = qt.transform(q_event.reshape(-1,1)).flatten()
 
-            #q_event_cdf = cdf_sm[q_event_argsort_inv] #uniformly distributed under the SM hypothesis
-            q_event_cdf = cdf_map( q_event )
+            store_transformer(qt, version=f'{args.version}_cpt_{x}_cpqm_{y}')
 
-            #qt = QuantileTransformer(n_quantiles=40, random_state=0)
-            #qt.fit(sig_bit.reshape(-1, 1))
-            #sig_bit_trans = qt.transform(sig_bit.reshape(-1,1)).flatten()
+            ## FIXME: does some background leak into this data frame?
+            #q_event_argsort     = np.argsort(q_event)
+            #q_event_argsort_inv = np.argsort(q_event_argsort)
+            #cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
+            #cdf_sm/=cdf_sm[-1]
 
-            bit_hist.fill(dataset="TTW", bit=cdf_map(get_bit_score(ttW, cpt=x, cpqm=y, trans=None)), weight=ttW['weight']*2)
-            bit_hist.fill(dataset="TTZ", bit=cdf_map(get_bit_score(ttZ, cpt=x, cpqm=y, trans=None)), weight=ttZ['weight']*2)
-            bit_hist.fill(dataset="TTH", bit=cdf_map(get_bit_score(ttH, cpt=x, cpqm=y, trans=None)), weight=ttH['weight']*2)
-            bit_hist.fill(dataset="NP", bit=cdf_map(get_bit_score(NP, cpt=x, cpqm=y, trans=None)), weight=NP['weight']*NP['weight_np'])
-            bit_hist.fill(dataset="rare", bit=cdf_map(get_bit_score(rare, cpt=x, cpqm=y, trans=None)), weight=rare['weight']*2)
-            bit_hist.fill(dataset="diboson", bit=cdf_map(get_bit_score(diboson, cpt=x, cpqm=y, trans=None)), weight=diboson['weight']*2)
-            bit_hist.fill(dataset="XG", bit=cdf_map(get_bit_score(XG, cpt=x, cpqm=y, trans=None)), weight=XG['weight']*2)
-            bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
-            #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_train['weight'])
+            ## map to the SM CDF of q
+            #cdf_map = make_cdf_map( q_event[q_event_argsort], cdf_sm )
+
+            #q_event_cdf = cdf_map( q_event )
+
+            #bit_hist.fill(dataset="TTW", bit=cdf_map(get_bit_score(ttW, cpt=x, cpqm=y, trans=None)), weight=ttW['weight']*2)
+            #bit_hist.fill(dataset="TTZ", bit=cdf_map(get_bit_score(ttZ, cpt=x, cpqm=y, trans=None)), weight=ttZ['weight']*2)
+            #bit_hist.fill(dataset="TTH", bit=cdf_map(get_bit_score(ttH, cpt=x, cpqm=y, trans=None)), weight=ttH['weight']*2)
+            #bit_hist.fill(dataset="NP", bit=cdf_map(get_bit_score(NP, cpt=x, cpqm=y, trans=None)), weight=NP['weight']*NP['weight_np'])
+            #bit_hist.fill(dataset="rare", bit=cdf_map(get_bit_score(rare, cpt=x, cpqm=y, trans=None)), weight=rare['weight']*2)
+            #bit_hist.fill(dataset="diboson", bit=cdf_map(get_bit_score(diboson, cpt=x, cpqm=y, trans=None)), weight=diboson['weight']*2)
+            #bit_hist.fill(dataset="XG", bit=cdf_map(get_bit_score(XG, cpt=x, cpqm=y, trans=None)), weight=XG['weight']*2)
+            #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
+
+            bit_hist.fill(dataset="TTW",        bit=get_bit_score(ttW, cpt=x, cpqm=y, trans=qt), weight=ttW['weight']*2)
+            bit_hist.fill(dataset="TTZ",        bit=get_bit_score(ttZ, cpt=x, cpqm=y, trans=qt), weight=ttZ['weight']*2)
+            bit_hist.fill(dataset="TTH",        bit=get_bit_score(ttH, cpt=x, cpqm=y, trans=qt), weight=ttH['weight']*2)
+            bit_hist.fill(dataset="NP",         bit=get_bit_score(NP, cpt=x, cpqm=y, trans=qt), weight=NP['weight']*NP['weight_np'])
+            bit_hist.fill(dataset="rare",       bit=get_bit_score(rare, cpt=x, cpqm=y, trans=qt), weight=rare['weight']*2)
+            bit_hist.fill(dataset="diboson",    bit=get_bit_score(diboson, cpt=x, cpqm=y, trans=qt), weight=diboson['weight']*2)
+            bit_hist.fill(dataset="XG",         bit=get_bit_score(XG, cpt=x, cpqm=y, trans=qt), weight=XG['weight']*2)
+            bit_hist.fill(dataset="signal",     bit=q_event_cdf, weight=sig_test['weight'])
+
+            print (bit_hist['signal'].values())
 
             hist_dict = {
                 'TTW': bit_hist['TTW'],

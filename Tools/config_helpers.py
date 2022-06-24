@@ -94,7 +94,7 @@ def get_latest_output(cache_name, cfg):
     return util.load(filtered[0])
 #    return filtered[0]
 
-def get_merged_output(name, year, postfix=None, quiet=False):
+def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=None):
     '''
     name: e.g. SS_analysis
     year: string like 2016APV
@@ -116,6 +116,9 @@ def get_merged_output(name, year, postfix=None, quiet=False):
     order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG', 'rare']
 
     datasets = data + order
+
+    if isinstance(select_datasets, list):
+        datasets = select_datasets
 
     cfg = loadConfig()
 

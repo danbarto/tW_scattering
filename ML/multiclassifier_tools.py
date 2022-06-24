@@ -41,7 +41,7 @@ def store_model(model, scaler, version='v5'):
     joblib.dump(scaler, 'networks/scaler_%s.joblib'%version)
 
 def store_transformer(transformer, version='v5'):
-    joblib.dump(transformer, 'networks/transformer_%s.joblib'%version)
+    joblib.dump(transformer, os.path.expandvars('$TWHOME/ML/networks/transformer_%s.joblib'%version))
 
 def load_model(version='v5'):
     model = tf.keras.models.load_model(os.path.expandvars('$TWHOME/ML/networks/weights_%s.h5a'%version))

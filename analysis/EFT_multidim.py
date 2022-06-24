@@ -202,7 +202,7 @@ if __name__ == '__main__':
     from Tools.config_helpers import get_merged_output, load_yaml
 
 
-    inclusive = False
+    inclusive = True
 
     # FIXME placeholder systematics....
     systematics= [

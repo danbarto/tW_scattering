@@ -249,9 +249,9 @@ def fill_multiple(hist, dataset, predictions=[], arrays={}, selections=[], weigh
             kw_dict['systematic'] = systematic
 
         ## fill additional axes, if any
-        #if other:
-        #    for k in other.keys():
-        #        kw_dict[k] = other[k]
+        if other:
+            for k in other.keys():
+                kw_dict[k] = other[k]
         hist.fill(**kw_dict)
 
 def get_four_vec(cand):
