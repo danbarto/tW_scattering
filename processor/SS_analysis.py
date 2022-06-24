@@ -503,7 +503,6 @@ class SS_analysis(processor.ProcessorABC):
                     #BIT_inputs = np.moveaxis(BIT_inputs, 0, 1)
                     #
                     variables = sorted(BIT_inputs_d.keys())
-                    print (variables)
                     BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
                     BIT_inputs = BIT_inputs_df[variables].values
 
@@ -525,7 +524,8 @@ class SS_analysis(processor.ProcessorABC):
             #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
             dummy = (np.ones(len(ev))==1)
-            def fill_multiple_np(hist, arrays, add_sel=dummy, other=None):
+            dummy_weight = Weights(len(ev))
+            def fill_multiple_np(hist, arrays, add_sel=dummy, other=None, weight_multiplier=dummy_weight.weight()):
                 #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
                 #print ('len', len(reg_sel[0]))
                 #print ('sel', reg_sel[0])
@@ -559,42 +559,66 @@ class SS_analysis(processor.ProcessorABC):
                     arrays=arrays,
                     selections=reg_sel[0],  # no idea where the additional dimension is coming from...
                     weights=[
-                        weight.weight(modifier=shift)[reg_sel[0][0]],
-                        weight.weight(modifier=shift)[reg_sel[0][1]],
-                        weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
-                        weight.weight(modifier=shift)[reg_sel[0][3]],
-                        weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
-                        weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
-                        weight.weight(modifier=shift)[reg_sel[0][6]],
-                        weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
-                        weight.weight(modifier=shift)[reg_sel[0][8]],
-                        weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                        weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                        weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                        weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
+                        weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
+                        weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                        weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
+                        weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
+                        weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
+                        weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
+                        weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
                     ],
                     systematic = var_name,  # NOTE check this.
                     other = other,
                 )
 
             if self.bit:
-                # NOTE Define a scan here?
 
-                x = np.arange(-9,12,3)
-                y = np.arange(-9,12,3)
+                # NOTE Define a scan here?
+                # FIXME this should be done somewhere outside.
+                x = np.arange(-7,8,1)
+                y = np.arange(-7,8,1)
                 X, Y = np.meshgrid(x, y)
 
                 for x, y in zip(X.flatten(), Y.flatten()):
-                    #print (f"Working on cpt {x} and cpqm {y} for classical LT analysis")
                     point = [x, y]
-                    #score = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=None)  # NOTE: this is completely inclusive
-                    ## Now get the training sample (OS with one lepton from top, and project the distribution on a 0-1 interval.)
-                    ## FIXME: this needs to be imported, otherwise the scaling function is different for each chunk.
-                    #qt = QuantileTransformer(n_quantiles=40, random_state=0)
-                    ##qt.fit(score[((baseline_OS)&(ev.nLepFromTop==1))].reshape(-1, 1))
-                    #qt.fit(score[BL].reshape(-1, 1))  # FIXME this is wrong anyway
                     qt = load_transformer(f'v31_cpt_{x}_cpqm_{y}')
-                    #score_trans = qt.transform(score.reshape(-1,1)).flatten()
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
-                    fill_multiple_np(output['bit_score_incl'], {'bit': score_trans}, other={'EFT': f"cpt_{x}_cpqm_{y}"})
+                    # Get the weights
+                    if dataset.count('EFT'):
+                        eft_weight = self.hyperpoly.eval(ev.Pol, point)
+                    else:
+                        eft_weight = dummy_weight.weight()
+
+                    SR_sel_pp = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)>0))
+                    SR_sel_mm = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)<0))
+
+                    fill_multiple_np(
+                        output['bit_score_incl'],
+                        {'bit': score_trans},
+                        add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
+                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['bit_score_pp'],
+                        {'bit': score_trans},
+                        add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
+                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['bit_score_mm'],
+                        {'bit': score_trans},
+                        add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
+                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
+                    )
 
             #if self.evaluate or self.dump:
             if self.evaluate:
@@ -733,6 +757,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 # Manually hack in the PDF weights - we don't really want to have them for all the distributions
                 if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                    print ("Running PDFs")
                     # if we just run central (len(variations)=1) we don't need the PDF variations either
                     for i in range(1,101):
                         pdf_ext = "pdf_%s"%i
@@ -1323,6 +1348,8 @@ if __name__ == '__main__':
             "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
             "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
             "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+            "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+            "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
             "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
             "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
@@ -1486,6 +1513,9 @@ if __name__ == '__main__':
                            #signal='topW_v3',
                            total=False,
                            ))
+
+    from Tools.config_helpers import get_merged_output
+    output_scaled = get_merged_output('SS_analysis', str(year), select_datasets=processes)
 
     ## Data double counting checks
     if args.check_double_counting:
