@@ -21,6 +21,7 @@ import mplhep as hep
 plt.style.use(hep.style.CMS)
 
 from plots.helpers import makePlot
+from Tools.helpers import make_bh
 from Tools.config_helpers import get_cache
 from Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
 from Tools.yahist_to_root import yahist_to_root
@@ -201,8 +202,11 @@ if __name__ == '__main__':
 
     from Tools.config_helpers import get_merged_output, load_yaml
 
+    #ref_values = 'cpt_0p_cpqm_0p_nlo'
+    ref_values = [0,0]
 
-    inclusive = True
+    inclusive = False
+    bit = True
 
     # FIXME placeholder systematics....
     systematics= [
@@ -217,95 +221,179 @@ if __name__ == '__main__':
     ]
 
     lt_axis      = hist.Bin("ht",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,2000])
+    #bit_axis     = hist.Bin("bit",           r"N",               10, 0, 1)
+    #bit_axis     = hist.Bin("bit",           r"N",         [0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0])
+    bit_axis     = hist.Bin("bit",           r"N",         20,0,1)
 
-    if inclusive:
-        regions = [
-            ("LT", lt_axis),
-        ]
-    else:
-        regions = [
-            ("LT_SR_pp", lt_axis),
-            ("LT_SR_mm", lt_axis),
-        ]
 
 
     card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
 
+    # Define a scan
+    x = np.arange(-7,8,2)
+    y = np.arange(-7,8,2)
+    X, Y = np.meshgrid(x, y)
+    scan = zip(X.flatten(), Y.flatten())
+
     if run_scan:
+
 
         #years = ['2016', '2016APV', '2017', '2018']
         years = ['2018']
 
+        # load outputs
+        outputs = {}
+
         for year in years:
-            output = get_merged_output('SS_analysis', year)
+            outputs[year] = get_merged_output('SS_analysis', year)#, date='20220624')
 
-            sm_cards = {}
-            bsm_cards = {}
+        results = {}
 
-            for region, axis in regions:
+        for x,y in scan:
 
-                histo_name = region
+            if bit:
 
-                backgrounds = {
-                    'signal': output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'cpt_0p_cpqm_0p_nlo').copy(),
-                    'TTW': output[histo_name]['TTW'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'TTH': output[histo_name]['TTH'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'TTZ': output[histo_name]['TTZ'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'rare': output['LT_SR_pp']['rare'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'diboson': output['LT_SR_pp']['diboson'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'conv': output['LT_SR_pp'].integrate('prediction', 'conv_mc').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                    'nonprompt': output['LT_SR_pp'].integrate('prediction', 'np_est_mc').integrate('systematic', 'central').integrate('EFT', 'central').copy(),
-                }
+                sm_point = f'cpt_{x}_cpqm_{y}'
+                bsm_point = f'bsm_cpt_{x}_cpqm_{y}'
+                sm_bkg = f'cpt_{x}_cpqm_{y}'
 
-                for p in backgrounds.keys():
-                    backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
+                print (sm_point, bsm_point, sm_bkg)
 
-                signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', 'cpt_6p_cpqm_0p_nlo').copy()
-                signal = signal.rebin(axis.name, axis)
+                if inclusive:
+                    regions = [
+                        ("bit_score_incl", bit_axis),
+                    ]
 
-                sm_card = makeCardFromHist(
-                    backgrounds,
-                    ext=f'MultiClass_SM_{region}_{year}',
-                    #scales = scales,
-                    #bsm_scales = bsm_scales,
-                    systematics = systematics,
-                )
-                sm_cards[f'{region}_{year}'] = sm_card
+                else:
+                    regions = [
+                        ("bit_score_pp", bit_axis),
+                        ("bit_score_mm", bit_axis),
+                    ]
+            else:
+                #sm_point = 'cpt_0p_cpqm_0p_nlo'
+                #bsm_point = 'cpt_6p_cpqm_0p_nlo'  # NOTE: redundant
+                sm_point = f'eft_cpt_0_cpqm_0'
+                bsm_point = f'eft_cpt_{x}_cpqm_{y}'
+                sm_bkg = 'central'
 
-                bsm_card = makeCardFromHist(
-                    backgrounds,
-                    ext=f'MultiClass_BSM_{region}_{year}',
-                    bsm_hist = signal.sum('dataset').to_hist(),
-                    #scales = scales,
-                    #bsm_scales = bsm_scales,
-                    systematics = systematics,
-                )
-                bsm_cards[f'{region}_{year}'] = bsm_card
+                if inclusive:
+                    regions = [
+                        ("LT", lt_axis),
+                    ]
+                else:
+                    regions = [
+                        ("LT_SR_pp", lt_axis),
+                        ("LT_SR_mm", lt_axis),
+                    ]
 
-        sm_card_combined = card.combineCards(sm_cards)
-        res_sm = card.calcNLL(sm_card_combined)
-        nll_sm = res_sm['nll0'][0] + res_sm['nll'][0]
 
-        bsm_card_combined = card.combineCards(bsm_cards)
-        res_bsm = card.calcNLL(bsm_card_combined)
-        nll_bsm = res_bsm['nll0'][0] + res_bsm['nll'][0]
+            for year in years:
+                output = outputs[year]
 
-        nll = -2*(nll_sm - nll_bsm)
+                if not bit:
+                    #eft_mapping = {k[0]:k[0] for k in output['LT_SR_pp'].values().keys() if 'cpt' in k[0]}  # not strictly necessary
+                    weights = [ k[0] for k in output['LT_SR_pp'].sum('dataset', 'systematic', 'prediction').values() if '_nlo' in k[0] ]
+                    print (weights)
 
-        print (nll)
-        #res_sm = get_NLL(years=years, point=[0,0])
-        #
-        raise NotImplementedError
+                    hp = HyperPoly(order=2)
+                    hp.initialize( [get_coordinates(weight) for weight in weights], ref_values )
 
-        x = np.arange(-10,11,4)
-        y = np.arange(-10,11,4)
-        X, Y = np.meshgrid(x, y)
+                    coeff = {}
+
+                sm_cards = {}
+                bsm_cards = {}
+
+                for region, axis in regions:
+
+                    histo_name = region
+
+                    backgrounds = {
+                        'signal':    output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_point).copy(),
+                        'TTW':       output[histo_name]['TTW'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'TTH':       output[histo_name]['TTH'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'TTZ':       output[histo_name]['TTZ'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'rare':      output[histo_name]['rare'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'diboson':   output[histo_name]['diboson'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'conv':      output[histo_name].integrate('prediction', 'conv_mc').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                        'nonprompt': output[histo_name].integrate('prediction', 'np_est_mc').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                    }
+
+                    for p in backgrounds.keys():
+                        backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
+
+                    if not bit:
+                        coeff[region] = hp.get_parametrization(
+                            [output[histo_name]['topW_lep'].rebin(axis.name, axis)
+                             .integrate('prediction', 'central')
+                             .integrate('systematic', 'central')
+                             .integrate('EFT', w)
+                             .sum('dataset')
+                             .values()[()] for w in weights],
+                        )
+                        central, sumw2 = output[histo_name]['topW_lep'].rebin(axis.name, axis).integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', weights[0]).sum('dataset').values(sumw2=True)[()]
+                        bsm_vals = hp.eval(coeff[region], [x,y])
+
+                        ## NOTE: this is an over-optimistic simplification of sumw2.
+                        ## we can't really use this for a real analysis because the weights are not homogenuous
+                        ## def make_bh(sumw, sumw2, edges):
+                        #signal = make_bh(
+                        #    bsm_vals,
+                        #    2*(np.sqrt(sumw2)*bsm_vals/central)**2,
+                        #    axis.edges(),
+                        #)
+
+                        # NOTE: this is the "correct" way, but we need all the different histograms filled
+                        # already from the processor.
+                        signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', bsm_point).copy()
+                        signal = signal.rebin(axis.name, axis)
+                        signal = signal.sum('dataset').to_hist()
+
+                    else:
+                        signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', bsm_point).copy()
+                        signal = signal.rebin(axis.name, axis)
+
+                    #print (signal.values())
+
+                    sm_card = makeCardFromHist(
+                        backgrounds,
+                        ext=f'MultiClass_SM_{region}_{year}',
+                        #scales = scales,
+                        #bsm_scales = bsm_scales,
+                        systematics = systematics,
+                    )
+                    sm_cards[f'{region}_{year}'] = sm_card
+
+                    bsm_hist_for_card = signal if not bit else signal.sum('dataset').to_hist()
+                    bsm_card = makeCardFromHist(
+                        backgrounds,
+                        ext=f'MultiClass_BSM_{region}_{year}',
+                        bsm_hist = bsm_hist_for_card,
+                        #scales = scales,
+                        #bsm_scales = bsm_scales,
+                        systematics = systematics,
+                    )
+                    bsm_cards[f'{region}_{year}'] = bsm_card
+
+            sm_card_combined = card.combineCards(sm_cards)
+            res_sm = card.calcNLL(sm_card_combined)
+            nll_sm = res_sm['nll0'][0] + res_sm['nll'][0]
+
+            bsm_card_combined = card.combineCards(bsm_cards)
+            res_bsm = card.calcNLL(bsm_card_combined)
+            nll_bsm = res_bsm['nll0'][0] + res_bsm['nll'][0]
+
+            nll = -2*(nll_sm - nll_bsm)
+
+            print (nll)
+            #res_sm = get_NLL(years=years, point=[0,0])
+
+            results[(x,y)] = nll
 
 
         z = []
-        for x, y in zip(X.flatten(), Y.flatten()):
+        for x, y in results:
             point = [x, y]
-            z.append((-2*(res_sm-get_NLL(years=years, point=point))))
+            z.append(results[(x,y)])
 
 
         Z = np.array(z)
@@ -333,13 +421,14 @@ if __name__ == '__main__':
 
         plt.show()
         
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test.png')
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test.pdf')
+        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test_bit.png')
+        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test_bit.pdf')
 
 
         card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
         card.cleanUp()
 
+        raise NotImplementedError
 
     else:
 
