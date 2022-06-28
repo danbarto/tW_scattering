@@ -596,29 +596,51 @@ class SS_analysis(processor.ProcessorABC):
                     SR_sel_pp = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)>0))
                     SR_sel_mm = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)<0))
 
+                    if dataset.count('EFT'):
+                        fill_multiple_np(
+                            output['bit_score_incl'],
+                            {'bit': score_trans},
+                            add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
+                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                            weight_multiplier = eft_weight,
+                           )
+
+                        fill_multiple_np(
+                            output['bit_score_pp'],
+                            {'bit': score_trans},
+                            add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
+                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                            weight_multiplier = eft_weight,
+                           )
+
+                        fill_multiple_np(
+                            output['bit_score_mm'],
+                            {'bit': score_trans},
+                            add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
+                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                            weight_multiplier = eft_weight,
+                           )
+
                     fill_multiple_np(
                         output['bit_score_incl'],
                         {'bit': score_trans},
                         add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
                         other={'EFT': f"cpt_{x}_cpqm_{y}"},
-                        weight_multiplier = eft_weight,
-                    )
+                       )
 
                     fill_multiple_np(
                         output['bit_score_pp'],
                         {'bit': score_trans},
                         add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
                         other={'EFT': f"cpt_{x}_cpqm_{y}"},
-                        weight_multiplier = eft_weight,
-                    )
+                       )
 
                     fill_multiple_np(
                         output['bit_score_mm'],
                         {'bit': score_trans},
                         add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
                         other={'EFT': f"cpt_{x}_cpqm_{y}"},
-                        weight_multiplier = eft_weight,
-                    )
+                       )
 
             #if self.evaluate or self.dump:
             if self.evaluate:
@@ -1245,10 +1267,23 @@ if __name__ == '__main__':
 
         from Tools.reweighting import get_coordinates_and_ref, get_coordinates
 
-        points = [
-            {'name': 'cpt_3.0', 'point': [3.0, 0]},
-            {'name': 'cpt_6.0', 'point': [6.0, 0]},
-            ]
+
+        # NOTE new way of defining points.
+        x = np.arange(-7,8,1)
+        y = np.arange(-7,8,1)
+        CPT, CPQM = np.meshgrid(x, y)
+
+        points = []
+        for cpt, cpqm in zip(CPT.flatten(), CPQM.flatten()):
+            points.append({
+                'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
+                'point': [cpt, cpqm],
+            })
+
+        #points = [
+        #    {'name': 'cpt_3.0', 'point': [3.0, 0]},
+        #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
+        #    ]
 
         f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
