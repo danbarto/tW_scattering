@@ -65,20 +65,20 @@ def histo_values(histo, weight):
 if __name__ == '__main__':
 
     # Load samples
-    base_dir = "/nfs-7/userdata/dspitzba/"
-    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT/"
+    base_dir = "/ceph/cms/store/user/dspitzba/NanoGEN/"
+    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT_v2/"
     finalizePlotDir(plot_dir)
     
     res = {}
 
     res['ttZ_NLO'] = {
-        'file': base_dir + "merged_ttZ_NLO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_NLO.root").events()
+        'file': base_dir + "ttZ_EFT_NLO.root",
+        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
     }
 
     res['ttZ_LO'] = {
-        'file': base_dir + "merged_ttZ_LO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "merged_ttZ_LO.root").events()
+        'file': base_dir + "ttZ_EFT_LO.root",
+        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_LO.root").events()
     }
     
     #res['ttll_LO'] = {
