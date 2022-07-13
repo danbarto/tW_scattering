@@ -10,18 +10,21 @@ from coffea.lookup_tools import extractor
 class NonpromptWeight:
 
     def __init__(self, year=2016):
-        self.year = year
+        if year == 2016:
+            self.year = '2016APV_2016'
+        else:
+            self.year = year
 
         self.ext = extractor()
 
         # FIXME those need updates! Do we still have MC based FRs for closure tests?
-        fr = os.path.expandvars("$TWHOME/data/fakerate/fr_%s.root"%self.year)
-        fr_data = os.path.expandvars("$TWHOME/data/fakerate/fr_%s_recorrected.root"%self.year)
+        fr = os.path.expandvars("$TWHOME/data/leptons/ttH/fakerate/fr_%s.root"%self.year)
+        fr_data = os.path.expandvars("$TWHOME/data/leptons/ttH/fakerate/fr_%s_recorrected.root"%self.year)
 
-        self.ext.add_weight_sets(["el_QCD FR_mva080_el_QCD %s"%fr])
-        self.ext.add_weight_sets(["el_QCD_NC FR_mva080_el_QCD_NC %s"%fr])
-        self.ext.add_weight_sets(["el_TT FR_mva080_el_TT %s"%fr])
-        self.ext.add_weight_sets(["el_data FR_mva080_el_data_comb_NC_recorrected %s"%fr_data])
+        self.ext.add_weight_sets(["el_QCD FR_mva090_el_QCD %s"%fr])
+        self.ext.add_weight_sets(["el_QCD_NC FR_mva090_el_QCD_NC %s"%fr])
+        self.ext.add_weight_sets(["el_TT FR_mva090_el_TT %s"%fr])
+        self.ext.add_weight_sets(["el_data FR_mva090_el_data_comb_NC_recorrected %s"%fr_data])
         self.ext.add_weight_sets(["mu_QCD FR_mva085_mu_QCD %s"%fr])
         self.ext.add_weight_sets(["mu_TT FR_mva085_mu_TT %s"%fr])
         self.ext.add_weight_sets(["mu_data FR_mva085_mu_data_comb_recorrected %s"%fr_data])

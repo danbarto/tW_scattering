@@ -76,14 +76,17 @@ def make_small(fileset, small, n_max=1):
             fileset[proc] = fileset[proc][:n_max]
     return fileset
 
-def get_latest_output(cache_name, cfg):
+def get_latest_output(cache_name, cfg, date=None, max_time='999999'):
     from coffea import util
     cache_dir = os.path.expandvars(cfg['caches']['base'])
     all_caches = glob.glob(cache_dir+'/*.coffea')
     filtered = [f for f in all_caches if f.count(cache_name)]
+    if date:
+        filtered = [f for f in filtered if f.count(date)]
     if not cache_name.count('APV'):
         # manually filter out everything with APV if it's not APV
         filtered = [f for f in filtered if not f.count('APV')]
+    filtered = [f for f in filtered if int(f.replace('.coffea','').split('_')[-1])<int(max_time)]
     filtered.sort(reverse=True)
     try:
         latest = filtered[0]
@@ -94,7 +97,7 @@ def get_latest_output(cache_name, cfg):
     return util.load(filtered[0])
 #    return filtered[0]
 
-def get_merged_output(name, year, postfix=None, quiet=False):
+def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=None, date=None, max_time='999999'):
     '''
     name: e.g. SS_analysis
     year: string like 2016APV
@@ -117,6 +120,9 @@ def get_merged_output(name, year, postfix=None, quiet=False):
 
     datasets = data + order
 
+    if isinstance(select_datasets, list):
+        datasets = select_datasets
+
     cfg = loadConfig()
 
     outputs = []
@@ -130,7 +136,7 @@ def get_merged_output(name, year, postfix=None, quiet=False):
         if postfix:
             cache_name += postfix
         print (cache_name)
-        outputs.append(get_latest_output(cache_name, cfg))
+        outputs.append(get_latest_output(cache_name, cfg, date=date, max_time=max_time))
 
         for dataset in mapping[ul][sample]:
             if samples[dataset]['reweight'] == 1:
