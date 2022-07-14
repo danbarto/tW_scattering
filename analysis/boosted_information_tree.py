@@ -131,6 +131,7 @@ if __name__ == '__main__':
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire scan")
     argParser.add_argument('--allBkg', action='store_true', default=None, help="Use all backgrounds (not just ttW)")
     argParser.add_argument('--max_label', action='store', type=int, default=100, help="Maximum label for backgrounds in training")
+    argParser.add_argument('--use_weight', action='store_true', help="Use weights in training")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
     argParser.add_argument('--version', action='store', default='v1', help="Version number")
     # NOTE: need to add the full Run2 training option back
@@ -431,8 +432,10 @@ if __name__ == '__main__':
     min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
 
     training_features = train[variables].values
-    #training_weights = abs(train['weight'].values)
-    training_weights = np.ones_like(train['weight'].values)
+    if args.use_weight:
+        training_weights = abs(train['weight'].values)
+    else:
+        training_weights = np.ones_like(train['weight'].values)
     scaler = RobustScaler()
     #training_features_scaled = scaler.fit_transform(training_features)
     training_features_scaled = training_features
@@ -784,8 +787,8 @@ if __name__ == '__main__':
 
 
         #bit_bins = [0., 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
-        #bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0]
-        bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0]
+        #bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
         for x, y in zip(X.flatten(), Y.flatten()):
