@@ -13,7 +13,7 @@ import shutil
 import math
 import copy
 import re
-
+from coffea.processor.accumulator import dict_accumulator
 
 import glob
 
@@ -76,8 +76,22 @@ def make_small(fileset, small, n_max=1):
             fileset[proc] = fileset[proc][:n_max]
     return fileset
 
-def get_latest_output(cache_name, cfg, date=None, max_time='999999'):
+def load_wrapper(f_in, select_histograms):
     from coffea import util
+    tmp = util.load(f_in)
+    if select_histograms:
+        res = dict_accumulator()
+        for hist in select_histograms:
+            res[hist] = tmp[hist]
+    else:
+        res = tmp
+    return res
+
+
+def get_latest_output(cache_name, cfg, date=None, max_time='999999', select_histograms=False):
+    import concurrent.futures
+    from functools import partial
+
     cache_dir = os.path.expandvars(cfg['caches']['base'])
     all_caches = glob.glob(cache_dir+'/*.coffea')
     filtered = [f for f in all_caches if f.count(cache_name)]
@@ -94,10 +108,16 @@ def get_latest_output(cache_name, cfg, date=None, max_time='999999'):
         print ("Couldn't find a suitable cache! Rerunning.")
         return None
     print ("Found the following cache: %s"%latest)
-    return util.load(filtered[0])
+
+    func = partial(load_wrapper, select_histograms=select_histograms)
+    # this is a bad hack
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+        for f_in, hist in zip(filtered[:1], executor.map(func, filtered[:1])):
+            res = hist
+    return res
 #    return filtered[0]
 
-def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=None, date=None, max_time='999999'):
+def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=None, date=None, max_time='999999', select_histograms=False):
     '''
     name: e.g. SS_analysis
     year: string like 2016APV
@@ -136,7 +156,7 @@ def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=Non
         if postfix:
             cache_name += postfix
         print (cache_name)
-        outputs.append(get_latest_output(cache_name, cfg, date=date, max_time=max_time))
+        outputs.append(get_latest_output(cache_name, cfg, date=date, max_time=max_time, select_histograms=select_histograms))
 
         for dataset in mapping[ul][sample]:
             if samples[dataset]['reweight'] == 1:
@@ -163,4 +183,5 @@ def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=Non
                 print ("Scale and merge failed for:",key)
                 print ("At least I tried.")
 
+    del outputs, output
     return output_scaled
