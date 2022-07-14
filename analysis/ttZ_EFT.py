@@ -68,7 +68,9 @@ if __name__ == '__main__':
     base_dir = "/ceph/cms/store/user/dspitzba/NanoGEN/"
     plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT_v2/"
     finalizePlotDir(plot_dir)
-    
+
+    # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
+
     res = {}
 
     res['ttZ_NLO'] = {
