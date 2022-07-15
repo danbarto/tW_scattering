@@ -21,7 +21,7 @@ pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)",   100, 0, 
 p_axis                  = hist.Bin("p",             r"$p$ (GeV)",       250, 0, 2500)  # 10 GeV is fine enough
 ht_axis                 = hist.Bin("ht",            r"$H_{T}$ (GeV)",   250, 0, 5000) 
 mass_axis               = hist.Bin("mass",          r"M (GeV)",         200, 0, 200)  # for any real resonance, like W, Z, maybe even top
-ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
+ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         1000, 0, 2000)  # for any other mass
 eta_axis                = hist.Bin("eta",           r"$\eta$",          50, -5.0, 5.0)
 delta_eta_axis          = hist.Bin("eta",           r"$\eta$",          150, -5.0, 10.0)
 phi_axis                = hist.Bin("phi",           r"$\phi$",          64, -3.2, 3.2)
@@ -44,7 +44,7 @@ desired_output = {
             "PV_npvs" :         hist.Hist("PV_npvs", dataset_axis, systematic_axis, ext_multiplicity_axis),
             "PV_npvsGood" :     hist.Hist("PV_npvsGood", dataset_axis, systematic_axis, ext_multiplicity_axis),
             
-            "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, phi_axis),
+            "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, phi_axis),
             
             "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
             "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),

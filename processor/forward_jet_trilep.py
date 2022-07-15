@@ -143,6 +143,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         OS_dilepton_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.mass, OS_dielectron_bestZee.mass], axis=1), 1, clip=True), -1)
 
         OS_dilepton_pt = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.pt, OS_dielectron_bestZee.pt], axis=1), 1, clip=True), -1)
+        OS_dilepton_eta = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.eta, OS_dielectron_bestZee.eta], axis=1), 1, clip=True), -1)
 
         OS_dilepton_all_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), 1, clip=True), -1)
 
@@ -286,6 +287,37 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             if not re.search(data_pattern, dataset):
                 BL_offZ = add_conversion_req(dataset, BL_offZ)
 
+
+            output['lead_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
+            output['trail_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
+            output['second_lep'].fill(
+                dataset = dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                pt  = ak.to_numpy(ak.flatten(second_lepton[BL].pt)),
+                eta = ak.to_numpy(ak.flatten(second_lepton[BL].eta)),
+                phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
+                weight = weight.weight()[BL]
+            )
+
             output['N_jet_offZ'].fill(
                 dataset=dataset,
                 systematic = var_name,
@@ -336,7 +368,6 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-
             output['min_mass_SFOS'].fill(
                 dataset=dataset,
                 mass=(OS_min_mass[BL]),
@@ -348,6 +379,14 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 systematic = var_name,
                 n_ele = n_ele[BL],
                 pt=ak.flatten(OS_dilepton_pt[BL]),
+                weight=weight.weight()[BL],
+            )
+
+            output['dilep_eta_onZ'].fill(
+                dataset=dataset,
+                systematic = var_name,
+                n_ele = n_ele[BL],
+                eta=ak.flatten(OS_dilepton_eta[BL]),
                 weight=weight.weight()[BL],
             )
 
@@ -504,6 +543,9 @@ if __name__ == '__main__':
 
 
         desired_output.update({
+            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
+            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
+            "second_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
             "N_jet_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
             "N_jet_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
             "N_b_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
@@ -516,6 +558,7 @@ if __name__ == '__main__':
             "HT": hist.Hist("Counts", dataset_axis, ht_axis),
             "LT": hist.Hist("Counts", dataset_axis, ht_axis),
             "dilep_pt_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "dilep_eta_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, eta_axis),
             "min_mass_SFOS": hist.Hist("Counts", dataset_axis, mass_axis),
             "best_M_ll_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "best_M_ll_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),

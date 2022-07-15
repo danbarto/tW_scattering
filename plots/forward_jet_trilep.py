@@ -58,10 +58,10 @@ if __name__ == '__main__':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
+
     order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
     #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
     #order = ['topW', 'DY']
-    #data = []
 
     datasets = data + order
 
@@ -158,6 +158,7 @@ if __name__ == '__main__':
     #deltaEta_bins = None
     jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
     m3l_bins = hist.Bin('mass', r'$M\ (GeV)$', 15, 0, 300)
+    m3l_bins_fine = hist.Bin('mass', r'$M\ (GeV)$', 20, 70, 110)
 #ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
 
     my_labels = {
@@ -292,6 +293,17 @@ if __name__ == '__main__':
 
     makePlot(output, 'M3l_offZ', 'mass',
              data=data,
+             bins=m3l_bins_fine, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             lumi=lumi_year,
+             signals=signals,
+             overflowclip=True,
+             save=os.path.expandvars(plot_dir+'M3l_offZ_zoomin'),
+        )
+
+    makePlot(output, 'M3l_offZ', 'mass',
+             data=data,
              bins=m3l_bins, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
              new_colors=my_colors, new_labels=my_labels,
              order=order,
@@ -299,6 +311,19 @@ if __name__ == '__main__':
              signals=signals,
              save=os.path.expandvars(plot_dir+'M3l_offZ'),
         )
+
+    for ch in ['mm', 'em', 'ee']:
+        makePlot(output, 'M3l_offZ', 'mass',
+                 data=data,
+                 bins=m3l_bins_fine, log=False, normalize=TFnormalize, axis_label=r'$M3l$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 lumi=lumi_year,
+                 signals=signals,
+                 overflowclip=True,
+                 channel=ch,
+                 save=os.path.expandvars(plot_dir+'M3l_offZ_'+ch),
+            )
 
 
     makePlot(output, 'N_jet_onZ', 'n_ele',
@@ -325,6 +350,25 @@ if __name__ == '__main__':
              save=os.path.expandvars(plot_dir+'N_ele_offZ'),
              )
 
+    makePlot(output, 'dilep_pt_onZ', 'pt',
+             data=data,
+             bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'dilep_pt_onZ'),
+        )
+
+    makePlot(output, 'dilep_eta_onZ', 'eta',
+             data=data,
+             bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta$ (GeV)',
+             new_colors=my_colors, new_labels=my_labels,
+             order=order,
+             signals=signals,
+             lumi=lumi_year,
+             save=os.path.expandvars(plot_dir+'dilep_eta_onZ'),
+        )
 
     makePlot(output, 'best_M_ll_onZ', 'mass',
              data=data,
@@ -345,15 +389,13 @@ if __name__ == '__main__':
              lumi=lumi_year,
              save=os.path.expandvars(plot_dir+'best_M_ll_offZ'),
         )
-
-    raise NotImplementedError
     
     makePlot(output, 'lead_lep', 'pt',
         data=data,
         bins=pt_bins, log=True, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,
-        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_pt'),
+        save=os.path.expandvars(plot_dir+'lead_lep_pt'),
         )
 
     makePlot(output, 'lead_lep', 'eta',
@@ -361,15 +403,15 @@ if __name__ == '__main__':
         bins=eta_bins, log=True, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_eta'),
+        save=os.path.expandvars(plot_dir+'lead_lep_eta'),
         )
 
     makePlot(output, 'lead_lep', 'phi',
         data=data,
-        bins=phi_bins, log=True, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
+        bins=None, log=True, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'lead_lep_phi'),
+        save=os.path.expandvars(plot_dir+'lead_lep_phi'),
         )
 
     makePlot(output, 'trail_lep', 'pt',
@@ -377,7 +419,7 @@ if __name__ == '__main__':
         bins=pt_bins, log=True, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_pt'),
+        save=os.path.expandvars(plot_dir+'trail_lep_pt'),
         )
 
     makePlot(output, 'trail_lep', 'eta',
@@ -385,23 +427,23 @@ if __name__ == '__main__':
         bins=eta_bins, log=True, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_eta'),
+        save=os.path.expandvars(plot_dir+'trail_lep_eta'),
         )
 
     makePlot(output, 'trail_lep', 'phi',
         data=data,
-        bins=phi_bins, log=True, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
+        bins=None, log=True, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'trail_lep_phi'),
+        save=os.path.expandvars(plot_dir+'trail_lep_phi'),
         )
     
     makePlot(output, 'second_lep', 'pt',
         data=data,
-        bins=lep_pt_bins, log=True, normalize=TFnormalize, axis_label=r'$p_{T}\ second \ lep\ (GeV)$',
+        bins=pt_bins, log=True, normalize=TFnormalize, axis_label=r'$p_{T}\ second \ lep\ (GeV)$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'second_lep_pt'),
+        save=os.path.expandvars(plot_dir+'second_lep_pt'),
         )
 
     makePlot(output, 'second_lep', 'eta',
@@ -409,17 +451,18 @@ if __name__ == '__main__':
         bins=eta_bins, log=True, normalize=TFnormalize, axis_label=r'$\eta\ second \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'second_lep_eta'),
+        save=os.path.expandvars(plot_dir+'second_lep_eta'),
         )
 
     makePlot(output, 'second_lep', 'phi',
         data=data,
-        bins=phi_bins, log=True, normalize=TFnormalize, axis_label=r'$\phi\ second \ lep$',
+        bins=None, log=True, normalize=TFnormalize, axis_label=r'$\phi\ second \ lep$',
         new_colors=my_colors, new_labels=my_labels,
         order=order,lumi=lumi_year,
-        save=os.path.expandvars(plot_dir+version_dir+'second_lep_phi'),
+        save=os.path.expandvars(plot_dir+'second_lep_phi'),
         )
 
+    raise NotImplementedError
 
     makePlot(output, 'PV_npvsGood', 'multiplicity',
         data=data,

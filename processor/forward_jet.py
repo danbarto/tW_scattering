@@ -454,7 +454,7 @@ class forward_jet_analysis(processor.ProcessorABC):
             output['MET'].fill(
                 dataset = dataset,
                 systematic = var_name,
-                #n_ele = n_ele[BL_minusMET],
+                n_ele = n_ele[BL_minusMET],
                 pt  = met[BL_minusMET].pt,
                 phi  = met[BL_minusMET].phi,
                 weight = weight.weight()[BL_minusMET]
@@ -487,6 +487,7 @@ if __name__ == '__main__':
     argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
     argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
     argParser.add_argument('--central', action='store_true', default=None, help="Only run the central value (no systematics)")
+    argParser.add_argument('--ptjes', action='store_true', default=None, help="Run on central value + jes_up & jes_down")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
@@ -572,6 +573,8 @@ if __name__ == '__main__':
            ]
 
         if args.central: variations = variations[:1]
+
+        if args.ptjes: variations = variations[:3]
 
         if local:# and not profile:
             exe = processor.FuturesExecutor(workers=10)
