@@ -22,6 +22,8 @@ OUTPUTNAME=$(echo $OUTPUTNAME | sed 's/\.root//')
 
 export SCRAM_ARCH=${SCRAMARCH}
 
+echo $GRIDPACK
+
 function getjobad {
     grep -i "^$1" "$_CONDOR_JOB_AD" | cut -d= -f2- | xargs echo
 }
@@ -151,6 +153,7 @@ setup_environment
 mkdir temp
 cd temp
 cp ../*.gz .
+cp ../*.xz .
 tar xf *.gz
 
 edit_psets $GRIDPACK $IFILE $NEVENTS
@@ -191,8 +194,18 @@ fi
 echo "time before copy: $(date +%s)"
 chirp ChirpMetisStatus "before_copy"
 
-COPY_SRC="file://`pwd`/${OUTPUTNAME}.root"
-COPY_DEST="gsiftp://gftp.t2.ucsd.edu${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+
+echo "Local output dir"
+echo ${OUTPUTDIR}
+
+export REP="/store"
+OUTPUTDIR="${OUTPUTDIR/\/ceph\/cms\/store/$REP}"
+
+echo "Final output path for xrootd:"
+echo ${OUTPUTDIR}
+
+COPY_SRC="file://`pwd`/output.root"
+COPY_DEST=" davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
 
 echo -e "\n--- end copying output ---\n" #                      <----- section division
