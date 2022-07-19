@@ -120,6 +120,9 @@ variables = sorted(variables)
 
 if __name__ == '__main__':
 
+    from Tools.config_helpers import loadConfig
+    cfg = loadConfig()
+
     #print (variables)
     import argparse
 
@@ -128,14 +131,17 @@ if __name__ == '__main__':
     argParser.add_argument('--fit', action='store_true', default=None, help="Run combine fit?")
     argParser.add_argument('--plot', action='store_true', default=None, help="Make all the plots")
     argParser.add_argument('--signalOnly', action='store_true', default=None, help="Use only signal for training / evaluation")
-    argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire scan")
-    argParser.add_argument('--allBkg', action='store_true', default=None, help="Use all backgrounds (not just ttW)")
-    argParser.add_argument('--max_label', action='store', type=int, default=100, help="Maximum label for backgrounds in training")
+    argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire 2D scan (slow)")
+    argParser.add_argument('--allBkg', action='store_true', default=None, help="Use backgrounds (not just ttW)")
+    argParser.add_argument('--max_label', action='store', type=int, default=100, help="Maximum label for backgrounds in training (strictly smaller!)")  # labels go from 1-7 (see below for definitions)
     argParser.add_argument('--use_weight', action='store_true', help="Use weights in training")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
-    argParser.add_argument('--version', action='store', default='v1', help="Version number")
+    argParser.add_argument('--version', action='store', default='v1', help="Version number for the output tree")
     # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
+
+    ## NOTE: Labels
+    # labels = {'topW': 0, 'TTW':1, 'TTZ': 2, 'TTH': 3, 'top': 4, 'rare':5, 'diboson':6, 'XG': 7, 'topW_lep': 0}
 
     bit_file = f'bits_{args.version}.pkl'  # list of all trees
     signal_bit_file = f'bit_{args.version}.pkl'  # Signal only tree
@@ -146,6 +152,7 @@ if __name__ == '__main__':
     #years = ['2016APV', '2016', '2017', '2018']
     years = ['2018']
 
+    # simplified systematics
     systematics= [
         ('signal_norm', 1.1, 'signal'),
         ('TTW_norm', 1.15, 'TTW'),
@@ -157,28 +164,20 @@ if __name__ == '__main__':
         ('rare_norm', 1.30, 'rare'),
     ]
 
+    data_dir = '/ceph/cms/store/user/dspitzba/tW_scattering/MVA/'
+
     df_in = pd.DataFrame()
     for year in years:
-        tmp = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
+        tmp = pd.concat([pd.read_hdf(f"{data_dir}/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
         df_in = pd.concat([df_in, tmp])
         df_in = df_in[((df_in['SS']==1) | (df_in['AR']==1))]
     del tmp
 
-    plot_dir = f'/home/users/dspitzba/public_html/tW_scattering/BIT/{args.version}/'
+    df_signal = pd.concat([pd.read_hdf(f"{data_dir}/multiclass_input_topW_lep_{year}.h5") for year in years])
+    df_signal['weight'] = df_signal['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
+
+    plot_dir = os.path.expandvars(f"{cfg['meta']['plots']}/BIT/{args.version}/")
     finalizePlotDir(plot_dir)
-
-    df_signal = pd.DataFrame()
-    #for year in years:
-    #    tmp = pd.read_hdf(f"../processor/multiclass_input_topW_{year}.h5")
-    #    if year == '2018':
-    #        tmp['weight'] = tmp['weight']/2
-    #    df_signal = pd.concat([df_signal, tmp])
-    #    df_signal = df_signal[df_signal['SS']==1]
-    #del tmp
-
-    df_signal_lep = pd.read_hdf(f"../processor/multiclass_input_topW_lep_2018.h5")
-    df_signal_lep['weight'] = df_signal_lep['weight']  # NOTE this needs a factor 2 if mixed with inclusive signal!
-    df_signal = pd.concat([df_signal, df_signal_lep])
 
     # Prepare hyper poly inputs
     samples = get_samples("samples_UL18.yaml")
@@ -811,26 +810,6 @@ if __name__ == '__main__':
 
             store_transformer(qt, version=f'{args.version}_cpt_{x}_cpqm_{y}')
 
-            ## FIXME: does some background leak into this data frame?
-            #q_event_argsort     = np.argsort(q_event)
-            #q_event_argsort_inv = np.argsort(q_event_argsort)
-            #cdf_sm = np.cumsum(sig_test['weight'].values[q_event_argsort])
-            #cdf_sm/=cdf_sm[-1]
-
-            ## map to the SM CDF of q
-            #cdf_map = make_cdf_map( q_event[q_event_argsort], cdf_sm )
-
-            #q_event_cdf = cdf_map( q_event )
-
-            #bit_hist.fill(dataset="TTW", bit=cdf_map(get_bit_score(ttW, cpt=x, cpqm=y, trans=None)), weight=ttW['weight']*2)
-            #bit_hist.fill(dataset="TTZ", bit=cdf_map(get_bit_score(ttZ, cpt=x, cpqm=y, trans=None)), weight=ttZ['weight']*2)
-            #bit_hist.fill(dataset="TTH", bit=cdf_map(get_bit_score(ttH, cpt=x, cpqm=y, trans=None)), weight=ttH['weight']*2)
-            #bit_hist.fill(dataset="NP", bit=cdf_map(get_bit_score(NP, cpt=x, cpqm=y, trans=None)), weight=NP['weight']*NP['weight_np'])
-            #bit_hist.fill(dataset="rare", bit=cdf_map(get_bit_score(rare, cpt=x, cpqm=y, trans=None)), weight=rare['weight']*2)
-            #bit_hist.fill(dataset="diboson", bit=cdf_map(get_bit_score(diboson, cpt=x, cpqm=y, trans=None)), weight=diboson['weight']*2)
-            #bit_hist.fill(dataset="XG", bit=cdf_map(get_bit_score(XG, cpt=x, cpqm=y, trans=None)), weight=XG['weight']*2)
-            #bit_hist.fill(dataset="signal", bit=q_event_cdf, weight=sig_test['weight'])
-
             bit_hist.fill(dataset="TTW",        bit=get_bit_score(ttW, cpt=x, cpqm=y, trans=qt), weight=ttW['weight']*2)
             bit_hist.fill(dataset="TTZ",        bit=get_bit_score(ttZ, cpt=x, cpqm=y, trans=qt), weight=ttZ['weight']*2)
             bit_hist.fill(dataset="TTH",        bit=get_bit_score(ttH, cpt=x, cpqm=y, trans=qt), weight=ttH['weight']*2)
@@ -852,9 +831,6 @@ if __name__ == '__main__':
                 'conv': bit_hist['XG'],
                 'diboson': bit_hist['diboson'],
                 }
-                #'TTW': bit_hist['TTW'],
-                #'TTW': bit_hist['TTW'],
-                #'SR': bit_hist}
 
             if args.fit:
                 sm_card = makeCardFromHist(
