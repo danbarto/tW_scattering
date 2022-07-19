@@ -6,4 +6,4 @@
 	url = https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration.git
 [submodule "BIT"]
 	path = BIT
-	url = https://github.com/HephyAnalysisSW/BIT.git
+	url = git@github.com:HephyAnalysisSW/BIT.git
