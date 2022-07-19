@@ -1,0 +1,5 @@
+import model SMEFTatNLO-NLO_no4q
+
+generate p p > t t~ z QED=1 QCD=2 NP=2 [QCD] @0
+
+output TTZ_5f_NLO_SMEFT -nojpeg
