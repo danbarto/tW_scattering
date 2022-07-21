@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # Load samples
     base_dir = "/ceph/cms/store/user/dspitzba/NanoGEN/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v2/"
+    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT_v2/"
     finalizePlotDir(plot_dir)
 
     # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
@@ -149,14 +149,16 @@ if __name__ == '__main__':
             )
 
         res[r]['coeff'] = hp.get_parametrization( [histo_values(res[name]['hist'], w) for w in weights] )
-
+        allvals = [histo_values(res[name]['hist'], w) for w in weights]
+        print(allvals)
+        print(hp.root_func_string(np.sum(allvals,axis=1)))
         # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
-        if is2D[r]:
-            print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
-            print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
-        else:
-            print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
-            print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
+        #if is2D[r]:
+        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
+        #    print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
+        #else:
+        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
+        #    print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
 
         # FIXME WIP
         ## E^2 scaling for ttZ
@@ -167,7 +169,7 @@ if __name__ == '__main__':
     
             c_values = []
             for i in range(0,41):
-                print (i-20, hp.eval(res[r]['coeff'], points[i]['point']))
+                #print (i-20, hp.eval(res[r]['coeff'], points[i]['point']))
                 c_values.append(i-20)
     
             pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41) ])
@@ -204,23 +206,23 @@ if __name__ == '__main__':
 
 # comparison plots NLO vs. NLO_2D
 for c in ['cpQM', 'cpt']:
-    c_values = []
-    for i in range(0,41):
-        c_values.append(i-20)
-    
-    fig, ax = plt.subplots()
-    plt.plot(c_values, results['ttZ_NLO'][c]['inc'], label=r'NLO inclusive', c='green')
-    plt.plot(c_values, results['ttZ_NLO'][c]['>700'], label=r'NLO $L_{T} \geq 700\ GeV$', c='blue')
-    plt.plot(c_values, results['ttZ_NLO_2D'][c]['inc'], label=r'NLO 2D inclusive', c='lime')
-    plt.plot(c_values, results['ttZ_NLO_2D'][c]['>700'], label=r'NLO 2D $L_{T} \geq 700\ GeV$', c='cyan')
-    if c == 'cpQM':
-        plt.xlabel(r'$C_{\varphi Q}^{-}$')
-    else:
-        plt.xlabel(r'$C_{\varphi t}$')
-    plt.ylabel(r'$\sigma/\sigma_{SM}$')
-    plt.legend()
+    for t in ['inc','>700']:
+        c_values = []
+        for i in range(0,41):
+            c_values.append(i-20)
+        
+        fig, ax = plt.subplots()
+        plt.plot(c_values, results['ttZ_NLO'][c][t], label=r'NLO', c='green')
+        plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO 2D', c='lime')
+        plt.plot(c_values, results['ttZ_LO'][c][t], label=r'LO', c='darkviolet')
+        if c == 'cpQM':
+            plt.xlabel(r'$C_{\varphi Q}^{-}$')
+        else:
+            plt.xlabel(r'$C_{\varphi t}$')
+        plt.ylabel(r'$\sigma/\sigma_{SM}$')
+        plt.legend()
 
-    ax.set_ylim(0,10)
-    
-    fig.savefig(plot_dir+'NLOvsNLO2D_'+c+'_scaling.pdf')
-    fig.savefig(plot_dir+'NLOvsNLO2D_'+c+'_scaling.png')
+        ax.set_ylim(0,10)
+        
+        fig.savefig(plot_dir+t+'_'+c+'_scaling.pdf')
+        fig.savefig(plot_dir+t+'_'+c+'_scaling.png')

@@ -11,14 +11,20 @@ from metis.Path import Path
 from metis.StatsParser import StatsParser
 import time
 
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--test_run', action='store_true', default=False, help="Do test run with smaller # of events?")
+args = argParser.parse_args()
+
+
 def submit():
 
     requests = {
         #'TTZ_EFT_NLO_fixed': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_NLO_fixed_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_test_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz', # this corresponds to TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO
         #'TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
-        'TTZ_5f_LO_SMEFT': '',
-        'TTZ_5f_NLO_SMEFT': '',
+        'TTZ_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        'TTZ_5f_NLO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_NLO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
 
     total_summary = {}
@@ -27,10 +33,13 @@ def submit():
 
     # v6+ is UL
 
-    tag = "v13"
-    events_per_point = int(2.5e6)
-    #events_per_point = 200
-    events_per_job = 10000
+    tag = "v17"
+    if args.test_run:
+        events_per_point = 200
+        events_per_job = 50
+    else:
+        events_per_point = int(2e6)
+        events_per_job = 5000
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:
@@ -39,10 +48,10 @@ def submit():
         nlo = reqname.count("NLO") > 0  # NOTE: is this good enough?
         exe = "executables/condor_executable_nanogen_nlo.sh" if nlo else "executables/condor_executable_nanogen.sh"
 
-        print (f"Working on request: {reqname}")
-        print (f"NLO mode:", nlo)
-        print (f"Executable used: {exe}")
-        print (f"Gridpack: {gridpack}")
+        print ("Working on request:", reqname)
+        print ("NLO mode:", nlo)
+        print ("Executable used:", exe)
+        print ("Gridpack:", gridpack)
 
         task = CondorTask(
                 sample = DummySample(dataset="/%s/RunIISummer20_NanoGEN/NANO"%(reqname),N=njobs,nevents=int(events_per_point)),
