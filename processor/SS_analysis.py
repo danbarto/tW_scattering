@@ -64,6 +64,7 @@ class SS_analysis(processor.ProcessorABC):
                  points=[[]],  # maybe can go?
                  weights=[],
                  reweight=1,
+                 minimal=False,
                  ):
         self.variations = variations
 
@@ -76,6 +77,7 @@ class SS_analysis(processor.ProcessorABC):
         self.dump = dump
 
         self.bit = bit
+        self.minimal=minimal,
         
         self.btagSF = btag_scalefactor(year, era=era)
         self.leptonSF = LeptonSF(year=year, era=era)
@@ -643,7 +645,7 @@ class SS_analysis(processor.ProcessorABC):
                        )
 
             #if self.evaluate or self.dump:
-            if self.evaluate:
+            if self.evaluate and not self.minimal:
                 blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
                 if var['name'] == 'central':
 
@@ -972,7 +974,7 @@ class SS_analysis(processor.ProcessorABC):
                 #del NN_inputs_scaled, NN_pred
 
 
-            if self.dump and var['name']=='central':
+            if self.dump and var['name']=='central' and not self.minimal:
                 #output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
                 output['dump_'+dataset]['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
                 output['dump_'+dataset]['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
@@ -986,7 +988,7 @@ class SS_analysis(processor.ProcessorABC):
 
             # first, make a few super inclusive plots
 
-            if var['name'] == 'central':
+            if var['name'] == 'central' and not self.minimal:
                 '''
                 Don't fill these histograms for the variations
                 '''
@@ -1173,6 +1175,7 @@ if __name__ == '__main__':
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--rerun', action='store_true', default=None, help="Rerun or try using existing results??")
+    argParser.add_argument('--minimal', action='store_true', default=None, help="Only run minimal set of histograms")
     argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
     argParser.add_argument('--central', action='store_true', default=None, help="Only run the central value (no systematics)")
     argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
@@ -1467,6 +1470,7 @@ if __name__ == '__main__':
                     reweight=reweight,
                     points=points,
                     hyperpoly=hp,
+                    minimal=args.minimal,
                 ),
             )
 
