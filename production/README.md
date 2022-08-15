@@ -24,6 +24,30 @@ voms-proxy-init -voms cms -valid 100:00 -out /tmp/x509up_YOUR_USER; export X509_
 - 2017
 - 2018
 
+## Local runs
+
+Setup your CMSSW area, e.g. CMSSW_10_6_19 for NanoGEN
+
+``` shell
+cmsrel CMSSW_10_6_19
+```
+
+Then
+
+``` shell
+cd CMSSW_10_6_19/src
+cmsenv
+wget https://raw.githubusercontent.com/syjeon162/tW_scattering/master/production/psets/nanogen/nanogen_nlo_cfg.py
+curl -s -k https://raw.githubusercontent.com/syjeon162/tW_scattering/master/production/psets/tW_scattering.py --retry 3 --create-dirs -o Configuration/GenProduction/python/tW_scattering.py
+```
+
+Fix the path to the gridpack, then
+
+``` shell
+cmsRun nanogen_nlo_cfg.py
+```
+
+
 ## Production using metis
 
 Fripdacks are here:
