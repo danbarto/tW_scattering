@@ -121,7 +121,7 @@ def get_latest_output(cache_name, cfg, date=None, max_time='999999', select_hist
     return res
 #    return filtered[0]
 
-def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=None, date=None, max_time='999999', select_histograms=False):
+def get_merged_output(name, year, samples=None, postfix=None, quiet=False, select_datasets=None, date=None, max_time='999999', select_histograms=False):
     '''
     name: e.g. SS_analysis
     year: string like 2016APV
@@ -131,7 +131,8 @@ def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=Non
     from coffea import hist
     from plots.helpers import scale_and_merge
     ul = "UL"+year[2:] if year != '2022' else "Run3_%s"%(year[2:])
-    samples = get_samples(f"samples_{ul}.yaml")
+    if samples is None:
+        samples = get_samples(f"samples_{ul}.yaml")
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
     renorm   = {}
@@ -173,6 +174,7 @@ def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=Non
             try:
                 renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
             except:
+                print (f"Failed to renorm sample {dataset}")
                 renorm[dataset] = 1
     output = accumulate(outputs)
 

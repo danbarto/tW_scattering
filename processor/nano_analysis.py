@@ -208,6 +208,12 @@ if __name__ == '__main__':
 
         fileset = make_fileset([sample], samples, year=ul, redirector=redirector_ucsd, small=small)
         meta = get_sample_meta(fileset, samples)
+
+        # NOTE need to update the sumweight values in the samples directory because we run directly from the grid
+        # and some files might not be available / readable
+        for dataset in meta:
+            samples[dataset]['sumWeight'] = meta[dataset]['sumWeight']
+
         add_processes_to_output(fileset, desired_output)
 
         pt_axis_coarse  = hist.Bin("pt",            r"$p_{T}$ (GeV)", [15,40,60,80,100,200,300])
@@ -285,7 +291,8 @@ if __name__ == '__main__':
             # way of deallocating all the accumulated memory...
             c.restart()
 
-    output = get_merged_output("nano_analysis", year=str(year))
+
+    output = get_merged_output("nano_analysis", samples=samples, year=str(year))
     plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v1/')
 
     import matplotlib.pyplot as plt
