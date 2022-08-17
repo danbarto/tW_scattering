@@ -65,33 +65,34 @@ def histo_values(histo, weight):
 if __name__ == '__main__':
 
     # Load samples
-    base_dir = "/ceph/cms/store/user/dspitzba/NanoGEN/"
-    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT_v2/"
+    base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v3/"
     finalizePlotDir(plot_dir)
 
     # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
 
     res = {}
 
-    res['ttZ_NLO'] = {
+    res['ttZ_NLO_2D'] = {
         'file': base_dir + "ttZ_EFT_NLO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
+        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO_bckup.root").events()
     }
 
-    res['ttZ_LO'] = {
+    res['ttZ_LO_2D'] = {
         'file': base_dir + "ttZ_EFT_LO.root",
         'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_LO.root").events()
     }
-    
+    '''    
     res['ttZ_NLO_2D'] = {
-        'file': base_dir + "../ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root",
+        'file': "/ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root",
         'events': NanoEventsFactory.from_root(base_dir + "../ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root").events()
     }
-    
+    '''
     is2D = {
-        'ttZ_NLO'   :False,
-        'ttZ_LO'    :False,
-        'ttZ_NLO_2D':True
+        #'ttZ_NLO'   :True,
+        #'ttZ_LO'    :True,
+        'ttZ_NLO_2D':True,
+        'ttZ_LO_2D':True,
     }
 
     results = {}
@@ -104,12 +105,12 @@ if __name__ == '__main__':
     # Get HyperPoly parametrization.
     # this is sample independent as long as the coordinates are the same.
 
-    xsecs = {'ttZ_NLO': 0.930, 'ttZ_LO': 0.663, 'ttZ_NLO_2D': 0.930}
+    xsecs = {'ttZ_NLO_2D': 0.930, 'ttZ_LO_2D': 0.663}
     
     for r in res:
 
         print (r)
-
+ 
         hp = HyperPoly(2)
 
         coordinates, ref_coordinates = get_coordinates_and_ref(res[r]['file'],is2D[r])
@@ -127,9 +128,26 @@ if __name__ == '__main__':
         trilep = (ak.num(ev.GenDressedLepton)==3)
         #trilep = (ak.num(ev.GenDressedLepton)>=0)
 
+        print('genWeight is:')
+        print(ev[trilep].genWeight)
+        print('LHEWeights are:')
+        print(ev[trilep].LHEWeight)
+        LHElen = len(ev[trilep].LHEWeight)
+        for key in ev[trilep].LHEWeight[0]:
+            sumval = sum(item[key] for item in ev[trilep].LHEWeight)
+            print(key)
+            if key == "originalXWGTUP":
+                print(sumval)
+            else:
+                print(sumval/LHElen)
+
         res[name]['selection'] = trilep
         res[name]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
 
+        print('pt is:')
+        print(get_LT(ev[trilep]))
+        print('how long is this list?:')
+        print(len(get_LT(ev[trilep])))
         res[name]['hist'].fill(
             dataset='stat',
             pt = get_LT(ev[trilep]),
@@ -149,16 +167,18 @@ if __name__ == '__main__':
             )
 
         res[r]['coeff'] = hp.get_parametrization( [histo_values(res[name]['hist'], w) for w in weights] )
+        print("Weights are:")
+        print(weights)
         allvals = [histo_values(res[name]['hist'], w) for w in weights]
-        print(allvals)
+        print("Coefficients are:")
         print(hp.root_func_string(np.sum(allvals,axis=1)))
         # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
-        #if is2D[r]:
-        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
-        #    print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
-        #else:
-        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
-        #    print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
+        if is2D[r]:
+            print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
+            print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
+        else:
+            print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
+            print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
 
         # FIXME WIP
         ## E^2 scaling for ttZ
@@ -166,12 +186,13 @@ if __name__ == '__main__':
         results[r] = {}
         for c in ['cpQM', 'cpt']:
             points = make_scan(operator=c, C_min=-20, C_max=20, step=1, is2D=is2D[r])
-    
             c_values = []
+            print(c)
             for i in range(0,41):
-                #print (i-20, hp.eval(res[r]['coeff'], points[i]['point']))
+                if (i-20 == 0) or (i-20 == 3) or (i-20 == 6):
+                    print (i-20, hp.eval(res[r]['coeff'], points[i]['point']))
                 c_values.append(i-20)
-    
+
             pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41) ])
     
             fig, ax = plt.subplots()
@@ -212,9 +233,9 @@ for c in ['cpQM', 'cpt']:
             c_values.append(i-20)
         
         fig, ax = plt.subplots()
-        plt.plot(c_values, results['ttZ_NLO'][c][t], label=r'NLO', c='green')
-        plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO 2D', c='lime')
-        plt.plot(c_values, results['ttZ_LO'][c][t], label=r'LO', c='darkviolet')
+        plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO', c='green')
+        #plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO 2D', c='lime')
+        plt.plot(c_values, results['ttZ_LO_2D'][c][t], label=r'LO', c='darkviolet')
         if c == 'cpQM':
             plt.xlabel(r'$C_{\varphi Q}^{-}$')
         else:
@@ -224,5 +245,5 @@ for c in ['cpQM', 'cpt']:
 
         ax.set_ylim(0,10)
         
-        fig.savefig(plot_dir+t+'_'+c+'_scaling.pdf')
-        fig.savefig(plot_dir+t+'_'+c+'_scaling.png')
+        fig.savefig(plot_dir+'compare_'+t+'_'+c+'.pdf')
+        fig.savefig(plot_dir+'compare_'+t+'_'+c+'.png')
