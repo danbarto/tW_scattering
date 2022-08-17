@@ -526,7 +526,7 @@ if __name__ == '__main__':
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
     if args.sample == 'MCall':
-        sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+        sample_list = ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
         #sample_list = ['DY', 'topW', 'top', 'TTW', 'TTZ', 'XG', 'rare', 'diboson']
     elif args.sample == 'data':
         if year == 2018:

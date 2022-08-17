@@ -91,17 +91,21 @@ def load_wrapper(f_in, select_histograms):
 def get_latest_output(cache_name, cfg, date=None, max_time='999999', select_histograms=False):
     import concurrent.futures
     from functools import partial
+    import re
 
     cache_dir = os.path.expandvars(cfg['caches']['base'])
     all_caches = glob.glob(cache_dir+'/*.coffea')
-    filtered = [f for f in all_caches if f.count(cache_name)]
+    #filtered = [f for f in all_caches if f.count(cache_name)]
+    filtered = [f for f in all_caches if re.search('(.*)'+cache_name+'_(\d{8})_(\d{6}).coffea', f)]
     if date:
         filtered = [f for f in filtered if f.count(date)]
     if not cache_name.count('APV'):
         # manually filter out everything with APV if it's not APV
         filtered = [f for f in filtered if not f.count('APV')]
+    # FIXME need to ensure that only <cache_name>_<datetime> is allowed
     filtered = [f for f in filtered if int(f.replace('.coffea','').split('_')[-1])<int(max_time)]
     filtered.sort(reverse=True)
+    print (filtered)
     try:
         latest = filtered[0]
     except:
@@ -126,13 +130,13 @@ def get_merged_output(name, year, postfix=None, quiet=False, select_datasets=Non
     from coffea.processor import accumulate
     from coffea import hist
     from plots.helpers import scale_and_merge
-    ul = "UL"+year[2:]
+    ul = "UL"+year[2:] if year != '2022' else "Run3_%s"%(year[2:])
     samples = get_samples(f"samples_{ul}.yaml")
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
     renorm   = {}
 
-    if year == '2018':
+    if year in ['2018', '2022']:
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']

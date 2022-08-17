@@ -137,6 +137,8 @@ if __name__ == '__main__':
     argParser.add_argument('--use_weight', action='store_true', help="Use weights in training")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
     argParser.add_argument('--version', action='store', default='v1', help="Version number for the output tree")
+    argParser.add_argument('--year', action='store', default='2018', help="Version number for the output tree")
+
     # NOTE: need to add the full Run2 training option back
     args = argParser.parse_args()
 
@@ -149,8 +151,7 @@ if __name__ == '__main__':
     # load data
     #sample_list =  ['TTW', 'TTZ','TTH']
     sample_list =  ['TTW', 'TTZ','TTH', 'top', 'rare', 'diboson', 'XG']
-    #years = ['2016APV', '2016', '2017', '2018']
-    years = ['2018']
+    years = [args.year] if not args.year == 'all' else ['2016APV', '2016', '2017', '2018']
 
     # simplified systematics
     systematics= [
@@ -507,7 +508,7 @@ if __name__ == '__main__':
 
     from Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
     from Tools.dataCard import dataCard
-    card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('/home/users/$USER/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
 
     dataset_axis = hist.Cat("dataset", "Primary dataset")
     eft_axis = hist.Cat("eft", "EFT point")
