@@ -54,9 +54,13 @@ class nano_analysis(processor.ProcessorABC):
         
         ## Muons
         muon     = ev.Muon
+        muon = muon[muon.pt > 20]
+        muon = muon[abs(muon.eta) < 2.4]
         
         ## Electrons
         electron     = ev.Electron  # Collections(ev, "Electron", "tight").get()
+        electron = electron[electron.pt > 20]
+        electron = electron[abs(electron.eta) < 2.5] 
 
         n_ele = ak.num(electron, axis=1)
         gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
@@ -74,6 +78,8 @@ class nano_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
         
+        dilepton_mass = (leading_lepton+trailing_lepton).mass
+
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
@@ -104,6 +110,14 @@ class nano_analysis(processor.ProcessorABC):
             #phi = ak.to_numpy(ak.flatten(leading_lepton[baseline].phi)),
             weight = weight.weight()[baseline],
             n_ele = n_ele[baseline],
+            systematic = 'central',
+        )
+
+        output['m_ll'].fill(
+            dataset = dataset,
+            mass = ak.flatten(dilepton_mass[baseline]),
+            n_ele = n_ele[baseline],
+            weight = weight.weight()[baseline],
             systematic = 'central',
         )
 
@@ -228,6 +242,7 @@ if __name__ == '__main__':
             "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "m_ll": hist.Hist("Counts", dataset_axis, systematic_axis, mass_axis, n_ele_axis),
            })
 
         ##desired_output.update({
@@ -293,7 +308,7 @@ if __name__ == '__main__':
 
 
     output = get_merged_output("nano_analysis", samples=samples, year=str(year))
-    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v1/')
+    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v2/')
 
     import matplotlib.pyplot as plt
     import mplhep as hep
@@ -319,7 +334,8 @@ if __name__ == '__main__':
     signals = []
     omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 
-    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
+    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)    
+    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
 
     my_labels = {
         'topW_lep': 'top-W scat.',
@@ -357,4 +373,38 @@ if __name__ == '__main__':
                  signals=signals,
                  lumi=lumi,
                  save=os.path.expandvars(plot_dir_temp+'lead_lep_pt')
+                 )
+
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='ee',  
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_ee')
+                 )
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='em',
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_emu')
+                 )
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='mm',
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_mumu')
                  )
