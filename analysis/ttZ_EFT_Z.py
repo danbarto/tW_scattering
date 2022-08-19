@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # Load samples
     base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_LT/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_ptZ/"
     finalizePlotDir(plot_dir)
 
     # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
@@ -144,9 +144,15 @@ if __name__ == '__main__':
         res[name]['selection'] = trilep
         res[name]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
 
+        #res[name]['hist'].fill(
+        #    dataset='stat',
+        #    pt = get_LT(ev[trilep]),
+        #    weight = ev[trilep].genWeight/sum(ev.genWeight)
+        #)
+
         res[name]['hist'].fill(
             dataset='stat',
-            pt = get_LT(ev[trilep]),
+            pt = ak.flatten(get_Z(ev[trilep]).pt),
             weight = ev[trilep].genWeight/sum(ev.genWeight)
         )
 
@@ -155,12 +161,18 @@ if __name__ == '__main__':
 
         for w in weights:
         
+            #res[name]['hist'].fill(
+            #    dataset=w,
+            #    pt = get_LT(ev[trilep]),
+            #    #pt = ev[trilep].GenMET.pt,
+            #    weight=xsecs[r]*getattr(ev[trilep].LHEWeight, w)*ev[trilep].genWeight/sum(ev.genWeight)
+            #)
             res[name]['hist'].fill(
                 dataset=w,
-                pt = get_LT(ev[trilep]),
-                #pt = ev[trilep].GenMET.pt,
+                pt = ak.flatten(get_Z(ev[trilep]).pt),
                 weight=xsecs[r]*getattr(ev[trilep].LHEWeight, w)*ev[trilep].genWeight/sum(ev.genWeight)
             )
+
 
         res[r]['coeff'] = hp.get_parametrization( [getattr(ev.LHEWeight, w) for w in weights] )
         #print("Weights are:")
@@ -209,10 +221,10 @@ if __name__ == '__main__':
             
             results[r][c] = {}
             results[r][c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
-            results[r][c]['>700'] = np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[20,7:])
+            results[r][c]['>400'] = np.sum(pred_matrix[:,4:], axis=1)/np.sum(pred_matrix[20,7:])
 
             plt.plot(c_values, results[r][c]['inc'], label=r'inclusive', c='green')
-            plt.plot(c_values, results[r][c]['>700'], label=r'$L_{T} \geq 700\ GeV$', c='blue')
+            plt.plot(c_values, results[r][c]['>400'], label=r'$p_{T,Z} \geq 400\ GeV$', c='blue')
            
             if c == 'cpQM': 
                 plt.xlabel(r'$C_{\varphi Q}^{-}$')
@@ -229,7 +241,7 @@ if __name__ == '__main__':
 
 # comparison plots NLO vs. NLO_2D
 for c in ['cpQM', 'cpt']:
-    for t in ['inc','>700']:
+    for t in ['inc','>400']:
         c_values = []
         for i in range(0,41):
             c_values.append(i-20)
