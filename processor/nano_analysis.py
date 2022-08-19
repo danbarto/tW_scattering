@@ -54,9 +54,24 @@ class nano_analysis(processor.ProcessorABC):
         
         ## Muons
         muon     = ev.Muon
+        muon = muon[muon.pt > 20]
+        muon = muon[abs(muon.eta) < 2.4]
         
         ## Electrons
         electron     = ev.Electron  # Collections(ev, "Electron", "tight").get()
+        electron = electron[electron.pt > 20]
+        electron = electron[abs(electron.eta) < 2.5] 
+
+        ## Jets
+        jet       = getJets(ev, minPt=25, maxEta=4.7 )
+        jet       = jet[~match(jet, muon, deltaRCut=0.4)] # remove jets that overlap with muons
+        jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
+
+        central   = jet[(abs(jet.eta)<2.4)]
+        btag      = getBTagsDeepFlavB(jet)
+        light     = getBTagsDeepFlavB(jet, invert=True)
+        light_central = light[(abs(light.eta)<2.5)]
+        fwd       = getFwdJet(light)
 
         n_ele = ak.num(electron, axis=1)
         gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
@@ -74,9 +89,13 @@ class nano_analysis(processor.ProcessorABC):
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
         
+        dilepton_mass = (leading_lepton+trailing_lepton).mass
+
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
+
+        lt = met_pt + ak.sum(lepton.pt, axis=1)
 
         # define the weight
         weight = Weights( len(ev) )
@@ -106,6 +125,50 @@ class nano_analysis(processor.ProcessorABC):
             n_ele = n_ele[baseline],
             systematic = 'central',
         )
+
+        output['m_ll'].fill(
+            dataset = dataset,
+            mass = ak.flatten(dilepton_mass[baseline]),
+            n_ele = n_ele[baseline],
+            weight = weight.weight()[baseline],
+            systematic = 'central',
+        )
+
+        output['N_jet'].fill(
+            dataset=dataset,
+            systematic = 'central',
+            n_ele = n_ele[baseline],
+            multiplicity=ak.num(jet)[baseline],
+            weight=weight.weight()[baseline],
+        )
+
+        output['N_fwd'].fill(
+            dataset=dataset,
+            systematic = 'central',
+            n_ele = n_ele[baseline],
+            multiplicity=ak.num(fwd)[baseline],
+            weight=weight.weight()[baseline],
+        )
+
+        output['MET'].fill(
+            dataset = dataset,
+            systematic = 'central',
+            n_ele = n_ele[baseline],
+            pt  = met_pt[baseline],
+            phi  = met_phi[baseline],
+            weight = weight.weight()[baseline]
+        )
+
+        output['LT'].fill(
+            dataset = dataset,
+            systematic = 'central',
+            n_ele = n_ele[baseline],
+            ht  = lt[baseline],
+            weight = weight.weight()[baseline]
+        )
+
+
+
 
         ## This is just for charge flip.
         ## FIXME: can this just be deleted?
@@ -228,6 +291,11 @@ if __name__ == '__main__':
             "lead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "sublead_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
             "fwd_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "m_ll": hist.Hist("Counts", dataset_axis, systematic_axis, mass_axis, n_ele_axis),
+            "LT": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, ht_axis),
+            "N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+
            })
 
         ##desired_output.update({
@@ -293,7 +361,7 @@ if __name__ == '__main__':
 
 
     output = get_merged_output("nano_analysis", samples=samples, year=str(year))
-    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v1/')
+    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v2/')
 
     import matplotlib.pyplot as plt
     import mplhep as hep
@@ -319,7 +387,12 @@ if __name__ == '__main__':
     signals = []
     omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
 
-    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)
+    pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 30, 0, 300)    
+    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+    N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
+    N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+    ht_bins_red = hist.Bin('ht', r'$p_{T}\ (GeV)$', 7,100,800)
+    eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
 
     my_labels = {
         'topW_lep': 'top-W scat.',
@@ -358,3 +431,90 @@ if __name__ == '__main__':
                  lumi=lumi,
                  save=os.path.expandvars(plot_dir_temp+'lead_lep_pt')
                  )
+
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='ee',  
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_ee')
+                 )
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='em',
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_emu')
+                 )
+        makePlot(output, 'm_ll', 'mass',
+                 data=data,
+                 bins=mass_bins, log=log, normalize=False, axis_label=r'$M_{\ell\ell}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 channel='mm',
+                 save=os.path.expandvars(plot_dir_temp+'m_ll_mumu')
+                 )
+        makePlot(output, 'N_jet', 'multiplicity',
+                 data=data,
+                 bins=N_bins, log=log, normalize=False, axis_label=r'$N_{jet}$',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 save=os.path.expandvars(plot_dir_temp+'N_jet'),
+                 )
+        makePlot(output, 'N_fwd', 'multiplicity',
+                 data=data,
+                 bins=N_bins_red, log=log, normalize=False, axis_label=r'$N_{fwd\ jets}$',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 save=os.path.expandvars(plot_dir_temp+'N_fwd'),
+                 )
+
+        makePlot(output, 'MET', 'pt',
+                 data=data,
+                 bins=pt_bins, log=log, normalize=False, axis_label=r'$p_{T}^{miss}$ (GeV)',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 #upHists=['jes_up'], downHists=['jes_down'],
+                 save=os.path.expandvars(plot_dir_temp+'MET_pt'),
+                 )
+
+        makePlot(output, 'MET', 'phi',
+                 data=data,
+                 bins=None, log=log, normalize=False, axis_label=r'$\phi(p_{T}^{miss})$',
+                 new_colors=my_colors, new_labels=my_labels,
+                 order=order,
+                 omit=omit,
+                 signals=signals,
+                 lumi=lumi,
+                 save=os.path.expandvars(plot_dir_temp+'MET_phi'),
+                 )
+        makePlot(output, 'LT', 'ht',
+                 data=data,
+                 bins=ht_bins_red, log=log, normalize=False, axis_label=r'$L_T\ (GeV)$',
+                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
+                 order=order,
+                 signals=signals,
+                 save=os.path.expandvars(plot_dir_temp+'LT'),
+                )
+        
