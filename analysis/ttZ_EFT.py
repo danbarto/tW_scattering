@@ -69,40 +69,25 @@ if __name__ == '__main__':
     plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_LT/"
     finalizePlotDir(plot_dir)
 
-    # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
-
     res = {}
 
     res['ttZ_NLO_2D'] = {
-        'file': '/home/users/dspitzba/TOP/CMSSW_10_6_19/src/output.root',
-        'events': NanoEventsFactory.from_root('/home/users/dspitzba/TOP/CMSSW_10_6_19/src/output.root').events()
-        #'file': base_dir + "ttZ_EFT_NLO.root",
-        #'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
+        'file': base_dir + "ttZ_EFT_NLO.root",
+        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
     }
 
     res['ttZ_LO_2D'] = {
         'file': base_dir + "ttZ_EFT_LO.root",
         'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_LO.root").events()
     }
-    '''    
-    res['ttZ_NLO_2D'] = {
-        'file': "/ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root",
-        'events': NanoEventsFactory.from_root(base_dir + "../ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root").events()
-    }
-    '''
+    
     is2D = {
-        #'ttZ_NLO'   :True,
-        #'ttZ_LO'    :True,
         'ttZ_NLO_2D':True,
         'ttZ_LO_2D':True,
     }
 
     results = {}
 
-    #res['ttll_LO'] = {
-    #    'file': base_dir + "merged_ttll_LO.root",
-    #    'events': NanoEventsFactory.from_root(base_dir + "merged_ttll_LO.root").events()
-    #}
 
     # Get HyperPoly parametrization.
     # this is sample independent as long as the coordinates are the same.
@@ -119,7 +104,6 @@ if __name__ == '__main__':
         hp.initialize( coordinates, ref_coordinates )
 
         pt_axis   = hist.Bin("pt",     r"p", 7, 100, 800)
-        #pt_axis   = hist.Bin("pt",     r"p", 7, 0, 200)
 
         tree    = uproot.open(res[r]['file'])["Events"]
         ev      = res[r]['events']
@@ -127,11 +111,10 @@ if __name__ == '__main__':
 
         weights = [ x.replace('LHEWeight_','') for x in tree.keys() if x.startswith('LHEWeight_c') ]
 
+        # selections
         trilep = (ak.num(ev.GenDressedLepton)==3)
-        #trilep = (ak.num(ev.GenDressedLepton)>=0)
-
-        #print('LHEWeights are:')
-        #print(ev[trilep].LHEWeight)
+        LT700 = get_LT(ev) >= 700
+        ptZ400 = ak.flatten(get_Z(ev).pt >= 400)
         
         LHElen = len(ev[trilep].LHEWeight)
         for key in ev[trilep].LHEWeight[0]:
@@ -158,23 +141,20 @@ if __name__ == '__main__':
             res[name]['hist'].fill(
                 dataset=w,
                 pt = get_LT(ev[trilep]),
-                #pt = ev[trilep].GenMET.pt,
                 weight=xsecs[r]*getattr(ev[trilep].LHEWeight, w)*ev[trilep].genWeight/sum(ev.genWeight)
             )
 
-        res[r]['coeff'] = hp.get_parametrization( [getattr(ev.LHEWeight, w) for w in weights] )
-        #print("Weights are:")
-        #print(weights)
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
+        res[r]['coeff'] = hp.get_parametrization(allvals)
         print("Coefficients are:")
         print(hp.root_func_string(np.sum(allvals,axis=1)))
         # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
-        # if is2D[r]:
-        #     print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
-        #     print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
-        # else:
-        #     print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
-        #     print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
+        if is2D[r]:
+            print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
+            print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
+        else:
+            print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
+            print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
 
         # FIXME WIP
         ## E^2 scaling for ttZ
@@ -183,16 +163,7 @@ if __name__ == '__main__':
         for c in ['cpQM', 'cpt']:
             points = make_scan(operator=c, C_min=-20, C_max=20, step=1, is2D=is2D[r])
             c_values = []
-            print(c)
-            smpoint = sum(hp.eval(res[r]['coeff'], [0,0]))
-            print('these should be the same:')
-            if r == "ttZ_NLO_2D":
-                print(smpoint, sum(ev.LHEWeight.cpt_0p_cpQM_0p_nlo))
-            else:
-                print(smpoint, sum(ev.LHEWeight.cpt_0p_cpQM_0p))
             for i in range(0,41):
-                if (i-20 == 0) or (i-20 == 3) or (i-20 == 6):
-                    print (i-20, sum(hp.eval(res[r]['coeff'], points[i]['point']))/smpoint )
                 c_values.append(i-20)
 
             pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41) ])
@@ -206,14 +177,18 @@ if __name__ == '__main__':
                 loc=0,
                 ax=ax,
             )
-            
+           
+            # store results 
             results[r][c] = {}
             results[r][c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
-            results[r][c]['>700'] = np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[20,7:])
+            results[r][c]['LT>700'] = np.sum(pred_matrix[:,LT700], axis=1)/np.sum(pred_matrix[20,LT700])
+            results[r][c]['ptZ>400'] = np.sum(pred_matrix[:,ptZ400], axis=1)/np.sum(pred_matrix[20,ptZ400])
 
-            plt.plot(c_values, results[r][c]['inc'], label=r'inclusive', c='green')
-            plt.plot(c_values, results[r][c]['>700'], label=r'$L_{T} \geq 700\ GeV$', c='blue')
-           
+            # plot
+            plt.plot(c_values, results[r][c]['inc'], label=r'inclusive', c='black')
+            plt.plot(c_values, results[r][c]['LT>700'], label=r'$L_{T} \geq 700\ GeV$', c='blue')
+            plt.plot(c_values, results[r][c]['ptZ>400'], label=r'$p_{T,Z} \geq 400\ GeV$', c='red')
+
             if c == 'cpQM': 
                 plt.xlabel(r'$C_{\varphi Q}^{-}$')
             else:
@@ -223,20 +198,19 @@ if __name__ == '__main__':
     
             ax.set_ylim(0,10)
     
-    
             fig.savefig(plot_dir+r[4:]+'_'+c+'_scaling.pdf')
             fig.savefig(plot_dir+r[4:]+'_'+c+'_scaling.png')
 
-# comparison plots NLO vs. NLO_2D
+
+# comparison plots NLO vs.LO
 for c in ['cpQM', 'cpt']:
-    for t in ['inc','>700']:
+    for t in ['inc','LT>700','ptZ>400']:
         c_values = []
         for i in range(0,41):
             c_values.append(i-20)
         
         fig, ax = plt.subplots()
         plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO', c='green')
-        #plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO 2D', c='lime')
         plt.plot(c_values, results['ttZ_LO_2D'][c][t], label=r'LO', c='darkviolet')
         if c == 'cpQM':
             plt.xlabel(r'$C_{\varphi Q}^{-}$')
