@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     # Load samples
     base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_LT/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT/"
     finalizePlotDir(plot_dir)
 
     res = {}
@@ -97,57 +97,62 @@ if __name__ == '__main__':
     for r in res:
 
         print (r)
- 
+
         hp = HyperPoly(2)
+
+        tree    = uproot.open(res[r]['file'])["Events"]
+        ev      = res[r]['events']
 
         coordinates, ref_coordinates = get_coordinates_and_ref(res[r]['file'],is2D[r])
         hp.initialize( coordinates, ref_coordinates )
 
         pt_axis   = hist.Bin("pt",     r"p", 7, 100, 800)
 
-        tree    = uproot.open(res[r]['file'])["Events"]
-        ev      = res[r]['events']
-        name    = r
-
         weights = [ x.replace('LHEWeight_','') for x in tree.keys() if x.startswith('LHEWeight_c') ]
 
-        # selections
+        # define selections
         trilep = (ak.num(ev.GenDressedLepton)==3)
-        LT700 = get_LT(ev) >= 700
+        LT700 = (get_LT(ev) >= 700) #& trilep
         ptZ400 = ak.flatten(get_Z(ev).pt >= 400)
+      
+        print('out of',len(ev),'events total, there are...')
+        print(len(ev[LT700]), 'events with LT>700')
+        print(len(ev[ptZ400]), 'events with ptZ>400') 
         
-        LHElen = len(ev[trilep].LHEWeight)
-        for key in ev[trilep].LHEWeight[0]:
-            sumval = sum(item[key] for item in ev[trilep].LHEWeight)
-            if key == "originalXWGTUP":
-                print(key, sumval)
-            else:
-                print(key, sumval/LHElen)
+        #LHElen = len(ev[trilep].LHEWeight)
+        #for key in ev[trilep].LHEWeight[0]:
+        #    sumval = sum(item[key] for item in ev[trilep].LHEWeight)
+        #    if key == "originalXWGTUP":
+        #        print(key, sumval)
+        #    else:
+        #        print(key, sumval/LHElen)
 
-        res[name]['selection'] = trilep
-        res[name]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
+        res[r]['selection'] = trilep
+        res[r]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
 
-        res[name]['hist'].fill(
+        res[r]['hist'].fill(
             dataset='stat',
             pt = get_LT(ev[trilep]),
             weight = ev[trilep].genWeight/sum(ev.genWeight)
         )
 
-        res[name]['central'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][0]
-        res[name]['w2'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][1]
+        res[r]['central'] = res[r]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][0]
+        res[r]['w2'] = res[r]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][1]
 
         for w in weights:
-        
-            res[name]['hist'].fill(
+            res[r]['hist'].fill(
                 dataset=w,
                 pt = get_LT(ev[trilep]),
                 weight=xsecs[r]*getattr(ev[trilep].LHEWeight, w)*ev[trilep].genWeight/sum(ev.genWeight)
             )
 
+        # calculate coefficients
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
         res[r]['coeff'] = hp.get_parametrization(allvals)
         print("Coefficients are:")
         print(hp.root_func_string(np.sum(allvals,axis=1)))
+
+        # print sample SM/BSM point
         # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
         if is2D[r]:
             print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
@@ -156,18 +161,26 @@ if __name__ == '__main__':
             print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
             print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
 
-        # FIXME WIP
-        ## E^2 scaling for ttZ
-        # just an example.
+        
         results[r] = {}
+
         for c in ['cpQM', 'cpt']:
+ 
+            # get c axis points
             points = make_scan(operator=c, C_min=-20, C_max=20, step=1, is2D=is2D[r])
             c_values = []
             for i in range(0,41):
                 c_values.append(i-20)
 
+            # calculate and store results 
             pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41) ])
     
+            results[r][c] = {}
+            results[r][c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
+            results[r][c]['LT>700'] = np.sum(pred_matrix[:,LT700], axis=1)/np.sum(pred_matrix[20,LT700])
+            results[r][c]['ptZ>400'] = np.sum(pred_matrix[:,ptZ400], axis=1)/np.sum(pred_matrix[20,ptZ400])
+
+            # plot
             fig, ax = plt.subplots()
             hep.cms.label(
                 "Work in progress",
@@ -177,14 +190,6 @@ if __name__ == '__main__':
                 loc=0,
                 ax=ax,
             )
-           
-            # store results 
-            results[r][c] = {}
-            results[r][c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
-            results[r][c]['LT>700'] = np.sum(pred_matrix[:,LT700], axis=1)/np.sum(pred_matrix[20,LT700])
-            results[r][c]['ptZ>400'] = np.sum(pred_matrix[:,ptZ400], axis=1)/np.sum(pred_matrix[20,ptZ400])
-
-            # plot
             plt.plot(c_values, results[r][c]['inc'], label=r'inclusive', c='black')
             plt.plot(c_values, results[r][c]['LT>700'], label=r'$L_{T} \geq 700\ GeV$', c='blue')
             plt.plot(c_values, results[r][c]['ptZ>400'], label=r'$p_{T,Z} \geq 400\ GeV$', c='red')
@@ -210,6 +215,14 @@ for c in ['cpQM', 'cpt']:
             c_values.append(i-20)
         
         fig, ax = plt.subplots()
+        hep.cms.label(
+            "Work in progress",
+            data=True,
+            #year=2018,
+            lumi=60.0+41.5+35.9,
+            loc=0,
+            ax=ax,
+        )
         plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO', c='green')
         plt.plot(c_values, results['ttZ_LO_2D'][c][t], label=r'LO', c='darkviolet')
         if c == 'cpQM':
