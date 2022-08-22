@@ -187,8 +187,10 @@ def makePlot(output,
                      .integrate('systematic', 'central')
                      .integrate('n_ele', ch_sel)
                      .project(axis, 'dataset'))
+        print ("n_ele axis found for this histogram")
     except KeyError:
         # fallback if there's no n_ele axis
+        print ("No n_ele axis found for this histogram")
         syst_histogram =  (syst_histogram
                            .project(axis, 'dataset', 'systematic'))
         histogram = (histogram

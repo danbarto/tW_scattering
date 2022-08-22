@@ -42,6 +42,7 @@ def submit():
     else:
         events_per_point = int(2e6)
         events_per_job = 5000
+
     njobs = int(events_per_point)//events_per_job
 
     for reqname in requests:

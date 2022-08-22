@@ -18,6 +18,7 @@ lumi:
   2016: 16.8
   2017: 41.48
   2018: 59.83
+  2022: 0.5
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
   localSkim: /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples/

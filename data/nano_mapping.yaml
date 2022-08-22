@@ -346,3 +346,23 @@ UL16APV:
     - /SingleMuon/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
     - /SingleMuon/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
     - /SingleMuon/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+
+Run3_22:
+  top:
+    - /TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8/Run3Winter22NanoAOD-122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM
+  DY:
+    - /DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Winter22NanoAOD-122X_mcRun3_2021_realistic_v9_ext2-v1/NANOAODSIM
+  diboson:
+    - /WW_TuneCP5_13p6TeV-pythia8/Run3Winter22NanoAOD-122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM
+    - /WZ_TuneCP5_13p6TeV-pythia8/Run3Winter22NanoAOD-122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM
+    - /ZZ_TuneCP5_13p6TeV-pythia8/Run3Winter22NanoAOD-122X_mcRun3_2021_realistic_v9-v1/NANOAODSIM
+  topW_lep: []
+  TTW: []
+  TTZ: []
+  TTH: []
+  XG: []
+  rare: []
+  DoubleMuon: []
+  SingleMuon: []
+  MuonEG: []
+  EGamma: []

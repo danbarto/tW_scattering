@@ -20,6 +20,7 @@ def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_m
     '''
     fileset = {}
     for dataset in datasets:
+        print (dataset, year)
         for nano_sample in nano_mapping[year][dataset]:
             if skim:
                 files = samples[nano_sample]['files']

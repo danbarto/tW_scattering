@@ -150,6 +150,7 @@ def getDict(sample):
         split_factor = getSplitFactor(metis_sample, target=1e6)
 
         sample_dict['files'] = len(allFiles)
+        sample_dict['nano'] = allFiles
 
         nEvents, sumw, sumw2, good_files = metis_sample.get_nevents(),0,0, []  # [redirector_ucsd+f.get_name() for f in metis_sample.get_files()]
 
@@ -171,6 +172,7 @@ def main():
     argParser.add_argument('--name',  action='store', default='samples', help='Name of the samples txt file in data/')
     argParser.add_argument('--version',  action='store', default=None, help='Skim version')
     argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
+    argParser.add_argument('--nano',  action='store_true', help='Also store NanoAOD files')
     argParser.add_argument('--overwrite',  action='store_true', help='Overwrite')
     args = argParser.parse_args()
 
@@ -250,7 +252,8 @@ def main():
                             samples[sample]['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
                             if 'LHEReweightingSumw' in f:
                                 samples[sample]['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
-
+        if not args.nano:
+            samples[sample]['nano'] = "Not kept"
 
         with open(data_path+'%s.yaml'%name, 'w') as f:
             yaml.dump(samples, f, Dumper=Dumper)
