@@ -182,12 +182,12 @@ process = customizeNanoGEN(process)
 ## postfix _nlo for NLO samples, nothing for LO samples
 
 named_weights = [
-    "cpt_0p_cpqm_0p",
-    "cpt_3p_cpqm_0p",
-    "cpt_6p_cpqm_0p",
-    "cpt_0p_cpqm_3p",
-    "cpt_0p_cpqm_6p",
-    "cpt_3p_cpqm_3p",
+    "cpt_0p_cpQM_0p",
+    "cpt_3p_cpQM_0p",
+    "cpt_6p_cpQM_0p",
+    "cpt_0p_cpQM_3p",
+    "cpt_0p_cpQM_6p",
+    "cpt_3p_cpQM_3p",
 ]
 
 process.genWeightsTable.namedWeightIDs = named_weights

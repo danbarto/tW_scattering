@@ -35,7 +35,7 @@ def submit():
 
     # v6+ is UL
 
-    tag = "v17"
+    tag = "v18"
     if args.test_run:
         events_per_point = 200
         events_per_job = 50
