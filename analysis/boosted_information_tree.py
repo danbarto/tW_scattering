@@ -426,10 +426,24 @@ if __name__ == '__main__':
 
     ## Train all the trees! ##
 
+    # NOTE default
     n_trees       = 100  # from 100
     learning_rate = 0.3
     max_depth     = 4  # v21: 3, v22: 5, v23: 7, v24: signal only
     min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
+    ## NOTE what I determined to be the best hyperparameters
+    #n_trees       = 30  # from 100
+    #learning_rate = 0.1
+    #max_depth     = 5  # v21: 3, v22: 5, v23: 7, v24: signal only
+    #min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
+    ## NOTE the actual best hyper parameters
+    #n_trees       = 10  # from 100
+    #learning_rate = 0.1
+    #max_depth     = 5  # v21: 3, v22: 5, v23: 7, v24: signal only
+    #min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
 
     training_features = train[variables].values
     if args.use_weight:
