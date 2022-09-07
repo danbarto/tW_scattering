@@ -121,20 +121,57 @@ setup_environment
 
 # Make temporary directory to keep original dir clean
 # Go inside and extract the package tarball
+
+echo "Start of the job"
+pwd
+ls -lrth
+
+echo "Setting up temp directory"
+
 mkdir temp
 cd temp
-cp ../*.gz .
 cp ../*.py .
+cp ../*.gz .
 tar xf *.gz
 
-activate_cmssw CMSSW_12_4_7 slc7_amd64_gcc10
+echo "Activating CMSSW"
+export SCRAM_ARCH=slc7_amd64_gcc10
+#cmsrel CMSSW_12_4_7
+cd CMSSW_12_4_7/src
+scramv1 b ProjectRename
+cmsenv
+#git config --global user.name 'Daniel Spitzbart'
+#git config --global user.email 'daniel.spitzbart@cern.ch'
+#git config --global user.github 'danbarto'
+#git cms-init
+#echo "/PhysicsTools/NanoAOD/" >> .git/info/sparse-checkout
+
+#echo "begin sparse-checkout file"
+#cat .git/info/sparse-checkout
+#echo "end"
+
+#echo "Checkout and files afterwards"
+#git checkout CMSSW_12_4_X
+#ls -la
+#scram b -j 1
+#cp -r ../../../CMSSW_12_4_7/src/PhysicsTools/NanoAOD/python/ PhysicsTools/NanoAOD/
+#scram b -j 1
+#cmsenv
+cd -
+# activate_cmssw CMSSW_12_4_7 slc7_amd64_gcc10
+
+echo "Inside CMSSW"
+ls -lrth CMSSW_12_4_7/src
 
 echo "before running: ls -lrth"
+pwd
 ls -lrth
 
 echo -e "\n--- begin running ---\n" #                           <----- section division
 
 chirp ChirpMetisStatus "before_cmsRun"
+
+echo "Running config: $CFGNAME"
 
 cmsRun $CFGNAME inputFiles=$INPUTFILENAMES outputFile=nanoAOD.root
 
