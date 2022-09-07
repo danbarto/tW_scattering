@@ -123,6 +123,7 @@ class SS_analysis(processor.ProcessorABC):
         ### Reco objects ###
         ####################
 
+
         # NOTE: lepton objects are unaffected by any of the variations, therefore we keep them outside the variation loop.
 
         # Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
@@ -141,7 +142,8 @@ class SS_analysis(processor.ProcessorABC):
         el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year, era=self.era).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
-        
+
+
         if not re.search(data_pattern, dataset):
             gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
 
@@ -198,6 +200,7 @@ class SS_analysis(processor.ProcessorABC):
 
         # this is where the real JEC dependent stuff happens
 
+
         if re.search(data_pattern, dataset):
             variations = self.variations[:1]
         else:
@@ -249,7 +252,8 @@ class SS_analysis(processor.ProcessorABC):
 
             mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, met.pt, met.phi)
             min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-            
+
+
             # define the weight
             weight = Weights( len(ev) )
 
@@ -389,7 +393,7 @@ class SS_analysis(processor.ProcessorABC):
 
             out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-            if self.evaluate or self.dump:
+            if self.evaluate or self.dump or self.bit:
                 # define the inputs to the NN
                 # this is super stupid. there must be a better way.
                 # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
@@ -508,7 +512,7 @@ class SS_analysis(processor.ProcessorABC):
                     BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
                     BIT_inputs = BIT_inputs_df[variables].values
 
-                    bit_file = '../analysis/bits_v31.pkl'
+                    bit_file = '../analysis/bits_v40.pkl'  # was v31
                     with open(bit_file, 'rb') as f:
                         bits = pickle.load(f)
 
@@ -586,7 +590,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 for x, y in zip(X.flatten(), Y.flatten()):
                     point = [x, y]
-                    qt = load_transformer(f'v31_cpt_{x}_cpqm_{y}')
+                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
                     # Get the weights
