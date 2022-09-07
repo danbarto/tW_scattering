@@ -230,7 +230,7 @@ def makePlot(output,
 
     if shape:
         scales = { process: 1/histogram[process].sum("dataset").values(overflow='over')[()].sum() for process in processes }
-        histogram.scale(scales, axis='dataset')
+    histogram.scale(scales, axis='dataset')
     
     if data:
         fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
