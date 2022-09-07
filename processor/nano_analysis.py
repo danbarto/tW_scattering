@@ -71,13 +71,14 @@ class nano_analysis(processor.ProcessorABC):
         btag      = getBTagsDeepFlavB(jet)
         light     = getBTagsDeepFlavB(jet, invert=True)
         light_central = light[(abs(light.eta)<2.5)]
-        fwd       = getFwdJet(light)
+        fwd       = getFwdJet(light, puId=False)
 
         n_ele = ak.num(electron, axis=1)
-        gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
-        gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
+        if not re.search(data_pattern, dataset):
+            gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
+            gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
 
-        is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
+            is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
 
         ## Merge electrons and muons - this should work better now in ak1
         dilepton = cross(muon, electron)
@@ -99,8 +100,8 @@ class nano_analysis(processor.ProcessorABC):
 
         # define the weight
         weight = Weights( len(ev) )
-        
-        if not dataset=='MuonEG':
+
+        if not re.search(data_pattern, dataset):
             # generator weight
             weight.add("weight", ev.genWeight)
             
