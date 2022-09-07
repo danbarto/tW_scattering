@@ -99,7 +99,10 @@ def getBTagsDeepFlavB(jet, year=2016, era=None, invert=False, UL=True):
 
 def getFwdJet(jet, minPt=40, puId=True):
     minId = 7 if puId else 0
-    return jet[(abs(jet.p4.eta)>1.7) & (abs(jet.p4.eta)<4.7) & (jet.p4.pt>minPt) & ( ((jet.puId>=minId) & (jet.p4.pt<50)) | (jet.p4.pt>=50))] # PU jet Id just for jets below 50 GeV
+    if puId:
+        return jet[(abs(jet.p4.eta)>1.7) & (abs(jet.p4.eta)<4.7) & (jet.p4.pt>minPt) & ( ((jet.puId>=minId) & (jet.p4.pt<50)) | (jet.p4.pt>=50))] # PU jet Id just for jets below 50 GeV
+    else:
+        return jet[(abs(jet.p4.eta)>1.7) & (abs(jet.p4.eta)<4.7) & (jet.p4.pt>minPt) ]
 
 def getHTags(fatjet, year=2016):
     # 2.5% WP
