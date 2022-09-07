@@ -25,7 +25,7 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--tag', action='store', default=None, help="Tag on github for baby production")
 argParser.add_argument('--user', action='store', help="Your github user name")
-argParser.add_argument('--skim', action='store', default="dilep", choices=["dilep", "trilep"], help="Which skim to use")
+argParser.add_argument('--skim', action='store', default="dilep", choices=["SS", "dilep", "trilep"], help="Which skim to use")
 argParser.add_argument('--dryRun', action='store_true', default=None, help="Don't submit?")
 argParser.add_argument('--small', action='store_true', default=None, help="Only submit first two samples?")
 argParser.add_argument('--only', action='store', default='', help="Just select one sample")

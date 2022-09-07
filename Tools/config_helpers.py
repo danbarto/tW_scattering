@@ -13,7 +13,6 @@ import shutil
 import math
 import copy
 import re
-from coffea.processor.accumulator import dict_accumulator
 
 import glob
 
@@ -77,6 +76,7 @@ def make_small(fileset, small, n_max=1):
     return fileset
 
 def load_wrapper(f_in, select_histograms):
+    from coffea.processor.accumulator import dict_accumulator
     from coffea import util
     tmp = util.load(f_in)
     if select_histograms:
@@ -132,7 +132,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
     from plots.helpers import scale_and_merge
     ul = "UL"+year[2:] if year != '2022' else "Run3_%s"%(year[2:])
     if samples is None:
-        samples = get_samples(f"samples_{ul}.yaml")
+        samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
     renorm   = {}
@@ -156,8 +156,9 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
     lumi = cfg['lumi'][lumi_year]
 
     for sample in datasets:
-        if not quiet: print (f"Loading output for sample {sample}")
-        cache_name = f'{name}_{sample}_{year}'
+        if not quiet: print ("Loading output for sample:", sample)
+        cache_name = '_'.join(name, sample, year)
+        #f'{name}_{sample}_{year}'
         if postfix:
             cache_name += postfix
         print (cache_name)
@@ -174,7 +175,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
             try:
                 renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
             except:
-                print (f"Failed to renorm sample {dataset}")
+                print ("Failed to renorm sample:", dataset)
                 renorm[dataset] = 1
     output = accumulate(outputs)
 
