@@ -11,6 +11,7 @@ from Tools.helpers import get_samples
 from Tools.config_helpers import redirector_ucsd, load_yaml, data_path
 
 import uproot
+import glob
 
 nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
@@ -21,12 +22,17 @@ def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_m
     fileset = {}
     for dataset in datasets:
         print (dataset, year)
+        print (nano_mapping[year][dataset])
         for nano_sample in nano_mapping[year][dataset]:
+            print (nano_sample)
             if skim:
                 files = samples[nano_sample]['files']
             else:
-                dbs_files = DBSSample(dataset=nano_sample).get_files()
-                files = [ redirector+x.name for x in dbs_files ]
+                if nano_sample.count("ceph"):
+                    files = glob.glob(nano_sample+'/*.root')
+                else:
+                    dbs_files = DBSSample(dataset=nano_sample).get_files()
+                    files = [ redirector+x.name for x in dbs_files ]
             if not small:
                 fileset.update({nano_sample: files})
             else:
