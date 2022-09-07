@@ -62,6 +62,8 @@ def getSplitFactor(sample, target=1e6):
     print ("Average number of events in file:", average_events)
     print ("Filter efficiency:", filter_eff)
 
+    filter_eff = max(filter_eff, 0.1)
+    average_events = max(average_events, 1000)
     return min(max(1, int(round(target/(average_events*filter_eff),0))), len(sample.get_files()))
 
 def readSampleNames( sampleFile ):
