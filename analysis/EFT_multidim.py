@@ -32,11 +32,7 @@ from Tools.HyperPoly import HyperPoly
 from Tools.limits import regroup_and_rebin, get_systematics
 from Tools.EFT_tools import make_scan
 
-from yahist import Hist1D
-'''
-Taken from the NanoAOD-tools module
-'''
-
+# Taken from the NanoAOD-tools module
 def get_points(points):
     points = points.replace('LHEWeight_','').replace('_nlo','')
     ops = points.split('_')[::2]
@@ -52,7 +48,6 @@ def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
 def get_NLL(card_name):
-    # card: datacard instance
     # card_name: string
     res = card.calcNLL(card_name)  # NOTE: calcNLL makes a unique dir
     try:
