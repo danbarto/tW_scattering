@@ -69,7 +69,7 @@ if __name__ == '__main__':
     postfix = '_DY' if args.DY else None
     output = get_merged_output("OS_analysis", year=year, postfix=postfix)
 
-    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS/v0.7.0_v1/')
+    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
     if args.DY: plot_dir = plot_dir.replace('OS', 'DY')
     if args.postfix:
         plot_dir += '_%s'%args.postfix
@@ -135,6 +135,8 @@ if __name__ == '__main__':
     #order = ['topW_v3', 'diboson', 'TTXnoW', 'DY', 'ttbar', 'XG']
     signals = []
     omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
+
+    scale = {'DY': 1.5}
 
     for log in True, False:
 
@@ -468,6 +470,7 @@ if __name__ == '__main__':
                  lumi=lumi,
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='ee',
+                 rescale=scale,
                  save=os.path.expandvars(plot_dir_temp+'MET_pt_ee'),
                  )
 
@@ -481,6 +484,7 @@ if __name__ == '__main__':
                  lumi=lumi,
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='em',
+                 rescale=scale,
                  save=os.path.expandvars(plot_dir_temp+'MET_pt_em'),
                  )
 
@@ -494,6 +498,7 @@ if __name__ == '__main__':
                  lumi=lumi,
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='mm',
+                 rescale=scale,
                  save=os.path.expandvars(plot_dir_temp+'MET_pt_mm'),
                  )
 
@@ -505,6 +510,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 rescale=scale,
                  #upHists=['jes_up'], downHists=['jes_down'],
                  save=os.path.expandvars(plot_dir_temp+'MET_pt'),
                  )
