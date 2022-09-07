@@ -2,7 +2,6 @@ import os
 import numpy as np
 
 import onnxruntime as rt
-from keras.utils import np_utils
 
 from sklearn.metrics import roc_curve, roc_auc_score, auc, confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -12,6 +11,7 @@ import joblib
 import matplotlib.pyplot as plt
 
 def get_one_hot(labels):
+    from keras.utils import np_utils
     encoder = LabelEncoder()
     encoder.fit(labels)
     return np_utils.to_categorical(labels)
