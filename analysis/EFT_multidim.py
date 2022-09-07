@@ -128,7 +128,9 @@ if __name__ == '__main__':
 
         if args.overwrite:
 
-            # load outputs
+            # load outputs (coffea histograms)
+            # histograms are created per sample,
+            # x-secs and lumi scales are applied on the fly below
             outputs = {}
 
             for year in years:
@@ -161,8 +163,6 @@ if __name__ == '__main__':
                         ("bit_score_mm", bit_axis),
                     ]
             else:
-                #sm_point = 'cpt_0p_cpqm_0p_nlo'
-                #bsm_point = 'cpt_6p_cpqm_0p_nlo'  # NOTE: redundant
                 sm_point = f'eft_cpt_0_cpqm_0'
                 bsm_point = f'eft_cpt_{x}_cpqm_{y}'
                 sm_bkg = 'central'
@@ -238,7 +238,7 @@ if __name__ == '__main__':
                             #)
 
                             # NOTE: this is the "correct" way, but we need all the different histograms filled
-                            # already from the processor.
+                            # already from the coffea processor.
                             signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', bsm_point).copy()
                             signal = signal.rebin(axis.name, axis)
                             #signal = signal.sum('dataset').to_hist()
