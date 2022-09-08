@@ -157,7 +157,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
 
     for sample in datasets:
         if not quiet: print ("Loading output for sample:", sample)
-        cache_name = '_'.join(name, sample, year)
+        cache_name = '_'.join([name, sample, year])
         #f'{name}_{sample}_{year}'
         if postfix:
             cache_name += postfix
