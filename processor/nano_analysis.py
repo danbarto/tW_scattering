@@ -6,6 +6,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist, util
+from coffea.lumi_tools import LumiMask
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
@@ -39,7 +40,7 @@ class nano_analysis(processor.ProcessorABC):
     def process(self, events):
         
         output = self.accumulator.identity()
-        
+
         # we can use a very loose preselection to filter the events. nothing is done with this presel, though
         presel = ak.num(events.Jet)>=0
         
@@ -111,7 +112,12 @@ class nano_analysis(processor.ProcessorABC):
         selection = PackedSelection()
         selection.add('dilep',         dilep )
         #selection.add('filter',        (filters) )
-        
+
+        if re.search(data_pattern, dataset):
+            # FIXME need to extract the correct era from the dataset name
+            lumi_mask = LumiMask("../data/lumi/Cert_Collisions2022_eraB_355100_355769_Golden.json")(ev.run, ev.luminosityBlock)
+            selection.add('lumiMask', lumi_mask)
+
         bl_reqs = ['dilep']
 
         bl_reqs_d = { sel: True for sel in bl_reqs }
