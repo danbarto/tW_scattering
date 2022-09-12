@@ -1203,6 +1203,7 @@ if __name__ == '__main__':
     era         = args.year[4:7]
     local       = not args.dask
     save        = True
+    buaf        = True
 
     if profile:
         from pympler import muppy, summary
@@ -1246,7 +1247,7 @@ if __name__ == '__main__':
                 reweight[dataset] = (weight, index)
 
         from Tools.nano_mapping import make_fileset
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=True)
 
         add_processes_to_output(fileset, desired_output)
 
@@ -1292,7 +1293,10 @@ if __name__ == '__main__':
         #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
         #    ]
 
-        f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        if buaf:
+            f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        else:
+            f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
         ref_coordinates = [0,0]
 

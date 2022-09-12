@@ -15,7 +15,7 @@ import glob
 
 nano_mapping = load_yaml(data_path+'nano_mapping.yaml')
 
-def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018, skim=False):
+def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_max=1, year=2018, skim=False, buaf=False):
     '''
     This was supposed to give a NanoAOD samples based fileset. Can also be used for skims now.
     '''
@@ -26,7 +26,15 @@ def make_fileset(datasets, samples, redirector=redirector_ucsd, small=False, n_m
         for nano_sample in nano_mapping[year][dataset]:
             print (nano_sample)
             if skim:
-                files = samples[nano_sample]['files']
+                if buaf:
+                    print ("Running on BUAF")
+                    files = samples[nano_sample]['files']
+                    #print (files)
+                    files = [f.replace('/ceph/cms/', 'root://redirector.t2.ucsd.edu:1095//') for f in files]
+                    #print (files)
+
+                else:
+                    files = samples[nano_sample]['files']
             else:
                 if nano_sample.count("ceph"):
                     files = glob.glob(nano_sample+'/*.root')

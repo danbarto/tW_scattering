@@ -556,7 +556,7 @@ if __name__ == '__main__':
         from Tools.nano_mapping import make_fileset
         from default_accumulators import add_processes_to_output, desired_output
 
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=True)
 
         add_processes_to_output(fileset, desired_output)
 
