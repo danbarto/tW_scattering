@@ -18,9 +18,11 @@ def submit():
         '/DoubleMuon/Run2022A-PromptReco-v1/MINIAOD',
         '/DoubleMuon/Run2022B-PromptReco-v1/MINIAOD',
         '/DoubleMuon/Run2022C-PromptReco-v1/MINIAOD',
+        #'/DoubleMuon/Run2022D-PromptReco-v1/MINIAOD',
         '/SingleMuon/Run2022A-PromptReco-v1/MINIAOD',
         '/SingleMuon/Run2022B-PromptReco-v1/MINIAOD',
         '/SingleMuon/Run2022C-PromptReco-v1/MINIAOD',
+        #'/SingleMuon/Run2022D-PromptReco-v1/MINIAOD',
         '/EGamma/Run2022A-PromptReco-v1/MINIAOD',
         '/EGamma/Run2022B-PromptReco-v1/MINIAOD',
         '/EGamma/Run2022C-PromptReco-v1/MINIAOD',
@@ -56,7 +58,7 @@ def submit():
 
         if sample_name.count("Run2022B") or sample_name.count("Run2022A"):
             cfg_file = "nano_runB_v10_cfg.py"
-            min_completion = 0.98
+            min_completion = 0.94
         elif sample_name.count("Run2022"):
             cfg_file = "nano_runC_v10_cfg.py"
             min_completion = 0.98

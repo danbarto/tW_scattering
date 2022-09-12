@@ -200,7 +200,6 @@ class SS_analysis(processor.ProcessorABC):
 
         # this is where the real JEC dependent stuff happens
 
-
         if re.search(data_pattern, dataset):
             variations = self.variations[:1]
         else:
@@ -237,7 +236,6 @@ class SS_analysis(processor.ProcessorABC):
 
             # try to get either the most forward light jet, or if there's more than one with eta>1.7, the highest pt one
             most_fwd = light[ak.argsort(abs(light.eta))][:,0:1]
-            #most_fwd = light[ak.singletons(ak.argmax(abs(light.eta)))]
             best_fwd = ak.concatenate([j_fwd, most_fwd], axis=1)[:,0:1]
             
             jf          = cross(j_fwd, jet)
@@ -252,7 +250,6 @@ class SS_analysis(processor.ProcessorABC):
 
             mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, met.pt, met.phi)
             min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-
 
             # define the weight
             weight = Weights( len(ev) )
@@ -582,14 +579,16 @@ class SS_analysis(processor.ProcessorABC):
 
             if self.bit:
 
-                # NOTE Define a scan here?
-                # FIXME this should be done somewhere outside.
-                x = np.arange(-7,8,1)
-                y = np.arange(-7,8,1)
-                X, Y = np.meshgrid(x, y)
-
-                for x, y in zip(X.flatten(), Y.flatten()):
-                    point = [x, y]
+                ## NOTE Define a scan here?
+                ## FIXME this should be done somewhere outside.
+                #x = np.arange(-7,8,1)
+                #y = np.arange(-7,8,1)
+                #X, Y = np.meshgrid(x, y)
+                for p in self.points:
+                    x,y = p['point']
+                    point = p['point']
+                #for x, y in zip(X.flatten(), Y.flatten()):
+                #    point = [x, y]
                     qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
@@ -1191,6 +1190,9 @@ if __name__ == '__main__':
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
+    argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
+    argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
+    argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -1276,8 +1278,13 @@ if __name__ == '__main__':
 
 
         # NOTE new way of defining points.
-        x = np.arange(-7,8,1)
-        y = np.arange(-7,8,1)
+        if args.scan:
+            x = np.arange(-7,8,1)
+            y = np.arange(-7,8,1)
+        else:
+            x = np.array([int(args.cpt)])
+            y = np.array([int(args.cpqm)])
+
         CPT, CPQM = np.meshgrid(x, y)
 
         points = []
@@ -1286,11 +1293,6 @@ if __name__ == '__main__':
                 'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
                 'point': [cpt, cpqm],
             })
-
-        #points = [
-        #    {'name': 'cpt_3.0', 'point': [3.0, 0]},
-        #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
-        #    ]
 
         f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
@@ -1379,48 +1381,51 @@ if __name__ == '__main__':
         # everything else is taken the default_accumulators.py
         from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis, bit_axis
         desired_output.update({
-            "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-            "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-            "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
-            "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-            "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-            "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-            "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-            "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
             "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
-            "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
-            "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
            })
+        if not args.minimal:
+            desired_output.update({
+                "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
+                "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
+                "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+                "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            })
 
 
 
@@ -1506,8 +1511,9 @@ if __name__ == '__main__':
             if not args.small:
                 df_out.to_hdf(f"multiclass_input_{sample}_{args.year}.h5", key='df', format='table', mode='w')
 
-        print ("\nNN debugging:")
-        print (output['node'].sum('multiplicity').values())
+        if args.evaluate:
+            print ("\nNN debugging:")
+            print (output['node'].sum('multiplicity').values())
 
         # Scale the cutflow output. This should be packed into a function?
         cutflow_output[sample] = {}
