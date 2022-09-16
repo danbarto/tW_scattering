@@ -65,8 +65,8 @@ def histo_values(histo, weight):
 if __name__ == '__main__':
 
     # Load samples
-    base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
-    #base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
+    #base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
+    base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
     plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v2/"
     finalizePlotDir(plot_dir)
 
@@ -86,9 +86,6 @@ if __name__ == '__main__':
         'ttZ_NLO_2D':True,
         'ttZ_LO_2D':True,
     }
-
-    results = {}
-
 
     # Get HyperPoly parametrization.
     # this is sample independent as long as the coordinates are the same.
@@ -115,14 +112,27 @@ if __name__ == '__main__':
         ptZlim = 400
         LTmask = (get_LT(ev) >= LTlim)
         ptZmask = ak.flatten(get_Z(ev).pt >= ptZlim)
+        
+        res[r]['N_LT'] = len(ev[LTmask])
+        res[r]['N_ptZ'] = len(ev[ptZmask])
+       
+        res[r]['N_LT_weighted'] = 0
+        res[r]['N_ptZ_weighted'] = 0
+        w_LT = ev.genWeight[LTmask]
+        w_ptZ = ev.genWeight[ptZmask]
+        for i in range(res[r]['N_LT']):
+             res[r]['N_LT_weighted'] += w_LT[i]
+        for i in range(res[r]['N_ptZ']):
+             res[r]['N_ptZ_weighted'] += w_ptZ[i]
       
-        print('out of',len(ev),'events total, there are...')
-        print(len(ev[LTmask]), 'events with LT>%d'%LTlim)
-        print(len(ev[ptZmask]), 'events with ptZ>%d'%ptZlim) 
+        print('out of %d events total, there are...'%len(ev))
+        print('%d (%d weighted) events with LT>%d'%(res[r]['N_LT'],res[r]['N_LT_weighted'],LTlim))
+        print('%d (%d weighted) events with ptZ>%d'%(res[r]['N_ptZ'],res[r]['N_ptZ_weighted'],ptZlim))
         
         # calculate coefficients
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
         res[r]['coeff'] = hp.get_parametrization(allvals)
+
         # print sample SM/BSM point
         # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
         if is2D[r]:
@@ -133,24 +143,24 @@ if __name__ == '__main__':
             print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
 
         
-        results[r] = {}
+        res[r]['results'] = {}
 
         for c in ['cpQM', 'cpt']:
  
             # get c axis points
             points = make_scan(operator=c, C_min=-20, C_max=20, step=1, is2D=is2D[r])
-            print(points)
             c_values = []
             for i in range(0,41):
                 c_values.append(i-20)
 
             # calculate and store results 
             pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41) ])
-    
-            results[r][c] = {}
-            results[r][c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
-            results[r][c]['LTtail'] = np.sum(pred_matrix[:,LTmask], axis=1)/np.sum(pred_matrix[20,LTmask])
-            results[r][c]['ptZtail'] = np.sum(pred_matrix[:,ptZmask], axis=1)/np.sum(pred_matrix[20,ptZmask])
+
+            res[r]['results'][c] = {}
+            results = res[r]['results']
+            results[c]['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
+            results[c]['LTtail'] = np.sum(pred_matrix[:,LTmask], axis=1)/np.sum(pred_matrix[20,LTmask])
+            results[c]['ptZtail'] = np.sum(pred_matrix[:,ptZmask], axis=1)/np.sum(pred_matrix[20,ptZmask])
 
             # plot
             fig, ax = plt.subplots()
@@ -162,10 +172,12 @@ if __name__ == '__main__':
                 loc=0,
                 ax=ax,
             )
-            plt.plot(c_values, results[r][c]['inc'], label=r'inclusive', c='black')
-            plt.plot(c_values, results[r][c]['LTtail'], label=r'$L_{T} \geq %d\ GeV$'%LTlim, c='blue')
-            plt.plot(c_values, results[r][c]['ptZtail'], label=r'$p_{T,Z} \geq %d\ GeV$'%ptZlim, c='red')
-
+            plt.plot(c_values, results[c]['inc'], label=r'inclusive', c='black')
+            plt.plot(c_values, results[c]['LTtail'], label=r'$L_{T} \geq %d\ GeV$'%LTlim, c='blue')
+            plt.plot(c_values, results[c]['ptZtail'], label=r'$p_{T,Z} \geq %d\ GeV$'%ptZlim, c='red')
+            
+            plt.plot([],[],' ',label="# ev (LT): %d(%d)"%(res[r]['N_LT'],res[r]['N_LT_weighted']))
+            plt.plot([],[],' ',label="# ev (ptZ): %d(%d)"%(res[r]['N_ptZ'],res[r]['N_ptZ_weighted']))
             if c == 'cpQM': 
                 plt.xlabel(r'$C_{\varphi Q}^{-}$')
             else:
@@ -194,13 +206,19 @@ for c in ['cpQM', 'cpt']:
             loc=0,
             ax=ax,
         )
-        plt.plot(c_values, results['ttZ_NLO_2D'][c][t], label=r'NLO', c='green')
-        plt.plot(c_values, results['ttZ_LO_2D'][c][t], label=r'LO', c='darkviolet')
+        plt.plot(c_values, res['ttZ_NLO_2D']['results'][c][t], label=r'NLO', c='green')
+        plt.plot(c_values, res['ttZ_LO_2D']['results'][c][t], label=r'LO', c='darkviolet')
         if c == 'cpQM':
             plt.xlabel(r'$C_{\varphi Q}^{-}$')
         else:
             plt.xlabel(r'$C_{\varphi t}$')
         plt.ylabel(r'$\sigma/\sigma_{SM}$')
+
+        if t == 'LTtail': N = 'N_LT'
+        else: N = 'N_ptZ'
+        plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_NLO_2D'][N],res['ttZ_NLO_2D'][N+'_weighted']))
+        plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_LO_2D'][N],res['ttZ_LO_2D'][N+'_weighted']))
+
         plt.legend()
 
         ax.set_ylim(0,10)
