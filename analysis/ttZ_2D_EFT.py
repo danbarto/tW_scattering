@@ -3,6 +3,7 @@ Load NanoGEN samples in NanoAOD event factory
 - Compare LO vs NLO ttZ samples
 - Compare on-shell vs off-shell ttZ samples
 - Compare to a benchmark point to verify that reweighting works #FIXME
+- Find plane fit equation for cpt and cpQM
 '''
 
 import warnings
@@ -28,11 +29,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import mplhep as hep
 plt.style.use(hep.style.CMS)
-from scipy.optimize import curve_fit
 
 from yahist import Hist1D, Hist2D
 
-from reweighting_sanity_check import add_uncertainty
+
+# ==================================
+# ======== HELPER FUNCTIONS ========
+# ==================================
 
 def get_Z(ev):
     gp = ev.GenPart
@@ -64,99 +67,62 @@ def get_LT(ev):
 def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
+
+# ==================================
+# =========== MAIN CODE ============
+# ==================================
+
 if __name__ == '__main__':
 
     # Load samples
-    #base_dir = "/home/users/sjeon/ttw/CMSSW_10_6_19/src/"
+
     base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_2D/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v2/"
     finalizePlotDir(plot_dir)
+
+
+    # root files
 
     res = {}
 
-    res['ttZ_NLO_2D'] = {
-        'file': base_dir + "ttZ_EFT_NLO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
-    }
+    res['ttZ_NLO'] = {
+    'filename': "ttZ_EFT_NLO_all.root",
+        'is2D'    : True,
+        'xsecs'   : 0.930
+        }
 
-    res['ttZ_LO_2D'] = {
-        'file': base_dir + "ttZ_EFT_LO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_LO.root").events()
-    }
-    
-    is2D = {
-        'ttZ_NLO_2D':True,
-        'ttZ_LO_2D':True,
-    }
-
-    results = {}
+    res['ttZ_LO']  = {
+    'filename': "ttZ_EFT_LO_all.root",
+        'is2D'    : True,
+        'xsecs'   : 0.663
+         }
 
 
-    # Get HyperPoly parametrization.
-    # this is sample independent as long as the coordinates are the same.
-
-    xsecs = {'ttZ_NLO_2D': 0.930, 'ttZ_LO_2D': 0.663}
-    
     for r in res:
-
         print (r)
+
+        res[r]['file'] = base_dir + res[r]['filename']
+        res[r]['events'] = NanoEventsFactory.from_root(base_dir + res[r]['filename']).events()
+        res[r]['data'] = {}
 
         hp = HyperPoly(2)
 
-        tree    = uproot.open(res[r]['file'])["Events"]
+        tree = uproot.open(res[r]['file'])['Events']
 
-        coordinates, ref_coordinates = get_coordinates_and_ref(res[r]['file'],is2D[r])
-        hp.initialize( coordinates, ref_coordinates )
+        coordinates, ref_coordinates = get_coordinates_and_ref(res[r]['file'],res[r]['is2D'])
+        hp.initialize(coordinates, ref_coordinates)
 
         weights = [ x.replace('LHEWeight_','') for x in tree.keys() if x.startswith('LHEWeight_c') ]
 
-        # define selections
+
+        # ========= Define and count selections =========
+
         trilep = (ak.num(res[r]['events'].GenDressedLepton)==3)
-        ev = res[r]['events'][trilep] 
-        LTlim = 700
-        ptZlim = 400
-        LTmask = (get_LT(ev) >= LTlim)
-        ptZmask = ak.flatten(get_Z(ev).pt >= ptZlim)
-      
-        print('out of',len(ev),'events total, there are...')
-        print(len(ev[LTmask]), 'events with LT>%d'%LTlim)
-        print(len(ev[ptZmask]), 'events with ptZ>%d'%ptZlim) 
-        
-        # fill histogram
-        pt_axis = hist.Bin("pt", r"p", 1, 0, 5000)
-        res[r]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
+        ev = res[r]['events'][trilep]
+        print('%d trilep events in total'%len(ev))
 
-        res[r]['hist'].fill(
-            dataset='stat',
-            pt = get_LT(ev),
-            weight = ev.genWeight/sum(ev.genWeight)
-        )
-        
-        res[r]['central'] = res[r]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][0]
-        res[r]['w2'] = res[r]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][1]
 
-        for w in weights:
-            res[r]['hist'].fill(
-                dataset=w,
-                pt = get_LT(ev),
-                weight=xsecs[r]*getattr(ev.LHEWeight, w)*ev.genWeight/sum(ev.genWeight)
-            )
-
-        # calculate coefficients
-        allvals = [getattr(ev.LHEWeight, w) for w in weights]
-        res[r]['coeff'] = hp.get_parametrization(allvals)
-
-        allvals_fit = [histo_values(res[r]['hist'], w) for w in weights]
-        res[r]['coeff_fit'] = hp.get_parametrization(allvals_fit)
-
-        # print sample SM/BSM point
-        # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
-        #if is2D[r]:
-        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0]))
-        #    print ("BSM point:", hp.eval(res[r]['coeff'], [1,1]))
-        #else:
-        #    print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
-        #    print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
+        # =========== Calculate & plot 2D fit ===========
 
         # get c axis points
         points = make_scan_2D(operators=['cpt','cpQM'], C_min=-20, C_max=20, step=1)
@@ -164,58 +130,69 @@ if __name__ == '__main__':
         cpQM_mesh = np.linspace(-20,20,41)
         cpt_mesh, cpQM_mesh = np.meshgrid(cpt_mesh,cpQM_mesh)
 
-        # calculate and store results 
-        pred_matrix = [ [ hp.eval(res[r]['coeff'],points[i1][i2]['point']) for i1 in range(41) ] for i2 in range(41)]
-        pred_matrix_fit = [ [ hp.eval(res[r]['coeff_fit'],points[i1][i2]['point']) for i1 in range(41) ] for i2 in range(41)]
+        # get event-by-event coeffs & plot data
+        allvals = [getattr(ev.LHEWeight, w) for w in weights]
+        unweighted = hp.get_parametrization(allvals)
+        res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
 
-        #print(pred_matrix)
-        results[r] = {}
-        results[r]['inc'] = np.sum(pred_matrix*ev.genWeight, axis=2)/np.sum(pred_matrix[20][20]*ev.genWeight)
-        results[r]['inc_fit'] = np.sum(pred_matrix_fit, axis=2)/np.sum(pred_matrix_fit[20][20])
+        pred_matrix = [ [ hp.eval(res[r]['coeff'],points[i1][i2]['point']) for i2 in range(41) ] for i1 in range(41)]
 
+        # get 2D fit coeffs & plot data
+        pt_axis = hist.Bin("pt", r"p", 1, 0, 5000)
+        res[r]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
+
+        for w in weights:
+            res[r]['hist'].fill(
+                dataset=w,
+                pt = get_LT(ev),
+                weight=res[r]['xsecs']*getattr(ev.LHEWeight, w)*ev.genWeight/sum(ev.genWeight)
+            )
+
+        allvals_fit = [histo_values(res[r]['hist'], w) for w in weights]
+        res[r]['coeff_fit'] = hp.get_parametrization(allvals_fit)
+
+        pred_matrix_fit = [ [ hp.eval(res[r]['coeff_fit'],points[i1][i2]['point']) for i2 in range(41) ] for i1 in range(41)]
+
+        res[r]['data']['inc'] = np.sum(pred_matrix,axis=2)/np.sum(pred_matrix[20][20])
+        res[r]['data']['inc_fit'] = np.sum(pred_matrix_fit, axis=2)/np.sum(pred_matrix_fit[20][20])
+
+        # sanity check
         print('point | real data | fit')
         for p in [[5,8],[26,30],[1,40]]:
             i = p[0]-20
             j = p[1]-20
-            print('%d,%d | %.2f | %.2f'%(i,j,results[r]['inc'][p[0]][p[1]],results[r]['inc_fit'][p[0]][p[1]]))
+            print('%d,%d | %.2f | %.2f'%(i,j,res[r]['data']['inc'][p[0]][p[1]],res[r]['data']['inc_fit'][p[0]][p[1]]))
 
-        # plot colormap
+        # Heatmap plot of data
         fig, ax = plt.subplots()
         hep.cms.label(
-                "Work in progress",
+                "WIP",
                 data=True,
                 lumi=60.0+41.5+35.9,
                 loc=0,
                 ax=ax,
             )
-        im = ax.imshow(results[r]['inc'],
+        im = ax.imshow(res[r]['data']['inc'],
                   interpolation='gaussian',
                   cmap='viridis',
                   origin='lower',
                   extent=[-20,20,-20,20])
         plt.colorbar(im)
 
-        #ax.plot_surface(cpt_values, cpQM_values, results[r]['inc'], cmap=cm.coolwarm)
         plt.ylabel(r'$C_{\varphi Q}^{-}$')
         plt.xlabel(r'$C_{\varphi t}$')
-        #plt.zlabel(r'$\sigma/\sigma_{SM}$')
         plt.legend()
 
         fig.savefig(plot_dir+r[4:]+'_scaling.pdf')
         fig.savefig(plot_dir+r[4:]+'_scaling.png')
 
-        # fit and plot 3D
+        # 3D plot of fit
         cpt = np.array(cpt_mesh).flatten()
         cpQM = np.array(cpQM_mesh).flatten()
-        #A = np.array([cpt**4,cpQM**4,cpt**2*cpQM**2,cpt**2,cpQM**2,cpt*cpQM,cpt*0+1]).T
-        #B = results[r]['inc'].flatten()
-        #coeff, residuals, rank, s = np.linalg.lstsq(A, B)
-        #results[r]['fit_coeff'] = coeff
 
         coeff = np.sum(res[r]['coeff_fit'],axis=1)
         def plane_func(xt,xQM,A,B,C,D,E,F):
             return A+B*xt+C*xQM+D*xt**2+E*xt*xQM+F*xQM**2
-            #return (A*xt**4)+(B*xQM**4)+(C*xt**2*xQM**2)+(D*xt**2)+(E*xQM**2)+(F*xt*xQM)+G
         plot_func = plane_func(cpt_mesh,cpQM_mesh,
                        coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5])
         print(plot_func)
@@ -234,19 +211,18 @@ if __name__ == '__main__':
             r'$+{:.3f}x_tx_{{QM}}$' '\n'
             r'$+{:.3f}x_{{QM}}^2$'.format(*coeff),
             transform=ax2.transAxes, wrap=True, fontsize='small')
-        #fig.savefig(plot_dir+r[4:]+'_fit.pdf')
+        fig2.savefig(plot_dir+r[4:]+'_fit.pdf')
         fig2.savefig(plot_dir+r[4:]+'_fit.png')
 
-        # plot 3D
+        # 3D plot of data
         fig3 = plt.figure()
         ax3 = fig3.add_subplot(projection='3d')
         ax3.set_xlim3d(-20,20) 
         ax3.set_ylim3d(-20,20)
         ax3.set_zlim3d(0,10)
-        ax3.plot_surface(cpt_mesh, cpQM_mesh, results[r]['inc'], cmap=cm.coolwarm)
+        ax3.plot_surface(cpt_mesh, cpQM_mesh, res[r]['data']['inc'], cmap=cm.coolwarm)
         plt.ylabel(r'$C_{\varphi Q}^{-}$')
         plt.xlabel(r'$C_{\varphi t}$')
-        #plt.zlabel(r'$\sigma/\sigma_{SM}$')
         plt.legend()
+        fig3.savefig(plot_dir+r[4:]+'_data.pdf')
         fig3.savefig(plot_dir+r[4:]+'_data.png')
-
