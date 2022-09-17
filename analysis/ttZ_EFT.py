@@ -85,13 +85,13 @@ if __name__ == '__main__':
     res = {}
 
     res['ttZ_NLO'] = {
-    'filename': "ttZ_EFT_NLO_all.root",
+        'filename': "ttZ_EFT_NLO_all.root",
         'is2D'    : True,
         'xsecs'   : 0.930
         }
 
     res['ttZ_LO']  = {
-    'filename': "ttZ_EFT_LO_all.root",
+        'filename': "ttZ_EFT_LO_all.root",
         'is2D'    : True,
         'xsecs'   : 0.663
          }
@@ -139,8 +139,9 @@ if __name__ == '__main__':
 
         # get coefficients
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
-        unweighted = hp.get_parametrization(allvals)
-        res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
+        res[r]['coeff'] = hp.get_parametrization(allvals)
+        #unweighted = hp.get_parametrization(allvals)
+        #res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
 
 
         for c in ['cpQM', 'cpt']:
@@ -150,8 +151,8 @@ if __name__ == '__main__':
             c_vals = np.linspace(-20,20,41)
 
             # get plot data
-            pred_matrix = np.array([ np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41)])
-            
+            #pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41)])
+            pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point']))*ev.genWeight for i in range(41)])
             res[r]['data'][c] = {}
             data = res[r]['data'][c]
             data['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
@@ -203,12 +204,12 @@ if __name__ == '__main__':
     
             plt.xlabel(r'$C_{\varphi Q}^{-}$') if c == 'cpQM' else plt.xlabel(r'$C_{\varphi t}$')
             plt.ylabel(r'$\sigma/\sigma_{SM}$')
-            N = 'N_LT' if t == 'LTtail' else 'N_ptZ'
-            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_NLO'][N],res['ttZ_NLO_2D'][N+'_weighted']))
-            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_LO'][N],res['ttZ_LO_2D'][N+'_weighted']))
+            N = 'N_LT' if sel == 'LTtail' else 'N_ptZ'
+            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_NLO'][N],res['ttZ_NLO'][N+'_weighted']))
+            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_LO'][N],res['ttZ_LO'][N+'_weighted']))
             plt.legend()
     
             ax.set_ylim(0,10)
             
-            fig.savefig(plot_dir+'compare_'+t+'_'+c+'.pdf')
-            fig.savefig(plot_dir+'compare_'+t+'_'+c+'.png')
+            fig.savefig(plot_dir+'compare_'+sel+'_'+c+'.pdf')
+            fig.savefig(plot_dir+'compare_'+sel+'_'+c+'.png')

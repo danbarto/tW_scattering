@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # Load samples
 
     base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v2/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_2D/"
     finalizePlotDir(plot_dir)
 
 
@@ -86,13 +86,13 @@ if __name__ == '__main__':
     res = {}
 
     res['ttZ_NLO'] = {
-    'filename': "ttZ_EFT_NLO_all.root",
+        'filename': "ttZ_EFT_NLO.root",
         'is2D'    : True,
         'xsecs'   : 0.930
         }
 
     res['ttZ_LO']  = {
-    'filename': "ttZ_EFT_LO_all.root",
+        'filename': "ttZ_EFT_LO.root",
         'is2D'    : True,
         'xsecs'   : 0.663
          }
@@ -128,14 +128,14 @@ if __name__ == '__main__':
         points = make_scan_2D(operators=['cpt','cpQM'], C_min=-20, C_max=20, step=1)
         cpt_mesh = np.linspace(-20,20,41)
         cpQM_mesh = np.linspace(-20,20,41)
-        cpt_mesh, cpQM_mesh = np.meshgrid(cpt_mesh,cpQM_mesh)
+        cpQM_mesh, cpt_mesh = np.meshgrid(cpQM_mesh,cpt_mesh)
 
         # get event-by-event coeffs & plot data
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
         unweighted = hp.get_parametrization(allvals)
         res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
 
-        pred_matrix = [ [ hp.eval(res[r]['coeff'],points[i1][i2]['point']) for i2 in range(41) ] for i1 in range(41)]
+        pred_matrix = [[hp.eval(res[r]['coeff'],points[i1][i2]['point']) for i2 in range(41) ] for i1 in range(41)]
 
         # get 2D fit coeffs & plot data
         pt_axis = hist.Bin("pt", r"p", 1, 0, 5000)
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
         # sanity check
         print('point | real data | fit')
-        for p in [[5,8],[26,30],[1,40]]:
+        for p in [[5,8],[26,30],[40,0]]:
             i = p[0]-20
             j = p[1]-20
             print('%d,%d | %.2f | %.2f'%(i,j,res[r]['data']['inc'][p[0]][p[1]],res[r]['data']['inc_fit'][p[0]][p[1]]))
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 loc=0,
                 ax=ax,
             )
-        im = ax.imshow(res[r]['data']['inc'],
+        im = ax.imshow(res[r]['data']['inc'].T,
                   interpolation='gaussian',
                   cmap='viridis',
                   origin='lower',
