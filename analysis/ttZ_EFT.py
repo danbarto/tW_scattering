@@ -139,9 +139,8 @@ if __name__ == '__main__':
 
         # get coefficients
         allvals = [getattr(ev.LHEWeight, w) for w in weights]
-        res[r]['coeff'] = hp.get_parametrization(allvals)
-        #unweighted = hp.get_parametrization(allvals)
-        #res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
+        unweighted = hp.get_parametrization(allvals)
+        res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
 
 
         for c in ['cpQM', 'cpt']:
@@ -151,8 +150,7 @@ if __name__ == '__main__':
             c_vals = np.linspace(-20,20,41)
 
             # get plot data
-            #pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41)])
-            pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point']))*ev.genWeight for i in range(41)])
+            pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41)])
             res[r]['data'][c] = {}
             data = res[r]['data'][c]
             data['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
