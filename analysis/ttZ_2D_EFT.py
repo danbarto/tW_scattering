@@ -86,13 +86,13 @@ if __name__ == '__main__':
     res = {}
 
     res['ttZ_NLO'] = {
-        'filename': "ttZ_EFT_NLO.root",
+        'filename': "ttZ_EFT_NLO_all.root",
         'is2D'    : True,
         'xsecs'   : 0.930
         }
 
     res['ttZ_LO']  = {
-        'filename': "ttZ_EFT_LO.root",
+        'filename': "ttZ_EFT_LO_all.root",
         'is2D'    : True,
         'xsecs'   : 0.663
          }
@@ -157,11 +157,13 @@ if __name__ == '__main__':
         res[r]['data']['inc_fit'] = np.sum(pred_matrix_fit, axis=2)/np.sum(pred_matrix_fit[20][20])
 
         # sanity check
-        print('point | real data | fit')
+        print('point | actual data | fit')
         for p in [[5,8],[26,30],[40,0]]:
             i = p[0]-20
             j = p[1]-20
-            print('%d,%d | %.2f | %.2f'%(i,j,res[r]['data']['inc'][p[0]][p[1]],res[r]['data']['inc_fit'][p[0]][p[1]]))
+            actualdata = res[r]['data']['inc'][p[0]][p[1]]
+            fitdata = res[r]['data']['inc_fit'][p[0]][p[1]]
+            print('%d,%d | %.2f | %.2f'%(i,j,actualdata,fitdata))
 
         # Heatmap plot of data
         fig, ax = plt.subplots()
@@ -195,7 +197,7 @@ if __name__ == '__main__':
             return A+B*xt+C*xQM+D*xt**2+E*xt*xQM+F*xQM**2
         plot_func = plane_func(cpt_mesh,cpQM_mesh,
                        coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5])
-        print(plot_func)
+        print('{:f}+{:f}x_t+{:f}x_QM+{:f}x_t^2+{:f}x_tx_QM+{:f}x_{{QM}}^2'.format(*coeff))
         fig2, ax2 = plt.subplots(subplot_kw={"projection": "3d"})
         surf = ax2.plot_surface(cpt_mesh,cpQM_mesh,plot_func,cmap=cm.coolwarm)
         ax2.set_xlim3d(-20,20)

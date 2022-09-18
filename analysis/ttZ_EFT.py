@@ -86,12 +86,15 @@ if __name__ == '__main__':
 
     res['ttZ_NLO'] = {
         'filename': "ttZ_EFT_NLO_all.root",
+        #'filename': "ttZ_EFT_NLO.root",
+        # this root file is smaller than the _all one
         'is2D'    : True,
         'xsecs'   : 0.930
         }
 
     res['ttZ_LO']  = {
         'filename': "ttZ_EFT_LO_all.root",
+        #'filename': "ttZ_EFT_LO.root",
         'is2D'    : True,
         'xsecs'   : 0.663
          }
@@ -127,8 +130,8 @@ if __name__ == '__main__':
 
         LTmask = (get_LT(ev) >= LTlim)
         ptZmask = ak.flatten(get_Z(ev).pt >= ptZlim)
-        res[r]['N_LT'] = len(ev[LTmask])
-        res[r]['N_ptZ'] = len(ev[ptZmask])
+        res[r]['N_LT'] = np.sum(LTmask)
+        res[r]['N_ptZ'] = np.sum(ptZmask)
         res[r]['N_LT_weighted'] = np.sum(ev.genWeight[LTmask])
         res[r]['N_ptZ_weighted'] = np.sum(ev.genWeight[ptZmask])
         print('%d (%d weighted) events with LT>%d'%(res[r]['N_LT'],res[r]['N_LT_weighted'],LTlim))
