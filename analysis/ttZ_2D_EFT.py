@@ -157,13 +157,13 @@ if __name__ == '__main__':
         res[r]['data']['inc_fit'] = np.sum(pred_matrix_fit, axis=2)/np.sum(pred_matrix_fit[20][20])
 
         # sanity check
-        print('point | actual data | fit')
-        for p in [[5,8],[26,30],[40,0]]:
+        print('  point | data | fit')
+        for p in [[5,8],[20,20],[26,30],[40,0]]:
             i = p[0]-20
             j = p[1]-20
             actualdata = res[r]['data']['inc'][p[0]][p[1]]
             fitdata = res[r]['data']['inc_fit'][p[0]][p[1]]
-            print('%d,%d | %.2f | %.2f'%(i,j,actualdata,fitdata))
+            print('%3d,%3d | %.2f | %.2f'%(i,j,actualdata,fitdata))
 
         # Heatmap plot of data
         fig, ax = plt.subplots()
@@ -192,12 +192,12 @@ if __name__ == '__main__':
         cpt = np.array(cpt_mesh).flatten()
         cpQM = np.array(cpQM_mesh).flatten()
 
-        coeff = np.sum(res[r]['coeff_fit'],axis=1)
+        coeff = np.sum(res[r]['coeff_fit'],axis=1)/np.sum(res[r]['coeff_fit'][0])
         def plane_func(xt,xQM,A,B,C,D,E,F):
             return A+B*xt+C*xQM+D*xt**2+E*xt*xQM+F*xQM**2
         plot_func = plane_func(cpt_mesh,cpQM_mesh,
                        coeff[0],coeff[1],coeff[2],coeff[3],coeff[4],coeff[5])
-        print('{:f}+{:f}x_t+{:f}x_QM+{:f}x_t^2+{:f}x_tx_QM+{:f}x_{{QM}}^2'.format(*coeff))
+        print('{:f}+{:f}x_t+{:f}x_QM+{:f}x_t^2+{:f}x_tx_QM+{:f}x_QM^2'.format(*coeff))
         fig2, ax2 = plt.subplots(subplot_kw={"projection": "3d"})
         surf = ax2.plot_surface(cpt_mesh,cpQM_mesh,plot_func,cmap=cm.coolwarm)
         ax2.set_xlim3d(-20,20)
@@ -207,11 +207,11 @@ if __name__ == '__main__':
         plt.xlabel(r'$C_{\varphi t}$')
         ax2.text2D(0.0, 0.8,
             r'${:.3f}$' '\n'
-            r'$+{:.3f}x_{{t}}$' '\n'
-            r'$+{:.3f}x_{{QM}}$' '\n'
-            r'$+{:.3f}x_t^2$' '\n'
-            r'$+{:.3f}x_tx_{{QM}}$' '\n'
-            r'$+{:.3f}x_{{QM}}^2$'.format(*coeff),
+            r'$ + {:.3f}x_{{t}}$' '\n'
+            r'$ + {:.3f}x_{{QM}}$' '\n'
+            r'$ + {:.3f}x_t^2$' '\n'
+            r'$ + {:.3f}x_tx_{{QM}}$' '\n'
+            r'$ + {:.3f}x_{{QM}}^2$'.format(*coeff),
             transform=ax2.transAxes, wrap=True, fontsize='small')
         fig2.savefig(plot_dir+r[4:]+'_fit.pdf')
         fig2.savefig(plot_dir+r[4:]+'_fit.png')
