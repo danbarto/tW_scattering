@@ -22,6 +22,7 @@ lumi:
 meta:
   localNano: /hadoop/cms/store/user/dspitzba/nanoAOD/
   localSkim: /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples/
+  buafSkim: /media/data_hdd/daniel/ttw_samples/
   plots: /home/users/$USER/public_html/tW_scattering/
   version: 0.4.0
 signalSelection:

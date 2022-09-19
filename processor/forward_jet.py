@@ -266,9 +266,9 @@ class forward_jet_analysis(processor.ProcessorABC):
 
             if var_name == 'central':
                 cutflow = Cutflow(output, ev, weight=weight)
-                BL = sel.dilep_baseline(cutflow=cutflow, SS=False, DY=self.DY)
+                #BL = sel.dilep_baseline(cutflow=cutflow, SS=False, DY=self.DY)
 
-            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'], DY=self.DY)
+            BL = sel.dilep_baseline(SS=False, omit=['N_fwd>0', 'N_central>2'], DY=self.DY, Zsel='offZ')  # offZ not in effect if DY is true
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
             output['N_jet'].fill(
@@ -334,7 +334,7 @@ class forward_jet_analysis(processor.ProcessorABC):
 
             #output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
 
-            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'], DY=self.DY)
+            BL_minusNb = sel.dilep_baseline(SS=False, omit=['N_btag>0','N_central>2', 'N_fwd>0'], DY=self.DY, Zsel='offZ')
             if not re.search(data_pattern, dataset):
                 BL_minusNb = add_conversion_req(dataset, BL_minusNb)
             output['N_b'].fill(
@@ -346,7 +346,7 @@ class forward_jet_analysis(processor.ProcessorABC):
             )
 
             # This is the real baseline, although N_fwd is removed for training. FIXME: decide what to call "baseline"
-            BL = sel.dilep_baseline(SS=False, DY=self.DY)
+            BL = sel.dilep_baseline(SS=False, DY=self.DY, Zsel='offZ')
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
 
@@ -448,7 +448,7 @@ class forward_jet_analysis(processor.ProcessorABC):
                     weight=weight.weight()[BL],
                 )
 
-            BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'], DY=self.DY)
+            BL_minusMET = sel.dilep_baseline(cutflow=cutflow, SS=False, omit=['MET>30', 'N_central>2','N_fwd>0'], DY=self.DY, Zsel='offZ')
             if not re.search(data_pattern, dataset):
                 BL_minusMET = add_conversion_req(dataset, BL_minusMET)
             output['MET'].fill(
@@ -499,6 +499,7 @@ if __name__ == '__main__':
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
+    argParser.add_argument('--buaf', action='store', default='false', help="Run on the BU AF")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -556,7 +557,7 @@ if __name__ == '__main__':
         from Tools.nano_mapping import make_fileset
         from default_accumulators import add_processes_to_output, desired_output
 
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=True)
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=args.buaf)
 
         add_processes_to_output(fileset, desired_output)
 
@@ -675,3 +676,47 @@ if __name__ == '__main__':
             # NOTE: this really restarts the cluster, but is the only fully effective
             # way of deallocating all the accumulated memory...
             c.restart()
+
+        processes = sample_list
+
+        from Tools.config_helpers import get_merged_output
+        output_scaled = get_merged_output('OS_analysis', str(year), select_datasets=processes)
+
+        from plots.helpers import makePlot
+
+        ## The below doesn't work reliably :(
+        #processes = [ x.name for x in output_scaled['dilep_mass'].sum('mass', 'systematic', 'n_ele').axes()[0].identifiers() ]
+
+        mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+        makePlot(output_scaled, 'dilep_mass', 'mass',
+                 data=[],
+                 bins=mass_bins,
+                 log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
+                 #new_colors=my_colors, new_labels=my_labels,
+                 channel='mm',
+                 upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
+                 order=processes,
+                 save=os.path.expandvars('$TWHOME/dump/dilep_mass_mm'),
+                 )
+
+        makePlot(output_scaled, 'dilep_mass', 'mass',
+                 data=[],
+                 bins=mass_bins,
+                 log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
+                 #new_colors=my_colors, new_labels=my_labels,
+                 channel='em',
+                 order=processes,
+                 save=os.path.expandvars('$TWHOME/dump/dilep_mass_em'),
+                 )
+
+        N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+        makePlot(output_scaled, 'N_fwd', 'multiplicity',
+                 data=[],
+                 bins=N_bins_red,
+                 log=False, normalize=False, axis_label=r'N',
+                 #new_colors=my_colors, new_labels=my_labels,
+                 #channel='em',
+                 upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
+                 order=processes,
+                 save=os.path.expandvars('$TWHOME/dump/N_fwd'),
+                 )

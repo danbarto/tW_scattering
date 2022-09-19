@@ -9,11 +9,13 @@ import re
 
 colors = {
     'tW_scattering': '#FF595E',
+    'topW_lep': '#FF595E',
     'topW_v2': '#FF595E',
     'topW_v3': '#FF595E',
     'signal': '#FF595E',
     #'tW_scattering': '#000000', # this would be black
     'TTW': '#8AC926',
+    'TTXnoW': '#FFCA3A',
     'prompt': '#8AC926',
     'TTX': '#FFCA3A',
     'TTZ': '#FFCA3A',
@@ -21,6 +23,7 @@ colors = {
     'TTH': '#34623F',
     'TTTT': '#0F7173',
     'ttbar': '#1982C4',
+    'top': '#1982C4',
     'non prompt': '#1982C4',
     'wjets': '#6A4C93',
     'diboson': '#525B76',
@@ -31,6 +34,13 @@ colors = {
     'XG': '#5bc0de',
     'charge flip': '#6A4C93',
     'MuonEG': '#000000',
+    'conv_mc': '#5bc0de',
+    'np_obs_mc': '#1982C4',
+    'np_est_mc': '#1982C4',
+    'np_est_data': '#1982C4',
+    'cf_obs_mc': '#0F7173',
+    'cf_est_mc': '#0F7173',
+    'cf_est_data': '#0F7173',
 }
 '''
 other colors (sets from coolers.com):
@@ -43,6 +53,7 @@ my_labels = {
     'tW_scattering': 'top-W scat.',
     'topW_v2': 'top-W scat.',
     'topW_v3': 'top-W scat.',
+    'topW_lep': 'top-W scat.',
     'signal': 'top-W scat.',
     'prompt': 'prompt/irred.',
     'non prompt': 'nonprompt',
@@ -50,10 +61,12 @@ my_labels = {
     'lost lepton': 'lost lepton',
     'TTW': r'$t\bar{t}$W+jets',
     'TTX': r'$t\bar{t}$Z/H',
+    'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
     'TTH': r'$t\bar{t}$H',
     'TTZ': r'$t\bar{t}$Z',
     'TTTT': r'$t\bar{t}t\bar{t}$',
     'ttbar': r'$t\bar{t}$+jets',
+    'top': r'$t\bar{t}$',
     'wjets': 'W+jets',
     'DY': 'Drell-Yan',
     'diboson': 'VV/VVV',
@@ -63,6 +76,14 @@ my_labels = {
     'MuonEG': 'Observed',
     'pseudodata': 'Pseudo-data',
     'uncertainty': 'Uncertainty',
+    'XG': 'XG',  # this is bare XG
+    'conv_mc': 'conversion',
+    'np_obs_mc': 'nonprompt (MC true)',
+    'np_est_mc': 'nonprompt (MC est)',
+    'cf_obs_mc': 'charge flip (MC true)',
+    'cf_est_mc': 'charge flip (MC est)',
+    'np_est_data': 'nonprompt (est)',
+    'cf_est_data': 'charge flip (est)',
 }
 
 

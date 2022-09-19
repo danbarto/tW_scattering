@@ -1192,6 +1192,7 @@ if __name__ == '__main__':
     argParser.add_argument('--sample', action='store', default='all', )
     argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
     argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
+    argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     args = argParser.parse_args()
 
@@ -1205,7 +1206,7 @@ if __name__ == '__main__':
     era         = args.year[4:7]
     local       = not args.dask
     save        = True
-    buaf        = True
+    buaf        = False
 
     if profile:
         from pympler import muppy, summary
@@ -1249,7 +1250,7 @@ if __name__ == '__main__':
                 reweight[dataset] = (weight, index)
 
         from Tools.nano_mapping import make_fileset
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=True)
+        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=args.buaf)
 
         add_processes_to_output(fileset, desired_output)
 
@@ -1295,7 +1296,6 @@ if __name__ == '__main__':
                 'point': [cpt, cpqm],
             })
 
-<<<<<<< HEAD
         #points = [
         #    {'name': 'cpt_3.0', 'point': [3.0, 0]},
         #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
@@ -1304,8 +1304,10 @@ if __name__ == '__main__':
         if buaf:
             f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         else:
-            f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+            #f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+            f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
+        coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
         ref_coordinates = [0,0]
 
         from Tools.awkwardHyperPoly import *

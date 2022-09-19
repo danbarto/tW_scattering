@@ -30,10 +30,11 @@ class Selection:
         self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
-    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True, DY=False):
+    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True, DY=False, Zsel='none'):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
+        Zsel: none / offZ / onZ
         '''
         self.selection = PackedSelection()
 
@@ -49,6 +50,13 @@ class Selection:
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
         dilep   = choose(lepton, 2)
+
+        OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
+        OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
+        SFOS        = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
+
+        offZ    = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
+        onZ     = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
 
         is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
         is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
@@ -82,6 +90,8 @@ class Selection:
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
+        self.selection.add('offZ',          offZ )
+        self.selection.add('onZ',           onZ )
         self.selection.add('min_mll',       (min_mll) )
         
         reqs = [
@@ -123,7 +133,13 @@ class Selection:
                 #'delta_eta',
             ]
 
-        if DY: reqs = reqs_DY
+        if DY:
+            reqs = reqs_DY
+        elif Zsel == 'offZ':
+            reqs += ['offZ']
+
+        if Zsel == 'onZ':
+            reqs += ['onZ']
 
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)
@@ -158,7 +174,6 @@ class Selection:
 
         OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
-
 
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
