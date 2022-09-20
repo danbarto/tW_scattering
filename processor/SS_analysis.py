@@ -698,6 +698,76 @@ class SS_analysis(processor.ProcessorABC):
                         other={'EFT': f"cpt_{x}_cpqm_{y}"},
                        )
 
+                    if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                        #print ("Running PDFs")
+                        # if we just run central (len(variations)=1) we don't need the PDF variations either
+                        for i in range(1,101):
+                            pdf_ext = "pdf_%s"%i
+
+                            output['bit_score_pp'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_pp)],
+                                weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)],
+                            )
+
+                            output['bit_score_mm'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_mm)],
+                                weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)],
+                            )
+
+                        for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                            # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
+                            # SAMPLES WITH JUST 8 SCALE WEIGHTS: EFT SIGNALS, ZZTo2Q2L_mllmin4p0
+                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0"; [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
+                            pdf_ext = "scale_%s"%i
+
+                            output['bit_score_pp'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_pp)],
+                                weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)],
+                            )
+
+                            output['bit_score_mm'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_mm)],
+                                weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)],
+                            )
+                        if len(ev.PSWeight[0]) > 1:
+                            for i in range(4):
+                                pdf_ext = "PS_%s"%i
+
+                                output['bit_score_pp'].fill(
+                                    dataset     = dataset,
+                                    systematic  = pdf_ext,
+                                    prediction  = 'central',
+                                    EFT         = f"cpt_{x}_cpqm_{y}",
+                                    bit         = score_trans[(BL & SR_sel_pp)],
+                                    weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
+                                )
+
+                                output['bit_score_mm'].fill(
+                                    dataset     = dataset,
+                                    systematic  = pdf_ext,
+                                    prediction  = 'central',
+                                    EFT         = f"cpt_{x}_cpqm_{y}",
+                                    bit         = score_trans[(BL & SR_sel_mm)],
+                                    weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                                )
+
             #if self.evaluate or self.dump:
             if self.evaluate and not self.minimal:
                 blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
