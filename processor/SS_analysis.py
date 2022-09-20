@@ -1206,7 +1206,6 @@ if __name__ == '__main__':
     era         = args.year[4:7]
     local       = not args.dask
     save        = True
-    buaf        = False
 
     if profile:
         from pympler import muppy, summary
@@ -1301,11 +1300,13 @@ if __name__ == '__main__':
         #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
         #    ]
 
-        if buaf:
+        if args.buaf == 'remote':
             f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
-        else:
-            #f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        elif args.buaf == 'local':
             f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        else:
+            f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
         coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
         ref_coordinates = [0,0]
