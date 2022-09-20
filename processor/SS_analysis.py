@@ -532,50 +532,101 @@ class SS_analysis(processor.ProcessorABC):
                 #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
                 #print ('len', len(reg_sel[0]))
                 #print ('sel', reg_sel[0])
-                reg_sel = [
-                    BL&add_sel,
-                    BL_incl&add_sel,
-                    np_est_sel_mc&add_sel,
-                    np_obs_sel_mc&add_sel,
-                    np_est_sel_data&add_sel,
-                    cf_est_sel_mc&add_sel,
-                    cf_obs_sel_mc&add_sel,
-                    cf_est_sel_data&add_sel,
-                    conv_sel&add_sel,
-                    np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
-                ],
-                fill_multiple(
-                    hist,
-                    dataset = dataset,
-                    predictions=[
-                        "central", # only prompt contribution from process
-                        "inclusive", # everything from process (inclusive MC truth)
-                        "np_est_mc", # MC based NP estimate
-                        "np_obs_mc", # MC based NP observation
-                        "np_est_data",
-                        "cf_est_mc",
-                        "cf_obs_mc",
-                        "cf_est_data",
-                        "conv_mc",
-                        "np_est_mc_qcd",  # MC based NP estimate with QCD FR
+
+                if not re.search(data_pattern, dataset) and args.minimal:
+                    # NOTE:
+                    # For minimal we don't need all the different predictions for MC
+                    reg_sel = [
+                        BL&add_sel,
+                        conv_sel&add_sel,
                     ],
-                    arrays=arrays,
-                    selections=reg_sel[0],  # no idea where the additional dimension is coming from...
-                    weights=[
-                        weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
-                        weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
-                        weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
-                        weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
-                        weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
-                        weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
-                        weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
-                        weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
-                        weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
-                        weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "conv_mc",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                        )
+
+                elif re.search(data_pattern, dataset) and args.minimal:
+                    reg_sel = [
+                        BL&add_sel,
+                        np_est_sel_data&add_sel,
+                        cf_est_sel_data&add_sel,
                     ],
-                    systematic = var_name,  # NOTE check this.
-                    other = other,
-                )
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "np_est_data",
+                            "cf_est_data",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]]*weight_np_data[reg_sel[0][1]],
+                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_cf_data[reg_sel[0][2]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                    )
+
+                else:
+                    reg_sel = [
+                        BL&add_sel,
+                        BL_incl&add_sel,
+                        np_est_sel_mc&add_sel,
+                        np_obs_sel_mc&add_sel,
+                        np_est_sel_data&add_sel,
+                        cf_est_sel_mc&add_sel,
+                        cf_obs_sel_mc&add_sel,
+                        cf_est_sel_data&add_sel,
+                        conv_sel&add_sel,
+                        np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
+                    ],
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "inclusive", # everything from process (inclusive MC truth)
+                            "np_est_mc", # MC based NP estimate
+                            "np_obs_mc", # MC based NP observation
+                            "np_est_data",
+                            "cf_est_mc",
+                            "cf_obs_mc",
+                            "cf_est_data",
+                            "conv_mc",
+                            "np_est_mc_qcd",  # MC based NP estimate with QCD FR
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
+                            weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
+                            weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                            weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
+                            weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
+                            weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
+                            weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
+                            weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                    )
 
             if self.bit:
 
