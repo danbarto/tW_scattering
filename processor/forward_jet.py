@@ -677,46 +677,47 @@ if __name__ == '__main__':
             # way of deallocating all the accumulated memory...
             c.restart()
 
-        processes = sample_list
 
-        from Tools.config_helpers import get_merged_output
-        output_scaled = get_merged_output('OS_analysis', str(year), select_datasets=processes)
+    processes = sample_list
 
-        from plots.helpers import makePlot
+    from Tools.config_helpers import get_merged_output
+    output_scaled = get_merged_output('OS_analysis', str(year), select_datasets=processes)
 
-        ## The below doesn't work reliably :(
-        #processes = [ x.name for x in output_scaled['dilep_mass'].sum('mass', 'systematic', 'n_ele').axes()[0].identifiers() ]
+    from plots.helpers import makePlot
 
-        mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
-        makePlot(output_scaled, 'dilep_mass', 'mass',
-                 data=[],
-                 bins=mass_bins,
-                 log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
-                 #new_colors=my_colors, new_labels=my_labels,
-                 channel='mm',
-                 upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
-                 order=processes,
-                 save=os.path.expandvars('$TWHOME/dump/dilep_mass_mm'),
-                 )
+    ## The below doesn't work reliably :(
+    #processes = [ x.name for x in output_scaled['dilep_mass'].sum('mass', 'systematic', 'n_ele').axes()[0].identifiers() ]
 
-        makePlot(output_scaled, 'dilep_mass', 'mass',
-                 data=[],
-                 bins=mass_bins,
-                 log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
-                 #new_colors=my_colors, new_labels=my_labels,
-                 channel='em',
-                 order=processes,
-                 save=os.path.expandvars('$TWHOME/dump/dilep_mass_em'),
-                 )
+    mass_bins = hist.Bin('mass', r'$M\ (GeV)$', 20, 0, 200)
+    makePlot(output_scaled, 'dilep_mass', 'mass',
+             data=[],
+             bins=mass_bins,
+             log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
+             #new_colors=my_colors, new_labels=my_labels,
+             channel='mm',
+             upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
+             order=processes,
+             save=os.path.expandvars('$TWHOME/dump/dilep_mass_mm'),
+             )
 
-        N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
-        makePlot(output_scaled, 'N_fwd', 'multiplicity',
-                 data=[],
-                 bins=N_bins_red,
-                 log=False, normalize=False, axis_label=r'N',
-                 #new_colors=my_colors, new_labels=my_labels,
-                 #channel='em',
-                 upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
-                 order=processes,
-                 save=os.path.expandvars('$TWHOME/dump/N_fwd'),
-                 )
+    makePlot(output_scaled, 'dilep_mass', 'mass',
+             data=[],
+             bins=mass_bins,
+             log=False, normalize=False, axis_label=r'$M(\ell\ell)$ (GeV)',
+             #new_colors=my_colors, new_labels=my_labels,
+             channel='em',
+             order=processes,
+             save=os.path.expandvars('$TWHOME/dump/dilep_mass_em'),
+             )
+
+    N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
+    makePlot(output_scaled, 'N_fwd', 'multiplicity',
+             data=[],
+             bins=N_bins_red,
+             log=False, normalize=False, axis_label=r'N',
+             #new_colors=my_colors, new_labels=my_labels,
+             #channel='em',
+             upHists=['jes_up', 'l_up', 'b_up', 'PU_up'], downHists=['jes_down', 'l_down', 'b_down', 'PU_down'],
+             order=processes,
+             save=os.path.expandvars('$TWHOME/dump/N_fwd'),
+             )

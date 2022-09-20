@@ -286,7 +286,16 @@ class SS_analysis(processor.ProcessorABC):
                     weight.add("btag", self.btagSF.Method1a(btag, light_central))
 
                 # lepton SFs
-                weight.add("lepton", self.leptonSF.get(electron, muon))
+                if var['name'] == 'ele_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
+                elif var['name'] == 'ele_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
+                elif var['name'] == 'mu_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
+                elif var['name'] == 'mu_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
+                else:
+                    weight.add("lepton", self.leptonSF.get(electron, muon))
 
                 # trigger SFs
                 weight.add("trigger", self.triggerSF.get(electron, muon))
@@ -710,7 +719,7 @@ class SS_analysis(processor.ProcessorABC):
                                 prediction  = 'central',
                                 EFT         = f"cpt_{x}_cpqm_{y}",
                                 bit         = score_trans[(BL & SR_sel_pp)],
-                                weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)],
+                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                             )
 
                             output['bit_score_mm'].fill(
@@ -719,7 +728,7 @@ class SS_analysis(processor.ProcessorABC):
                                 prediction  = 'central',
                                 EFT         = f"cpt_{x}_cpqm_{y}",
                                 bit         = score_trans[(BL & SR_sel_mm)],
-                                weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)],
+                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                             )
 
                         for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
@@ -735,7 +744,7 @@ class SS_analysis(processor.ProcessorABC):
                                 prediction  = 'central',
                                 EFT         = f"cpt_{x}_cpqm_{y}",
                                 bit         = score_trans[(BL & SR_sel_pp)],
-                                weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)],
+                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                             )
 
                             output['bit_score_mm'].fill(
@@ -744,8 +753,9 @@ class SS_analysis(processor.ProcessorABC):
                                 prediction  = 'central',
                                 EFT         = f"cpt_{x}_cpqm_{y}",
                                 bit         = score_trans[(BL & SR_sel_mm)],
-                                weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)],
+                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                             )
+
                         if len(ev.PSWeight[0]) > 1:
                             for i in range(4):
                                 pdf_ext = "PS_%s"%i
@@ -756,7 +766,7 @@ class SS_analysis(processor.ProcessorABC):
                                     prediction  = 'central',
                                     EFT         = f"cpt_{x}_cpqm_{y}",
                                     bit         = score_trans[(BL & SR_sel_pp)],
-                                    weight      = eft_weight[(BL & SR_sel_pp)]*weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
+                                    weight      = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
                                 )
 
                                 output['bit_score_mm'].fill(
@@ -765,7 +775,7 @@ class SS_analysis(processor.ProcessorABC):
                                     prediction  = 'central',
                                     EFT         = f"cpt_{x}_cpqm_{y}",
                                     bit         = score_trans[(BL & SR_sel_mm)],
-                                    weight      = eft_weight[(BL & SR_sel_mm)]*weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                                    weight      = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
                                 )
 
             #if self.evaluate or self.dump:
@@ -1384,6 +1394,10 @@ if __name__ == '__main__':
             {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
            ]
 
         # inclusive EFT weights
