@@ -69,7 +69,9 @@ if __name__ == '__main__':
     postfix = '_DY' if args.DY else None
     output = get_merged_output("OS_analysis", year=year, postfix=postfix)
 
-    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
+    #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
+    plot_dir    = os.path.join("/home/daniel/TTW/tW_scattering/plots/images/", str(year), 'OS', args.version)
+
     if args.DY: plot_dir = plot_dir.replace('OS', 'DY')
     if args.postfix:
         plot_dir += '_%s'%args.postfix

@@ -177,6 +177,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
             except:
                 print ("Failed to renorm sample:", dataset)
                 renorm[dataset] = 1
+            print (dataset, renorm[dataset])
     output = accumulate(outputs)
 
     #res = scale_and_merge(output['N_jet'], renorm, mapping[ul])

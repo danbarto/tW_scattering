@@ -262,6 +262,9 @@ def main():
                     except:
                         # FIXME this is dangerous! temp fix
                         print ("Skipping faulty file:", f_in)
+                        raise
+                print ("Found sumweight for sample", sample)
+                print (samples[sample]['sumWeight'])
         if not args.nano:
             samples[sample]['nano'] = "Not kept"
 
