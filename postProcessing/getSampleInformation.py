@@ -166,6 +166,34 @@ def getDict(sample):
         
         return sample_dict
 
+def get_sumw(files):
+    first = True
+    res = {}
+    res['sumWeight'] = 0
+    res['nEvents'] = 0
+
+    for f_in in files:
+        try:
+            with uproot.open(f_in) as f:
+                print (f_in, float(f['genEventSumw'].counts()[0]), float(f['genEventCount'].counts()[0]))
+                res['sumWeight'] += float(f['genEventSumw'].counts()[0])
+                res['nEvents'] += float(f['genEventCount'].counts()[0])
+                if first:
+                    first = False
+                    res['LHEPdfWeight'] = f['LHEPdfSumw'].counts()
+                    res['LHEScaleWeight'] = f['LHEScaleSumw'].counts()
+                    if 'LHEReweightingSumw' in f:
+                        res['LHEReweightingWeight'] = f['LHEReweightingSumw'].counts()
+                else:
+                    res['LHEPdfWeight'] += f['LHEPdfSumw'].counts()
+                    res['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
+                    if 'LHEReweightingSumw' in f:
+                        res['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
+        except:
+            print ("Skipping faulty file:", f_in)
+            raise
+
+    return res
 
 def main():
 
@@ -236,35 +264,24 @@ def main():
 
     for sample in samples.keys():
         sample_name = samples[sample]['name']
+        print ()
         print (sample_name)
         if args.version is not None:
             skim_path_total = f"{skim_path}/{sample_name}/merged/"
             print (skim_path_total)
             samples[sample]['files'] = glob.glob(skim_path_total+"*.root")
             if samples[sample]['xsec'] > 0:  # NOTE: identifier for data / MC
-                samples[sample]['sumWeight'] = 0
-                first = True
-                for f_in in samples[sample]['files']:
-                    try:
-                        with uproot.open(f_in) as f:
-                            samples[sample]['sumWeight'] += float(f['genEventSumw'].counts()[0])
-                            if first:
-                                first = False
-                                samples[sample]['LHEPdfWeight'] = f['LHEPdfSumw'].counts()
-                                samples[sample]['LHEScaleWeight'] = f['LHEScaleSumw'].counts()
-                                if 'LHEReweightingSumw' in f:
-                                    samples[sample]['LHEReweightingWeight'] = f['LHEReweightingSumw'].counts()
-                            else:
-                                samples[sample]['LHEPdfWeight'] += f['LHEPdfSumw'].counts()
-                                samples[sample]['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
-                                if 'LHEReweightingSumw' in f:
-                                    samples[sample]['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
-                    except:
-                        # FIXME this is dangerous! temp fix
-                        print ("Skipping faulty file:", f_in)
-                        raise
+                res = get_sumw(samples[sample]['files'])
+                samples[sample]['sumWeight']        = res['sumWeight']
+                samples[sample]['nEvents']          = res['nEvents']
+                samples[sample]['LHEPdfWeight']     = res['LHEPdfWeight']
+                samples[sample]['LHEScaleWeight']   = res['LHEScaleWeight']
+                if 'LHEReweightingSumw' in res.keys():
+                    samples[sample]['LHEReweightingWeight'] = res['LHEReweightingWeight']
+
                 print ("Found sumweight for sample", sample)
-                print (samples[sample]['sumWeight'])
+                print (samples[sample]['sumWeight'], samples[sample]['nEvents'])
+                print (samples[sample]['sumWeight']/samples[sample]['nEvents'])
         if not args.nano:
             samples[sample]['nano'] = "Not kept"
 

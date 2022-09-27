@@ -1381,7 +1381,7 @@ if __name__ == '__main__':
                 reweight[dataset] = (weight, index)
 
         from Tools.nano_mapping import make_fileset
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1, buaf=args.buaf)
+        fileset = make_fileset([sample], samples, year=ul, skim='topW_v0.7.1_SS', small=small, n_max=1, buaf=args.buaf, merged=True)
 
         add_processes_to_output(fileset, desired_output)
 
