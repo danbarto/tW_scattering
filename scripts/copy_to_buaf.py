@@ -29,13 +29,13 @@ def make_dir(path):
 def make_copy(in_n_out):
     file_in, target = in_n_out
     print (file_in, " ---> ", target)
-    success =  xrdcp(f_in, target)
+    success =  xrdcp(file_in, target)
     #os.system('xrdcp %s %s'%(f_in, out_dir))
     return success
 
 if __name__ == '__main__':
 
-    ul = "UL16"
+    ul = "UL18"
 
     samples = get_samples("samples_%s.yaml"%ul)
 

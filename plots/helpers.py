@@ -342,7 +342,9 @@ def makePlot(output,
 
     ax.legend(
         loc='upper right',
-        ncol=2,
+        bbox_to_anchor=(0.03, 0.88, 0.90, .11),
+        mode="expand",
+        ncol=3,
         borderaxespad=0.0,
         labels=updated_labels,
         handles=handles,

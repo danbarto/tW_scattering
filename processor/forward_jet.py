@@ -494,6 +494,7 @@ if __name__ == '__main__':
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--year', action='store', default='2016', help="Which year to run on?")
+    argParser.add_argument('--workers', action='store', default=10, help="How many threads for local running?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--DY', action='store_true', default=None, help="DY specific selection?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
@@ -578,7 +579,7 @@ if __name__ == '__main__':
         if args.ptjes: variations = variations[:3]
 
         if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=10)
+            exe = processor.FuturesExecutor(workers=int(args.workers))
 
         elif iterative:
             exe = processor.IterativeExecutor()

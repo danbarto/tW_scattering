@@ -266,7 +266,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  save=os.path.expandvars(plot_dir_temp+'N_fwd'),
                  )
 
@@ -290,6 +290,7 @@ if __name__ == '__main__':
                      omit=omit,
                      signals=signals,
                      lumi=lumi,
+                     upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                      #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                      save=os.path.expandvars(plot_dir_temp+'fwd_jet_pt'),
                      )
@@ -302,6 +303,7 @@ if __name__ == '__main__':
                      omit=omit,
                      signals=signals,
                      lumi=lumi,
+                     upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                      #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                      save=os.path.expandvars(plot_dir_temp+'fwd_jet_eta'),
                      )
@@ -326,6 +328,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  save=os.path.expandvars(plot_dir_temp+'N_jet'),
                  )
 
@@ -337,6 +340,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                  save=os.path.expandvars(plot_dir_temp+'lead_jet_pt'),
                  )
@@ -349,6 +353,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                  save=os.path.expandvars(plot_dir_temp+'lead_jet_eta'),
                  )
@@ -373,6 +378,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
                  save=os.path.expandvars(plot_dir_temp+'sublead_jet_pt'),
                  )
@@ -385,7 +391,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  save=os.path.expandvars(plot_dir_temp+'sublead_jet_eta'),
                  )
 
@@ -397,7 +403,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  save=os.path.expandvars(plot_dir_temp+'N_b'),
                  )
 
@@ -470,6 +476,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='ee',
                  rescale=scale,
@@ -484,6 +491,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='em',
                  rescale=scale,
@@ -498,6 +506,7 @@ if __name__ == '__main__':
                  omit=omit,
                  signals=signals,
                  lumi=lumi,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['jes_up'], downHists=['jes_down'],
                  channel='mm',
                  rescale=scale,
@@ -513,6 +522,7 @@ if __name__ == '__main__':
                  signals=signals,
                  lumi=lumi,
                  rescale=scale,
+                 upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
                  #upHists=['jes_up'], downHists=['jes_down'],
                  save=os.path.expandvars(plot_dir_temp+'MET_pt'),
                  )

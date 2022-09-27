@@ -1318,6 +1318,7 @@ if __name__ == '__main__':
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
+    argParser.add_argument('--workers', action='store', default=10, help="How many threads for local running?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
@@ -1438,7 +1439,7 @@ if __name__ == '__main__':
         if args.buaf == 'remote':
             f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         elif args.buaf == 'local':
-            f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+            f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
         else:
             f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
 
@@ -1511,7 +1512,7 @@ if __name__ == '__main__':
                     #})
 
         if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=10)
+            exe = processor.FuturesExecutor(workers=int(args.workers))
 
         elif iterative:
             exe = processor.IterativeExecutor()
