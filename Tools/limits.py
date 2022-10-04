@@ -6,8 +6,20 @@ import numpy as np
 from Tools.dataCard import *
 from Tools.helpers import make_bh
 
+def get_norms(dataset, samples, mapping, name='pdf', weight='LHEPdfWeight'):
+    '''
+    this function does not need the actual histograms but the stored meta data
+    from the samples database
+    '''
+    # samples[mapping['UL16']['TTW'][0]]['xsec']/samples[mapping['UL16']['TTW'][0]]['LHEPdfWeight'][1]
+    #
+    #norms = {f'{name}_{i}': 0 for x,i in enumerate(samples[mapping[dataset][0]])}
+    #
+    total = sum([ samples[s]['xsec']/samples[s][weight] for s in mapping[dataset] ])
+    norms = {f'{name}_{i}': x for i,x in enumerate(total/total[0])}
+    return norms
 
-def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True):
+def get_pdf_unc(output, hist_name, process, eft_point, rebin=None, hessian=True, quiet=True, overflow='all', norms=None):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
@@ -19,21 +31,23 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
     
     
     # now get the actual values
-    tmp_central = output[hist_name].copy()
+    tmp_central = output[hist_name][(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
-    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
     pdf_unc = np.zeros_like(central)
     
     
     for i in range(1,101):
-        tmp_variation = output['%s_pdf_%s'%(hist_name, i)]
+        tmp_variation = output[hist_name][(process, eft_point, 'central', f'pdf_{i}')].sum('EFT', 'systematic', 'prediction').copy()
         #print (tmp_variation.values())
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
-        pdf_unc += (tmp_variation[process].sum('dataset').values(overflow='all')[()]-central)**2
 
-    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+        norm = norms[f'pdf_{i}'] if (norms is not None) else 1
+        pdf_unc += (tmp_variation[process].sum('dataset').values(overflow=overflow)[()]*norm-central)**2
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     pdf_unc = np.sqrt(pdf_unc)
 
@@ -49,7 +63,7 @@ def get_pdf_unc(output, hist_name, process, rebin=None, hessian=True, quiet=True
 
     return  up_hist, down_hist
 
-def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=False):
+def get_scale_unc(output, hist_name, process, eft_point, rebin=None, quiet=True, overflow='all', norms=None):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
@@ -64,16 +78,14 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
     --> take 0, 1, 3 for down variations
     --> take 5, 7, 8 for up variations
     --> 4 is central, if needed
-    
     '''
     
     # now get the actual values
-    tmp_central = output[hist_name].copy()
+    tmp_central = output[hist_name][(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
-    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
-    
-    
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+
     scale_unc = np.zeros_like(central)
     for i in [0,1,3,5,7,8]:
         '''
@@ -82,23 +94,23 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
         without getting vulnerable to weird one-sided uncertainties.
         '''
 
-        norm = 1
-        if keep_norm:
-            proc_norm_central   = output['norm'][process].sum('dataset').sum('one').values(overflow='all')[()]
-            #print (proc_norm_central)
-            proc_norm_var       = output['_scale_%s'%i][process].sum('dataset').sum('one').values(overflow='all')[()]
-            #print (proc_norm_var)
-            norm = (proc_norm_central)/proc_norm_var
+        norm = norms[f'scale_{i}'] if (norms is not None) else 1
+        #if norms:
+        #    proc_norm = norms[f'scale_{i}']
 
-        tmp_variation = output['%s_scale_%s'%(hist_name, i)].copy()
+        tmp_variation = output[hist_name][(process, eft_point, 'central', f'scale_{i}')].sum('EFT', 'systematic', 'prediction').copy()
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+
+        tmp_var = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+        print (i, sum(tmp_var)/sum(central))
+
         scale_unc = np.maximum(
             scale_unc,
-            np.abs(tmp_variation[process].sum('dataset').values(overflow='all')[()] * norm - central)
+            np.abs(tmp_var * norm - central)
         )
 
-    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     up_hist = make_bh((central+scale_unc)/central, (central+scale_unc)/central, edges)
     down_hist = make_bh((central-scale_unc)/central, (central-scale_unc)/central, edges)
@@ -110,42 +122,48 @@ def get_scale_unc(output, hist_name, process, rebin=None, quiet=True, keep_norm=
     
     return  up_hist, down_hist
 
-def get_ISR_unc(output, hist_name, process, rebin=None, quiet=True):
+
+def get_ISR_unc(output, hist_name, process, eft_point, rebin=None, quiet=True, overflow='all', norm=None):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
-    
+
     From auto documentation of NanoAODv8
-    
+
     PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2
-    
     --> take 0, 2 for ISR variations
-    
     '''
-    
+
     # now get the actual values
-    tmp_central = output[hist_name].copy()
+    tmp_central = output[hist_name][(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
-    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
-    
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+
     for i in [0,2]:
-        tmp_variation = output['%s_PS_%s'%(hist_name, i)].copy()
+        tmp_variation = output[hist_name][(process, eft_point, 'central', f'PS_{i}')].sum('EFT', 'systematic', 'prediction').copy()
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
         if i == 2:
-            up_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+            up_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
         if i == 0:
-            down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+            down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
 
-    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
     down_hist = make_bh(down_unc/central, down_unc/central, edges)
 
+    if not quiet:
+        print (process)
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
     return  up_hist, down_hist
 
-def get_FSR_unc(output, hist_name, process, rebin=None, quiet=True):
+
+def get_FSR_unc(output, hist_name, process, eft_point, rebin=None, quiet=True, overflow='all', norm=None):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
@@ -153,54 +171,57 @@ def get_FSR_unc(output, hist_name, process, rebin=None, quiet=True):
     From auto documentation of NanoAODv8
     
     PS weights (w_var / w_nominal); [0] is ISR=0.5 FSR=1; [1] is ISR=1 FSR=0.5; [2] is ISR=2 FSR=1; [3] is ISR=1 FSR=2
-    
-    --> take 1, 3 for ISR variations
-    
+    --> take 1, 3 for FSR variations
     '''
     
     # now get the actual values
-    tmp_central = output[hist_name].copy()
+    tmp_central = output[hist_name][(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
-    central = tmp_central[process].sum('dataset').values(overflow='all')[()]
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
     
     for i in [1,3]:
-        tmp_variation = output['%s_PS_%s'%(hist_name, i)].copy()
+        tmp_variation = output[hist_name][(process, eft_point, 'central', f'PS_{i}')].sum('EFT', 'systematic', 'prediction').copy()
         if rebin:
             tmp_variation = tmp_variation.rebin(rebin.name, rebin)
         if i == 3:
-            up_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+            up_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
         if i == 1:
-            down_unc = tmp_variation[process].sum('dataset').values(overflow='all')[()]
+            down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
 
-    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
     down_hist = make_bh(down_unc/central, down_unc/central, edges)
 
+    if not quiet:
+        print (process)
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
     return  up_hist, down_hist
 
-def get_unc(output, hist_name, process, unc, rebin=None, quiet=True):
+def get_unc(output, hist_name, process, unc, eft_point, rebin=None, quiet=True, overflow='all'):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
-    
     '''
     
     # now get the actual values
-    tmp_central = output[hist_name].copy()
-    tmp_up      = output[hist_name+unc+'Up'].copy()
-    tmp_down    = output[hist_name+unc+'Down'].copy()
+    tmp_central = output[hist_name][(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
+    tmp_up      = output[hist_name][(process, eft_point, 'central', unc+'_up')].sum('EFT', 'systematic', 'prediction').copy()
+    tmp_down    = output[hist_name][(process, eft_point, 'central', unc+'_down')].sum('EFT', 'systematic', 'prediction').copy()
     
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
         tmp_up      = tmp_up.rebin(rebin.name, rebin)
         tmp_down    = tmp_down.rebin(rebin.name, rebin)
         
-    central  = tmp_central[process].sum('dataset').values(overflow='all')[()]
-    up_unc   = tmp_up[process].sum('dataset').values(overflow='all')[()]
-    down_unc = tmp_down[process].sum('dataset').values(overflow='all')[()]   
-    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow='all')
+    central  = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+    up_unc   = tmp_up[process].sum('dataset').values(overflow=overflow)[()]
+    down_unc = tmp_down[process].sum('dataset').values(overflow=overflow)[()]
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
     down_hist = make_bh(down_unc/central, down_unc/central, edges)
@@ -219,52 +240,54 @@ def regroup_and_rebin(histo, rebin, mapping):
     tmp = tmp.group("dataset", hist.Cat("dataset", "new grouped dataset"), mapping)
     return tmp
 
-def get_systematics(output, hist, year, correlated=False, signal=True):
+def get_systematics(output, hist, year, eft_point, correlated=False, signal=True, overflow='all'):
     if correlated:
         year = "cor"
     systematics = []
 
-    all_processes = ['TTW', 'TTZ', 'TTH']
+    all_processes = ['TTW', 'TTZ', 'TTH', 'rare', 'diboson']
     if signal: all_processes += ['signal']
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(output, hist, proc, '_pt_jesTotal', quiet=True), proc),
-            ('b_%s'%year,       get_unc(output, hist, proc, '_b', quiet=True), proc),
-            ('light_%s'%year,   get_unc(output, hist, proc, '_l', quiet=True), proc),
-            ('PU',      get_unc(output, hist, proc, '_PU', quiet=True), proc),
+            ('jes_%s'%year,     get_unc(output, hist, proc, 'jes',  eft_point, overflow=overflow, quiet=True), proc),
+            ('b_%s'%year,       get_unc(output, hist, proc, 'b',    eft_point, overflow=overflow, quiet=True), proc),
+            ('light_%s'%year,   get_unc(output, hist, proc, 'l',    eft_point, overflow=overflow, quiet=True), proc),
+            ('mu_%s'%year,      get_unc(output, hist, proc, 'mu',   eft_point, overflow=overflow, quiet=True), proc),
+            ('ele_%s'%year,     get_unc(output, hist, proc, 'ele',  eft_point, overflow=overflow, quiet=True), proc),
+            ('PU',              get_unc(output, hist, proc, 'PU',   eft_point, overflow=overflow, quiet=True), proc),
         ]
 
     for proc in ['TTW', 'TTZ', 'TTH']:
         systematics += [
-            ('pdf', get_pdf_unc(output, hist, proc), proc),  # FIXME not keep_norm yet
-            ('FSR', get_FSR_unc(output, hist, proc), proc),
+            ('pdf', get_pdf_unc(output, hist, proc, eft_point, overflow=overflow), proc),  # FIXME not keep_norm yet
+            ('FSR', get_FSR_unc(output, hist, proc, eft_point, overflow=overflow), proc),
         ]
 
-    systematics += [
-        ('scale_TTW', get_scale_unc(output, hist, 'TTW', keep_norm=True), 'TTW'),
-        ('scale_TTH', get_scale_unc(output, hist, 'TTH', keep_norm=True), 'TTH'),
-        ('scale_TTZ', get_scale_unc(output, hist, 'TTZ', keep_norm=True), 'TTZ'),
-        ('ISR_TTW', get_ISR_unc(output, hist, 'TTW'), 'TTW'),
-        ('ISR_TTH', get_ISR_unc(output, hist, 'TTH'), 'TTH'),
-        ('ISR_TTZ', get_ISR_unc(output, hist, 'TTZ'), 'TTZ'),
-        ##('ttz_norm', 1.10, 'TTZ'),
-        ##('tth_norm', 1.20, 'TTH'),
-        ('rare_norm', 1.20, 'rare'),
-        ('nonprompt_norm', 1.30, 'nonprompt'),
-        ('chargeflip_norm', 1.20, 'chargeflip'),
-        ('conversion_norm', 1.20, 'conversion')
-    ]
+    #systematics += [
+    #    ('scale_TTW', get_scale_unc(output, hist, 'TTW', keep_norm=True), 'TTW'),
+    #    ('scale_TTH', get_scale_unc(output, hist, 'TTH', keep_norm=True), 'TTH'),
+    #    ('scale_TTZ', get_scale_unc(output, hist, 'TTZ', keep_norm=True), 'TTZ'),
+    #    ('ISR_TTW', get_ISR_unc(output, hist, 'TTW'), 'TTW'),
+    #    ('ISR_TTH', get_ISR_unc(output, hist, 'TTH'), 'TTH'),
+    #    ('ISR_TTZ', get_ISR_unc(output, hist, 'TTZ'), 'TTZ'),
+    #    ##('ttz_norm', 1.10, 'TTZ'),
+    #    ##('tth_norm', 1.20, 'TTH'),
+    #    #('rare_norm', 1.20, 'rare'),
+    #    ('nonprompt_norm', 1.30, 'nonprompt'),
+    #    ('chargeflip_norm', 1.20, 'chargeflip'),
+    #    ('conversion_norm', 1.20, 'conversion')
+    #]
     return systematics
 
-def add_signal_systematics(output, hist, year, correlated=False, systematics=[], proc='signal'):
+def add_signal_systematics(output, hist, year, eft_point, correlated=False, systematics=[], proc='signal'):
     if correlated:
         year = "cor"
     systematics += [
-        ('jes_%s'%year,     get_unc(output, hist, proc, '_pt_jesTotal'), proc),
-        ('b_%s'%year,       get_unc(output, hist, proc, '_b'), proc),
-        ('light_%s'%year,   get_unc(output, hist, proc, '_l'), proc),
-        ('PU',      get_unc(output, hist, proc, '_PU'), proc),
+        ('jes_%s'%year,     get_unc(output, hist, proc, 'jes', eft_point), proc),
+        ('b_%s'%year,       get_unc(output, hist, proc, 'b', eft_point), proc),
+        ('light_%s'%year,   get_unc(output, hist, proc, 'l', eft_point), proc),
+        ('PU',              get_unc(output, hist, proc, 'PU', eft_point), proc),
     ]
     return systematics
 
@@ -281,6 +304,8 @@ def makeCardFromHist(
         #sm_vals=None,
         integer=False,
         quiet=False,
+        blind=True,
+        data=None,
 ):
     
     '''
