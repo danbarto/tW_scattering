@@ -109,7 +109,7 @@ def get_latest_output(cache_name, cfg, date=None, max_time='999999', select_hist
     try:
         latest = filtered[0]
     except:
-        print ("Couldn't find a suitable cache! Rerunning.")
+        print ("Couldn't find a suitable cache!")
         return None
     print ("Found the following cache: %s"%latest)
 
@@ -177,7 +177,8 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
             except:
                 print ("Failed to renorm sample:", dataset)
                 renorm[dataset] = 1
-            print (dataset, renorm[dataset])
+            #print (dataset, renorm[dataset])
+
     output = accumulate(outputs)
 
     #res = scale_and_merge(output['N_jet'], renorm, mapping[ul])
@@ -186,6 +187,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
     for key in output.keys():
         if isinstance(output[key], hist.Hist):
             try:
+                print (f"Merging histogram {key}")
                 output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
             except:
                 print ("Scale and merge failed for:",key)
