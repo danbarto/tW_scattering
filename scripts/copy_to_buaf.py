@@ -13,7 +13,7 @@ redirector = 'root://redirector.t2.ucsd.edu:1095//'
 
 local_dir = "/data/"
 
-skim = 'topW_v0.7.0_dilep'
+skim = 'topW_v0.7.1_SS'
 
 def xrdcp(source, target):
     cmd = ['xrdcp', '-f', source, target]
@@ -47,7 +47,9 @@ if __name__ == '__main__':
 
         print (sample)
 
-        for f in samples[sample]['files']:
+        all_files = [ f.replace('topW_v0.7.0_dilep', 'topW_v0.7.1_SS') for f in  samples[sample]['files'] ]
+
+        for f in all_files:
 
             file_name = f.split('/')[-1]
             # extract the name and create the local path
