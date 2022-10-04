@@ -1265,32 +1265,32 @@ class SS_analysis(processor.ProcessorABC):
                     weight = weight_BL,
                 )
                 
-            output['j1'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
-                eta = ak.flatten(jet.eta[:, 0:1][BL]),
-                phi = ak.flatten(jet.phi[:, 0:1][BL]),
-                weight = weight_BL
-            )
-            
-            output['j2'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
-                eta = ak.flatten(jet[:, 1:2][BL].eta),
-                phi = ak.flatten(jet[:, 1:2][BL].phi),
-                weight = weight_BL
-            )
-            
-            output['j3'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
-                eta = ak.flatten(jet[:, 2:3][BL].eta),
-                phi = ak.flatten(jet[:, 2:3][BL].phi),
-                weight = weight_BL
-            )
+                output['j1'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
+                    eta = ak.flatten(jet.eta[:, 0:1][BL]),
+                    phi = ak.flatten(jet.phi[:, 0:1][BL]),
+                    weight = weight_BL
+                   )
+
+                output['j2'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
+                    eta = ak.flatten(jet[:, 1:2][BL].eta),
+                    phi = ak.flatten(jet[:, 1:2][BL].phi),
+                    weight = weight_BL
+                   )
+
+                output['j3'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
+                    eta = ak.flatten(jet[:, 2:3][BL].eta),
+                    phi = ak.flatten(jet[:, 2:3][BL].phi),
+                    weight = weight_BL
+                   )
                     
         
         return output
@@ -1325,6 +1325,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
     argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
     argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
+    argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     args = argParser.parse_args()
 
@@ -1347,7 +1348,6 @@ if __name__ == '__main__':
 
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
-
 
     if args.sample == 'MCall':
         sample_list = ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
@@ -1381,7 +1381,17 @@ if __name__ == '__main__':
                 reweight[dataset] = (weight, index)
 
         from Tools.nano_mapping import make_fileset
-        fileset = make_fileset([sample], samples, year=ul, skim='topW_v0.7.1_SS', small=small, n_max=1, buaf=args.buaf, merged=True)
+        fileset = make_fileset(
+            [sample],
+            samples,
+            year=ul,
+            #skim='topW_v0.7.0_dilep',
+            skim=args.skim,
+            small=small,
+            n_max=1,
+            buaf=args.buaf,
+            merged=True,
+        )
 
         add_processes_to_output(fileset, desired_output)
 
@@ -1676,7 +1686,10 @@ if __name__ == '__main__':
         for key in output[dataset_0]:
             cutflow_output[sample][key] = 0.
             for dataset in mapping[ul][sample]:
-                cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+                try:
+                    cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+                except ZeroDivisionError:
+                    cutflow_output[sample][key] += output[dataset][key]
 
         if not local:
             # clean up the DASK workers. this partially frees up memory on the workers
@@ -1712,8 +1725,8 @@ if __name__ == '__main__':
                            total=False,
                            ))
 
-    from Tools.config_helpers import get_merged_output
-    output_scaled = get_merged_output('SS_analysis', str(year), select_datasets=processes)
+    #from Tools.config_helpers import get_merged_output
+    #output_scaled = get_merged_output('SS_analysis', str(year), select_datasets=processes)
 
     ## Data double counting checks
     if args.check_double_counting:
