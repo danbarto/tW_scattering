@@ -412,7 +412,7 @@ def addUncertainties(
     
     ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
-def scale_and_merge(histogram, scales, nano_mapping):
+def scale_and_merge(histogram, scales, nano_mapping, quiet=False):
     """
     Scale NanoAOD samples to a physical cross section.
     Merge NanoAOD samples into categories, e.g. several ttZ samples into one ttZ category.
@@ -421,9 +421,14 @@ def scale_and_merge(histogram, scales, nano_mapping):
     scales -- scales to apply to each dataset
     nano_mapping -- dictionary to map NanoAOD samples into categories
     """
+    print ("Making copy of histogram")
     temp = histogram.copy()
+    # NOTE copy is not what is slow, but some histogram operations.
+    # This is probably a price we have to pay for flexibility
 
+    print ("Scaling the datasets to x-sec and lumi.")
     temp.scale(scales, axis='dataset')
+    print ("Regrouping datasets")
     temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
 
     return temp
