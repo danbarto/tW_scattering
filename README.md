@@ -20,9 +20,14 @@ curl -O -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh -b 
 ```
 
-Add conda to the end of ~/.bashrc, so relogin after executing this line
+Add conda to the end of ~/.bashrc
 ```
-~/miniconda3/bin/conda init
+echo "~/miniconda3/bin/conda init" >> ~/.bashrc
+```
+
+Then source it to activate conda
+``` shell
+source ~/.bashrc
 ```
 
 Stop conda from activating the base environment on login
@@ -40,7 +45,7 @@ conda install --name base conda-pack -y
 
 Create environments with as much stuff from anaconda
 ```
-conda create --name workerenv python=3.9.7 ipython uproot dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime coffea -y
+conda create --name workerenv python=3.9.7 ipython coffea=0.7.14 dask dask-jobqueue pyarrow fastparquet numba numexpr boost-histogram onnxruntime -y
 ``` 
 
 Pack it
@@ -55,8 +60,8 @@ E.g.:
 
 ``` shell
 conda activate workerenv
-pip install yahist
-pip install keras, tensorflow, sklearn
+pip install yahist pyyaml
+pip install keras tensorflow sklearn
 conda deactivate
 ```
 
@@ -211,3 +216,21 @@ wget https://raw.githubusercontent.com/cms-analysis/CombineHarvester/master/Comb
 scram b -j 8
 ```
 
+
+## Combine in docker
+
+``` shell
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+scram p CMSSW CMSSW_10_2_13
+cd CMSSW_10_2_13/src
+cmsenv
+git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+cd HiggsAnalysis/CombinedLimit
+git fetch origin
+git checkout v8.1.0
+scramv1 b clean; scramv1 b # always make a clean build
+
+cd $CMSSW_BASE/src
+wget https://raw.githubusercontent.com/cms-analysis/CombineHarvester/master/CombineTools/scripts/sparse-checkout-https.sh; source sparse-checkout-https.sh
+scram b -j 8
+```

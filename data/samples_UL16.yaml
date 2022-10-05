@@ -26,14 +26,14 @@
       - 0
     - false
     - !!binary |
-      os+qS0EPpUuObq5LVmuoS/tVqUsf5qlLIMqsSz/Uqkvu+qhLucirS9QWq0v/LKtLCmGqSyQUq0uD
-      SKpLD4uqS/TNqkuFcqpL2PmqSwnKqkuA3apLVRurS1YTq0sloapLv6+qSwAZq0s4eapLqQmrSzrL
-      qku8PqtLQNOqS4wCq0tU4KpLlaOqS+/uqktbxKpLvOKqSwHEqkuuIKtLtPuqS2ztqksi4qpL+aiq
-      S8rKqkvzyapLMd2qSxf0qkv72KpLMbCqSzvVqkvB/6pLOcuqSwe5qkvowqpLjPCqS1j+qkv4zapL
-      CL6qS5TTqkuVyapLoayqSynqqkv2tapL+NeqS17aqkttvapLPd2qS3HQqksBxqpLXcyqSwDEqku4
-      xKpLw+iqSzTBqkvUzapLXLuqS33Iqkv916pLuLSqSzbNqksP06pLFMqqS2K+qkvwrqpLVdiqSx7S
-      qkt60KpLjMCqSxveqkuCxapLbdKqS/zPqkul16pLbeOqSxHEqkusyapLVdeqS8rlqkvM1KpLDNGq
-      S6LPqkuNC6hLxICuSw==
+      o8+qS0EPpUuPbq5LVWuoS/tVqUsg5qlLIMqsSz7Uqkvt+qhLuMirS9UWq0v+LKtLCWGqSyQUq0uE
+      SKpLDouqS/TNqkuFcqpL1/mqSwnKqkuA3apLVRurS1YTq0sloapLvq+qSwAZq0s3eapLqQmrSznL
+      qku+PqtLQNOqS40Cq0tU4KpLlqOqS+/uqktbxKpLvOKqSwDEqkuuIKtLtPuqS2ztqksi4qpL+aiq
+      S8rKqkvzyapLMd2qSxf0qkv82KpLMLCqSzrVqkvB/6pLOcuqSwe5qkvowqpLjPCqS1f+qkv4zapL
+      CL6qS5TTqkuWyapLoqyqSyrqqkv3tapL+NeqS17aqktsvapLPN2qS3LQqksBxqpLXcyqSwDEqku4
+      xKpLwuiqSzXBqkvTzapLXLuqS33Iqkv916pLuLSqSzfNqksQ06pLFcqqS2K+qkvwrqpLVdiqSx3S
+      qkt60KpLjMCqSxveqkuCxapLbNKqS/vPqkum16pLbOOqSxHEqkusyapLVNeqS8vlqkvM1KpLDNGq
+      S6PPqkuOC6hLxICuSw==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -61,15 +61,17 @@
       - 0
     - false
     - !!binary |
-      j8RmS0eVq0tA7etLkWdlS6LPqkvrE+tLJGFkS/86qktlcOpL
+      jsRmS0aVq0tB7etLkmdlS6PPqkvqE+tLJWFkS/86qktmcOpL
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 22388550
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 22388550.0
   name: DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
-  split: 34
-  sumWeight: 22388548.0
+  split: 15
+  sumWeight: 22388550.0
   xsec: 18610.0
 /DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -136,24 +138,25 @@
     - !!binary |
       izCNTMLmnUzF56xMX4+MTBRCnUwCQaxMUwuMTCa7nExfuKtM
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
-  nEvents: 82448537
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 82448537.0
   name: DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -161,9 +164,10 @@
   xsec: 6077.0
 /DoubleEG/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
   nEvents: 4360689
   name: DoubleEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -171,20 +175,21 @@
   xsec: -1.0
 /DoubleEG/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 78797031
   name: DoubleEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -192,23 +197,24 @@
   xsec: -1.0
 /DoubleEG/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_15.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 85388673
   name: DoubleEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 3
@@ -216,9 +222,10 @@
   xsec: -1.0
 /DoubleMuon/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
   nEvents: 2429162
   name: DoubleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 1
@@ -226,23 +233,24 @@
   xsec: -1.0
 /DoubleMuon/Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_15.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2/merged/nanoSkim_4.root
   nEvents: 45235604
   name: DoubleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v2
+  nano: Not kept
   path: null
   reweight: 1
   split: 1
@@ -250,22 +258,23 @@
   xsec: -1.0
 /DoubleMuon/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 48912812
   name: DoubleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 1
@@ -273,9 +282,10 @@
   xsec: -1.0
 /MuonEG/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
   nEvents: 1901339
   name: MuonEG_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 3
@@ -283,16 +293,17 @@
   xsec: -1.0
 /MuonEG/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 33854612
   name: MuonEG_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -300,18 +311,19 @@
   xsec: -1.0
 /MuonEG/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 29236516
   name: MuonEG_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 1
@@ -382,9 +394,10 @@
     - !!binary |
       Qbt9SYAJbklyVmBJQbt9SYAJbklyVmBJQbt9SYAJbklyVmBJ
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 975000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 975000.0
   name: SSWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 23
@@ -455,9 +468,10 @@
     - !!binary |
       wunoTEKQ7UwKEfNMyUbcTCOX4kwhzuhMsHXQTLXS10wJb95M
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 3654510
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3654510.0
   name: ST_tW_antitop_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 7
@@ -528,9 +542,10 @@
     - !!binary |
       YU3WTPaN2kwrmd9MNarKTN1z0ExlKNZMC8m/TGOLxkzIncxM
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 3368375
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3368375.0
   name: ST_tW_top_5f_NoFullyHadronicDecays_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 9
@@ -538,9 +553,10 @@
   xsec: 19.47
 /SingleElectron/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
   nEvents: 8858206
   name: SingleElectron_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -548,17 +564,18 @@
   xsec: -1.0
 /SingleElectron/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 153363109
   name: SingleElectron_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -566,18 +583,19 @@
   xsec: -1.0
 /SingleElectron/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 129021893
   name: SingleElectron_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -585,9 +603,10 @@
   xsec: -1.0
 /SingleMuon/Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
   nEvents: 8024195
   name: SingleMuon_Run2016F-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -595,20 +614,21 @@
   xsec: -1.0
 /SingleMuon/Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 149916849
   name: SingleMuon_Run2016G-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 3
@@ -616,22 +636,23 @@
   xsec: -1.0
 /SingleMuon/Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/NANOAOD:
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1/merged/nanoSkim_4.root
   nEvents: 174035164
   name: SingleMuon_Run2016H-UL2016_MiniAODv2_NanoAODv9-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 3
@@ -665,14 +686,14 @@
       - 0
     - false
     - !!binary |
-      uuBdS0z4XUuOyV1LUPddSzgXXks25l1LSBNeS0f1XUsi9V1LoPddS17VXUvN2V1LCf5dS7gaXkuU
-      RF5LzAxeSyYEXktxBF5LcptdS46lXUvc3V1L5qVdS67nXUtd+l1Lqs9dS4TeXUuABF5LiL9dSx7i
-      XUsYzV1LsxpeS/HEXUvw4V1LVD9eS5imXUtVul1LqOddS1DLXUtWEF5L9U1dS4mVXUv8I15LgkVd
-      S9WAXUuSpl1LEFtdSxIQXUtsr11LbDNeS/yNXUtGq11LHgJeS3PjXUt4GV5LDt5dSzHjXUuH6V1L
-      Vr5dS8z9XUvqC15L3PBdS7LNXUt8/V1L5dZdS+oIXkuQ+F1LDLNdS2D+XUsy911LoOFdS6LEXUum
-      0l1L2O9dS5npXUst5V1LwMtdS4/DXUsE/11LkOFdS8DQXUsM3F1L4PRdS17ZXUuszF1LmuBdS0fk
-      XUs33F1LedtdS6n0XUuT411LUO9dS1blXUsw6V1LUuJdS2XhXUu13l1L5tFdS+rgXUuc2V1LZ9Vd
-      S7rgXUs=
+      UvdjS6QPZEt632NLjA5kS0IvZEvu/GNLVitkS1AMZEtGDGRL5g5kS5zrY0sH8GNLiRVkSwYzZEvg
+      XWRLdCRkS8QbZEsVHGRLFrBjS5K6Y0si9GNL6rpjS5b+Y0uhEWRL1uVjS9L0Y0s0HGRLQNVjS974
+      Y0tE42NLoTJkSw3bY0uA+GNLQFhkS7C7Y0vkz2NLUf5jS0fhY0v0J2RLwWBjSyuqY0tePGRL3ldj
+      S/SUY0uWu2NLFm5jSxwhY0vFxGNLbExkS2qiY0txwGNLrBlkS/z5Y0uoMWRLnvRjS8H5Y0tdAGRL
+      3tNjSzgVZEuUI2RL4AdkS7rjY0sMFWRLcu1jS7UgZEvYD2RLTMhjS7oVZEt2DmRLR/hjS4jaY0vI
+      6GNL3AZkS2sAZEv0+2NL0uFjS0HZY0t0FmRLLfhjSwTnY0t+8mNLHAxkS7rvY0vE4mNLLvdjS/f6
+      Y0uz8mNL3fFjS9wLZEtC+mNLWgZkSxv8Y0sMAGRLAfljSwH4Y0s89WNLGOhjS4j3Y0sK8GNLuetj
+      S1L3Y0s=
   LHEReweightingWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -700,11 +721,11 @@
       - 0
     - false
     - !!binary |
-      x55YTCan9EvO76pLGjmLSzcrLEunUQFLF6i6SgtqgEq8sidKcRfUSQqpj0k+GoJJEWurScLNBUrP
-      JpxKwqJ5S0SfiUz1GChMMaD5S0x800tgxrBLb36RS+xIa0vycDpL3HgQS6ip2kpmIaJKFaJuSjBx
-      NEoYsBVKzl4SSqgLXkrEqC9LVQYmTAQrqUsanFhLDwkmS+6j9Eqr7apKmN5dSqxRAUqic4BJ6TnU
-      SNxNgkgj8AVJSTycSRAwFkrLsXlKKsEESwPdsUtR1kpL3Zc4S09IJ0uA6RZLZ3gHSwTw8UqSxtZK
-      8Yy9Sq4qpkoxrZBKXAl6St+BVkpYrzZKuq8aSvRkAkqOtNtJuBa6SUX4n0mqU41J
+      xJBeTPxd+0usoK9LIguPS4nkMEvn3QRL18a/Spfvg0qlSyxKEefZSQ+Yk0lCqoVJrB2wSSh5CUrM
+      b6BKeD6ASydmjUzbtSxM3DwATNhJ2UsHoLVLTHyVS0a9cUscjj9LKW8US36o4EoTk6ZK7it1Sk9i
+      OUpOyRlK5mAWSughZErMejRL55QqTKDPrUv7jV5LkpcqS55a+0pqnq9KBPVjSs7dBEo6+YNJqQna
+      SIfehUgenAlJs4WgSUZPGkooRoBKDGYIS+e+tkv6ZlBLTqg9SxbfK0s4DRtLly8LS5CS+Eo6qtxK
+      Vb/CSr+4qkpCpJRKonGASi5iXEojsDtK5useSpb2BUqCt+FJ6S2/SXhYpEmIMZFJ
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -732,17 +753,18 @@
       - 0
     - false
     - !!binary |
-      5o2IS6JIfEv9vWlLxD1wS7rgXUsYi01L5q1WS1Y9RktaoDdL
+      DU2MS3SagUspKHBLINV2S1L3Y0sUL1NLqpFcS9StS0tRqjxL
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
-  nEvents: 14939986
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 14939986.0
   name: THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  nano: Not kept
   path: null
   reweight: LHEReweightingWeight,11
   split: 14
-  sumWeight: 14540986.0
+  sumWeight: 14939986.0
   xsec: 0.0742
 /TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -809,10 +831,11 @@
     - !!binary |
       xJy3SqYorUqGWKNKCmWXSuDCjkrmqIZKMx5+Sl6bb0p9/mFK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 4678000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 4678000.0
   name: TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 5
@@ -883,11 +906,12 @@
     - !!binary |
       rGw9S4yoMkskjyhLgDMcS/BOE0sw+ApLUxoDS8RB90pkPulK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 9654000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 9654000.0
   name: TTGamma_SingleLept_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -921,14 +945,14 @@
       - 0
     - false
     - !!binary |
-      4tn0Rt8t9EaxM/RGlOr0RjRo9UYCcfNGPp31Rl6S80ZYW/NGVvD0RlZ99EYCdfZGTav0RvyK9UYA
-      1vVGrNf1Rm4k9kYiAvZGopXzRhmn80YoI/VG7p7zRhh99EZHbPVGwBnzRrkC9UZquvRG0Dj1RjRG
-      9EYJ3PNGHHD0RngJ9EaS8vRG4M70Rrj380Yq5PRG0F71RvP080ZWKvVG0Kb0Rmx79EZtIvRGOAP1
-      Rjis9EaBiPRGy4b0Rhbd80Y2GPVGmhn1Rill9EbJyPRGeu70Rs4x9UY56vRGZJ/0Rtzm80ZA2vRG
-      KCT1RsA59Ub29PRG8rj0RiL09Ea+CfVG+Hv1Rv6I9EY89fRGS6v0Rksm9EZWSfVGnq70Ri559UYK
-      VfRGTSH0RlS29EaiXfRGOuL0Rn4U9UZ2+vRGqPz0RkC59Eaj4vRGoKn0Rgfd9Eami/VGXbf0Rgzq
-      9EZ01/RGtvv0RhqY9EbkkPRGhvj0RrgK9UZ+HPVGIo30RrTv9EZtGPVGfMb0RigQ9UYwAfVGdPn0
-      RuPZ9EZAqudG1v4BRw==
+      P0kBRzPuAEck8gBHR1IBR6yUAUdxigBHRbABR1KcAEeGfwBHUlUBR64XAUfUIgJHLDABRyKnAUeE
+      zgFHZNABRwD3AUf25QFH2Z0AR2KnAEc4cQFHpqIAR8oXAUd7lgFHk1wARxlgAUcBOAFHVXsBR8D6
+      AEfTwwBHLhMBR9DZAEfnVgFHjUYBR2DRAEe6TQFH5o8BR4LQAEeOdAFH1SwBR/AWAUdv6QBHXF4B
+      R/QwAUcAHgFH/BwBRzDDAEf3aQFHVWsBR+kKAUdTQAFHalQBR9Z3AUfFUQFHIisBRy/JAEdUSQFH
+      IXABR5J7AUd+VwFHBTgBR+RWAUeOYgFHgp4BR3YeAUfsVwFH7zABR3jqAEdOhAFHfTIBR/icAUcK
+      AwFH8ucAR4w2AUewBwFHsU0BRz1oAUdsWgFHrVsBR/A3AUfITQFHuC8BR/BKAUfkpgFHGDcBR5RR
+      AUfsRwFHClsBR1kmAUesIgFHdVkBR/BiAUdYbAFHuCABR8JUAUcragFH9j4BR91lAUfjXQFH6FkB
+      R0BJAUfyo/RGckcJRw==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -956,16 +980,17 @@
       - 0
     - false
     - !!binary |
-      RSYeR+rvFUejpQ5HoIgDR+LZ9EYGTeVG9vPXRiaVxkafALhG
+      wgcnR8pbHkdtqRZH8uYKRz9JAUcJKPJGEAjkRqex0UaJTcJG
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
-  nEvents: 4544000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 4074000.0
   name: TTTT_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  nano: Not kept
   path: null
   reweight: 1
   split: 6
-  sumWeight: 31340.94140625
+  sumWeight: 33097.24609375
   xsec: 0.009103
 /TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -1032,21 +1057,22 @@
     - !!binary |
       0NJST2kpT08UzExPTMU/T1gqO0/OnzdPI4stT5eQKE+OeSRP
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
-  nEvents: 43546000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 43546000.0
   name: TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -1080,14 +1106,14 @@
       - 0
     - false
     - !!binary |
-      CzIcUf0NHFExVxxR4j8cUVqTHFH4GBxRFdIbUSP0G1G61RtRdXocUZ0THFFH3BtRxTocUbP+G1GL
-      VxxRWUccUXZlHFEoFxxRCSYcUYs9HFGyTBxRij0cUWkyHFG/WhxRT/gbUVdJHFHmbhxRYPYbUTjy
-      G1Gk7xxRSzwcUS9RHFEnSxxRU08cUWpQHFHXMBxRsigcUSFOHFGGORxRlBscUeE6HFFMJhxR6/Qb
-      UTQzHFElVRxRbiIcUW1gHFFyWRxRwAUcUdkfHFGrQRxRBEscUW8hHFEQOhxRvEAcUak3HFFKMhxR
-      zDEcUV05HFE7JhxRNTAcUaYiHFGTLRxR+DEcUagnHFEkORxRXDgcUTkuHFF5PRxRRj4cUecRHFE+
-      GRxR3DYcUS4eHFFNHRxRhh8cUUBDHFFGBhxRSjocUWs9HFHCQBxR3zscUWtCHFHZNRxRciocUQ88
-      HFG2ORxRSB4cUZg3HFH7KBxRATkcUZcsHFHVLRxR2jwcUZouHFEGPxxRcSMcURlRHFG4JRxRVjUc
-      UYoxHFGt7BdR6K0gUQ==
+      IDsiUasVIlG0YSJRgEkiUTCgIlEUISJRctchUdD6IVE92yFRVYYiUYYbIlEJ4iFRLEQiUcsFIlEQ
+      YiJRPlEiUYZwIlExHyJRpC4iURBHIlHKViJRD0ciUYE7IlFkZSJRJf8hUVFTIlFVeiJRJP0hUdT4
+      IVEJACNRwUUiUXdbIlEzVSJRhlkiUapaIlHeOSJRajEiUUxYIlHgQiJRyCMiUUpEIlHpLiJRovsh
+      UVc8IlGUXyJR5ioiUUxrIlELZCJRGw0iUTooIlFbSyJREFUiUd0pIlFzQyJRYUoiUfVAIlFaOyJR
+      3joiUbZCIlHYLiJRNjkiUSErIlF8NiJRCDsiUVIwIlF/QiJRq0EiUSo3IlEARyJR1UciUb0ZIlFe
+      ISJRH0AiUXwmIlGTJSJR4iciUQBNIlGoDSJRsEMiUe9GIlFnSiJRVEUiUSBMIlERPyJRPTMiUYdF
+      IlEVQyJRmCYiUd9AIlG2MSJRWEIiUXQ1IlG9NiJRWkYiUYw3IlGaSCJR9CsiUWFbIlFQLiJRjT4i
+      UZs6IlF8yx1RXOMmUQ==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -1115,48 +1141,50 @@
       - 0
     - false
     - !!binary |
-      vPAvUZbiLFGb6SpRWAkgUQsyHFFSPRlRwdIQUVOrDFG9QQlR
+      Wr02UeSQM1FNhDFRfTgmUSA7IlEbKR9RTWsWUbwaElFcjw5R
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_30.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_31.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_18.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_17.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_24.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_25.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_34.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_22.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_23.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_19.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_29.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_21.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_33.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_27.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_28.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_20.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_32.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_26.root
-  nEvents: 144722000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_30.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_11.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_14.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_31.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_18.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_16.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_17.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_9.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_10.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_24.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_13.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_25.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_15.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_8.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_34.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_22.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_23.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_19.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_29.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_21.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_12.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_33.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_27.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_35.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_28.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_20.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_32.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_26.root
+  nEvents: 144722000.0
   name: TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
-  sumWeight: 41928133760.0
+  sumWeight: 43548253760.0
   xsec: 364.35
 ? /TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
 : LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -1223,9 +1251,10 @@
     - !!binary |
       wtmVSbdolEkxopNJB4WKSfThh0kK4oVJfv16SXPOdEmfyG9J
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 3322643
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3322643.0
   name: TTWJetsToLNu_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 6
@@ -1296,9 +1325,10 @@
     - !!binary |
       D8dhSMpYX0iJ9F1IAlhQSMA0TEjwDElITIk8SIbFN0gs5TNI
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 308983
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 308983.0
   name: TTWJetsToQQ_TuneCP5_13TeV-amcatnloFXFX-madspin-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 8
@@ -1369,9 +1399,10 @@
     - !!binary |
       isLFSJUCtUgcv6ZIPtqkSADhlkgR+4pISJ6LSDqNf0joYmtI
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 309000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 309000.0
   name: TTWW_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 13
@@ -1442,9 +1473,10 @@
     - !!binary |
       medESOMaOkhwSzBI5E0kSABGG0iCEhNI4EQLSMKZA0jfRvlH
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 159000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 159000.0
   name: TTWZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -1478,14 +1510,14 @@
       - 0
     - false
     - !!binary |
-      kDqzSbkVs0mu7LJJ5ECzSWmSs0la1bJJanazSaHZskkr17JJLWmzSeb9skmtl7NJQk6zSRC3s0mX
-      lLNJ3fazSZxxs0kKhrNJ+ICySYzjskkaTbNJI7SySTRes0m3U7NJdJGySfQus0mhKLNJg2uzSTwq
-      s0mJGbNJS2GzSeQns0nXIbNJsEOzSQ79sklhPLNJY0ezSWohs0mGT7NJYxCzSfENs0ndDbNJNyGz
-      SRIfs0mIMrNJWCSzSZHpsklSPLNJPF+zSSXvskk4IbNJUEuzSQhgs0mBN7NJSjOzSRsls0lMQLNJ
-      5D+zST5Ws0ldVrNJOk2zSUhCs0lXWLNJ0j6zSc5As0lfU7NJLEOzSe4ws0nxYbNJ4iazSatas0kV
-      J7NJGhazScJCs0mOELNJEDOzSTM+s0kQVbNJ+E2zSYEhs0nqO7NJNTOzSfNJs0lCWrNJSzuzSYI1
-      s0mEN7NJvlSzSWIts0lCLLNJYESzSbRIs0nMRrNJ6yazSepAs0mXSrNJwS2zSatHs0mDRbNJH0qz
-      SZA6s0nJYq5JnHK4SQ==
+      uRKWSezzlUly0ZVJrReWSfVblkl0vpVJ2ESWSVjBlUncv5VJPDqWSQrglUmqYJZJCCOWSch6lklG
+      XpZJOLCWSe5Alkm2UZZJzneVSbXJlUkMIpZJwaGVSXowlkkIKJZJcIWVSXkIlkmyA5ZJ6DuWSYoF
+      lknq9pVJzzKWSecClklN/pVJbBqWSUnflUmsE5ZJSR2WSZL8lUk3JJZJLO6VSbHslUli7pVJG/yV
+      SZz6lUkdC5ZJ0f+VSabNlUkdFJZJ4DGWSWPTlUl9/ZVJziCWSbMxlkmiEJZJjgyWSdUAlklWF5ZJ
+      oReWSewplkklKpZJASOWScwYlknQK5ZJeBaWSRcYlkl6J5ZJthmWScwKlklbM5ZJbAKWSe4tlklA
+      ApZJIfSVSVoZlkns75VJfgyWSawVlknmKJZJyyKWScj9lUn6E5ZJ2gyWSYAflklILZZJfhOWSVcO
+      lkkuEJZJuCiWSbYHlknmBpZJDRuWSaYelknyHJZJOQKWSRoYlkkAIJZJ+AeWScYdlknbG5ZJxR+W
+      SbkSlknCA5JJn2+aSQ==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -1513,16 +1545,17 @@
       - 0
     - false
     - !!binary |
-      xQ7ESX8cwUlG7r5JdiG4SZA6s0lUPa9JfXuqSWGbpEnmsp9J
+      bzGkSXKzoUkD259JXDKaSbkSlknJt5JJKMOOSezTiUnctIVJ
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 6017000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 5038000.0
   name: TTZToLLNuNu_M-10_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 12
-  sumWeight: 1468242.0625
+  sumWeight: 1229399.125
   xsec: 0.2728
 /TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -1589,10 +1622,11 @@
     - !!binary |
       ZFs4SsWPNUokeDNKagEtSkxhKEpgmiRKHyIgShqYGkqx9RVK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 5401000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 5401000.0
   name: TTZToQQ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 7
@@ -1663,9 +1697,10 @@
     - !!binary |
       QoRASC76MUi2bCVIVpIgSABwFEhT9glI5Q0ISASJ+0eDxulH
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 152000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 152000.0
   name: TTZZ_TuneCP5_13TeV-madgraph-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 8
@@ -1736,9 +1771,10 @@
     - !!binary |
       gcUzRfl6NEVo3zZFyKwsRavbLUUTAjBFolglRXbXJkUuyyhF
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 926000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 926000.0
   name: TWZToLL_thad_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -1809,9 +1845,10 @@
     - !!binary |
       SNdARSK1QUWfVURFTC85RYSKOkXI5TxFR0sxRYT4MkVSGzVF
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 992000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 992000.0
   name: TWZToLL_tlept_Whad_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -1882,9 +1919,10 @@
     - !!binary |
       tSf4Q44t+UOocfxDFa7uQ4Be8EN0UfNDJ8fkQ7Dn5kPVl+lD
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 320000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 320000.0
   name: TWZToLL_tlept_Wlept_5f_DR_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 8
@@ -1955,9 +1993,10 @@
     - !!binary |
       jes2Ss+0TkrZVmRKE+00ShStTEoxSmJKpFMzSiAMS0o3pWBK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 3353413
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3353413.0
   name: WGToLNuG_TuneCP5_13TeV-madgraphMLM-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 6
@@ -2028,9 +2067,10 @@
     - !!binary |
       xiz4S4oy+0tVrP1Lft3xS/VE9Uv0CPhLFpzsSxFR8EvVVfNL
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 2900000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 2900000.0
   name: WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 7
@@ -2064,14 +2104,14 @@
       - 0
     - false
     - !!binary |
-      QPhaSWcOW0nh4lpJkcxaSe9AW0kGpFpJWOhaSRWlWkmwOVpJmcFbSciGWkkGP1tJIO9aSTykW0lc
-      8VpJxFtcSeyiWknd21pJdBRaSWADW0mBTFtJcVZaSUSVW0mbjFpJU1paSTrAWklV7VpJ78BbSVsv
-      W0m691tJyG1bSZITXEmfyFpJfnBbST1OW0m6qlpJyndaSUhnW0kkP1tJ9ZhaServWkm0GFtJVk1a
-      SXS6Wkk2wlpJXvpaSenCWkl36VpJrSNbSdaNWkn20FpJtTlbSTreWkmU6VpJlfpaST9FW0mzE1tJ
-      Ju9aSZkGW0muK1tJxytbSdMQW0lQ+lpJ5cNaSbIpW0kw+FpJUjVbSZYsW0ms5VpJvdJaST7pWkkB
-      A1tJZ/1aSbQMW0mM41pJl+daSWXkWkk0C1tJJAhbSf7IWknt81pJwgJbSSoRW0kM0lpJAhBbSS3m
-      Wknw9VpJRA9bSe/+WklXCFtJ2u1aSScGW0lo41pJAfRaSZfrWklB71pJYu9aSbz3Wklq91pJofpa
-      SUD4Wkk=
+      8DtbSRtSW0mLJltJNhBbSb2EW0mb51pJ/itbSbDoWkkZfVpJgAVcSUjKWknQgltJyjJbSSPoW0kM
+      NVtJ4J9cSYbmWkmIH1tJ4ldaSRJHW0lIkFtJ85laSR7ZW0ki0FpJxp1aSd4DW0kIMVtJ1QRcSR5z
+      W0mqO1xJsLFbSZ5XXElIDFtJZrRbSfyRW0ls7lpJTLtaSSOrW0n2gltJmtxaSZkzW0lcXFtJ2pBa
+      SST+WknWBVtJGD5bSaYGW0k0LVtJcWdbSXDRWkmdFFtJe31bSeAhW0lALVtJPz5bSQOJW0ltV1tJ
+      1TJbSU1KW0lqb1tJhm9bSY1UW0kEPltJhQdbSXNtW0nlO1tJF3lbSVhwW0lQKVtJYhZbSeYsW0m2
+      RltJG0FbSWhQW0k3J1tJPytbSREoW0noTltJ1EtbSaAMW0mgN1tJe0ZbSeBUW0myFVtJt1NbSdkp
+      W0miOVtJ+VJbSaFCW0kNTFtJgjFbSdtJW0kRJ1tJszdbSUIvW0ntMltJEDNbSWw7W0kcO1tJUD5b
+      SfA7W0k=
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2099,15 +2139,16 @@
       - 0
     - false
     - !!binary |
-      ThdmSQdZY0nZJmFJ0HJdSUD4Wknn7VhJ+ExWSYIKVEl6IVJJ
+      kl5mSWGfY0lzbGFJVLddSfA7W0nlMFlJN49WSf9LVElQYlJJ
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
-  nEvents: 4159000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4159000.0
   name: WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 19
-  sumWeight: 896900.0
+  sumWeight: 897983.0
   xsec: 0.2086
 /WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -2174,9 +2215,10 @@
     - !!binary |
       yhhLScCFR0k/mkRJEvBCSZqUP0nYyTxJgCw8SXD/OElPUDZJ
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
-  nEvents: 4595000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4595000.0
   name: WWZ_4F_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 5
@@ -2247,9 +2289,10 @@
     - !!binary |
       T3hFRzylQ0cCk0FH/vI5R9qEOEdjzjZHqH8wR/xjL0eQ+C1H
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 598000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 598000.0
   name: WZG_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 8
@@ -2283,14 +2326,14 @@
       - 0
     - false
     - !!binary |
-      htSlTJb2pUzc6KVMTnylTBTvpUxYnKVMZtWlTI/MpUwslaVMQOOlTOiYpUw656VM8MulTOINpkzE
-      uaVMYjymTJ60pUz+wKVMX7alTGjipUy8QKZMxNKlTP73pUwqoKVM6tylTP7JpUyPs6VM4kymTC72
-      pUxaIqZMdN6lTANCpkzM3KVMit+lTPj5pUyzu6VMLKOlTJr0pUweAqZMJralTFvSpUydAKZM2qKl
-      TMa2pUz1q6VMuM+lTOrGpUyewaVMM+OlTG6/pUy4yKVMgt2lTJTOpUyU2aVM3tilTGvypUyW5KVM
-      +s+lTGLWpUx26KVMYtelTLbapUxy16VMDNGlTBTupUyh0aVMyuqlTB7opUzgzaVMXNelTO7HpUy4
-      3aVMQuClTJDUpUzw2aVMTcelTPjNpUzx5aVM3M2lTFjGpUzU0qVMZM+lTCbXpUz1wqVMAN6lTFLQ
-      pUxs0qVMxdOlTM7hpUyd3aVMJtalTB7ZpUzd0KVMXdalTPrEpUyUzKVMbdGlTDPUpUyG1KVMcNKl
-      TIbUpUzC5qJM0lOoTA==
+      rYyoTGWvqExAoahMBDOoTKinqEyOU6hMko2oTImEqExBTKhMrJuoTB5QqEykn6hMAYSoTADHqEx5
+      cahMN/aoTExsqEzEeKhM8G2oTNaaqEyQ+qhM7IqoTMywqEx4V6hMP5WoTOSBqExQa6hMDQepTOCu
+      qEzY26hMwZaoTCj8qEz6lKhMs5eoTMayqEx2c6hMe1qoTFCtqEzsuqhMyG2oTISKqExduahMJlqo
+      THluqEyLY6hMw4eoTMp+qExqeahMoZuoTEB3qEydgKhM1JWoTJKGqEzFkahMG5GoTBKrqEwPnahM
+      +YeoTJiOqEzwoKhMko+oTAiTqEyyj6hMMImoTK6mqEytiahMQ6OoTIigqEz6hahMio+oTO5/qEwG
+      lqhMl5ioTLKMqEw0kqhMRH+oTPyFqExsnqhM6oWoTEl+qEzuiqhMdoeoTFOPqEzXeqhMTpaoTGCI
+      qEyIiqhM5ouoTDCaqEzklahMXY6oTFaRqEz2iKhMlI6oTOJ8qEyghKhMhYmoTFiMqEy0jKhMlIqo
+      TK6MqEyUkqVMZharTA==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2318,16 +2361,17 @@
       - 0
     - false
     - !!binary |
-      NYenTDq6q0x+V65MubigTIbUpUwtT6lMPCWbTC7woEwaFaVM
+      fUaqTJiKrkx6MrFM2lujTK2MqEyoFaxMObGdTCeUo0xCyqdM
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 10441724
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 10441724.0
   name: WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 10
-  sumWeight: 86942768.0
+  sumWeight: 88368488.0
   xsec: 4.666
 /WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -2394,9 +2438,10 @@
     - !!binary |
       ozCASrsahErugYZKtpZ4SqO1gEo6roNKajBySmjUe0rWV4FK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
-  nEvents: 904000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/merged/nanoSkim_1.root
+  nEvents: 904000.0
   name: WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2
+  nano: Not kept
   path: null
   reweight: 1
   split: 18
@@ -2467,15 +2512,16 @@
     - !!binary |
       5h05T/WHPk/YWEFPNDYyT+YoOU8ujT1Pg4MsT4qbNE9tMjpP
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
-  nEvents: 31562465
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_6.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_5.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_7.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_4.root
+  nEvents: 31562465.0
   name: ZGToLLG_01J_5f_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 2
@@ -2546,10 +2592,11 @@
     - !!binary |
       U3lsSzbscEsIQnRLx5VnS8SpbEtllXBLKohjS3QgaUuUhm1L
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 15928000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 15928000.0
   name: ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 4
@@ -2620,11 +2667,12 @@
     - !!binary |
       OYKSTENGlUwVVpdMOy6NTJwPk0ziq4hMz3SMTAdZj0w=
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 13740600
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_3.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 13740600.0
   name: ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 3
@@ -2658,14 +2706,14 @@
       - 0
     - false
     - !!binary |
-      nBJHRwglR0fM6kZH9hNHRwM1R0d3DUdHSeJGRxN9RkfMTkZH95xHRyasRkeUQ0dHGAtHR6DDR0e6
-      AEdHnkxIR7nKRkeN7EZHUCpGRxYkR0f0nUdHd4ZGRxjTR0fdykZH66tGR6HWRkexR0dHj/dHR3BH
-      R0dPD0hHhINHRxZjSEed0kZHv5BHR7KJR0fs7UZHOURGRwhjR0cvZkdHDrxGR/oLR0emJUdHh1xG
-      R0HsRke310ZHFvtGR3zORkc+AkdHWnZHR9LLRkd57UZHQ0ZHR9wUR0egC0dHuh5HR/9WR0d+VkdH
-      PeBGR1UPR0ckZkdHkl9HRxIzR0dFJEdHUcNGR8hRR0dhCUdH6GFHR2pWR0fZKEdHLfhGR6gmR0d2
-      PUdHzQZHRyEmR0eL5UZHTQdHRxIUR0eZLkdHjyxHR07uRkdiB0dHeRlHR2I+R0el8kZHKyRHR+Ht
-      RkcDGEdHoFNHR94UR0f9FEdHjBRHR0gfR0fJ/EZHvg1HR8ESR0efE0dHy/pGR6wRR0cGJkdHxS1H
-      R54SR0euyEVH3eJHRw==
+      Wr2CR5XJgkf1ooJHN76CRyrUgkfyuYJHp52CRzdbgkf5PIJHcRiDR2p6gkek3YJHjriCR08xg0er
+      sYJHqouDRzaOgkcspIJHGSWCRxTJgkclGYNHa2GCR8c7g0dXjoJH4nmCR+SVgkc24IJHyFODRx7g
+      gkcaY4NHngeDRyuag0dFk4JHsQ+DR34Lg0cBpYJH5jWCR0bygkcz9IJHiYSCR/24gkfWyYJHxEWC
+      R6yjgke4loJHtq2CR3yQgkc0soJHkP6CR9eOgkf2pIJHbd+CRwe/gkfBuIJHHcWCR1rqgkf86YJH
+      VpyCR0+7gkcl9IJHmO+CR6HSgkfRyIJHL4mCR+vmgkdht4JHa/GCR9TpgkfFy4JH1quCR6XKgkdm
+      2YJHoLWCRy/KgkfYn4JH3bWCR1K+gketz4JHcM6CR5Clgkf2tYJHA8KCRxragkdFqIJH48iCRxWl
+      gkf4wIJHD+iCR9a+gkfcvoJHrr6CR6rFgkcJr4JHJbqCR3G9gkf2vYJHpK2CR6a8gkcZyoJHOc+C
+      R1q9gkdy5IFHHEaDRw==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2693,15 +2741,16 @@
       - 0
     - false
     - !!binary |
-      moBMR+yhS0dQYktHzuhHR5wSR0dovUZHfxJER3tDQ0ek3EJH
+      o0+GR4q9hUfdk4VH60mDR1q9gkd3hYJHjsOAR6o7gEda8H9H
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
-  nEvents: 4534000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1/merged/nanoSkim_1.root
+  nEvents: 4534000.0
   name: ZZZ_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17_ext1-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 16
-  sumWeight: 50962.609375
+  sumWeight: 66938.703125
   xsec: 0.01398
 ? /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/
 : LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -2731,14 +2780,14 @@
       - 0
     - false
     - !!binary |
-      bGqNRFhqjUQoZY1EfHyNRNmIjUR3RY1Ea4WNRCE7jUSPH41E+pqNRPxXjUSorY1Ey2aNRF+vjUTS
-      sI1EYKmNRCqTjUQrno1EZgGNRE4ejUSWdo1E2huNRESCjUSNeI1E8TaNRFNjjURHi41EJXWNRMpc
-      jURafY1ESJ2NRJZ+jUSvYY1EBcaNRLk+jUSPS41Eu2CNRGBajUSRmo1ETP2MRB8zjUQRjo1Es+yM
-      RP8pjUSBNY1ERQSNRK/BjETbVY1Em7iNRCwkjURaRY1EGo+NRKFljURflI1EmmmNRIdfjUTTcY1E
-      /U2NRKOGjUQsiY1EmH+NRF9djUTMfo1EVmONROKAjUR2e41EqkWNRCR9jUQLfo1E4mONRPtYjUR3
-      WI1E3HGNRFJujUS4ZY1E21uNRBtWjUROfI1EU26NRCdcjUTFZI1E2n+NRJFnjUT9XI1EUGaNRBVt
-      jUSXaY1E5WiNRKN1jUR6aI1EFnONRINwjUSecY1Ef2eNRMBujUREao1E5F6NRAxsjUT5aI1EXGGN
-      RG1qjURdTYtEb2SORA==
+      S/eNRB73jUTX8Y1EdAmORMMVjkQ/0o1EYRKORM3HjUQfrI1EASiORLHkjUS0Oo5ExfONRHE8jkTi
+      PY5EWzaORDcgjkRoK45E342NRMeqjURkA45EeKiNRGQPjkR4BY5EoMONRAPwjUQ2GI5E+wGOROTp
+      jURdCo5EGCqORJcLjkSW7o1EE1OORJDLjURP2I1Ede2NRCLnjURfJ45EJoqNRAvAjUQIG45EU3mN
+      ROa2jUQEwo1E65CNRDdOjUTQ4o1ErEWORPawjUQ00o1EBRyORKHyjURpIY5EX/aNRFrsjUSt/o1E
+      xdqNRLETjkQsFo5EeAyORCnqjUTFC45EG/CNRNANjkReCI5EWNKNRCMKjkQGC45ErPCNRM/ljURG
+      5Y1Evf6NRDn7jUSW8o1Er+iNROXijURGCY5EMvuNROvojUSa8Y1EywyORHL0jUTX6Y1EM/ONRPn5
+      jURw9o1EzfWNRIgCjkRb9Y1E+/+NRGX9jUSC/o1EW/SNRJv7jUQl941EseuNROr4jUTY9Y1EMO6N
+      REv3jUR62ItEq/KORA==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2766,15 +2815,16 @@
       - 0
     - false
     - !!binary |
-      YNSoRHPQmUQoGY1EOiybRBvDgURxuo9ExgaDRAiHcEQ=
+      UHypRLhpmkQGpo1EicabRJxEgkRTSZBEQYmDRAB3cUQ=
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
-  nEvents: 0
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
+  nEvents: 217724.0
   name: ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14
+  nano: Not kept
   path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/
   reweight: 1
   split: 57
-  sumWeight: 1131.32568359375
+  sumWeight: 1135.7279052734375
   xsec: 0.005521
 ? /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/
 : LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -2804,14 +2854,14 @@
       - 0
     - false
     - !!binary |
-      A/oyRKX5MkTM9DJEGBIzRH4fM0TVzDJExxwzRB69MkSHnDJETzgzROLhMkTMUTNEPvMyRENTM0QL
-      UzNEc0wzRFwsM0TXOzNEjXMyRNWYMkQZCzNEeZQyREoYM0QfDjNEVLoyRDP1MkRQIjNEjgUzRATp
-      MkTfFTNEYz0zRAESM0Qc8TJEE3MzRD3CMkTtzDJE0u0yREnkMkS6ODNETmcyRN+vMkTqKzNEj1Qy
-      RJGjMkTztDJEvHgyRCkfMkQT4DJE4F8zRD+fMkTeyTJELiczRMLyMkSmLTNEjfwyRFzsMkRCATNE
-      Q9QyRAEcM0QfITNEyBczRJPqMkRWFDNES/EyRE4YM0TYDjNEa8syRB8RM0Q+EzNEOfIyRKbkMkTE
-      4zJELAMzRC/9MkQP9TJEcugyRODgMkSqEDNE9/8yRMnmMkRM8jJEsRQzRKv1MkSX6TJEg/QyRBj8
-      MkTI9zJEEPcyRKQHM0Q++DJEeAUzRN0BM0QHAzNEQ/YyRMP/MkQZ+TJEQOsyRGH8MkS7+DJEyu4y
-      RAP6MkS4SjBEWzQ0RA==
+      Ae85RIPuOUSO6TlEKAc6RFsVOkRRwDlEXRM6RNmvOUSjjTlEQS86RCvVOUSySTpE1Oc5RKpKOkRz
+      SzpEnEM6RBIkOkQJNDpEgGM5RN+KOUQiADpEYYU5ROEOOkTTAzpE3aw5RBXpOUSbGDpE9vo5RPve
+      OUQhDDpEgDM6RPkIOkTx5TlEPms6RK61OUTHvzlEKuI5RAPZOURuLjpEV1k5RCejOUSFIjpEskQ5
+      RJeWOUQApzlErGk5RAMOOUSZ1DlEQlg6RJ+ROUQ1vTlEmR06RArnOUScJDpEsfA5RKngOUQz9jlE
+      bMg5RIwSOkRzFzpE6Qw6RPHeOUQ/CjpECuY5RPEOOkTcBDpEI745RLwGOkQOCTpE0uY5RCTZOUTY
+      1zlEuvg5ROzxOURN6jlEqtw5RP7UOUTsBjpEIfU5RFLbOURG5zlEtws6RCvqOUS73TlEWuk5RPbw
+      OUQf7TlEDew5RKX9OUSe7TlE3Po5RFP3OURU+DlE3+o5RL30OUSz7TlEO985RKnxOUQU7jlEouM5
+      RAHvOUQKJjdEcTY7RA==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2839,15 +2889,16 @@
       - 0
     - false
     - !!binary |
-      6qxVRHipQkSsjzJEoGVERIc4JETS6jVEPtUlRHo0GEQ=
+      VvpdRJI6SkQwgTlELgdMREKbKkRW/DxEa0csRJAfHkQ=
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
-  nEvents: 0
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ProjectMetis_TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root
+  nEvents: 213925.0
   name: ProjectMetis_TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14
+  nano: Not kept
   path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/
   reweight: 1
   split: 56
-  sumWeight: 715.9064331054688
+  sumWeight: 743.7344360351562
   xsec: 0.003732
 /ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -2914,12 +2965,13 @@
     - !!binary |
       7cdVRw3OQkeFvTJHbodER+dpJEc6ETZHNwImR+1nGEc=
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/merged/nanoSkim_1.root
-  nEvents: 0
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/merged/nanoSkim_1.root
+  nEvents: 972004.0
   name: ProjectMetis_TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11
+  nano: Not kept
   path: /ceph/cms/store/user/dspitzba/ProjectMetis/TTW_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v11/
   reweight: 1
-  split: 172
+  split: 175
   sumWeight: 45859.70703125
   xsec: 0.0526
 /tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
@@ -2950,14 +3002,14 @@
       - 0
     - false
     - !!binary |
-      F76OSP3Ljkj+r45I6s2OSObhjkhrto5ICeWOSBXFjkidwY5IYM+OSNevjkhivY5IyNKOSM/njkg/
-      +I5ISdyOSKDWjkhn345IE4eOSHmUjkhGuY5IGpSOSK/DjkjMz45IIquOSO68jkj+z45IhauOSEa6
-      jkhRso5IatuOSN2tjkgwuo5ItPGOSGOcjkiypI5If8iOSOSsjkiH0o5INHWOSOCVjkhs345I8nKO
-      SMCSjki9no5IMnmOSHZNjkgvp45IkOqOSMCPjkgOpI5Iz82OSHC+jkgs2Y5IMsGOSDW7jkhgvo5I
-      pKuOSMLOjkjy0Y5ITMiOSGqwjkiO0I5IH7+OSIrQjkifzI5IQaKOSJzLjkiFzY5ItMCOSJewjkgw
-      so5IwMiOSBnCjkhevY5ISrSOSNisjkgt0I5IVL+OSKm0jkhZuo5IwMaOSAG6jkj7tY5IZL2OSG3A
-      jkiMu45IxriOSPzJjkjTvo5IucWOSO/BjkjfxI5IBL2OSHG+jkj7vI5I3rSOSETAjkgru45INLeO
-      SBe+jkg=
+      XQaWSCEUlkiw+JVIJReWSNUrlkjT/pVImC+WSF0OlkjGCpZIBhiWSKv2lUjBBpZIdxuWSHYylkgQ
+      RJZISCeWSAAflkgAKpZI3MyVSN3alUj0A5ZIxdmVSL8LlkgqGZZIWfKVSLkHlkgaGJZI7vGVSEIC
+      lkgY+pVIcCeWSJ7ylUioA5ZId0CWSO7hlUjN6ZVI5xGWSBf0lUgkHpZIaLeVSNralUjKK5ZIobaV
+      SGrXlUhg5JVIfr2VSHeOlUjC7ZVIQDWWSCvUlUgZ65VIlRaWSJIHlkhrIpZIVAqWSNwDlkhJBpZI
+      BPOVSJAXlkiXG5ZIZhGWSKb3lUhPGZZImQaWSPIZlkh2FZZIcemVSNYUlkg7FpZILgmWSAn4lUg6
+      +pVILBKWSFMKlkhIBZZINvyVSI70lUhDGZZIkgeWSCL8lUhtApZIUA+WSAcClkji/ZVIyQWWSPMI
+      lkiWA5ZI2gCWSMgSlkhjB5ZIDA6WSHYKlkhLDZZIDgWWSL8GlkjyBJZIsPyVSJwIlkg+A5ZI7P6V
+      SF0Glkg=
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -2985,16 +3037,17 @@
       - 0
     - false
     - !!binary |
-      GsGZSN7el0hLoZZInJuRSBe+jkgni4xIDuiJSPpphkgzmINI
+      0KWhSGudn0jEQ55IVxSZSF0GlkgIrZNI9/qQSB1GjUh4R4pI
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 3967000
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 3967000.0
   name: tZq_ll_4f_ckm_NLO_TuneCP5_13TeV-amcatnlo-pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 19
-  sumWeight: 292336.7109375
+  sumWeight: 307250.9140625
   xsec: 0.09418
 ? /ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM
 : LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
@@ -3024,14 +3077,14 @@
       - 0
     - false
     - !!binary |
-      XKt0SgVxdEpLRXRK+qp0SnUrdUpKDHRKbAl1Ss09dEoQOXRK5+F0SgRZdEohM3VKssR0St1KdUo7
-      P3VKgJN1StAKdUrcKHVKnrhzSiIhdEpJtHRKtvdzSti+dEog2HRKE8NzSoSvdEq+gHRK38h0SuSL
-      dEqZUnRKSNl0SvRRdErLmHRKZLd0SgE3dEqho3RKaul0SsB7dEq7xXRKQ2Z0SgNodEqhdnRKVZR0
-      Ssh/dErJpHRK/Xp0SmMndEqKp3RKkNl0SpI8dEqZhHRKdbh0SqzfdEofqXRKtJ50SgB/dErMq3RK
-      q8B0SpzTdEp3zHRKr7R0ShuxdEp01XRKAcN0SoSudEoC1HRKqqR0SoSPdEqb4nRKNpZ0SiXRdEo3
-      g3RKx3h0Snu2dEoVfXRKiaF0SvyqdEq/znRKPsN0SjKJdEo0rnRKQpx0Sli4dErd3nRKBqt0Sv+s
-      dEqmonRKEr90SvqXdEo+m3RKAbl0StC9dErTw3RKBJN0Sq2zdEr4w3RKNqB0Sm28dErjsnRKGrl0
-      Sl6rdEpfCGxKS9R9Sg==
+      4ReOSoz1jUoW3Y1K4heOShdijkojvI1Ktk6OSkPYjUod1Y1KLzeOSsfnjUoVZ45KgyaOSu10jkoT
+      bY5K0J6OSmZOjkr8YI5KioqNSjPHjUq2HY5KeK+NSq0jjkrKMY5KPJGNSpIajkot/41KwSiOSksF
+      jkr15I1KPTOOSvHjjUqODY5KayCOSnrUjUo9E45KkTuOSnr8jUrjJ45Kz++NSnrwjUr3+Y1K1AqO
+      StP+jUqDE45K5/uNSvrKjUokFo5KDDOOSknXjUoBAo5Kfh+OSqs2jkp0Fo5KWRGOSkH+jUr5F45K
+      2iOOSnwvjkoPK45KRx6OSnoajkpGMI5KHCWOSqcZjkp8L45K/BOOSoAIjkrcN45K5guOSqAtjkrz
+      AI5KIPuNSkwejkoG/Y1KGBKOSvkXjkqELI5KjSWOSj0EjkqaGY5KHA+OSoQfjkq1NY5KqxeOSr4Y
+      jkrZEo5KUCOOSpUMjkpwDo5Ksx+OSn0ijkoLJo5KmAmOStQcjkrpJY5KQBGOSuYhjkpnHI5KDCCO
+      SuIXjkpEFYlK4GmTSg==
   LHEScaleWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -3059,14 +3112,15 @@
       - 0
     - false
     - !!binary |
-      CY9uSsqPdkpcoH1KvmR2SlyrdEpGaHNK761rSn5DZUqp9l9K
+      YHiKShooj0q+SZNKPxKPSuEXjkqUYI1KCOCIStQphUpuGIJK
   files:
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
-  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
-  nEvents: 4941250
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_2.root
+  - /ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.1_SS/ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/merged/nanoSkim_1.root
+  nEvents: 4941250.0
   name: ttHJetToNonbb_M125_TuneCP5_13TeV_amcatnloFXFX_madspin_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
   path: null
   reweight: 1
   split: 8
-  sumWeight: 4008662.875
+  sumWeight: 4656112.5
   xsec: 0.215

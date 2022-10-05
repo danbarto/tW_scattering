@@ -62,6 +62,8 @@ def getSplitFactor(sample, target=1e6):
     print ("Average number of events in file:", average_events)
     print ("Filter efficiency:", filter_eff)
 
+    filter_eff = max(filter_eff, 0.1)
+    average_events = max(average_events, 1000)
     return min(max(1, int(round(target/(average_events*filter_eff),0))), len(sample.get_files()))
 
 def readSampleNames( sampleFile ):
@@ -164,6 +166,34 @@ def getDict(sample):
         
         return sample_dict
 
+def get_sumw(files):
+    first = True
+    res = {}
+    res['sumWeight'] = 0
+    res['nEvents'] = 0
+
+    for f_in in files:
+        try:
+            with uproot.open(f_in) as f:
+                print (f_in, float(f['genEventSumw'].counts()[0]), float(f['genEventCount'].counts()[0]))
+                res['sumWeight'] += float(f['genEventSumw'].counts()[0])
+                res['nEvents'] += float(f['genEventCount'].counts()[0])
+                if first:
+                    first = False
+                    res['LHEPdfWeight'] = f['LHEPdfSumw'].counts()
+                    res['LHEScaleWeight'] = f['LHEScaleSumw'].counts()
+                    if 'LHEReweightingSumw' in f:
+                        res['LHEReweightingWeight'] = f['LHEReweightingSumw'].counts()
+                else:
+                    res['LHEPdfWeight'] += f['LHEPdfSumw'].counts()
+                    res['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
+                    if 'LHEReweightingSumw' in f:
+                        res['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
+        except:
+            print ("Skipping faulty file:", f_in)
+            raise
+
+    return res
 
 def main():
 
@@ -173,6 +203,7 @@ def main():
     argParser.add_argument('--version',  action='store', default=None, help='Skim version')
     argParser.add_argument('--dump',  action='store_true', help='Dump a latex table?')
     argParser.add_argument('--nano',  action='store_true', help='Also store NanoAOD files')
+    argParser.add_argument('--buaf', action='store_true', help='Get samples from BUAF')
     argParser.add_argument('--overwrite',  action='store_true', help='Overwrite')
     args = argParser.parse_args()
 
@@ -181,7 +212,10 @@ def main():
     name = args.name
 
     if args.version is not None:
-        skim_path = '{}/{}'.format(config['meta']['localSkim'], args.version)
+        if args.buaf:
+            skim_path = '{}/{}'.format(config['meta']['buafSkim'], args.version)
+        else:
+            skim_path = '{}/{}'.format(config['meta']['localSkim'], args.version)
 
     # get list of samples
     sampleList = readSampleNames( data_path+'%s.txt'%name )
@@ -216,42 +250,38 @@ def main():
                 print ("Success.")
             except:
                 print ("Failed, will try again next time...")
-            #sample_tmp += [{str(sample[0]): result}]
-            #counter += 1
-            #print (sample[0])
-            #print (result)
-            #print ("Done with %s samples."%counter)
+                #sample_tmp += [{str(sample[0]): result}]
+                #counter += 1
+                #print (sample[0])
+                #print (result)
+                #print ("Done with %s samples."%counter)
 
-            print ("Done with the heavy lifting. Dumping results to yaml file now.")
+                print ("Done with the heavy lifting. Dumping results to yaml file now.")
 
-            with open(data_path+'%s.yaml'%name, 'w') as f:
-                print ("Dumping info into yaml file.")
-                yaml.dump(samples, f, Dumper=Dumper)
+                with open(data_path+'%s.yaml'%name, 'w') as f:
+                    print ("Dumping info into yaml file.")
+                    yaml.dump(samples, f, Dumper=Dumper)
 
     for sample in samples.keys():
         sample_name = samples[sample]['name']
+        print ()
         print (sample_name)
         if args.version is not None:
             skim_path_total = f"{skim_path}/{sample_name}/merged/"
             print (skim_path_total)
             samples[sample]['files'] = glob.glob(skim_path_total+"*.root")
             if samples[sample]['xsec'] > 0:  # NOTE: identifier for data / MC
-                samples[sample]['sumWeight'] = 0
-                first = True
-                for f_in in samples[sample]['files']:
-                    with uproot.open(f_in) as f:
-                        samples[sample]['sumWeight'] += float(f['genEventSumw'].counts()[0])
-                        if first:
-                            first = False
-                            samples[sample]['LHEPdfWeight'] = f['LHEPdfSumw'].counts()
-                            samples[sample]['LHEScaleWeight'] = f['LHEScaleSumw'].counts()
-                            if 'LHEReweightingSumw' in f:
-                                samples[sample]['LHEReweightingWeight'] = f['LHEReweightingSumw'].counts()
-                        else:
-                            samples[sample]['LHEPdfWeight'] += f['LHEPdfSumw'].counts()
-                            samples[sample]['LHEScaleWeight'] += f['LHEScaleSumw'].counts()
-                            if 'LHEReweightingSumw' in f:
-                                samples[sample]['LHEReweightingWeight'] += f['LHEReweightingSumw'].counts()
+                res = get_sumw(samples[sample]['files'])
+                samples[sample]['sumWeight']        = res['sumWeight']
+                samples[sample]['nEvents']          = res['nEvents']
+                samples[sample]['LHEPdfWeight']     = res['LHEPdfWeight']
+                samples[sample]['LHEScaleWeight']   = res['LHEScaleWeight']
+                if 'LHEReweightingSumw' in res.keys():
+                    samples[sample]['LHEReweightingWeight'] = res['LHEReweightingWeight']
+
+                print ("Found sumweight for sample", sample)
+                print (samples[sample]['sumWeight'], samples[sample]['nEvents'])
+                print (samples[sample]['sumWeight']/samples[sample]['nEvents'])
         if not args.nano:
             samples[sample]['nano'] = "Not kept"
 

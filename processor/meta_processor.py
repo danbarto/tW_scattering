@@ -25,9 +25,16 @@ class meta_processor(processor.ProcessorABC):
 
         dataset = events.metadata['dataset']
 
-        sumw = sum(events['genEventSumw'])
-        sumw2 = sum(events['genEventSumw2'])
-        nevents = sum(events['genEventCount'])
+        try:
+            sumw = sum(events['genEventSumw'])
+            sumw2 = sum(events['genEventSumw2'])
+            nevents = sum(events['genEventCount'])
+        except ValueError:
+            # this happens for data
+            sumw = 0
+            sumw2 = 0
+            nevents = 0
+
 
         output[events.metadata['filename']]['sumWeight'] += sumw  # naming for consistency...
         output[events.metadata['filename']]['sumWeight2'] += sumw2  # naming for consistency...

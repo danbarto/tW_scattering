@@ -116,6 +116,69 @@ variables = [
         'min_mt_lep_met',
     ]
 
+x_labels = {
+        'n_jet': r'$N_{jet}$',
+        'n_fwd': r'$N_{fwd jet}$',
+        'n_b': r'$N_{b}$',
+        'n_tau': r'$N_{\tau}$',
+        'st': r'$S_{T}\ (GeV)$',
+        'lt': r'$L_{T}\ (GeV)$',
+        'met': r'$p_{T}^{miss}\ (GeV)$',
+        'mjj_max': r'max$M_{jj}\ (GeV)$',
+        'delta_eta_jj': r'$\delta\eta(jj)$',
+        'lead_lep_pt': r'$p_{T} (lead\ lep)\ (GeV)$',
+        'lead_lep_eta': r'$\eta (lead\ lep)$',
+        'sublead_lep_pt': r'$p_{T} (sublead\ lep)\ (GeV)$',
+        'sublead_lep_eta': r'$\eta (sublead\ lep)$',
+        'dilepton_mass': r'$M_{ll}\ (GeV)$',
+        'dilepton_pt': r'$p_{T}(ll)\ (GeV)$',
+        'fwd_jet_pt': r'$p_{T}(fwd\ jet)\ (GeV)$',
+        'fwd_jet_p': r'$p(fwd\ jet)\ (GeV)$',
+        'fwd_jet_eta': r'$\eta (fwd\ jet)$',
+        'lead_jet_pt': r'$p_{T} (lead\ jet)\ (GeV)$',
+        'sublead_jet_pt': r'$p_{T} (sublead\ jet)\ (GeV)$',
+        'lead_jet_eta': r'$\eta (lead\ jet)$',
+        'sublead_jet_eta': r'$\eta (sublead\ jet)$',
+        'lead_btag_pt': r'$p_{T} (lead\ b-tagged\ jet)\ (GeV)$',
+        'sublead_btag_pt': r'$p_{T} (sublead\ b-tagged\ jet)\ (GeV)$',
+        'lead_btag_eta': r'$\eta (lead\ b-tagged\ jet)$',
+        'sublead_btag_eta': r'$\eta (sublead\ b-tagged\ jet)$',
+        'min_bl_dR': r'min$M(l,\ b-tagged\ jet)\ (GeV)$',
+        'min_mt_lep_met': r'min$M_{T}(l, p_{T}^{miss})\ (GeV)$',
+}
+
+inputs_binning = {
+        'n_jet': "9,3.5,12.5",
+        'n_fwd': "4,0.5,4.5",
+        'n_b': "5,0.5,5.5",
+        'n_tau': "3,-0.5,2.5",
+        'st': "20,200,1200",
+        'lt': "20,200,1200",
+        'met': "20,200,1200",
+        'mjj_max': "20,200,1200",
+        'delta_eta_jj': "10,0,5",
+        'lead_lep_pt': "20,200,1200",
+        'lead_lep_eta': "20,200,1200",
+        'sublead_lep_pt': "20,200,1200",
+        'sublead_lep_eta': "20,200,1200",
+        'dilepton_mass': "20,200,1200",
+        'dilepton_pt': "20,200,1200",
+        'fwd_jet_pt': "20,200,1200",
+        'fwd_jet_p': "20,200,1200",
+        'fwd_jet_eta': "20,200,1200",
+        'lead_jet_pt': "20,200,1200",
+        'sublead_jet_pt': "20,200,1200",
+        'lead_jet_eta': "20,200,1200",
+        'sublead_jet_eta': "20,200,1200",
+        'lead_btag_pt': "20,200,1200",
+        'sublead_btag_pt': "20,200,1200",
+        'lead_btag_eta': "20,200,1200",
+        'sublead_btag_eta': "10,-5,5",
+        'min_bl_dR': "10,0,10",
+        'min_mt_lep_met': "20,0,250",
+}
+
+
 variables = sorted(variables)
 
 if __name__ == '__main__':
@@ -207,6 +270,10 @@ if __name__ == '__main__':
     df_signal = df_signal[((df_signal['n_fwd']>=1))]
     df_np  = df_in[((df_in['AR']==1) & (df_in['label']==4) &(df_in['n_fwd']>=1))]
     df_bkg = df_in[((df_in['SS']==1)&(df_in['n_fwd']>=1))]
+
+    for var in variables:
+        for df in [df_signal, df_np, df_bkg]:
+            df[var] = abs(df[var])
 
     print ("Sample sizes:")
     print ("Bkg: {}".format(len(df_bkg)))
@@ -399,11 +466,20 @@ if __name__ == '__main__':
     eft_weight = hp.eval(coeffs_train.transpose(), [6,0])
     for var in variables:
 
-        h_signal = Hist1D(sig_train[var].values, bins=20, overflow=True)
+        h_signal = Hist1D(sig_train[var].values, bins=inputs_binning[var], overflow=True)
         h_bkg = Hist1D(bkg_train[var].values, bins=h_signal.edges, overflow=True)
         h_bsm = Hist1D(sig_train[var].values, bins=h_signal.edges, weights=eft_weight, overflow=True)
 
         fig, ax = plt.subplots(figsize=(10,10))
+
+        hep.cms.label(
+            "Preliminary",
+            data=False,
+            #year=2018,
+            lumi=1,
+            loc=0,
+            ax=ax,
+           )
 
         hep.histplot(
             [ h_signal.counts, h_bkg.counts, h_bsm.counts ],
@@ -412,13 +488,22 @@ if __name__ == '__main__':
             histtype="step",
             stack=False,
             density=True,
+            linewidth=3,
             #linestyle="--",
-            label= ["Signal", "Background", "Signal, cpt=6"],
+            label= [\
+                r"top-W scat. ($C_{\varphi t}=0, C_{\varphi Q}^{-}=0$)",
+                "All Bkg",
+                r"top-W scat. ($C_{\varphi t}=6, C_{\varphi Q}^{-}=0$)",
+            ],
             color = ["#FF595E", "#8AC926", "#1982C4"],
-            ax=ax)
+            ax=ax,
+        )
 
         ax.set_yscale('log')
         ax.legend()
+
+        ax.set_xlabel(x_labels[var])
+        ax.set_ylabel(r'a.u.')
 
         fig.savefig(f"{plot_dir}/input_{var}.png")
 
@@ -426,10 +511,24 @@ if __name__ == '__main__':
 
     ## Train all the trees! ##
 
+    # NOTE default
     n_trees       = 100  # from 100
     learning_rate = 0.3
     max_depth     = 4  # v21: 3, v22: 5, v23: 7, v24: signal only
     min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
+    ## NOTE what I determined to be the best hyperparameters
+    #n_trees       = 30  # from 100
+    #learning_rate = 0.1
+    #max_depth     = 5  # v21: 3, v22: 5, v23: 7, v24: signal only
+    #min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
+    ## NOTE the actual best hyper parameters
+    #n_trees       = 10  # from 100
+    #learning_rate = 0.1
+    #max_depth     = 5  # v21: 3, v22: 5, v23: 7, v24: signal only
+    #min_size      = 25  # v18: 20, v20: 5, v21: 1, v25: 25
+
 
     training_features = train[variables].values
     if args.use_weight:

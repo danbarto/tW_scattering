@@ -59,8 +59,6 @@ if __name__ == '__main__':
     import warnings
     warnings.filterwarnings("ignore")
 
-    pu = pileup(2018, UL=True)
-
     ## Load a single file here, get leptons, eval SFs just to be sure everything works
     from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
@@ -68,8 +66,12 @@ if __name__ == '__main__':
     from Tools.objects import Collections
     
     import awkward as ak
-    samples = get_samples("samples_UL18.yaml")
-    f_in    = samples['/ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/']['files'][0]
+
+
+    print ("### 2016 ###")
+    pu = pileup(2016, UL=True)
+    samples = get_samples("samples_UL16.yaml")
+    f_in    = samples['/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM']['files'][0]
 
     # load a subset of events
     n_max = 5000
@@ -85,5 +87,72 @@ if __name__ == '__main__':
     print ("Example weights for some events.")
     pu_weight = pu.reweight(events.Pileup.nTrueInt.to_numpy())
     print (pu_weight)
+    print (sum(pu_weight))
+    print (len(pu_weight))
+
+    print ("### 2016APV ###")
+    pu = pileup(2016, UL=True, era="APV")
+    samples = get_samples("samples_UL16APV.yaml")
+    f_in    = samples['/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM']['files'][0]
+
+    # load a subset of events
+    n_max = 5000
+    events = NanoEventsFactory.from_root(
+        f_in,
+        schemaclass = NanoAODSchema,
+        entry_stop = n_max).events()
+
+    print ("Weights from 1-100")
+    pu_weight = pu.reweight(np.arange(0,100))
+    print (pu_weight)
+
+    print ("Example weights for some events.")
+    pu_weight = pu.reweight(events.Pileup.nTrueInt.to_numpy())
+    print (pu_weight)
+    print (sum(pu_weight))
+    print (len(pu_weight))
 
 
+    print ("### 2017 ###")
+    pu = pileup(2017, UL=True)
+    samples = get_samples("samples_UL17.yaml")
+    f_in    = samples['/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM']['files'][0]
+
+    # load a subset of events
+    n_max = 5000
+    events = NanoEventsFactory.from_root(
+        f_in,
+        schemaclass = NanoAODSchema,
+        entry_stop = n_max).events()
+
+    print ("Weights from 1-100")
+    pu_weight = pu.reweight(np.arange(0,100))
+    print (pu_weight)
+
+    print ("Example weights for some events.")
+    pu_weight = pu.reweight(events.Pileup.nTrueInt.to_numpy())
+    print (pu_weight)
+    print (sum(pu_weight))
+    print (len(pu_weight))
+
+    print ("### 2018 ###")
+    pu = pileup(2018, UL=True)
+    samples = get_samples("samples_UL18.yaml")
+    f_in    = samples['/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM']['files'][0]
+
+    # load a subset of events
+    n_max = 5000
+    events = NanoEventsFactory.from_root(
+        f_in,
+        schemaclass = NanoAODSchema,
+        entry_stop = n_max).events()
+
+    print ("Weights from 1-100")
+    pu_weight = pu.reweight(np.arange(0,100))
+    print (pu_weight)
+
+    print ("Example weights for some events.")
+    pu_weight = pu.reweight(events.Pileup.nTrueInt.to_numpy())
+    print (pu_weight)
+    print (sum(pu_weight))
+    print (len(pu_weight))

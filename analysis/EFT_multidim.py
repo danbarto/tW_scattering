@@ -23,7 +23,7 @@ plt.style.use(hep.style.CMS)
 
 from plots.helpers import makePlot, colors, finalizePlotDir
 from Tools.helpers import make_bh
-from Tools.config_helpers import get_cache, loadConfig
+from Tools.config_helpers import get_cache, loadConfig, data_pattern
 from Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
 from Tools.yahist_to_root import yahist_to_root
 from Tools.dataCard import dataCard
@@ -32,11 +32,7 @@ from Tools.HyperPoly import HyperPoly
 from Tools.limits import regroup_and_rebin, get_systematics
 from Tools.EFT_tools import make_scan
 
-from yahist import Hist1D
-'''
-Taken from the NanoAOD-tools module
-'''
-
+# Taken from the NanoAOD-tools module
 def get_points(points):
     points = points.replace('LHEWeight_','').replace('_nlo','')
     ops = points.split('_')[::2]
@@ -52,7 +48,6 @@ def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
 def get_NLL(card_name):
-    # card: datacard instance
     # card_name: string
     res = card.calcNLL(card_name)  # NOTE: calcNLL makes a unique dir
     try:
@@ -62,6 +57,15 @@ def get_NLL(card_name):
 
     return nll
 
+data_err_opts = {
+    'linestyle': 'none',
+    'marker': '.',
+    'markersize': 10.,
+    'color': 'k',
+    'elinewidth': 1,
+}
+
+wildcard = re.compile('.')
 
 if __name__ == '__main__':
 
@@ -76,6 +80,9 @@ if __name__ == '__main__':
     argParser.add_argument('--bit', action='store_true', help="Use boosted information tree (LT otherwise)")
     argParser.add_argument('--fit', action='store_true', help="Run combine (otherwise just plotting)")
     argParser.add_argument('--workers', action='store', default=5, type=int, help="Define how many cores/workers can be used for fitting")
+    argParser.add_argument('--year', action='store', default=2016, type=str, help="Select years, comma separated")
+    argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
+    argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
 
     args = argParser.parse_args()
 
@@ -96,7 +103,8 @@ if __name__ == '__main__':
 
 
     cfg = loadConfig()
-    plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/multidim_fits/'
+    plot_dir = './plots/multidim_fits_v2/'
+    #plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/multidim_fits_v2/'
     finalizePlotDir(plot_dir)
 
     # FIXME placeholder systematics....
@@ -118,22 +126,30 @@ if __name__ == '__main__':
 
 
     all_cards = []
-    card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card_dir = os.path.expandvars('$TWHOME/data/cards/')
 
     # Define a scan
-    xr = np.arange(-7,8,2)
-    yr = np.arange(-7,8,2)
+    if args.run_scan:
+        xr = np.arange(-7,8,2)  # FIXME: switch to steps of 1
+        yr = np.arange(-7,8,2)
+    else:
+        xr = np.array([int(args.cpt)])
+        yr = np.array([int(args.cpqm)])
+
     X, Y = np.meshgrid(xr, yr)
     scan = zip(X.flatten(), Y.flatten())
 
-    if run_scan:
-
-        #years = ['2016', '2016APV', '2017', '2018']
-        years = ['2018']
+    
+    if True:
+        # FIXME resolve the selection of what to do in this script...
+        years = args.year.split(',')
 
         if args.overwrite:
-
-            # load outputs
+            # load outputs (coffea histograms)
+            # histograms are created per sample,
+            # x-secs and lumi scales are applied on the fly below
             outputs = {}
 
             for year in years:
@@ -146,6 +162,8 @@ if __name__ == '__main__':
         results = {}
 
         for x,y in scan:
+
+            print (f"Working on point {x}, {y}")
 
             if bit:
 
@@ -166,8 +184,6 @@ if __name__ == '__main__':
                         ("bit_score_mm", bit_axis),
                     ]
             else:
-                #sm_point = 'cpt_0p_cpqm_0p_nlo'
-                #bsm_point = 'cpt_6p_cpqm_0p_nlo'  # NOTE: redundant
                 sm_point = f'eft_cpt_0_cpqm_0'
                 bsm_point = f'eft_cpt_{x}_cpqm_{y}'
                 sm_bkg = 'central'
@@ -182,8 +198,16 @@ if __name__ == '__main__':
                         ("LT_SR_mm", lt_axis),
                     ]
 
+            sm_cards = {}
+            bsm_cards = {}
 
             for year in years:
+
+                if year == '2016APV':
+                    lumi = cfg['lumi'][year]
+                else:
+                    lumi = cfg['lumi'][int(year)]
+
                 if args.overwrite:
                     output = outputs[year]
 
@@ -197,29 +221,42 @@ if __name__ == '__main__':
 
                         coeff = {}
 
-                sm_cards = {}
-                bsm_cards = {}
 
                 for region, axis in regions:
 
                     histo_name = region
-                    plot_name_short = f"BIT_cpt_{x}_cpwm_{y}" if bit else f"LT_cpt_{x}_cpwm_{y}"  # FIXME: fix typo cpwm -> cpqm
+                    plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
                     plot_name = plot_name_short + f'_{region}_{year}'
 
                     if args.overwrite:
+                        print ("Filling background histogram")
                         backgrounds = {
-                            'signal':    output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_point).copy(),
-                            'TTW':       output[histo_name]['TTW'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'TTH':       output[histo_name]['TTH'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'TTZ':       output[histo_name]['TTZ'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'rare':      output[histo_name]['rare'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'diboson':   output[histo_name]['diboson'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'conv':      output[histo_name].integrate('prediction', 'conv_mc').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
-                            'nonprompt': output[histo_name].integrate('prediction', 'np_est_mc').integrate('systematic', 'central').integrate('EFT', sm_bkg).copy(),
+                            'signal':    output[histo_name][('topW_lep', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'TTW':       output[histo_name][('TTW', sm_bkg, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'TTH':       output[histo_name][('TTH', sm_bkg, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'TTZ':       output[histo_name][('TTZ', sm_bkg, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'rare':      output[histo_name][('rare', sm_bkg, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'diboson':   output[histo_name][('diboson', sm_bkg, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+                            'conv':      output[histo_name][(wildcard, sm_bkg, 'conv_mc', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
+                            'nonprompt': output[histo_name][(wildcard, sm_bkg, 'np_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
                            }
 
                         for p in backgrounds.keys():
                             backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
+
+                        total = backgrounds['signal'].copy()
+                        total.clear()
+                        for k in backgrounds.keys():
+                            if not k == 'signal':
+                                total.add(backgrounds[k])
+
+                        print ("Filling data histogram. I can still stay blind!")
+                        observation = output[histo_name][(data_pattern, sm_bkg, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
+                        observation = observation.rebin(axis.name, axis)
+                        # unblind the first 8 bins. this is hacky.
+                        unblind = observation._sumw[()][:8]
+                        blind   = np.zeros_like(observation._sumw[()][8:])
+                        observation._sumw[()] = np.concatenate([unblind, blind])
 
                         if not bit:
                             coeff[region] = hp.get_parametrization(
@@ -243,18 +280,26 @@ if __name__ == '__main__':
                             #)
 
                             # NOTE: this is the "correct" way, but we need all the different histograms filled
-                            # already from the processor.
+                            # already from the coffea processor.
                             signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', bsm_point).copy()
                             signal = signal.rebin(axis.name, axis)
                             #signal = signal.sum('dataset').to_hist()
 
                         else:
-                            signal = output[histo_name]['topW_lep'].integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', bsm_point).copy()
+                            print ("Filling signal histogram")
+                            signal = output[histo_name][('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
                             signal = signal.rebin(axis.name, axis)
                             #signal = signal.sum('dataset').to_hist()
 
+                        # NOTE get EFT point dependend systematics here
+
+
+
+
                         # NOTE make some nice plots here
                         #
+                        print ("Making first plots")
+                        print ("...prepping the plots")
                         hist_list = [
                             backgrounds['signal'],
                             backgrounds['rare'],
@@ -294,11 +339,13 @@ if __name__ == '__main__':
                         hep.cms.label(
                             "Work in Progress",
                             data=True,
-                            lumi=60,
+                            lumi=lumi,
                             com=13,
                             loc=0,
                             ax=ax,
                            )
+
+                        print ("...building histogram")
 
                         hep.histplot(
                             [ x.sum('dataset').values()[()] for x in hist_list],
@@ -317,6 +364,27 @@ if __name__ == '__main__':
                             color=['black'],
                             ax=ax)
 
+                        hep.histplot(
+                            [ observation.values()[()]],
+                            edges,
+                            histtype="errorbar",
+                            label=[r'Observation'],
+                            color=['black'],
+                            ax=ax)
+
+
+                        hist.plotratio(
+                            num=observation,
+                            denom=total.sum("dataset"),
+                            ax=rax,
+                            error_opts=data_err_opts,
+                            denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
+                            guide_opts={},
+                            unc='num',
+                            #unc=None,
+                            #overflow='over'
+                        )
+
                         ax.legend(ncol=3)
                         # labels
                         rax.set_xlabel(backgrounds['signal'].sum('dataset').axes()[0].label)
@@ -324,6 +392,7 @@ if __name__ == '__main__':
                         rax.set_ylabel(r'rel. unc.')
                         ax.set_ylabel(r'Events')
 
+                        print ("...storing plots")
 
                         fig.savefig(f'{plot_dir}/{plot_name}.png')
                         fig.savefig(f'{plot_dir}/{plot_name}.pdf')
@@ -339,6 +408,8 @@ if __name__ == '__main__':
                                 #scales = scales,
                                 #bsm_scales = bsm_scales,
                                 systematics = systematics,
+                                data = observation,
+                                blind = True,
                                )
 
                             #bsm_hist_for_card = signal if not bit else signal.sum('dataset').to_hist()
@@ -350,24 +421,24 @@ if __name__ == '__main__':
                                 #scales = scales,
                                 #bsm_scales = bsm_scales,
                                 systematics = systematics,
+                                data = observation,
+                                blind = True,
                                )
                             bsm_cards[f'BSM_{plot_name}'] = bsm_card
                             sm_cards[f'SM_{plot_name}'] = sm_card
                         else:
                             # FIXME: the paths should not be hard coded
-                            bsm_cards[f'BSM_{plot_name}'] = f'/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/data/cards/BSM_{plot_name}_card.txt'
-                            sm_cards[f'SM_{plot_name}'] = f'/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/data/cards/SM_{plot_name}_card.txt'
+                            bsm_cards[f'BSM_{plot_name}'] = f'/{card_dir}/BSM_{plot_name}_card.txt'
+                            sm_cards[f'SM_{plot_name}'] = f'/{card_dir}/SM_{plot_name}_card.txt'
 
 
             if fit:
-                if args.overwrite:
-                    sm_card_combined = card.combineCards(sm_cards, name=f'SM_{plot_name_short}.txt')
-                    bsm_card_combined = card.combineCards(bsm_cards, name=f'BSM_{plot_name_short}.txt')
-                else:
-                    sm_card_combined = f'/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/data/cards/SM_{plot_name_short}.txt'
-                    bsm_card_combined = f'/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/data/cards/BSM_{plot_name_short}.txt'
-
-
+                # FIXME check that this actually works - running years individually and then just combining
+                # this avoids having to load all the histograms at once
+                print ("Combining cards:")
+                print (sm_cards)
+                sm_card_combined = card.combineCards(sm_cards, name=f'SM_{plot_name_short}.txt')
+                bsm_card_combined = card.combineCards(bsm_cards, name=f'BSM_{plot_name_short}.txt')
 
                 all_cards.append(sm_card_combined)
                 all_cards.append(bsm_card_combined)
@@ -394,11 +465,11 @@ if __name__ == '__main__':
                     all_nll[card_name.split('/')[-1].strip('.txt')] = result
 
             for x,y in scan:
-                plot_name_short = f"BIT_cpt_{x}_cpwm_{y}" if bit else f"LT_cpt_{x}_cpwm_{y}"  # FIXME: fix typo cpwm -> cpqm
+                plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
                 print (plot_name_short)
                 results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
-        if fit:
+        if fit and len(xr)>4:
             z = []
             for x, y in results:
                 point = [x, y]
@@ -433,8 +504,8 @@ if __name__ == '__main__':
 
             plt.show()
 
-            fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test_bit_v3.png')
-            fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_test_bit_v3.pdf')
+            fig.savefig('./scan_test_bit_v3.png')
+            fig.savefig('./scan_test_bit_v3.pdf')
 
             out_path = os.path.expandvars(cfg['caches']['base'])
             if bit:
@@ -446,10 +517,14 @@ if __name__ == '__main__':
                 pickle.dump(results, f)
 
 
-        card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+        # NOTE re-init dataCard here just so that we always clean up the right dir...
+        #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+        card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
         card.cleanUp()
 
     elif comparison:
+        # NOTE this loads results and draws a comparison plot.
+        # kept for legacy, might be broken by now
         out_path = os.path.expandvars(cfg['caches']['base'])
         bit_path = out_path + 'results_bit.pkl'
         lt_path = out_path + 'results_lt.pkl'
@@ -513,6 +588,7 @@ if __name__ == '__main__':
         fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.pdf')
 
     else:
+        # NOTE this does something completely unrelated and should be retired...
 
         rx = np.arange(-7,8,1)
         ry = np.arange(-7,8,1)
@@ -558,8 +634,6 @@ if __name__ == '__main__':
 
         fig.savefig(f'{plot_dir}/inclusive_scaling.png')
         fig.savefig(f'{plot_dir}/inclusive_scaling.pdf')
-
-
 
         fig, ax = plt.subplots()
 

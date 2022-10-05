@@ -6,6 +6,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist, util
+from coffea.lumi_tools import LumiMask
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
@@ -39,7 +40,7 @@ class nano_analysis(processor.ProcessorABC):
     def process(self, events):
         
         output = self.accumulator.identity()
-        
+
         # we can use a very loose preselection to filter the events. nothing is done with this presel, though
         presel = ak.num(events.Jet)>=0
         
@@ -71,13 +72,14 @@ class nano_analysis(processor.ProcessorABC):
         btag      = getBTagsDeepFlavB(jet)
         light     = getBTagsDeepFlavB(jet, invert=True)
         light_central = light[(abs(light.eta)<2.5)]
-        fwd       = getFwdJet(light)
+        fwd       = getFwdJet(light, puId=False)
 
         n_ele = ak.num(electron, axis=1)
-        gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
-        gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
+        if not re.search(data_pattern, dataset):
+            gen_matched_electron = electron[((electron.genPartIdx >= 0) & (abs(electron.pdgId)==11))]
+            gen_matched_electron = gen_matched_electron[abs(gen_matched_electron.matched_gen.pdgId)==11]
 
-        is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
+            is_flipped = (gen_matched_electron.matched_gen.pdgId*(-1) == gen_matched_electron.pdgId)
 
         ## Merge electrons and muons - this should work better now in ak1
         dilepton = cross(muon, electron)
@@ -99,8 +101,8 @@ class nano_analysis(processor.ProcessorABC):
 
         # define the weight
         weight = Weights( len(ev) )
-        
-        if not dataset=='MuonEG':
+
+        if not re.search(data_pattern, dataset):
             # generator weight
             weight.add("weight", ev.genWeight)
             
@@ -110,7 +112,12 @@ class nano_analysis(processor.ProcessorABC):
         selection = PackedSelection()
         selection.add('dilep',         dilep )
         #selection.add('filter',        (filters) )
-        
+
+        if re.search(data_pattern, dataset):
+            # FIXME need to extract the correct era from the dataset name
+            lumi_mask = LumiMask("../data/lumi/Cert_Collisions2022_eraB_355100_355769_Golden.json")(ev.run, ev.luminosityBlock)
+            selection.add('lumiMask', lumi_mask)
+
         bl_reqs = ['dilep']
 
         bl_reqs_d = { sel: True for sel in bl_reqs }

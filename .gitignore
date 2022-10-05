@@ -5,3 +5,5 @@
 *.cmd
 *.h5
 *.tar*
+*.joblib
+*.pkl

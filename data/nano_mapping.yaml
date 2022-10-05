@@ -161,7 +161,7 @@ UL17:
     - /SSWW_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
     - /ZZTo2L2Nu_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
     - /WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM
-    - /WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM
+    #- /WZTo3LNu_mllmin4p0_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM
     - /WWTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM
     - /ZZTo2Q2L_mllmin4p0_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM
     - /WWW_4F_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9_ext1-v2/NANOAODSIM
@@ -362,7 +362,23 @@ Run3_22:
   TTH: []
   XG: []
   rare: []
-  DoubleMuon: []
-  SingleMuon: []
-  MuonEG: []
-  EGamma: []
+  DoubleMuon:
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/DoubleMuon_Run2022A-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/DoubleMuon_Run2022B-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/DoubleMuon_Run2022C-PromptReco-v1_MINIAOD_v18/merged/
+  SingleMuon:
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/SingleMuon_Run2022A-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/SingleMuon_Run2022B-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/SingleMuon_Run2022C-PromptReco-v1_MINIAOD_v18/merged/
+  MuonEG:
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/MuonEG_Run2022A-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/MuonEG_Run2022B-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/MuonEG_Run2022C-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/MuonEG_Run2022D-PromptReco-v1_MINIAOD_v18/merged/
+  EGamma:
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/EGamma_Run2022A-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/EGamma_Run2022B-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/EGamma_Run2022C-PromptReco-v1_MINIAOD_v18/merged/
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/EGamma_Run2022D-PromptReco-v1_MINIAOD_v18/merged/
+  DataTest:
+    - /ceph/cms/store/user/dspitzba/ProjectMetis/DoubleMuon_Run2022A-PromptReco-v1_MINIAOD_v18/merged/

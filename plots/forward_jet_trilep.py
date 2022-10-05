@@ -11,6 +11,7 @@ import numpy as np
 import copy
 
 from Tools.config_helpers import loadConfig, load_yaml, data_path, get_latest_output
+from Tools.config_helpers import get_merged_output
 from Tools.helpers import get_samples
 
 import warnings
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
 
-    order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
     #order = ['topW', 'diboson', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
     #order = ['topW', 'DY']
 
@@ -73,40 +74,9 @@ if __name__ == '__main__':
         lumi_year = year
     lumi = cfg['lumi'][lumi_year]
 
-    for sample in datasets:
-        cache_name = f'trilep_analysis_{sample}_{year}{era}'
-        print (cache_name)
-        outputs.append(get_latest_output(cache_name, cfg))
+    output = get_merged_output("trilep_analysis", year=year)
 
-        # NOTE we could also rescale processes here?
 
-        for dataset in mapping[ul][sample]:
-            if samples[dataset]['reweight'] == 1:
-                renorm[dataset] = 1
-            else:
-                # Currently only supporting a single reweight.
-                weight, index = samples[dataset]['reweight'].split(',')
-                index = int(index)
-                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
-            try:
-                renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
-            except:
-                renorm[dataset] = 1
-    output = accumulate(outputs)
-
-    res = scale_and_merge(output['N_jet'], renorm, mapping[ul])
-
-    output_scaled = {}
-    for key in output.keys():
-        if isinstance(output[key], hist.Hist):
-            #print (key)
-            try:
-                output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
-            except:
-                print ("Scale and merge failed for:",key)
-                print ("At least I tried.")
-
-    output = output_scaled
     #if year == '2019':
     #    # load the results
     #    lumi = 35.9+41.5+60.0
@@ -162,7 +132,7 @@ if __name__ == '__main__':
 #ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
 
     my_labels = {
-        'topW': 'top-W scat.',
+        'topW_lep': 'top-W scat.',
         'topW_EFT_cp8': 'EFT, cp8',
         'topW_EFT_mix': 'EFT mix',
         'TTZ': r'$t\bar{t}Z$',
@@ -184,7 +154,7 @@ if __name__ == '__main__':
     }
 
     my_colors = {
-        'topW': '#FF595E',
+        'topW_lep': '#FF595E',
         'topW_EFT_cp8': '#000000',
         'topW_EFT_mix': '#0F7173',
         'TTZ': '#FFCA3A',

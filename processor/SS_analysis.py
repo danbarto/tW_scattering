@@ -123,6 +123,7 @@ class SS_analysis(processor.ProcessorABC):
         ### Reco objects ###
         ####################
 
+
         # NOTE: lepton objects are unaffected by any of the variations, therefore we keep them outside the variation loop.
 
         # Get the leptons. This has changed a couple of times now, but we are using fakeable objects as baseline leptons.
@@ -141,7 +142,8 @@ class SS_analysis(processor.ProcessorABC):
         el_f        = Collections(ev, "Electron", "fakeableSSTTH", year=self.year, era=self.era).get()
         electron    = ak.concatenate([el_t, el_f], axis=1)
         electron['p4'] = get_four_vec_fromPtEtaPhiM(electron, get_pt(electron), electron.eta, electron.phi, electron.mass, copy=False)
-        
+
+
         if not re.search(data_pattern, dataset):
             gen_photon = ev.GenPart[ev.GenPart.pdgId==22]
 
@@ -234,7 +236,6 @@ class SS_analysis(processor.ProcessorABC):
 
             # try to get either the most forward light jet, or if there's more than one with eta>1.7, the highest pt one
             most_fwd = light[ak.argsort(abs(light.eta))][:,0:1]
-            #most_fwd = light[ak.singletons(ak.argmax(abs(light.eta)))]
             best_fwd = ak.concatenate([j_fwd, most_fwd], axis=1)[:,0:1]
             
             jf          = cross(j_fwd, jet)
@@ -249,7 +250,7 @@ class SS_analysis(processor.ProcessorABC):
 
             mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, met.pt, met.phi)
             min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-            
+
             # define the weight
             weight = Weights( len(ev) )
 
@@ -285,7 +286,16 @@ class SS_analysis(processor.ProcessorABC):
                     weight.add("btag", self.btagSF.Method1a(btag, light_central))
 
                 # lepton SFs
-                weight.add("lepton", self.leptonSF.get(electron, muon))
+                if var['name'] == 'ele_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
+                elif var['name'] == 'ele_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
+                elif var['name'] == 'mu_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
+                elif var['name'] == 'mu_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
+                else:
+                    weight.add("lepton", self.leptonSF.get(electron, muon))
 
                 # trigger SFs
                 weight.add("trigger", self.triggerSF.get(electron, muon))
@@ -389,7 +399,7 @@ class SS_analysis(processor.ProcessorABC):
 
             out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-            if self.evaluate or self.dump:
+            if self.evaluate or self.dump or self.bit:
                 # define the inputs to the NN
                 # this is super stupid. there must be a better way.
                 # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
@@ -508,7 +518,7 @@ class SS_analysis(processor.ProcessorABC):
                     BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
                     BIT_inputs = BIT_inputs_df[variables].values
 
-                    bit_file = '../analysis/bits_v31.pkl'
+                    bit_file = '../analysis/bits_v40.pkl'  # was v31
                     with open(bit_file, 'rb') as f:
                         bits = pickle.load(f)
 
@@ -531,62 +541,115 @@ class SS_analysis(processor.ProcessorABC):
                 #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
                 #print ('len', len(reg_sel[0]))
                 #print ('sel', reg_sel[0])
-                reg_sel = [
-                    BL&add_sel,
-                    BL_incl&add_sel,
-                    np_est_sel_mc&add_sel,
-                    np_obs_sel_mc&add_sel,
-                    np_est_sel_data&add_sel,
-                    cf_est_sel_mc&add_sel,
-                    cf_obs_sel_mc&add_sel,
-                    cf_est_sel_data&add_sel,
-                    conv_sel&add_sel,
-                    np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
-                ],
-                fill_multiple(
-                    hist,
-                    dataset = dataset,
-                    predictions=[
-                        "central", # only prompt contribution from process
-                        "inclusive", # everything from process (inclusive MC truth)
-                        "np_est_mc", # MC based NP estimate
-                        "np_obs_mc", # MC based NP observation
-                        "np_est_data",
-                        "cf_est_mc",
-                        "cf_obs_mc",
-                        "cf_est_data",
-                        "conv_mc",
-                        "np_est_mc_qcd",  # MC based NP estimate with QCD FR
+
+                if not re.search(data_pattern, dataset) and args.minimal:
+                    # NOTE:
+                    # For minimal we don't need all the different predictions for MC
+                    reg_sel = [
+                        BL&add_sel,
+                        conv_sel&add_sel,
                     ],
-                    arrays=arrays,
-                    selections=reg_sel[0],  # no idea where the additional dimension is coming from...
-                    weights=[
-                        weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
-                        weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
-                        weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
-                        weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
-                        weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
-                        weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
-                        weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
-                        weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
-                        weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
-                        weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "conv_mc",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                        )
+
+                elif re.search(data_pattern, dataset) and args.minimal:
+                    reg_sel = [
+                        BL&add_sel,
+                        np_est_sel_data&add_sel,
+                        cf_est_sel_data&add_sel,
                     ],
-                    systematic = var_name,  # NOTE check this.
-                    other = other,
-                )
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "np_est_data",
+                            "cf_est_data",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]]*weight_np_data[reg_sel[0][1]],
+                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_cf_data[reg_sel[0][2]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                    )
+
+                else:
+                    reg_sel = [
+                        BL&add_sel,
+                        BL_incl&add_sel,
+                        np_est_sel_mc&add_sel,
+                        np_obs_sel_mc&add_sel,
+                        np_est_sel_data&add_sel,
+                        cf_est_sel_mc&add_sel,
+                        cf_obs_sel_mc&add_sel,
+                        cf_est_sel_data&add_sel,
+                        conv_sel&add_sel,
+                        np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
+                    ],
+                    fill_multiple(
+                        hist,
+                        dataset = dataset,
+                        predictions=[
+                            "central", # only prompt contribution from process
+                            "inclusive", # everything from process (inclusive MC truth)
+                            "np_est_mc", # MC based NP estimate
+                            "np_obs_mc", # MC based NP observation
+                            "np_est_data",
+                            "cf_est_mc",
+                            "cf_obs_mc",
+                            "cf_est_data",
+                            "conv_mc",
+                            "np_est_mc_qcd",  # MC based NP estimate with QCD FR
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        weights=[
+                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
+                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
+                            weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
+                            weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
+                            weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
+                            weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
+                            weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
+                            weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
+                            weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                        ],
+                        systematic = var_name,
+                        other = other,
+                    )
 
             if self.bit:
 
-                # NOTE Define a scan here?
-                # FIXME this should be done somewhere outside.
-                x = np.arange(-7,8,1)
-                y = np.arange(-7,8,1)
-                X, Y = np.meshgrid(x, y)
-
-                for x, y in zip(X.flatten(), Y.flatten()):
-                    point = [x, y]
-                    qt = load_transformer(f'v31_cpt_{x}_cpqm_{y}')
+                ## NOTE Define a scan here?
+                ## FIXME this should be done somewhere outside.
+                #x = np.arange(-7,8,1)
+                #y = np.arange(-7,8,1)
+                #X, Y = np.meshgrid(x, y)
+                for p in self.points:
+                    x,y = p['point']
+                    point = p['point']
+                #for x, y in zip(X.flatten(), Y.flatten()):
+                #    point = [x, y]
+                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
                     # Get the weights
@@ -643,6 +706,77 @@ class SS_analysis(processor.ProcessorABC):
                         add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
                         other={'EFT': f"cpt_{x}_cpqm_{y}"},
                        )
+
+                    if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                        #print ("Running PDFs")
+                        # if we just run central (len(variations)=1) we don't need the PDF variations either
+                        for i in range(1,101):
+                            pdf_ext = "pdf_%s"%i
+
+                            output['bit_score_pp'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_pp)],
+                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                            )
+
+                            output['bit_score_mm'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_mm)],
+                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                            )
+
+                        for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                            # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
+                            # SAMPLES WITH JUST 8 SCALE WEIGHTS: EFT SIGNALS, ZZTo2Q2L_mllmin4p0
+                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0"; [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
+                            pdf_ext = "scale_%s"%i
+
+                            output['bit_score_pp'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_pp)],
+                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                            )
+
+                            output['bit_score_mm'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_mm)],
+                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                            )
+
+                        if len(ev.PSWeight[0]) > 1:
+                            for i in range(4):
+                                pdf_ext = "PS_%s"%i
+
+                                output['bit_score_pp'].fill(
+                                    dataset     = dataset,
+                                    systematic  = pdf_ext,
+                                    prediction  = 'central',
+                                    EFT         = f"cpt_{x}_cpqm_{y}",
+                                    bit         = score_trans[(BL & SR_sel_pp)],
+                                    weight      = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
+                                )
+
+                                output['bit_score_mm'].fill(
+                                    dataset     = dataset,
+                                    systematic  = pdf_ext,
+                                    prediction  = 'central',
+                                    EFT         = f"cpt_{x}_cpqm_{y}",
+                                    bit         = score_trans[(BL & SR_sel_mm)],
+                                    weight      = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                                )
 
             #if self.evaluate or self.dump:
             if self.evaluate and not self.minimal:
@@ -1131,32 +1265,32 @@ class SS_analysis(processor.ProcessorABC):
                     weight = weight_BL,
                 )
                 
-            output['j1'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
-                eta = ak.flatten(jet.eta[:, 0:1][BL]),
-                phi = ak.flatten(jet.phi[:, 0:1][BL]),
-                weight = weight_BL
-            )
-            
-            output['j2'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
-                eta = ak.flatten(jet[:, 1:2][BL].eta),
-                phi = ak.flatten(jet[:, 1:2][BL].phi),
-                weight = weight_BL
-            )
-            
-            output['j3'].fill(
-                dataset = dataset,
-                systematic = var_name,
-                pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
-                eta = ak.flatten(jet[:, 2:3][BL].eta),
-                phi = ak.flatten(jet[:, 2:3][BL].phi),
-                weight = weight_BL
-            )
+                output['j1'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
+                    eta = ak.flatten(jet.eta[:, 0:1][BL]),
+                    phi = ak.flatten(jet.phi[:, 0:1][BL]),
+                    weight = weight_BL
+                   )
+
+                output['j2'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
+                    eta = ak.flatten(jet[:, 1:2][BL].eta),
+                    phi = ak.flatten(jet[:, 1:2][BL].phi),
+                    weight = weight_BL
+                   )
+
+                output['j3'].fill(
+                    dataset = dataset,
+                    systematic = var_name,
+                    pt  = ak.flatten(jet[:, 2:3][BL].pt_nom),
+                    eta = ak.flatten(jet[:, 2:3][BL].eta),
+                    phi = ak.flatten(jet[:, 2:3][BL].phi),
+                    weight = weight_BL
+                   )
                     
         
         return output
@@ -1184,9 +1318,15 @@ if __name__ == '__main__':
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
+    argParser.add_argument('--workers', action='store', default=10, help="How many threads for local running?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
     argParser.add_argument('--sample', action='store', default='all', )
+    argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
+    argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
+    argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
+    argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
+    argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -1208,7 +1348,6 @@ if __name__ == '__main__':
 
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
-
 
     if args.sample == 'MCall':
         sample_list = ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
@@ -1242,7 +1381,17 @@ if __name__ == '__main__':
                 reweight[dataset] = (weight, index)
 
         from Tools.nano_mapping import make_fileset
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+        fileset = make_fileset(
+            [sample],
+            samples,
+            year=ul,
+            #skim='topW_v0.7.0_dilep',
+            skim=args.skim,
+            small=small,
+            n_max=1,
+            buaf=args.buaf,
+            merged=True,
+        )
 
         add_processes_to_output(fileset, desired_output)
 
@@ -1256,6 +1405,10 @@ if __name__ == '__main__':
             {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
            ]
 
         # inclusive EFT weights
@@ -1272,8 +1425,13 @@ if __name__ == '__main__':
 
 
         # NOTE new way of defining points.
-        x = np.arange(-7,8,1)
-        y = np.arange(-7,8,1)
+        if args.scan:
+            x = np.arange(-7,8,1)
+            y = np.arange(-7,8,1)
+        else:
+            x = np.array([int(args.cpt)])
+            y = np.array([int(args.cpqm)])
+
         CPT, CPQM = np.meshgrid(x, y)
 
         points = []
@@ -1288,8 +1446,15 @@ if __name__ == '__main__':
         #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
         #    ]
 
-        f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        if args.buaf == 'remote':
+            f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        elif args.buaf == 'local':
+            f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+        else:
+            f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+
         coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
+        coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
         ref_coordinates = [0,0]
 
         from Tools.awkwardHyperPoly import *
@@ -1357,7 +1522,7 @@ if __name__ == '__main__':
                     #})
 
         if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=10)
+            exe = processor.FuturesExecutor(workers=int(args.workers))
 
         elif iterative:
             exe = processor.IterativeExecutor()
@@ -1375,48 +1540,51 @@ if __name__ == '__main__':
         # everything else is taken the default_accumulators.py
         from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis, bit_axis
         desired_output.update({
-            "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-            "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-            "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
-            "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-            "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-            "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-            "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-            "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-            "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
             "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
             "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
-            "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-            "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-            "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
-            "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
            })
+        if not args.minimal:
+            desired_output.update({
+                "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
+                "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
+                "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+                "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+            })
 
 
 
@@ -1502,8 +1670,9 @@ if __name__ == '__main__':
             if not args.small:
                 df_out.to_hdf(f"multiclass_input_{sample}_{args.year}.h5", key='df', format='table', mode='w')
 
-        print ("\nNN debugging:")
-        print (output['node'].sum('multiplicity').values())
+        if args.evaluate:
+            print ("\nNN debugging:")
+            print (output['node'].sum('multiplicity').values())
 
         # Scale the cutflow output. This should be packed into a function?
         cutflow_output[sample] = {}
@@ -1517,7 +1686,10 @@ if __name__ == '__main__':
         for key in output[dataset_0]:
             cutflow_output[sample][key] = 0.
             for dataset in mapping[ul][sample]:
-                cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+                try:
+                    cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
+                except ZeroDivisionError:
+                    cutflow_output[sample][key] += output[dataset][key]
 
         if not local:
             # clean up the DASK workers. this partially frees up memory on the workers
@@ -1553,8 +1725,8 @@ if __name__ == '__main__':
                            total=False,
                            ))
 
-    from Tools.config_helpers import get_merged_output
-    output_scaled = get_merged_output('SS_analysis', str(year), select_datasets=processes)
+    #from Tools.config_helpers import get_merged_output
+    #output_scaled = get_merged_output('SS_analysis', str(year), select_datasets=processes)
 
     ## Data double counting checks
     if args.check_double_counting:
