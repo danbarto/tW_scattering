@@ -81,6 +81,8 @@ if __name__ == '__main__':
     argParser.add_argument('--fit', action='store_true', help="Run combine (otherwise just plotting)")
     argParser.add_argument('--workers', action='store', default=5, type=int, help="Define how many cores/workers can be used for fitting")
     argParser.add_argument('--year', action='store', default=2016, type=str, help="Select years, comma separated")
+    argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
+    argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
 
     args = argParser.parse_args()
 
@@ -131,16 +133,23 @@ if __name__ == '__main__':
     # Define a scan
     xr = np.arange(-7,8,2)
     yr = np.arange(-7,8,2)
+
+    if args.run_scan:
+        xr = np.arange(-7,8,1)
+        yr = np.arange(-7,8,1)
+    else:
+        xr = np.array([int(args.cpt)])
+        yr = np.array([int(args.cpqm)])
+
     X, Y = np.meshgrid(xr, yr)
     scan = zip(X.flatten(), Y.flatten())
 
-    if run_scan:
-
-        #years = ['2016', '2016APV', '2017', '2018']
+    
+    if True:
+        # FIXME resolve the selection of what to do in this script...
         years = args.year.split(',')
 
         if args.overwrite:
-
             # load outputs (coffea histograms)
             # histograms are created per sample,
             # x-secs and lumi scales are applied on the fly below
@@ -515,6 +524,8 @@ if __name__ == '__main__':
         card.cleanUp()
 
     elif comparison:
+        # NOTE this loads results and draws a comparison plot.
+        # kept for legacy, might be broken by now
         out_path = os.path.expandvars(cfg['caches']['base'])
         bit_path = out_path + 'results_bit.pkl'
         lt_path = out_path + 'results_lt.pkl'
@@ -578,6 +589,7 @@ if __name__ == '__main__':
         fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.pdf')
 
     else:
+        # NOTE this does something completely unrelated and should be retired...
 
         rx = np.arange(-7,8,1)
         ry = np.arange(-7,8,1)
@@ -623,8 +635,6 @@ if __name__ == '__main__':
 
         fig.savefig(f'{plot_dir}/inclusive_scaling.png')
         fig.savefig(f'{plot_dir}/inclusive_scaling.pdf')
-
-
 
         fig, ax = plt.subplots()
 
