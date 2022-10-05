@@ -470,7 +470,7 @@ if __name__ == '__main__':
                 print (plot_name_short)
                 results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
-        if fit:
+        if fit and len(z)>4:
             z = []
             for x, y in results:
                 point = [x, y]
