@@ -131,12 +131,9 @@ if __name__ == '__main__':
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
 
     # Define a scan
-    xr = np.arange(-7,8,2)
-    yr = np.arange(-7,8,2)
-
     if args.run_scan:
-        xr = np.arange(-7,8,1)
-        yr = np.arange(-7,8,1)
+        xr = np.arange(-7,8,2)  # FIXME: switch to steps of 1
+        yr = np.arange(-7,8,2)
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
@@ -201,6 +198,8 @@ if __name__ == '__main__':
                         ("LT_SR_mm", lt_axis),
                     ]
 
+            sm_cards = {}
+            bsm_cards = {}
 
             for year in years:
 
@@ -222,8 +221,6 @@ if __name__ == '__main__':
 
                         coeff = {}
 
-                sm_cards = {}
-                bsm_cards = {}
 
                 for region, axis in regions:
 
@@ -438,6 +435,8 @@ if __name__ == '__main__':
             if fit:
                 # FIXME check that this actually works - running years individually and then just combining
                 # this avoids having to load all the histograms at once
+                print ("Combining cards:")
+                print (sm_cards)
                 sm_card_combined = card.combineCards(sm_cards, name=f'SM_{plot_name_short}.txt')
                 bsm_card_combined = card.combineCards(bsm_cards, name=f'BSM_{plot_name_short}.txt')
 
@@ -470,7 +469,7 @@ if __name__ == '__main__':
                 print (plot_name_short)
                 results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
-        if fit and len(z)>4:
+        if fit and len(xr)>4:
             z = []
             for x, y in results:
                 point = [x, y]
