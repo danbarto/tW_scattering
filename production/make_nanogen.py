@@ -23,8 +23,8 @@ def submit():
         #'TTZ_EFT_NLO_fixed': '/hadoop/cms/store/user/dspitzba/tW_scattering/gridpacks/TTZ_5f_NLO_fixed_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTW_5f_EFT_NLO_test_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz', # this corresponds to TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO
         #'TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/TTWToLNu_TtoLep_aTtoHad_5f_EFT_NLO_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
-        'TTZ_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         'TTZ_5f_NLO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_NLO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
+        #'TTZ_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTH_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTH_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTH_5f_NLO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTH_5f_NLO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
     }
@@ -35,13 +35,13 @@ def submit():
 
     # v6+ is UL
 
-    tag = "v18"
+    tag = "v26"
     if args.test_run:
-        events_per_point = 200
+        events_per_point = 2e3
         events_per_job = 50
     else:
-        events_per_point = int(2e6)
-        events_per_job = 5000
+        events_per_point = int(1e6)
+        events_per_job = 1000
 
     njobs = int(events_per_point)//events_per_job
 
@@ -67,10 +67,10 @@ def submit():
                 arguments = gridpack.split('/')[-1],
                 condor_submit_params = {
                     "sites":"T2_US_UCSD", #
-                    #"memory": 1950,
-                    #"cpus": 1,
-                    "memory": 15600,
-                    "cpus": 8,
+                    "memory": 1950,
+                    "cpus": 1,
+                    #"memory": 15600,
+                    #"cpus": 8,
                     "classads": [
                         ["param_nevents",events_per_job],
                         ["metis_extraargs",""],

@@ -200,7 +200,7 @@ from Configuration.DataProcessing.Utils import addMonitoring
 process = addMonitoring(process)
 
 
-process.options.numberOfThreads=cms.untracked.uint32(12)
+#process.options.numberOfThreads=cms.untracked.uint32(12)
 # End of customisation functions
 
 # Customisation from command line

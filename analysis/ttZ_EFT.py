@@ -76,7 +76,7 @@ if __name__ == '__main__':
     # Load samples
 
     base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
-    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v2/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v5/"
     finalizePlotDir(plot_dir)
 
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     res = {}
 
     res['ttZ_NLO'] = {
-        'filename': "ttZ_EFT_NLO_all.root",
+        'filename': "ttZ_EFT_NLO_fixed.root",
         #'filename': "ttZ_EFT_NLO.root",
         # this root file is smaller than the _all one
         'is2D'    : True,
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         }
 
     res['ttZ_LO']  = {
-        'filename': "ttZ_EFT_LO_all.root",
+        'filename': "ttZ_EFT_LO_fixed.root",
         #'filename': "ttZ_EFT_LO.root",
         'is2D'    : True,
         'xsecs'   : 0.663
