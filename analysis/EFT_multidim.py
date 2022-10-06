@@ -414,16 +414,16 @@ if __name__ == '__main__':
                     if fit:
                         if args.overwrite:
                             if args.scaling:
-                                scales = {'TTZ': scalePolyLO(x,y)}
-                                bsm_scales = {'TTZ': scalePolyNLO(x,y)}
+                                LO_scales = {'TTZ': scalePolyLO(x,y)}
+                                NLO_scales = {'TTZ': scalePolyNLO(x,y)}
                             else:
-                                scales = {'TTZ': 1}
-                                bsm_scales = {'TTZ': 1}
+                                LO_scales = {'TTZ': 1}
+                                NLO_scales = {'TTZ': 1}
                             sm_card = makeCardFromHist(
                                 backgrounds,
                                 ext=f'SM_{plot_name}',
-                                scales = scales,
-                                #bsm_scales = bsm_scales,
+                                #scales = scales,
+                                bsm_scales = LO_scales,
                                 systematics = systematics,
                                 data = observation,
                                 blind = True,
@@ -436,7 +436,7 @@ if __name__ == '__main__':
                                 ext=f'BSM_{plot_name}',
                                 bsm_hist = bsm_hist_for_card,
                                 #scales = scales,
-                                bsm_scales = bsm_scales,
+                                bsm_scales = NLO_scales,
                                 systematics = systematics,
                                 data = observation,
                                 blind = True,
