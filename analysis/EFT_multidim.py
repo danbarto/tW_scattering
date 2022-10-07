@@ -106,10 +106,13 @@ if __name__ == '__main__':
 
     cfg = loadConfig()
     if not args.uaf:
-        plot_dir = './plots/multidim_fits_v2/'
-        #plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/multidim_fits_v2/'
+        base_dir = './plots/'
     else:
-        plot_dir = '/home/users/sjeon/public_html/tW_scattering/multidim_fits/'
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/'
+    if not args.scaling:
+        plot_dir = base_dir+'multidim_fits_2018/'
+    else:
+        plot_dir = base_dir+'multidim_fits_scaled_2018/'
     finalizePlotDir(plot_dir)
 
     # FIXME placeholder systematics....
@@ -137,8 +140,8 @@ if __name__ == '__main__':
 
     # Define a scan
     if args.run_scan:
-        xr = np.arange(-7,8,2)  # FIXME: switch to steps of 1
-        yr = np.arange(-7,8,2)
+        xr = np.arange(-6,7,2)  # FIXME: switch to steps of 1
+        yr = np.arange(-6,7,2)
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
@@ -487,13 +490,7 @@ if __name__ == '__main__':
                 results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
         if fit and len(xr)>4:
-            z = []
-            for x, y in results:
-                point = [x, y]
-                z.append(results[(x,y)])
-
-
-            Z = np.array(z)
+            Z = np.array(list(results.values()))
             Z = np.reshape(Z, X.shape)
 
             fig, ax, = plt.subplots(1,1,figsize=(10,10))
@@ -521,8 +518,8 @@ if __name__ == '__main__':
 
             plt.show()
 
-            fig.savefig('./scan_test_bit_v3.png')
-            fig.savefig('./scan_test_bit_v3.pdf')
+            fig.savefig(plot_dir+'scan_test_bit_v3.png')
+            fig.savefig(plot_dir+'scan_test_bit_v3.pdf')
 
             out_path = os.path.expandvars(cfg['caches']['base'])
             if bit:
@@ -532,6 +529,27 @@ if __name__ == '__main__':
 
             with open(out_path, 'wb') as f:
                 pickle.dump(results, f)
+
+
+            # also do 1D plots
+
+            fig, ax = plt.subplots()
+            hep.cms.label(
+                "Work in progress",
+                data=True,
+                #year=2018,
+                lumi=60,
+                loc=0,
+                ax=ax,
+               )
+            midpoint = int(len(xr)/2)
+            plt.plot(xr, Z[midpoint,:], label=r'cpt', c='green')
+            plt.plot(yr, Z[:,midpoint], label=r'cpqm', c='darkviolet')
+            plt.legend()
+            plt.show()
+
+            fig.savefig(plot_dir+'1D_scaling_test.png')
+            fig.savefig(plot_dir+'1D_scaling_test.pdf')
 
 
         # NOTE re-init dataCard here just so that we always clean up the right dir...
