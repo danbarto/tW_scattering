@@ -84,7 +84,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
-    argParser.add_argument('--scaling', action='store_true', help="run with scaling on")
+    argParser.add_argument('--scaling', action='store', default='noscaling', choices=['noscaling','LO','NLO'], help="run with scaling : LO or NLO?")
 
     args = argParser.parse_args()
 
@@ -109,11 +109,10 @@ if __name__ == '__main__':
         base_dir = './plots/'
     else:
         base_dir = '/home/users/sjeon/public_html/tW_scattering/'
-    if not args.scaling:
-        plot_dir = base_dir+'multidim_fits_2018/'
+    if args.scaling == 'noscaling':
+        plot_dir = base_dir+'multidim_fits'
     else:
-        plot_dir = base_dir+'multidim_fits_scaled_2018/'
-    finalizePlotDir(plot_dir)
+        plot_dir = base_dir+'multidim_fits_scaled'
 
     # FIXME placeholder systematics....
     systematics= [
@@ -167,6 +166,8 @@ if __name__ == '__main__':
             outputs = {}
 
             for year in years:
+                plot_dir = plot_dir + '_' + year + '/'
+                finalizePlotDir(plot_dir)
                 outputs[year] = get_merged_output(
                     'SS_analysis',
                     year,
@@ -416,17 +417,17 @@ if __name__ == '__main__':
 
                     if fit:
                         if args.overwrite:
-                            if args.scaling:
-                                LO_scales = {'TTZ': scalePolyLO(x,y)}
-                                NLO_scales = {'TTZ': scalePolyNLO(x,y)}
+                            if args.scaling == 'LO':
+                                bsm_scales = {'TTZ': scalePolyLO(x,y)}
+                            elif args.scaling == 'NLO':
+                                bsm_scales = {'TTZ': scalePolyNLO(x,y)}
                             else:
-                                LO_scales = {'TTZ': 1}
-                                NLO_scales = {'TTZ': 1}
+                                bsm_scales = {'TTZ': 1}
                             sm_card = makeCardFromHist(
                                 backgrounds,
                                 ext=f'SM_{plot_name}',
                                 #scales = scales,
-                                bsm_scales = LO_scales,
+                                #bsm_scales = bsm_scales,
                                 systematics = systematics,
                                 data = observation,
                                 blind = True,
@@ -439,7 +440,7 @@ if __name__ == '__main__':
                                 ext=f'BSM_{plot_name}',
                                 bsm_hist = bsm_hist_for_card,
                                 #scales = scales,
-                                bsm_scales = NLO_scales,
+                                bsm_scales = bsm_scales,
                                 systematics = systematics,
                                 data = observation,
                                 blind = True,
