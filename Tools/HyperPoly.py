@@ -161,6 +161,23 @@ class HyperPoly:
                 substrings.append( "*".join(sub_substring) ) 
         return  ( "+".join( [s for s in substrings if len(s)>0] ) ).replace("+-","-")
 
+    def print_root_func_string(self, coefficients):
+        substrings = []
+        for n in range(self, ndof):
+            if abs(coefficients[n])>self.min_abs_float:
+                sub_substring = []
+                if abs(1-coefficients[n])>self.min_abs_float:
+                    sub_substring.append( ('%f'%coefficients[n]).rstrip('0') )
+                for var in range(self.nvar):
+                    power = self.combination[n].count( var )
+                    if power>0:
+                        if abs(self.ref_point[var])>self.min_abs_float:
+                            sub_substring.append( "(x%i - %d)" % (var, int(self.ref_point[var])) if power==1 else "(x%i - %d)**%i" % (var, int(self.ref_point[var]), power)  )
+                        else:
+                            sub_substring.append( "x%i" % (var) if power==1 else "x%i**%i" % (var, power)  )
+                substrings.append( "*".join(sub_substring) )
+        return  ( "+".join( [s for s in substrings if len(s)>0] ) ).replace("+-","-")
+
 if __name__ == "__main__":
 
     # 3rd order parametrization

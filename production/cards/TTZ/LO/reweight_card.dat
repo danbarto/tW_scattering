@@ -1,0 +1,26 @@
+change rwgt_dir rwgt
+change mode NLO
+
+launch --rwgt_name=cpt_0p_cpQM_0p
+set cpt 0.000000
+set cpQM 0.000000
+
+launch --rwgt_name=cpt_3p_cpQM_0p
+set cpt 3.000000
+set cpQM 0.000000
+
+launch --rwgt_name=cpt_0p_cpQM_3p
+set cpt 0.000000
+set cpQM 3.000000
+
+launch --rwgt_name=cpt_6p_cpQM_0p
+set cpt 6.000000
+set cpQM 0.000000
+
+launch --rwgt_name=cpt_3p_cpQM_3p
+set cpt 3.000000
+set cpQM 3.000000
+
+launch --rwgt_name=cpt_0p_cpQM_6p
+set cpt 0.000000
+set cpQM 6.000000

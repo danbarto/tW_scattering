@@ -142,6 +142,8 @@ NEVENTS=$(getjobad param_nevents)
 
 echo -e "\n--- end header output ---\n" #                       <----- section division
 
+echo "After stage-in (are input files copied over?): ls -lrth"
+ls -lrth
 
 nanocfg="psets/nanogen/nanogen_cfg.py"
 
@@ -156,7 +158,7 @@ cp ../*.gz .
 cp ../*.xz .
 tar xf *.gz
 
-edit_psets $GRIDPACK $IFILE $NEVENTS
+edit_psets $PWD/$GRIDPACK $IFILE $NEVENTS
 
 echo "before running: ls -lrth"
 ls -lrth
@@ -194,7 +196,6 @@ fi
 echo "time before copy: $(date +%s)"
 chirp ChirpMetisStatus "before_copy"
 
-
 echo "Local output dir"
 echo ${OUTPUTDIR}
 
@@ -207,6 +208,7 @@ echo ${OUTPUTDIR}
 COPY_SRC="file://`pwd`/output.root"
 COPY_DEST=" davs://redirector.t2.ucsd.edu:1095/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
 stageout $COPY_SRC $COPY_DEST
+
 
 echo -e "\n--- end copying output ---\n" #                      <----- section division
 

@@ -3,6 +3,7 @@ Load NanoGEN samples in NanoAOD event factory
 - Compare LO vs NLO ttZ samples
 - Compare on-shell vs off-shell ttZ samples
 - Compare to a benchmark point to verify that reweighting works #FIXME
+- Find plane fit equation for cpt and cpQM
 '''
 
 import warnings
@@ -30,7 +31,10 @@ plt.style.use(hep.style.CMS)
 
 from yahist import Hist1D, Hist2D
 
-from reweighting_sanity_check import add_uncertainty
+
+# ==================================
+# ======== HELPER FUNCTIONS ========
+# ==================================
 
 def get_Z(ev):
     gp = ev.GenPart
@@ -62,295 +66,151 @@ def get_LT(ev):
 def histo_values(histo, weight):
     return histo[weight].sum('dataset').values(overflow='all')[()]
 
+
+# ==================================
+# =========== MAIN CODE ============
+# ==================================
+
 if __name__ == '__main__':
 
     # Load samples
-    base_dir = "/ceph/cms/store/user/dspitzba/NanoGEN/"
-    plot_dir = "/home/users/dspitzba/public_html/tW_scattering/ttZ_EFT_v2/"
+
+    base_dir = "/ceph/cms/store/user/sjeon/NanoGEN/"
+    plot_dir = "/home/users/sjeon/public_html/tW_scattering/ttZ_EFT_v5/"
     finalizePlotDir(plot_dir)
 
-    # NOTE: use these /ceph/cms/store/user/dspitzba/ProjectMetis/TTZ_EFT_NLO_fixed_RunIISummer20_NanoGEN_NANO_v12/output_1.root samples?
+
+    # root files
 
     res = {}
 
     res['ttZ_NLO'] = {
-        'file': base_dir + "ttZ_EFT_NLO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_NLO.root").events()
-    }
+        'filename': "ttZ_EFT_NLO_fixed.root",
+        #'filename': "ttZ_EFT_NLO.root",
+        # this root file is smaller than the _all one
+        'is2D'    : True,
+        'xsecs'   : 0.930
+        }
 
-    res['ttZ_LO'] = {
-        'file': base_dir + "ttZ_EFT_LO.root",
-        'events': NanoEventsFactory.from_root(base_dir + "ttZ_EFT_LO.root").events()
-    }
-    
-    #res['ttll_LO'] = {
-    #    'file': base_dir + "merged_ttll_LO.root",
-    #    'events': NanoEventsFactory.from_root(base_dir + "merged_ttll_LO.root").events()
-    #}
+    res['ttZ_LO']  = {
+        'filename': "ttZ_EFT_LO_fixed.root",
+        #'filename': "ttZ_EFT_LO.root",
+        'is2D'    : True,
+        'xsecs'   : 0.663
+         }
 
-    # Get HyperPoly parametrization.
-    # this is sample independent as long as the coordinates are the same.
-    
-    hp = HyperPoly(2)
-    
-    coordinates, ref_coordinates = get_coordinates_and_ref(res['ttZ_NLO']['file'])
-    hp.initialize( coordinates, ref_coordinates )
-    
-    pt_axis   = hist.Bin("pt",     r"p", 7, 100, 800)
-    #pt_axis   = hist.Bin("pt",     r"p", 7, 0, 200)
+    # ptZ and LT limits
 
-    xsecs = {'ttZ_NLO': 0.930, 'ttZ_LO': 0.663}
+    LTlim = 700
+    ptZlim = 400
+
 
     for r in res:
-
         print (r)
 
-        tree    = uproot.open(res[r]['file'])["Events"]
-        ev      = res[r]['events']
-        name    = r
+        res[r]['file'] = base_dir + res[r]['filename']
+        res[r]['events'] = NanoEventsFactory.from_root(base_dir + res[r]['filename']).events()
+        res[r]['data'] = {}
+
+        hp = HyperPoly(2)
+
+        tree = uproot.open(res[r]['file'])['Events']
+
+        coordinates, ref_coordinates = get_coordinates_and_ref(res[r]['file'],res[r]['is2D'])
+        hp.initialize(coordinates, ref_coordinates)
 
         weights = [ x.replace('LHEWeight_','') for x in tree.keys() if x.startswith('LHEWeight_c') ]
 
-        trilep = (ak.num(ev.GenDressedLepton)==3)
-        #trilep = (ak.num(ev.GenDressedLepton)>=0)
 
-        res[name]['selection'] = trilep
-        res[name]['hist'] = hist.Hist("met", dataset_axis, pt_axis)
+        # ========= Define and count selections =========
 
-        res[name]['hist'].fill(
-            dataset='stat',
-            pt = get_LT(ev[trilep]),
-            weight = ev[trilep].genWeight/sum(ev.genWeight)
-        )
+        trilep = (ak.num(res[r]['events'].GenDressedLepton)==3)
+        ev = res[r]['events'][trilep]
+        print('%d trilep events in total'%len(ev))
 
-        res[name]['central'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][0]
-        res[name]['w2'] = res[name]['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()][1]
+        LTmask = (get_LT(ev) >= LTlim)
+        ptZmask = ak.flatten(get_Z(ev).pt >= ptZlim)
+        res[r]['N_LT'] = np.sum(LTmask)
+        res[r]['N_ptZ'] = np.sum(ptZmask)
+        res[r]['N_LT_weighted'] = np.sum(ev.genWeight[LTmask])
+        res[r]['N_ptZ_weighted'] = np.sum(ev.genWeight[ptZmask])
+        print('%d (%d weighted) events with LT>%d'%(res[r]['N_LT'],res[r]['N_LT_weighted'],LTlim))
+        print('%d (%d weighted) events with ptZ>%d'%(res[r]['N_ptZ'],res[r]['N_ptZ_weighted'],ptZlim))
 
-        for w in weights:
-        
-            res[name]['hist'].fill(
-                dataset=w,
-                pt = get_LT(ev[trilep]),
-                #pt = ev[trilep].GenMET.pt,
-                weight=xsecs[r]*getattr(ev[trilep].LHEWeight, w)*ev[trilep].genWeight/sum(ev.genWeight)
+
+        # =========== Calculate & plot 1D fit ===========
+
+        # get coefficients
+        allvals = [getattr(ev.LHEWeight, w) for w in weights]
+        unweighted = hp.get_parametrization(allvals)
+        res[r]['coeff'] = [unweighted[u]*ev.genWeight for u in range(len(unweighted))]
+
+
+        for c in ['cpQM', 'cpt']:
+
+            # get c axis points
+            points = make_scan(operator=c, C_min=-20, C_max=20, step=1, is2D=res[r]['is2D'])
+            c_vals = np.linspace(-20,20,41)
+
+            # get plot data
+            pred_matrix = np.array([np.array(hp.eval(res[r]['coeff'],points[i]['point'])) for i in range(41)])
+            res[r]['data'][c] = {}
+            data = res[r]['data'][c]
+            data['inc'] = np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:])
+            data['LTtail'] = np.sum(pred_matrix[:,LTmask], axis=1)/np.sum(pred_matrix[20,LTmask])
+            data['ptZtail'] = np.sum(pred_matrix[:,ptZmask], axis=1)/np.sum(pred_matrix[20,ptZmask])
+
+            # plot
+            fig, ax = plt.subplots()
+            hep.cms.label(
+                "Work in progress",
+                data=True,
+                lumi=60.0+41.5+35.9,
+                loc=0,
+                ax=ax,
             )
+            plt.plot(c_vals, data['inc'], label=r'inclusive', c='black')
+            plt.plot(c_vals, data['LTtail'], label=r'$L_{T} \geq %d\ GeV$'%LTlim, c='blue')
+            plt.plot(c_vals, data['ptZtail'], label=r'$p_{T,Z} \geq %d\ GeV$'%ptZlim, c='red')
+            
+            plt.plot([],[],' ',label="# ev (LT): %d(%d)"%(res[r]['N_LT'],res[r]['N_LT_weighted']))
+            plt.plot([],[],' ',label="# ev (ptZ): %d(%d)"%(res[r]['N_ptZ'],res[r]['N_ptZ_weighted']))
+            plt.xlabel(r'$C_{\varphi Q}^{-}$') if c == 'cpQM' else plt.xlabel(r'$C_{\varphi t}$')
+            plt.ylabel(r'$\sigma/\sigma_{SM}$')
+            plt.legend()
 
-        res[r]['coeff'] = hp.get_parametrization( [histo_values(res[name]['hist'], w) for w in weights] )
+            ax.set_ylim(0,10)
 
-        # points are given as [ctZ, cpt, cpQM, cpQ3, ctW, ctp]
-        print ("SM point:", hp.eval(res[r]['coeff'], [0,0,0,0,0,0]))
-        print ("BSM point:", hp.eval(res[r]['coeff'], [2,0,0,0,0,0]))
+            fig.savefig(plot_dir+r[4:]+'_'+c+'_scaling.pdf')
+            fig.savefig(plot_dir+r[4:]+'_'+c+'_scaling.png')
 
-
+    # comparison plots NLO vs.LO
+    c_vals = np.linspace(-20,20,41)
     
+    for c in ['cpQM', 'cpt']:
+        for sel in ['inc','LTtail','ptZtail']:
+            
+            fig, ax = plt.subplots()
+            hep.cms.label(
+                "Work in progress",
+                data=True,
+                #year=2018,
+                lumi=60.0+41.5+35.9,
+                loc=0,
+                ax=ax,
+            )
     
-    ## k-factor
-    # because there are differences of the EFT effects at LO and NLO we are not arriving back at the same SM point when weighting back?
-    # Does that make sense?
-    # Yes, because we artificially fix the LO and NLO x-secs at our benchmark point to the same value the way we set weights.
-    # So, we use a k factor the fix the LO and NLO x-secs at the SM point to the same value.
-
-    # LO x-sec at ref point: 0.663 +- 0.00256 pb
-    # NLO x-sec at ref point: 0.930 +- 0.00132 pb
-
-    # FIXME negative weights! what to do about those?
-    # is it a problem for the histogram based reweighting???
-    # or is it a deeper problem?
-    # or no problem at all?
-
-    k = sum(res['ttZ_NLO']['hist']['ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p_nlo'].sum('dataset').values(overflow='all')[()])/sum(res['ttZ_LO']['hist']['ctZ_0p_cpt_0p_cpQM_0p_cpQ3_0p_ctW_0p_ctp_0p'].sum('dataset').values(overflow='all')[()])
-    edges   = res['ttZ_NLO']['hist'].axis('pt').edges(overflow='all')
-
-    print ("Found a k-factor of %.3f"%k)
-
-    fig, (ax, rax) = plt.subplots(2,1,figsize=(10,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+            plt.plot(c_vals, res['ttZ_NLO']['data'][c][sel], label=r'NLO', c='green')
+            plt.plot(c_vals, res['ttZ_LO']['data'][c][sel], label=r'LO', c='darkviolet')
     
-    hep.cms.label(
-        "Preliminary",
-        data=True,
-        #year=2018,
-        lumi=60.0,
-        loc=0,
-        ax=ax,
-    )
-
-    num     = hp.eval(res['ttZ_NLO']['coeff'], [0,0,0,0,0,0]), res['ttZ_NLO']['w2']
-    denom   = hp.eval(res['ttZ_LO']['coeff'], [0,0,0,0,0,0])*k, res['ttZ_LO']['w2']
-
-    num_vals = res['ttZ_NLO']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
-    denom_vals = res['ttZ_LO']['hist']['stat'].sum('dataset').values(overflow='all', sumw2=True)[()]
-    denom_unc_rel = np.sqrt(denom_vals[1])/denom_vals[0]
-    denom_unc_abs = denom_unc_rel*denom[0]
-
-    num_unc_rel = np.sqrt(num_vals[1])/num_vals[0]
-    num_unc_abs = num_unc_rel*num[0]
-
-    num_h   = Hist1D.from_bincounts(num[0], edges, num_unc_abs, )
-    denom_h = Hist1D.from_bincounts(denom[0], edges, denom_unc_abs, )
-    ratio   = num_h.divide(denom_h)
-
-    hep.histplot(
-        num[0],
-        edges,
-        #w2=num[1],
-        histtype="step",
-        label=[r'ttZ (NLO), $c_{\varphi t}=0$'],
-        color=['red'],
-        ax=ax)
-
-    hep.histplot(
-        denom[0],
-        edges,
-        #w2=denom[1],
-        histtype="step",
-        linestyle='--',
-        #linewidth=1.5,
-        label=[r'ttZ (LO), $c_{\varphi t}=0$'],
-        color=['red'],
-        ax=ax)
-
-    hep.histplot(
-        ratio.counts,
-        edges,
-        #w2=ratio.errors,
-        histtype="errorbar",
-        color='red',
-        ax=rax,
-    )
-
-    add_uncertainty(denom[0], denom_unc_abs, ax, edges, ratio=False, color='red', hatch='///')
-    add_uncertainty(num[0], np.sqrt(num[1]), ax, edges, ratio=False, color='red', hatch="\\\\")
-    add_uncertainty(ratio.counts, ratio.errors, rax, edges, ratio=False, color='red', hatch="|||")
-
-
-    num     = hp.eval(res['ttZ_NLO']['coeff'], [0,4,0,0,0,0]), res['ttZ_NLO']['w2']
-    denom   = hp.eval(res['ttZ_LO']['coeff'], [0,4,0,0,0,0])*k, res['ttZ_LO']['w2']
-
-    denom_unc_abs = denom_unc_rel*denom[0]
-
-    num_unc_abs = num_unc_rel*num[0]
-
-    num_h   = Hist1D.from_bincounts(num[0], edges, num_unc_abs, )
-    denom_h = Hist1D.from_bincounts(denom[0], edges, denom_unc_abs, )
-    ratio   = num_h.divide(denom_h)
-
-
-    hep.histplot(
-        num[0],
-        edges,
-        #w2=num[1],
-        histtype="step",
-        label=[r'ttZ (NLO), $c_{\varphi t}=4$'],
-        color=['green'],
-        ax=ax)
-
-    hep.histplot(
-        denom[0],
-        edges,
-        #w2=denom[1],
-        histtype="step",
-        linestyle='--',
-        #linewidth=1.5,
-        label=[r'ttZ (LO), $c_{\varphi t}=4$'],
-        color=['green'],
-        ax=ax)
-
-    hep.histplot(
-        ratio.counts,
-        edges,
-        #w2=ratio.errors,
-        histtype="errorbar",
-        color='green',
-        ax=rax,
-    )
-
-    add_uncertainty(denom[0], denom_unc_abs, ax, edges, ratio=False, color='green', hatch='///')
-    add_uncertainty(num[0], np.sqrt(num[1]), ax, edges, ratio=False, color='green', hatch="\\\\")
-    add_uncertainty(ratio.counts, ratio.errors, rax, edges, ratio=False, color='green', hatch="///")
-
-    rax.set_ylim(0,1.99)
-    rax.set_xlabel(r'$p_{T}(l_1)+p_{T}(l_2)+p_{T}^{miss}\ (GeV)$')
-    rax.set_ylabel(r'Ratio')
-    ax.set_ylabel(r'Events')
-    ax.set_yscale('log')
-    ax.set_ylim(0.00003,0.09)
-
-    ax.legend()
-
-    x1, y1 = [-100, 1000], [1, 1]
-    plt.xlim(0, 900)
-    #plt.ylim(-2, 8)
-    plt.plot(x1, y1, marker = 'o', color='black')
-
-    plt.show()
+            plt.xlabel(r'$C_{\varphi Q}^{-}$') if c == 'cpQM' else plt.xlabel(r'$C_{\varphi t}$')
+            plt.ylabel(r'$\sigma/\sigma_{SM}$')
+            N = 'N_LT' if sel == 'LTtail' else 'N_ptZ'
+            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_NLO'][N],res['ttZ_NLO'][N+'_weighted']))
+            plt.plot([], [], ' ', label="# ev (LT): %d(%d)"%(res['ttZ_LO'][N],res['ttZ_LO'][N+'_weighted']))
+            plt.legend()
     
-    fig.savefig(plot_dir+'LT_cpt.png')
-    fig.savefig(plot_dir+'LT_cpt.pdf')
-
-    # FIXME WIP
-    ## E^2 scaling for ttZ
-    # just an example.
-    points = make_scan(operator='cpQM', C_min=-20, C_max=20, step=1)
-
-    c_values = []
-    for i in range(0,41):
-        print (i-20, hp.eval(res['ttZ_LO']['coeff'], points[i]['point']))
-        c_values.append(i-20)
-
-    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_LO']['coeff'],points[i]['point'])) for i in range(41) ])
-
-    fig, ax = plt.subplots()
-    hep.cms.label(
-        "Work in progress",
-        data=True,
-        #year=2018,
-        lumi=60.0+41.5+35.9,
-        loc=0,
-        ax=ax,
-    )
-    
-    plt.plot(c_values, np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:]), label=r'inclusive', c='green')
-    plt.plot(c_values, np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[20,7:]), label=r'$L_{T} \geq 700\ GeV$', c='blue')
-    
-    plt.xlabel(r'$C_{\varphi Q}^{-}$')
-    plt.ylabel(r'$\sigma/\sigma_{SM}$')
-    plt.legend()
-
-    ax.set_ylim(0,10)
-
-
-    fig.savefig(plot_dir+'LO_cpQM_scaling.pdf')
-    fig.savefig(plot_dir+'LO_cpQM_scaling.png')
-
-    # just an example.
-    points = make_scan(operator='cpt', C_min=-20, C_max=20, step=1)
-
-    c_values = []
-    for i in range(0,41):
-        print (i-20, hp.eval(res['ttZ_LO']['coeff'], points[i]['point']))
-        c_values.append(i-20)
-
-    pred_matrix = np.array([ np.array(hp.eval(res['ttZ_LO']['coeff'],points[i]['point'])) for i in range(41) ])
-
-    fig, ax = plt.subplots()
-    
-    hep.cms.label(
-        "Work in progress",
-        data=True,
-        #year=2018,
-        lumi=60.0+41.5+35.9,
-        loc=0,
-        ax=ax,
-    )
-    
-    plt.plot(c_values, np.sum(pred_matrix, axis=1)/np.sum(pred_matrix[20,:]), label=r'inclusive', c='green')
-    plt.plot(c_values, np.sum(pred_matrix[:,7:], axis=1)/np.sum(pred_matrix[20,7:]), label=r'$L_{T} \geq 700\ GeV$', c='blue')
-    
-    plt.xlabel(r'$C_{\varphi t}$')
-    plt.ylabel(r'$\sigma/\sigma_{SM}$')
-    plt.legend()
-
-    ax.set_ylim(0,10)
-    
-    fig.savefig(plot_dir+'LO_cpt_scaling.pdf')
-    fig.savefig(plot_dir+'LO_cpt_scaling.png')
+            ax.set_ylim(0,10)
+            
+            fig.savefig(plot_dir+'compare_'+sel+'_'+c+'.pdf')
+            fig.savefig(plot_dir+'compare_'+sel+'_'+c+'.png')

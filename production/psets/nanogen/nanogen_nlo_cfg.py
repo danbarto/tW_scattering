@@ -187,12 +187,12 @@ process = customizeNanoGEN(process)
 ## needs to be all lower case for madspin!!
 
 named_weights = [
-    "cpt_0p_cpqm_0p_nlo",
-    "cpt_3p_cpqm_0p_nlo",
-    "cpt_6p_cpqm_0p_nlo",
-    "cpt_0p_cpqm_3p_nlo",
-    "cpt_0p_cpqm_6p_nlo",
-    "cpt_3p_cpqm_3p_nlo",
+    "cpt_0p_cpQM_0p_nlo",
+    "cpt_3p_cpQM_0p_nlo",
+    "cpt_6p_cpQM_0p_nlo",
+    "cpt_0p_cpQM_3p_nlo",
+    "cpt_0p_cpQM_6p_nlo",
+    "cpt_3p_cpQM_3p_nlo",
 ]
 
 process.genWeightsTable.namedWeightIDs = named_weights
@@ -205,7 +205,7 @@ from Configuration.DataProcessing.Utils import addMonitoring
 process = addMonitoring(process)
 
 
-process.options.numberOfThreads=cms.untracked.uint32(8)
+#process.options.numberOfThreads=cms.untracked.uint32(12)
 # End of customisation functions
 
 # Customisation from command line

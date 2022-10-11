@@ -74,6 +74,7 @@ def write_card_wrapper(arguments):
 def write_card(output, year, region, axis, cpt, cpqm,
                plot_dir='./',
                systematics=True,
+               bsm_scales={},
                ):
 
     x = cpt
@@ -278,7 +279,7 @@ def write_card(output, year, region, axis, cpt, cpqm,
         ext=f'BSM_{plot_name}',
         bsm_hist = signal,
         #scales = scales,
-        #bsm_scales = bsm_scales,
+        bsm_scales = bsm_scales,
         systematics = systematics,
         data = observation,
         blind = True,
@@ -312,6 +313,8 @@ if __name__ == '__main__':
     argParser.add_argument('--year', action='store', default=2016, type=str, help="Select years, comma separated")
     argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
+    argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
+    argParser.add_argument('--scaling', action='store', default='noscaling', choices=['noscaling','LO','NLO'], help="run with scaling : LO or NLO?")
 
     args = argParser.parse_args()
 
@@ -333,9 +336,14 @@ if __name__ == '__main__':
 
 
     cfg = loadConfig()
-    plot_dir = './plots/multidim_fits_v2/'
-    #plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/multidim_fits_v2/'
-    finalizePlotDir(plot_dir)
+    if not args.uaf:
+        base_dir = './plots/'
+    else:
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/'
+    if args.scaling == 'noscaling':
+        base_dir = base_dir+'multidim_fits'
+    else:
+        base_dir = base_dir+'multidim_fits_scaled'
 
     # NOTE placeholder systematics if run without --systematics
     mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
@@ -382,6 +390,12 @@ if __name__ == '__main__':
     X, Y = np.meshgrid(xr, yr)
     scan = zip(X.flatten(), Y.flatten())
 
+    # Define Scaling Polynomial
+    def scalePolyNLO(xt, xQM):
+        return 1 + 0.072813*xt - 0.098492*xQM + 0.005049*xt**2 - 0.002042*xt*xQM + 0.003988*xQM**2
+
+    def scalePolyLO(xt, xQM):
+        return 1 + 0.068485*xt - 0.104991*xQM + 0.003982*xt**2 - 0.002534*xt*xQM + 0.004144*xQM**2
     
     years = args.year.split(',')
 
@@ -394,6 +408,9 @@ if __name__ == '__main__':
         mapping = load_yaml(data_path+"nano_mapping.yaml")
 
         for year in years:
+            plot_dir = base_dir + '_' + year + '/'
+            finalizePlotDir(plot_dir)
+        
             ul = str(year)[2:]
             samples[year] = get_samples(f"samples_UL{ul}.yaml")
             outputs[year] = get_merged_output(
@@ -426,6 +443,13 @@ if __name__ == '__main__':
 
         sm_cards[(x,y)] = {}
         bsm_cards[(x,y)] = {}
+        
+        if args.scaling == 'LO':
+            bsm_scales = {'TTZ': scalePolyLO(x,y)}
+        elif args.scaling == 'NLO':
+            bsm_scales = {'TTZ': scalePolyNLO(x,y)}
+        else:
+            bsm_scales = {'TTZ': 1}
 
         for year in years:
             ul = str(year)[2:]
@@ -440,7 +464,7 @@ if __name__ == '__main__':
             for region, axis in regions:
 
                 if args.overwrite:
-                    cards_to_write.append((output, year, region, axis, x, y, './', True))
+                    cards_to_write.append((output, year, region, axis, x, y, './', True, bsm_scales))
                 #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
                 #                               plot_dir='./',
                 #                               systematics=True,
@@ -495,13 +519,7 @@ if __name__ == '__main__':
             results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
     if fit and len(xr)>4:
-        z = []
-        for x, y in results:
-            point = [x, y]
-            z.append(results[(x,y)])
-
-
-        Z = np.array(z)
+        Z = np.array(list(results.values()))
         Z = np.reshape(Z, X.shape)
 
         fig, ax, = plt.subplots(1,1,figsize=(10,10))
@@ -529,8 +547,8 @@ if __name__ == '__main__':
 
         plt.show()
 
-        fig.savefig('./scan_test_bit_v3.png')
-        fig.savefig('./scan_test_bit_v3.pdf')
+        fig.savefig(plot_dir+'scan_test_bit_v3.png')
+        fig.savefig(plot_dir+'scan_test_bit_v3.pdf')
 
         out_path = os.path.expandvars(cfg['caches']['base'])
         if bit:
@@ -540,6 +558,28 @@ if __name__ == '__main__':
 
         with open(out_path, 'wb') as f:
             pickle.dump(results, f)
+
+
+        # also do 1D plots
+
+        fig, ax = plt.subplots()
+        hep.cms.label(
+                "Work in progress",
+                data=True,
+                #year=2018,
+                lumi=60,
+                loc=0,
+                ax=ax,
+               )
+        midpoint = int(len(xr)/2)
+        plt.plot(xr, Z[midpoint,:], label=r'cpt', c='green')
+        plt.plot(yr, Z[:,midpoint], label=r'cpqm', c='darkviolet')
+        plt.legend()
+        plt.show()
+
+        fig.savefig(plot_dir+'1D_scaling_test.png')
+        fig.savefig(plot_dir+'1D_scaling_test.pdf')
+
 
 
     # NOTE re-init dataCard here just so that we always clean up the right dir...
