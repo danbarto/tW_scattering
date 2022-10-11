@@ -110,9 +110,9 @@ if __name__ == '__main__':
     else:
         base_dir = '/home/users/sjeon/public_html/tW_scattering/'
     if args.scaling == 'noscaling':
-        plot_dir = base_dir+'multidim_fits'
+        base_dir = base_dir+'multidim_fits'
     else:
-        plot_dir = base_dir+'multidim_fits_scaled'
+        base_dir = base_dir+'multidim_fits_scaled'
 
     # FIXME placeholder systematics....
     systematics= [
@@ -166,8 +166,8 @@ if __name__ == '__main__':
             outputs = {}
 
             for year in years:
-                plot_dir = plot_dir + '_' + year + '/'
-                finalizePlotDir(plot_dir)
+                plot_dir = base_dir + '_' + year + '/'
+                finalizePlotDir(base_dir)
                 outputs[year] = get_merged_output(
                     'SS_analysis',
                     year,
