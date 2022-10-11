@@ -167,7 +167,7 @@ if __name__ == '__main__':
 
             for year in years:
                 plot_dir = base_dir + '_' + year + '/'
-                finalizePlotDir(base_dir)
+                finalizePlotDir(plot_dir)
                 outputs[year] = get_merged_output(
                     'SS_analysis',
                     year,
