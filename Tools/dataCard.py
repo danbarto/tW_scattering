@@ -55,6 +55,11 @@ class dataCard:
         self.muted[name]=False
         self.processes[name] = ["signal"]+processes
 
+    def checkUncertaintyExists(self, name):
+        if self.uncertainties.count(name):
+            return True
+        return False
+
     def addUncertainty(self, name, t, n=0):
         assert len(name)<self.maxUncNameWidth,  "That's too long: %s. Max. length is %i"%(name, self.maxUncNameWidth)
         if self.uncertainties.count(name):
