@@ -408,9 +408,6 @@ if __name__ == '__main__':
         mapping = load_yaml(data_path+"nano_mapping.yaml")
 
         for year in years:
-            plot_dir = base_dir + '_' + year + '/'
-            finalizePlotDir(plot_dir)
-        
             ul = str(year)[2:]
             samples[year] = get_samples(f"samples_UL{ul}.yaml")
             outputs[year] = get_merged_output(
@@ -452,6 +449,9 @@ if __name__ == '__main__':
             bsm_scales = {'TTZ': 1}
 
         for year in years:
+            plot_dir = base_dir + '_' + year + '/'
+            finalizePlotDir(plot_dir)
+
             ul = str(year)[2:]
             if year == '2016APV':
                 lumi = cfg['lumi'][year]
@@ -464,7 +464,7 @@ if __name__ == '__main__':
             for region, axis in regions:
 
                 if args.overwrite:
-                    cards_to_write.append((output, year, region, axis, x, y, './', True, bsm_scales))
+                    cards_to_write.append((output, year, region, axis, x, y, plot_dir, True, bsm_scales))
                 #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
                 #                               plot_dir='./',
                 #                               systematics=True,
@@ -547,8 +547,8 @@ if __name__ == '__main__':
 
         plt.show()
 
-        fig.savefig(plot_dir+'scan_test_bit_v3.png')
-        fig.savefig(plot_dir+'scan_test_bit_v3.pdf')
+        fig.savefig(plot_dir+'scan_test_bit.png')
+        fig.savefig(plot_dir+'scan_test_bit.pdf')
 
         out_path = os.path.expandvars(cfg['caches']['base'])
         if bit:
