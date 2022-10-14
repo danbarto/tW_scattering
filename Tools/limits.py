@@ -5,6 +5,7 @@ import uproot
 import numpy as np
 from Tools.dataCard import *
 from Tools.helpers import make_bh
+import boost_histogram as bh
 
 def get_norms(dataset, samples, mapping, name='pdf', weight='LHEPdfWeight'):
     '''
@@ -370,19 +371,25 @@ def makeCardFromHist(
         edges = axis.edges(),
     )
 
+    fout = uproot.recreate(shape_file)
+
     # Replace signal histogram with BSM histogram, if we have a histogram
     if bsm_hist:
-        h_tmp_bsm['signal'] = bsm_hist.sum('dataset')
+        if isinstance(bsm_hist, bh.Histogram):
+            h_tmp_bsm['signal'] = bsm_hist
+            fout['signal'] = h_tmp_bsm['signal']
+        else:
+            h_tmp_bsm['signal'] = bsm_hist.sum('dataset')
+            fout['signal'] = h_tmp_bsm['signal'].to_hist()
     else:
         h_tmp_bsm['signal'] = h_tmp['signal']
-
-    fout = uproot.recreate(shape_file)
+        fout['signal'] = h_tmp_bsm['signal'].to_hist()
 
     # we write out the BSM histograms!
     for p in processes:
         fout[p] = h_tmp_bsm[p].to_hist()
 
-    fout['signal'] = h_tmp_bsm['signal'].to_hist()
+    #fout['signal'] = h_tmp_bsm['signal'].to_hist()
     fout['data_obs'] = pdata_hist  # this should work directly
 
     # Get the total _expected_ yields to write into a data card

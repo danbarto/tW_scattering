@@ -152,28 +152,28 @@ inputs_binning = {
         'n_fwd': "4,0.5,4.5",
         'n_b': "5,0.5,5.5",
         'n_tau': "3,-0.5,2.5",
-        'st': "20,200,1200",
-        'lt': "20,200,1200",
-        'met': "20,200,1200",
-        'mjj_max': "20,200,1200",
-        'delta_eta_jj': "10,0,5",
-        'lead_lep_pt': "20,200,1200",
-        'lead_lep_eta': "20,200,1200",
-        'sublead_lep_pt': "20,200,1200",
-        'sublead_lep_eta': "20,200,1200",
-        'dilepton_mass': "20,200,1200",
-        'dilepton_pt': "20,200,1200",
-        'fwd_jet_pt': "20,200,1200",
-        'fwd_jet_p': "20,200,1200",
-        'fwd_jet_eta': "20,200,1200",
-        'lead_jet_pt': "20,200,1200",
-        'sublead_jet_pt': "20,200,1200",
-        'lead_jet_eta': "20,200,1200",
-        'sublead_jet_eta': "20,200,1200",
-        'lead_btag_pt': "20,200,1200",
-        'sublead_btag_pt': "20,200,1200",
-        'lead_btag_eta': "20,200,1200",
-        'sublead_btag_eta': "10,-5,5",
+        'st': "20,200,2000",
+        'lt': "20,100,700",
+        'met': "20,0,400",
+        'mjj_max': "20,0,2000",
+        'delta_eta_jj': "10,0,8",
+        'lead_lep_pt': "20,0,500",
+        'lead_lep_eta': "10,0,2.5",
+        'sublead_lep_pt': "20,0,200",
+        'sublead_lep_eta': "10,0,2.5",
+        'dilepton_mass': "20,0,800",
+        'dilepton_pt': "20,0,500",
+        'fwd_jet_pt': "20,0,800",
+        'fwd_jet_p': "20,0,2000",
+        'fwd_jet_eta': "20,0,5",
+        'lead_jet_pt': "20,0,800",
+        'sublead_jet_pt': "20,0,400",
+        'lead_jet_eta': "20,0,5",
+        'sublead_jet_eta': "20,0,5",
+        'lead_btag_pt': "20,0,600",
+        'sublead_btag_pt': "20,0,400",
+        'lead_btag_eta': "10,0,2.5",
+        'sublead_btag_eta': "10,0,2.5",
         'min_bl_dR': "10,0,10",
         'min_mt_lep_met': "20,0,250",
 }
@@ -271,6 +271,7 @@ if __name__ == '__main__':
     df_np  = df_in[((df_in['AR']==1) & (df_in['label']==4) &(df_in['n_fwd']>=1))]
     df_bkg = df_in[((df_in['SS']==1)&(df_in['n_fwd']>=1))]
 
+    # NOTE this is new and slightly changes the results of BITs versions < 41
     for var in variables:
         for df in [df_signal, df_np, df_bkg]:
             df[var] = abs(df[var])
@@ -301,7 +302,7 @@ if __name__ == '__main__':
 
     np_test = df_np
 
-    train = pd.concat([sig_train, bkg_train])
+    train = pd.concat([sig_train, bkg_train, df_np])
     print (len(train))
 
     ## Plotting the input coefficients ##
@@ -500,12 +501,14 @@ if __name__ == '__main__':
         )
 
         ax.set_yscale('log')
+        ax.set_ylim(0.0005,2)
         ax.legend()
 
         ax.set_xlabel(x_labels[var])
         ax.set_ylabel(r'a.u.')
 
         fig.savefig(f"{plot_dir}/input_{var}.png")
+        fig.savefig(f"{plot_dir}/input_{var}.pdf")
 
 
 
