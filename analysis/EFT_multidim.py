@@ -10,6 +10,8 @@ import os
 import re
 import time
 import pickle
+import json
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -336,14 +338,20 @@ if __name__ == '__main__':
 
 
     cfg = loadConfig()
+
+    # set directories to save to
     if not args.uaf:
         base_dir = './plots/'
     else:
         base_dir = '/home/users/sjeon/public_html/tW_scattering/'
+    dir_name = 'multidim_fits'
     if args.scaling == 'noscaling':
-        base_dir = base_dir+'multidim_fits'
+        base_dir = base_dir+dir_name
     else:
-        base_dir = base_dir+'multidim_fits_scaled'
+        base_dir = base_dir+dir_name+'_scaled'
+
+    dump_dir = './results/' # where to save json files
+    finalizePlotDir(dump_dir)
 
     # NOTE placeholder systematics if run without --systematics
     mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
@@ -381,8 +389,8 @@ if __name__ == '__main__':
 
     # Define a scan
     if args.run_scan:
-        xr = np.arange(-7,8,1)
-        yr = np.arange(-7,8,1)
+        xr = np.arange(-6,7,2)
+        yr = np.arange(-6,7,2)
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
@@ -550,14 +558,20 @@ if __name__ == '__main__':
         fig.savefig(plot_dir+'scan_test_bit.png')
         fig.savefig(plot_dir+'scan_test_bit.pdf')
 
-        out_path = os.path.expandvars(cfg['caches']['base'])
-        if bit:
-            out_path += 'results_bit.pkl'
-        else:
-            out_path += 'results_lt.pkl'
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        with open(out_path, 'wb') as f:
-            pickle.dump(results, f)
+        if bit:
+            out_file = f'results_{year}_bit_{timestamp}.json'
+        else:
+            out_file = f'results_{year}_lt_{timestamp}.json'
+
+        results_dump = {}
+
+        for x,y in results:
+            results_dump[f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
+
+        with open(dump_dir + out_file, 'w') as f:
+            json.dump(results_dump, f)
 
 
         # also do 1D plots
@@ -587,72 +601,7 @@ if __name__ == '__main__':
     card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     card.cleanUp()
 
-    if comparison:
-        # NOTE this loads results and draws a comparison plot.
-        # kept for legacy, might be broken by now
-        out_path = os.path.expandvars(cfg['caches']['base'])
-        bit_path = out_path + 'results_bit.pkl'
-        lt_path = out_path + 'results_lt.pkl'
-
-        with open(bit_path, 'rb') as f:
-            results_bit = pickle.load(f)
-        with open(lt_path, 'rb') as f:
-            results_lt = pickle.load(f)
-
-        z_bit = []
-        z_lt = []
-        for x, y in results_bit:
-            point = [x, y]
-            z_bit.append(results_bit[(x,y)])
-            z_lt.append(results_lt[(x,y)])
-
-
-        Z_bit = np.array(z_bit)
-        Z_bit = np.reshape(Z_bit, X.shape)
-
-        Z_lt = np.array(z_lt)
-        Z_lt = np.reshape(Z_lt, X.shape)
-
-        fig, ax, = plt.subplots(1,1,figsize=(10,10))
-        hep.cms.label(
-            "Work in progress",
-            data=True,
-            #year=2018,
-            lumi=60,
-            loc=0,
-            ax=ax,
-           )
-
-        ax.set_ylim(-8.1, 8.1)
-        ax.set_xlim(-8.1, 8.1)
-
-        CS_bit = ax.contour(X, Y, Z_bit, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
-                     linestyles='dashed',linewidths=(4,))
-
-        CS_lt = ax.contour(X, Y, Z_lt, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
-                     linestyles='solid',linewidths=(4,))
-
-        fmt_bit = {}
-        strs_bit = ['BIT, 68%', 'BIT, 95%']
-        for l, s in zip(CS_bit.levels, strs_bit):
-            fmt_bit[l] = s
-
-        fmt_lt = {}
-        strs_lt = ['LT, 68%', 'LT, 95%']
-        for l, s in zip(CS_lt.levels, strs_lt):
-            fmt_lt[l] = s
-
-
-        # Label every other level using strings
-        ax.clabel(CS_bit, CS_bit.levels, inline=True, fmt=fmt_bit, fontsize=10)
-        ax.clabel(CS_lt, CS_lt.levels, inline=True, fmt=fmt_lt, fontsize=10)
-
-        plt.show()
-
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.png')
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.pdf')
-
-    elif False:
+    if False:
         # NOTE this does something completely unrelated and should be retired...
 
         rx = np.arange(-7,8,1)
