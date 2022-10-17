@@ -11,6 +11,7 @@ import glob
 import os
 import mplhep as hep
 plt.style.use(hep.style.CMS)
+from plots.helpers import finalizePlotDir
 
 if __name__ == '__main__':
 
@@ -22,6 +23,9 @@ if __name__ == '__main__':
     argParser.add_argument('--files', action='store', nargs=2, help="Specify files to plot")
     args = argParser.parse_args()
 
+    # dir to safe plot to
+    plot_dir = '/home/users/sjeon/public_html/tW_scattering/'
+    finalizePlotDir(plot_dir)
 
     # load data
     json_data = []
@@ -54,8 +58,6 @@ if __name__ == '__main__':
         N = int(np.sqrt(len(results[f]['X'])))
         for axis in ['X','Y','Z']:
             results[f][axis] = np.reshape(results[f][axis], (N,N)).tolist()
-
-    print(results)
 
     fig, ax, = plt.subplots(1,1,figsize=(10,10))
     hep.cms.label(
@@ -94,5 +96,5 @@ if __name__ == '__main__':
 
     plt.show()
 
-    fig.savefig('/home/users/sjeon/public_html/tW_scattering/scan_comparison.png')
-    fig.savefig('/home/users/sjeon/public_html/tW_scattering/scan_comparison.pdf')
+    fig.savefig(plot_dir+'scan_comparison.png')
+    fig.savefig(plot_dir+'scan_comparison.pdf')
