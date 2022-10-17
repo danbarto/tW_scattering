@@ -88,6 +88,8 @@ def write_card(output, year, region, axis, cpt, cpqm,
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
 
+    ul = str(year)[2:]
+
     print ("Filling background histogram")
     backgrounds = {
         'signal':    output[histo_name][('topW_lep', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
@@ -316,7 +318,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
-    argParser.add_argument('--scaling', action='store', default='noscaling', choices=['noscaling','LO','NLO'], help="run with scaling : LO or NLO?")
+    argParser.add_argument('--scaling', action='store', choices=['LO','NLO'], help="run with scaling : LO or NLO?")
 
     args = argParser.parse_args()
 
@@ -345,7 +347,7 @@ if __name__ == '__main__':
     else:
         base_dir = '/home/users/sjeon/public_html/tW_scattering/'
     dir_name = 'multidim_fits'
-    if args.scaling == 'noscaling':
+    if not args.scaling:
         base_dir = base_dir+dir_name
     else:
         base_dir = base_dir+dir_name+'_scaled'
@@ -389,8 +391,8 @@ if __name__ == '__main__':
 
     # Define a scan
     if args.run_scan:
-        xr = np.arange(-6,7,2)
-        yr = np.arange(-6,7,2)
+        xr = np.arange(-7,8,1)
+        yr = np.arange(-7,8,1)
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
