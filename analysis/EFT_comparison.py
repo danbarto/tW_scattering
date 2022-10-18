@@ -18,9 +18,10 @@ if __name__ == '__main__':
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
-    argParser.add_argument('--year', action='store', default='2016', help='Specify year to plot')
+    argParser.add_argument('--year', action='store', default='2016', help='Specify year to plot. Will compare BIT and LT for given year.')
     argParser.add_argument('--dir', action='store', default='./results', help='Specify directory with results')
     argParser.add_argument('--files', action='store', nargs=2, help="Specify files to plot")
+    argParser.add_argument('--legend', action='store', nargs=2, default=['BIT','LT'], help="Specify names for the legend")
     args = argParser.parse_args()
 
     # dir to safe plot to
@@ -80,20 +81,14 @@ if __name__ == '__main__':
                  levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
                  linestyles='solid',linewidths=(4,))
 
-    fmt_bit = {}
-    strs_bit = ['BIT, 68%', 'BIT, 95%']
-    for l, s in zip(CS_bit.levels, strs_bit):
-        fmt_bit[l] = s
+    h1,l1 = CS_bit.legend_elements(args.legend[0])
+    h2,l2 = CS_lt.legend_elements(args.legend[1])
 
-    fmt_lt = {}
-    strs_lt = ['LT, 68%', 'LT, 95%']
-    for l, s in zip(CS_lt.levels, strs_lt):
-        fmt_lt[l] = s
-
-    # Label every other level using strings
-    ax.clabel(CS_bit, CS_bit.levels, inline=True, fmt=fmt_bit, fontsize=10)
-    ax.clabel(CS_lt, CS_lt.levels, inline=True, fmt=fmt_lt, fontsize=10)
-
+    for l in [l1, l2]:
+        for i in range(2):
+            l[i] = l[i].replace('2.28','68\%')
+            l[i] = l[i].replace('5.99', '95\%')
+    ax.legend(h1+h2,l1+l2)
     plt.show()
 
     fig.savefig(plot_dir+'scan_comparison.png')
