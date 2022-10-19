@@ -408,9 +408,7 @@ if __name__ == '__main__':
         mapping = load_yaml(data_path+"nano_mapping.yaml")
 
         for year in years:
-            plot_dir = base_dir + '_' + year + '/'
-            finalizePlotDir(plot_dir)
-        
+
             ul = str(year)[2:]
             samples[year] = get_samples(f"samples_UL{ul}.yaml")
             outputs[year] = get_merged_output(
@@ -452,6 +450,9 @@ if __name__ == '__main__':
             bsm_scales = {'TTZ': 1}
 
         for year in years:
+            plot_dir = base_dir + '_' + year + '/'
+            finalizePlotDir(plot_dir)
+
             ul = str(year)[2:]
             if year == '2016APV':
                 lumi = cfg['lumi'][year]
