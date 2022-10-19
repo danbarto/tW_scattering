@@ -426,6 +426,7 @@ if __name__ == '__main__':
                 select_histograms = ['bit_score_incl', 'bit_score_pp', 'bit_score_mm'] if args.bit else ['LT', 'LT_SR_pp', 'LT_SR_mm'],
             )#, date='20220624')
 
+    results = {}
 
     sm_cards = {}
     bsm_cards = {}
@@ -510,97 +511,90 @@ if __name__ == '__main__':
     X, Y = np.meshgrid(xr, yr)
     scan = zip(X.flatten(), Y.flatten())
 
+    if fit:
 
-    # fit and plot fits
-    all_results = {}
-    for year in years:
-        all_results[year] = {}
-        results = all_results[year]
+        print ("Done with the pre-processing and data card making, running fits now.")
+        print (f"Using {workers} workers")
 
-        if fit:
+        all_nll = {}
+        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+            for card_name, result in zip(all_cards, executor.map(get_NLL, all_cards)):
 
-            print ("Done with the pre-processing and data card making, running fits now.")
-            print (f"Using {workers} workers")
+                #print (val, result)
+                all_nll[card_name.split('/')[-1].strip('.txt')] = result
 
-            all_nll = {}
-            with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-                for card_name, result in zip(all_cards, executor.map(get_NLL, all_cards)):
+        for x,y in scan:
+            plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
+            print (plot_name_short)
+            results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
-                    #print (val, result)
-                    all_nll[card_name.split('/')[-1].strip('.txt')] = result
+    if fit and len(xr)>4:
+        Z = np.array(list(results.values()))
+        Z = np.reshape(Z, X.shape)
 
-            for x,y in scan:
-                plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
-                print (plot_name_short)
-                results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+        fig, ax, = plt.subplots(1,1,figsize=(10,10))
+        hep.cms.label(
+            "Work in progress",
+            data=True,
+            #year=2018,
+            lumi=60,
+            loc=0,
+            ax=ax,
+            )
 
-        if fit and len(xr)>4:
-            Z = np.array(list(results.values()))
-            Z = np.reshape(Z, X.shape)
+        ax.set_ylim(-8.1, 8.1)
+        ax.set_xlim(-8.1, 8.1)
 
-            fig, ax, = plt.subplots(1,1,figsize=(10,10))
-            hep.cms.label(
+        CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
+                        linestyles=('-',),linewidths=(4,))
+        fmt = {}
+        strs = ['68%', '95%']
+        for l, s in zip(CS.levels, strs):
+            fmt[l] = s
+
+        # Label every other level using strings
+        ax.clabel(CS, CS.levels, inline=True, fmt=fmt, fontsize=10)
+
+        plt.show()
+
+        fig.savefig(plot_dir+'scan_test_bit.png')
+        fig.savefig(plot_dir+'scan_test_bit.pdf')
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        if bit:
+            out_file = f'results_{year}_bit_{timestamp}.json'
+        else:
+            out_file = f'results_{year}_lt_{timestamp}.json'
+
+        results_dump = {}
+
+        for x,y in results:
+            results_dump[f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
+
+        with open(dump_dir + out_file, 'w') as f:
+            json.dump(results_dump, f)
+
+
+        # also do 1D plots
+
+        fig, ax = plt.subplots()
+        hep.cms.label(
                 "Work in progress",
                 data=True,
                 #year=2018,
                 lumi=60,
                 loc=0,
                 ax=ax,
-                )
+               )
+        midpoint = int(len(xr)/2)
+        plt.plot(xr, Z[midpoint,:], label=r'cpt', c='green')
+        plt.plot(yr, Z[:,midpoint], label=r'cpqm', c='darkviolet')
+        plt.legend()
+        plt.show()
 
-            ax.set_ylim(-8.1, 8.1)
-            ax.set_xlim(-8.1, 8.1)
-
-            CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
-                            linestyles=('-',),linewidths=(4,))
-            fmt = {}
-            strs = ['68%', '95%']
-            for l, s in zip(CS.levels, strs):
-                fmt[l] = s
-
-            # Label every other level using strings
-            ax.clabel(CS, CS.levels, inline=True, fmt=fmt, fontsize=10)
-
-            plt.show()
-
-            fig.savefig(plot_dir+'scan_test_bit.png')
-            fig.savefig(plot_dir+'scan_test_bit.pdf')
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-            if bit:
-                out_file = f'results_{year}_bit_{timestamp}.json'
-            else:
-                out_file = f'results_{year}_lt_{timestamp}.json'
-
-            results_dump = {}
-
-            for x,y in results:
-                results_dump[f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
-
-            with open(dump_dir + out_file, 'w') as f:
-                json.dump(results_dump, f)
-
-
-            # also do 1D plots
-
-            fig, ax = plt.subplots()
-            hep.cms.label(
-                    "Work in progress",
-                    data=True,
-                    #year=2018,
-                    lumi=60,
-                    loc=0,
-                    ax=ax,
-                   )
-            midpoint = int(len(xr)/2)
-            plt.plot(xr, Z[midpoint,:], label=r'cpt', c='green')
-            plt.plot(yr, Z[:,midpoint], label=r'cpqm', c='darkviolet')
-            plt.legend()
-            plt.show()
-
-            fig.savefig(plot_dir+'1D_scaling_test.png')
-            fig.savefig(plot_dir+'1D_scaling_test.pdf')
+        fig.savefig(plot_dir+'1D_scaling_test.png')
+        fig.savefig(plot_dir+'1D_scaling_test.pdf')
 
 
 
