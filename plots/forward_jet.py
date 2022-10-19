@@ -42,18 +42,20 @@ if __name__ == '__main__':
     year        = args.year
     cfg         = loadConfig()
 
-    #year = int(args.year)
-    era = ''
-    ul = f"UL{str(year)[2:]}{era}"
-    #cfg = loadConfig()
+    ##year = int(args.year)
+    #era = ''
+    #ul = f"UL{str(year)[2:]}{era}"
+    ##cfg = loadConfig()
 
-    samples = get_samples(f"samples_{ul}.yaml")
-    mapping = load_yaml(data_path+"nano_mapping.yaml")
+    #samples = get_samples(f"samples_{ul}.yaml")
+    #mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    renorm   = {}
+    #renorm   = {}
 
     if year == '2018':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
+    elif year == '2019':
+        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron', 'EGamma']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
     order = ['topW_lep', 'diboson', 'rare', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
@@ -64,10 +66,21 @@ if __name__ == '__main__':
         lumi_year = int(year)
     except:
         lumi_year = year
-    lumi = cfg['lumi'][lumi_year]
+    if year == '2019':
+        lumi = sum([cfg['lumi'][y] for y in [2016, '2016APV', 2017, 2018]])
+    else:
+        lumi = cfg['lumi'][lumi_year]
 
     postfix = '_DY' if args.DY else None
-    output = get_merged_output("OS_analysis", year=year, postfix=postfix)
+
+    if year == '2019':
+        outputs = []
+        for y in ['2016', '2016APV', '2017', '2018']:
+            outputs.append(get_merged_output("OS_analysis", year=y, postfix=postfix))
+        output = accumulate(outputs)
+        del outputs
+    else:
+        output = get_merged_output("OS_analysis", year=year, postfix=postfix)
 
     #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
     plot_dir    = os.path.join("/home/daniel/TTW/tW_scattering/plots/images/", str(year), 'OS', args.version)
