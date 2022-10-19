@@ -218,6 +218,25 @@ Electron:
 
 
 Muon:
+  looseveto:
+    pt:
+      min: 10
+    eta:
+      max: 2.4
+      extra: abs
+    looseId: 1
+    dxy:
+      max: 0.05
+      extra: abs
+    dz:
+      max: 0.05
+      extra: abs
+    sip3d:
+      max: 4
+      extra: abs
+    ptErrRel:
+      max: 0.2
+
   tight:
     pt:
       min: 15

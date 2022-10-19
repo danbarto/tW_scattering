@@ -159,15 +159,15 @@ inputs_binning = {
         'delta_eta_jj': "10,0,8",
         'lead_lep_pt': "20,0,500",
         'lead_lep_eta': "10,0,2.5",
-        'sublead_lep_pt': "20,0,300",
+        'sublead_lep_pt': "20,0,200",
         'sublead_lep_eta': "10,0,2.5",
         'dilepton_mass': "20,0,800",
-        'dilepton_pt': "20,100,600",
+        'dilepton_pt': "20,0,500",
         'fwd_jet_pt': "20,0,800",
         'fwd_jet_p': "20,0,2000",
         'fwd_jet_eta': "20,0,5",
-        'lead_jet_pt': "20,0,1000",
-        'sublead_jet_pt': "20,0,600",
+        'lead_jet_pt': "20,0,800",
+        'sublead_jet_pt': "20,0,400",
         'lead_jet_eta': "20,0,5",
         'sublead_jet_eta': "20,0,5",
         'lead_btag_pt': "20,0,600",
@@ -271,6 +271,7 @@ if __name__ == '__main__':
     df_np  = df_in[((df_in['AR']==1) & (df_in['label']==4) &(df_in['n_fwd']>=1))]
     df_bkg = df_in[((df_in['SS']==1)&(df_in['n_fwd']>=1))]
 
+    # NOTE this is new and slightly changes the results of BITs versions < 41
     for var in variables:
         for df in [df_signal, df_np, df_bkg]:
             df[var] = abs(df[var])
@@ -301,7 +302,7 @@ if __name__ == '__main__':
 
     np_test = df_np
 
-    train = pd.concat([sig_train, bkg_train])
+    train = pd.concat([sig_train, bkg_train, df_np])
     print (len(train))
 
     ## Plotting the input coefficients ##
@@ -500,12 +501,14 @@ if __name__ == '__main__':
         )
 
         ax.set_yscale('log')
+        ax.set_ylim(0.0005,2)
         ax.legend()
 
         ax.set_xlabel(x_labels[var])
         ax.set_ylabel(r'a.u.')
 
         fig.savefig(f"{plot_dir}/input_{var}.png")
+        fig.savefig(f"{plot_dir}/input_{var}.pdf")
 
 
 
