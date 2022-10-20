@@ -345,13 +345,8 @@ if __name__ == '__main__':
     if not args.uaf:
         base_dir = './plots/'
     else:
-        base_dir = '/home/users/sjeon/public_html/tW_scattering/'
-    dir_name = 'multidim_fits'
-    if not args.scaling:
-        base_dir = base_dir+dir_name
-    else:
-        base_dir = base_dir+dir_name+'_scaled'
-
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/'
+    finalizePlotDir(base_dir)
     dump_dir = './results/' # where to save json files
     finalizePlotDir(dump_dir)
 
@@ -459,7 +454,8 @@ if __name__ == '__main__':
             bsm_scales = {'TTZ': 1}
 
         for year in years:
-            plot_dir = base_dir + '_' + year + '/'
+            suffix = "_scaled" if args.scaling else ""
+            plot_dir = base_dir + year + suffix + '/'
             finalizePlotDir(plot_dir)
 
             ul = str(year)[2:]
@@ -557,20 +553,23 @@ if __name__ == '__main__':
 
         plt.show()
 
-        fig.savefig(plot_dir+'scan_test_bit.png')
-        fig.savefig(plot_dir+'scan_test_bit.pdf')
+        fig.savefig(base_dir+'scan_test_bit.png')
+        fig.savefig(base_dir+'scan_test_bit.pdf')
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         if bit:
-            out_file = f'results_{year}_bit_{timestamp}.json'
+            out_file = f'results_bit_{timestamp}.json'
         else:
-            out_file = f'results_{year}_lt_{timestamp}.json'
+            out_file = f'results_lt_{timestamp}.json'
 
         results_dump = {}
+        results_dump['data'] = {}
 
         for x,y in results:
-            results_dump[f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
+            results_dump['data'][f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
+
+        results_dump['years'] = years
 
         with open(dump_dir + out_file, 'w') as f:
             json.dump(results_dump, f)
@@ -593,8 +592,8 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
-        fig.savefig(plot_dir+'1D_scaling_test.png')
-        fig.savefig(plot_dir+'1D_scaling_test.pdf')
+        fig.savefig(base_dir+'1D_scaling_test.png')
+        fig.savefig(base_dir+'1D_scaling_test.pdf')
 
 
 
@@ -648,8 +647,8 @@ if __name__ == '__main__':
 
         fig.colorbar(cax)
 
-        fig.savefig(f'{plot_dir}/inclusive_scaling.png')
-        fig.savefig(f'{plot_dir}/inclusive_scaling.pdf')
+        fig.savefig(f'{base_dir}/inclusive_scaling.png')
+        fig.savefig(f'{base_dir}/inclusive_scaling.pdf')
 
         fig, ax = plt.subplots()
 
@@ -669,5 +668,5 @@ if __name__ == '__main__':
 
         fig.colorbar(cax)
 
-        fig.savefig(f'{plot_dir}/high_E_scaling.png')
-        fig.savefig(f'{plot_dir}/high_E_scaling.pdf')
+        fig.savefig(f'{base_dir}/high_E_scaling.png')
+        fig.savefig(f'{base_dir}/high_E_scaling.pdf')

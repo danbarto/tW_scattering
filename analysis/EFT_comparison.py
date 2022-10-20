@@ -18,14 +18,17 @@ if __name__ == '__main__':
     import argparse
 
     argParser = argparse.ArgumentParser(description = "Argument parser")
-    argParser.add_argument('--year', action='store', default='2016', help='Specify year to plot. Will compare BIT and LT for given year.')
     argParser.add_argument('--dir', action='store', default='./results', help='Specify directory with results')
     argParser.add_argument('--files', action='store', nargs=2, help="Specify files to plot")
     argParser.add_argument('--legend', action='store', nargs=2, default=['BIT','LT'], help="Specify names for the legend")
+    argParser.add_argument('--uaf', action='store_true', default=False)
     args = argParser.parse_args()
 
     # dir to safe plot to
-    plot_dir = '/home/users/sjeon/public_html/tW_scattering/'
+    if args.uaf:
+        plot_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/'
+    else:
+        plot_dir = './plots/'
     finalizePlotDir(plot_dir)
 
     # load data
@@ -38,7 +41,7 @@ if __name__ == '__main__':
     else:
         method = ['bit', 'lt']
         for i in range(2):
-            list_of_files = glob.glob(f'{args.dir}/results_{args.year}_{method[i]}_*')
+            list_of_files = glob.glob(f'{args.dir}/results_{method[i]}_*')
             if not list_of_files: # if list is empty
                 raise Exception('No files found! Check your arguments.')
             latest_file = max(list_of_files, key=os.path.getctime)
@@ -51,11 +54,11 @@ if __name__ == '__main__':
     results[0] = {'X':[], 'Y':[], 'Z':[]}
     results[1] = {'X':[], 'Y':[], 'Z':[]}
     for f in range(2):
-        for point in json_data[f]:
+        for point in json_data[f]['data']:
             parsed = point.split('_')
             results[f]['X'].append(parsed[1])
             results[f]['Y'].append(parsed[3])
-            results[f]['Z'].append(json_data[f][point])
+            results[f]['Z'].append(json_data[f]['data'][point])
         N = int(np.sqrt(len(results[f]['X'])))
         for axis in ['X','Y','Z']:
             results[f][axis] = np.reshape(results[f][axis], (N,N)).tolist()
