@@ -246,7 +246,16 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     weight.add("btag", self.btagSF.Method1a(btag, light_central))
 
                 # lepton SFs
-                weight.add("lepton", self.leptonSF.get(electron, muon))
+                if var['name'] == 'ele_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
+                elif var['name'] == 'ele_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
+                elif var['name'] == 'mu_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
+                elif var['name'] == 'mu_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
+                else:
+                    weight.add("lepton", self.leptonSF.get(electron, muon))
 
                 # trigger SFs
                 weight.add("trigger", self.triggerSF.get(electron, muon))
@@ -450,7 +459,10 @@ if __name__ == '__main__':
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
+    argParser.add_argument('--workers', action='store', default=10, help="How many threads for local running?")
     argParser.add_argument('--sample', action='store', default='all', )
+    argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
+    argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -508,7 +520,16 @@ if __name__ == '__main__':
         from Tools.nano_mapping import make_fileset
         from default_accumulators import add_processes_to_output, desired_output
 
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+        fileset = make_fileset(
+            [sample],
+            samples,
+            year=ul,
+            skim=args.skim,
+            small=small,
+            n_max=1,
+            buaf=args.buaf,
+            merged=True,
+        )
 
         add_processes_to_output(fileset, desired_output)
 
@@ -522,12 +543,16 @@ if __name__ == '__main__':
             {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
            ]
 
         if args.central: variations = variations[:1]
 
         if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=10)
+            exe = processor.FuturesExecutor(workers=int(args.workers))
 
         elif iterative:
             exe = processor.IterativeExecutor()

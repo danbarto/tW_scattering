@@ -19,6 +19,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist, util
+from coffea.processor import accumulate
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 
@@ -85,7 +86,7 @@ class SS_analysis(processor.ProcessorABC):
         self.pu = pileup(year=year, UL=True, era=era)
 
         self.nonpromptWeight = NonpromptWeight(year=year)  # NOTE no era split. Does not need it!
-        self.chargeflipWeight = charge_flip(year=year)  # NOTE no era split
+        self.chargeflipWeight = charge_flip(year=year, era=era)
 
         self.hyperpoly = hyperpoly
         self.points = points
@@ -365,7 +366,7 @@ class SS_analysis(processor.ProcessorABC):
 
                 weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
                 weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD')
-                weight_cf_mc = self.chargeflipWeight.flip_weight(el_t_p)
+                weight_cf_mc = self.chargeflipWeight.get(el_t_p)
 
             else:
                 BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
@@ -531,7 +532,7 @@ class SS_analysis(processor.ProcessorABC):
 
             weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
             weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
-            weight_cf_data = self.chargeflipWeight.flip_weight(el_t)
+            weight_cf_data = self.chargeflipWeight.get(el_t)
 
             #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
@@ -1304,6 +1305,7 @@ class SS_analysis(processor.ProcessorABC):
 if __name__ == '__main__':
 
     from processor.default_accumulators import *
+    from Tools.reweighting import get_coordinates_and_ref, get_coordinates
 
     import argparse
 
@@ -1345,6 +1347,67 @@ if __name__ == '__main__':
 
     # load the config
     cfg = loadConfig()
+
+    variations = [
+        {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+        {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
+        {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
+        {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
+        {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
+        {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
+        ]
+
+    if args.central: variations = variations[:1]
+
+    # inclusive EFT weights
+    eft_weights = [\
+        'cpt_0p_cpqm_0p_nlo',
+        'cpt_0p_cpqm_3p_nlo',
+        'cpt_0p_cpqm_6p_nlo',
+        'cpt_3p_cpqm_0p_nlo',
+        'cpt_6p_cpqm_0p_nlo',
+        'cpt_3p_cpqm_3p_nlo',
+    ]
+
+    # NOTE new way of defining points.
+    if args.scan:
+        x = np.arange(-7,8,1)
+        y = np.arange(-7,8,1)
+    else:
+        x = np.array([int(args.cpt)])
+        y = np.array([int(args.cpqm)])
+
+    CPT, CPQM = np.meshgrid(x, y)
+
+    points = []
+    for cpt, cpqm in zip(CPT.flatten(), CPQM.flatten()):
+        points.append({
+            'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
+            'point': [cpt, cpqm],
+        })
+
+    if args.buaf == 'remote':
+        f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+    elif args.buaf == 'local':
+        f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+    else:
+        f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
+
+    coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
+    coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
+    ref_coordinates = [0,0]
+
+    from Tools.awkwardHyperPoly import *
+    hp = HyperPoly(2)
+    hp.initialize( coordinates, ref_coordinates )
+
 
     samples = get_samples("samples_%s.yaml"%ul)
     mapping = load_yaml(data_path+"nano_mapping.yaml")
@@ -1393,255 +1456,192 @@ if __name__ == '__main__':
             merged=True,
         )
 
-        add_processes_to_output(fileset, desired_output)
-
-        variations = [
-            {'name': 'central',     'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
-            {'name': 'jes_up',      'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
-            {'name': 'jes_down',    'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
-            {'name': 'PU_up',       'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
-            {'name': 'PU_down',     'ext': '_PUDown',           'weight': 'PUDown', 'pt_var': 'pt_nom'},
-            {'name': 'b_up',        'ext': '_bUp',              'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
-            {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
-           ]
-
-        # inclusive EFT weights
-        eft_weights = [\
-            'cpt_0p_cpqm_0p_nlo',
-            'cpt_0p_cpqm_3p_nlo',
-            'cpt_0p_cpqm_6p_nlo',
-            'cpt_3p_cpqm_0p_nlo',
-            'cpt_6p_cpqm_0p_nlo',
-            'cpt_3p_cpqm_3p_nlo',
-        ]
-
-        from Tools.reweighting import get_coordinates_and_ref, get_coordinates
-
-
-        # NOTE new way of defining points.
-        if args.scan:
-            x = np.arange(-7,8,1)
-            y = np.arange(-7,8,1)
-        else:
-            x = np.array([int(args.cpt)])
-            y = np.array([int(args.cpqm)])
-
-        CPT, CPQM = np.meshgrid(x, y)
-
-        points = []
-        for cpt, cpqm in zip(CPT.flatten(), CPQM.flatten()):
-            points.append({
-                'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
-                'point': [cpt, cpqm],
-            })
-
-        #points = [
-        #    {'name': 'cpt_3.0', 'point': [3.0, 0]},
-        #    {'name': 'cpt_6.0', 'point': [6.0, 0]},
-        #    ]
-
-        if args.buaf == 'remote':
-            f_in = 'root://redirector.t2.ucsd.edu:1095//store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
-        elif args.buaf == 'local':
-            f_in = '/media/data_hdd/daniel/ttw_samples/topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL16_postVFP_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
-        else:
-            f_in = '/ceph/cms/store/user/dspitzba/nanoAOD/ttw_samples//topW_v0.7.0_dilep/ProjectMetis_TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/merged/nanoSkim_1.root'
-
-        coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
-        coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
-        ref_coordinates = [0,0]
-
-        from Tools.awkwardHyperPoly import *
-        hp = HyperPoly(2)
-        hp.initialize( coordinates, ref_coordinates )
-
-        if args.central: variations = variations[:1]
-
-        if args.dump:
-            variables = [
-                'n_jet',
-                'n_b',
-                'n_fwd',
-                'n_tau',
-                #'n_track',
-                'st',
-                'met',
-                'mjj_max',
-                'delta_eta_jj',
-                'lead_lep_pt',
-                'lead_lep_eta',
-                'sublead_lep_pt',
-                'sublead_lep_eta',
-                'dilepton_mass',
-                'dilepton_pt',
-                'fwd_jet_pt',
-                'fwd_jet_p',
-                'fwd_jet_eta',
-                'lead_jet_pt',
-                'sublead_jet_pt',
-                'lead_jet_eta',
-                'sublead_jet_eta',
-                'lead_btag_pt',
-                'sublead_btag_pt',
-                'lead_btag_eta',
-                'sublead_btag_eta',
-                'min_bl_dR',
-                'min_mt_lep_met',
-                'weight',
-                'weight_np',
-                'weight_cf',
-                'SS',
-                'OS',
-                'AR',
-                'LL',
-                'conv',
-                'nLepFromTop',
-                'label',
-                'total_charge',
-                'event',
-            ]
-            if sample.count('topW'):
-                print ("topW sample")
-                variables += eft_weights
-
-            for dataset in mapping[ul][sample]:
-
-                desired_output.update({
-                    'dump_%s'%dataset: processor.dict_accumulator({})
-                })#processor.column_accumulator(np.zeros(shape=(0,))),
-                for var in variables:
-                    desired_output['dump_%s'%dataset].update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
-                    #'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    #'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    #})
-
-        if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=int(args.workers))
-
-        elif iterative:
-            exe = processor.IterativeExecutor()
-
-        else:
-            from Tools.helpers import get_scheduler_address
-            from dask.distributed import Client, progress
-
-            scheduler_address = get_scheduler_address()
-            c = Client(scheduler_address)
-
-            exe = processor.DaskExecutor(client=c, status=True, retries=3)
-
-        # add some histograms that we defined in the processor
-        # everything else is taken the default_accumulators.py
-        from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis, bit_axis
-        desired_output.update({
-            "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
-            "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
-            "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
-           })
-        if not args.minimal:
-            desired_output.update({
-                "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-                "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
-                "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
-                "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-                "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
-                "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-                "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
-                "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-                "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
-                "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
-                "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-                "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-                "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-                "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
-                "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
-                "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-                "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-            })
-
-
-
-        for rle in ['run', 'lumi', 'event']:
-            desired_output.update({
-                    'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-                    'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
-            })
-
-
-        
-        print ("I'm running now")
-
-        runner = processor.Runner(
-            exe,
-            #retries=3,
-            schema=NanoAODSchema,
-            chunksize=50000,
-            maxchunks=None,
-           )
-        print ("Runner properties")
-        print (runner.retries)
-        #runner.automatic_retries(3)
-        #print (runner.retries)
-
         # define the cache name
         cache_name = f'SS_analysis_{sample}_{year}{era}'
+        if not args.scan:
+            cache_name += f'cpt_{args.cpt}_cpqm_{args.cpqm}'
         # find an old existing output
         output = get_latest_output(cache_name, cfg)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        cache_name += f'_{timestamp}.coffea'
+        if small: cache_name += '_small'
+        cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
 
         if overwrite or output is None:
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            cache_name += f'_{timestamp}.coffea'
-            if small: cache_name += '_small'
-            cache = os.path.join(os.path.expandvars(cfg['caches']['base']), cache_name)
+            ## Try running all files separately
+            outputs = []
+            for f in fileset.keys():
 
-            output = runner(
-                fileset,
-                treename="Events",
-                processor_instance=SS_analysis(
-                    year=year,
-                    variations=variations,
-                    #variations=variations[:1],
-                    accumulator=desired_output,
-                    evaluate=args.evaluate,
-                    training=args.training,
-                    dump=args.dump,
-                    era=era,
-                    weights=eft_weights,
-                    reweight=reweight,
-                    points=points,
-                    hyperpoly=hp,
-                    minimal=args.minimal,
-                ),
-            )
+                fileset_tmp = {f:fileset[f]}
+                add_processes_to_output(fileset_tmp, desired_output)
 
+                if args.dump:
+                    variables = [
+                        'n_jet',
+                        'n_b',
+                        'n_fwd',
+                        'n_tau',
+                        #'n_track',
+                        'st',
+                        'met',
+                        'mjj_max',
+                        'delta_eta_jj',
+                        'lead_lep_pt',
+                        'lead_lep_eta',
+                        'sublead_lep_pt',
+                        'sublead_lep_eta',
+                        'dilepton_mass',
+                        'dilepton_pt',
+                        'fwd_jet_pt',
+                        'fwd_jet_p',
+                        'fwd_jet_eta',
+                        'lead_jet_pt',
+                        'sublead_jet_pt',
+                        'lead_jet_eta',
+                        'sublead_jet_eta',
+                        'lead_btag_pt',
+                        'sublead_btag_pt',
+                        'lead_btag_eta',
+                        'sublead_btag_eta',
+                        'min_bl_dR',
+                        'min_mt_lep_met',
+                        'weight',
+                        'weight_np',
+                        'weight_cf',
+                        'SS',
+                        'OS',
+                        'AR',
+                        'LL',
+                        'conv',
+                        'nLepFromTop',
+                        'label',
+                        'total_charge',
+                        'event',
+                    ]
+
+                    if sample.count('topW'):
+                        print ("topW sample")
+                        variables += eft_weights
+
+                    for dataset in mapping[ul][sample]:
+
+                        desired_output.update({
+                            'dump_%s'%dataset: processor.dict_accumulator({})
+                        })#processor.column_accumulator(np.zeros(shape=(0,))),
+                        for var in variables:
+                            desired_output['dump_%s'%dataset].update({var: processor.column_accumulator(np.zeros(shape=(0,)))})
+                            #'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                            #'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                            #})
+
+                if local:# and not profile:
+                    exe = processor.FuturesExecutor(workers=int(args.workers))
+
+                elif iterative:
+                    exe = processor.IterativeExecutor()
+
+                else:
+                    from Tools.helpers import get_scheduler_address
+                    from dask.distributed import Client, progress
+
+                    scheduler_address = get_scheduler_address()
+                    c = Client(scheduler_address)
+
+                    exe = processor.DaskExecutor(client=c, status=True, retries=3)
+
+                # add some histograms that we defined in the processor
+                # everything else is taken the default_accumulators.py
+                from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, one_axis, systematic_axis, eft_axis, charge_axis, pred_axis, bit_axis
+                desired_output.update({
+                    "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+                    "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+                    "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+                })
+                if not args.minimal:
+                    desired_output.update({
+                        "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                        "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
+                        "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
+                        "lead_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                        "trail_lep": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis, eta_axis, phi_axis),
+                        "lead_lep_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                        "lead_lep_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, pt_axis),
+                        "LT_SR_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                        "LT_SR_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, eft_axis, ht_axis),
+                        "node": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "node0_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node1_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node2_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node3_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node4_score_incl": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node0_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node1_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node2_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node3_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node4_score": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node0_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node0_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node0_score_transform_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node0_score_transform_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node1_score_pp": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "node1_score_mm": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, score_axis),
+                        "PS": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                        "scale": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                        "pdf": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                        "norm": hist.Hist("Counts", dataset_axis, systematic_axis, one_axis),
+                        "MET": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, phi_axis, eft_axis),
+                        "fwd_jet":            hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+                        "N_b" :               hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "N_ele" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "N_mu" :              hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "N_central" :         hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "N_jet" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                        "N_fwd" :             hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
+                    })
+
+                for rle in ['run', 'lumi', 'event']:
+                    desired_output.update({
+                            'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                            'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                            'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                    })
+
+
+
+                print ("I'm running now")
+
+                runner = processor.Runner(
+                    exe,
+                    #retries=3,
+                    schema=NanoAODSchema,
+                    chunksize=50000,
+                    maxchunks=None,
+                )
+
+
+                output = runner(
+                    fileset_tmp,
+                    treename="Events",
+                    processor_instance=SS_analysis(
+                        year=year,
+                        variations=variations,
+                        #variations=variations[:1],
+                        accumulator=desired_output,
+                        evaluate=args.evaluate,
+                        training=args.training,
+                        dump=args.dump,
+                        era=era,
+                        weights=eft_weights,
+                        reweight=reweight,
+                        points=points,
+                        hyperpoly=hp,
+                        minimal=args.minimal,
+                    ),
+                )
+
+                outputs.append(output)
+
+            output = accumulate(outputs)
             util.save(output, cache)
 
         ## output for DNN training
