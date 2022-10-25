@@ -10,6 +10,8 @@ import os
 import re
 import time
 import pickle
+import json
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -85,6 +87,8 @@ def write_card(output, year, region, axis, cpt, cpqm,
     histo_name = region
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
+
+    ul = str(year)[2:]
 
     print ("Filling background histogram")
     backgrounds = {
@@ -314,7 +318,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, type=int, help="If run_scan is used, this is the cpt value that's being evaluated")
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
-    argParser.add_argument('--scaling', action='store', default='noscaling', choices=['noscaling','LO','NLO'], help="run with scaling : LO or NLO?")
+    argParser.add_argument('--scaling', action='store', choices=['LO','NLO'], help="run with scaling : LO or NLO?")
 
     args = argParser.parse_args()
 
@@ -336,14 +340,15 @@ if __name__ == '__main__':
 
 
     cfg = loadConfig()
+
+    # set directories to save to
     if not args.uaf:
         base_dir = './plots/'
     else:
-        base_dir = '/home/users/sjeon/public_html/tW_scattering/'
-    if args.scaling == 'noscaling':
-        base_dir = base_dir+'multidim_fits'
-    else:
-        base_dir = base_dir+'multidim_fits_scaled'
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/'
+    finalizePlotDir(base_dir)
+    dump_dir = './results/' # where to save json files
+    finalizePlotDir(dump_dir)
 
     # NOTE placeholder systematics if run without --systematics
     mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
@@ -408,7 +413,6 @@ if __name__ == '__main__':
         mapping = load_yaml(data_path+"nano_mapping.yaml")
 
         for year in years:
-
             ul = str(year)[2:]
             samples[year] = get_samples(f"samples_UL{ul}.yaml")
             outputs[year] = get_merged_output(
@@ -450,7 +454,8 @@ if __name__ == '__main__':
             bsm_scales = {'TTZ': 1}
 
         for year in years:
-            plot_dir = base_dir + '_' + year + '/'
+            suffix = "_scaled" if args.scaling else ""
+            plot_dir = base_dir + year + suffix + '/'
             finalizePlotDir(plot_dir)
 
             ul = str(year)[2:]
@@ -465,7 +470,7 @@ if __name__ == '__main__':
             for region, axis in regions:
 
                 if args.overwrite:
-                    cards_to_write.append((output, year, region, axis, x, y, './', True, bsm_scales))
+                    cards_to_write.append((output, year, region, axis, x, y, plot_dir, True, bsm_scales))
                 #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
                 #                               plot_dir='./',
                 #                               systematics=True,
@@ -548,17 +553,26 @@ if __name__ == '__main__':
 
         plt.show()
 
-        fig.savefig(plot_dir+'scan_test_bit_v3.png')
-        fig.savefig(plot_dir+'scan_test_bit_v3.pdf')
+        fig.savefig(base_dir+'scan_test_bit.png')
+        fig.savefig(base_dir+'scan_test_bit.pdf')
 
-        out_path = os.path.expandvars(cfg['caches']['base'])
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
         if bit:
-            out_path += 'results_bit.pkl'
+            out_file = f'results_bit_{timestamp}.json'
         else:
-            out_path += 'results_lt.pkl'
+            out_file = f'results_lt_{timestamp}.json'
 
-        with open(out_path, 'wb') as f:
-            pickle.dump(results, f)
+        results_dump = {}
+        results_dump['data'] = {}
+
+        for x,y in results:
+            results_dump['data'][f'cpt_{x}_cpqm_{y}'] = results[(x,y)]
+
+        results_dump['years'] = years
+
+        with open(dump_dir + out_file, 'w') as f:
+            json.dump(results_dump, f)
 
 
         # also do 1D plots
@@ -578,8 +592,8 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
-        fig.savefig(plot_dir+'1D_scaling_test.png')
-        fig.savefig(plot_dir+'1D_scaling_test.pdf')
+        fig.savefig(base_dir+'1D_scaling_test.png')
+        fig.savefig(base_dir+'1D_scaling_test.pdf')
 
 
 
@@ -588,72 +602,7 @@ if __name__ == '__main__':
     card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     card.cleanUp()
 
-    if comparison:
-        # NOTE this loads results and draws a comparison plot.
-        # kept for legacy, might be broken by now
-        out_path = os.path.expandvars(cfg['caches']['base'])
-        bit_path = out_path + 'results_bit.pkl'
-        lt_path = out_path + 'results_lt.pkl'
-
-        with open(bit_path, 'rb') as f:
-            results_bit = pickle.load(f)
-        with open(lt_path, 'rb') as f:
-            results_lt = pickle.load(f)
-
-        z_bit = []
-        z_lt = []
-        for x, y in results_bit:
-            point = [x, y]
-            z_bit.append(results_bit[(x,y)])
-            z_lt.append(results_lt[(x,y)])
-
-
-        Z_bit = np.array(z_bit)
-        Z_bit = np.reshape(Z_bit, X.shape)
-
-        Z_lt = np.array(z_lt)
-        Z_lt = np.reshape(Z_lt, X.shape)
-
-        fig, ax, = plt.subplots(1,1,figsize=(10,10))
-        hep.cms.label(
-            "Work in progress",
-            data=True,
-            #year=2018,
-            lumi=60,
-            loc=0,
-            ax=ax,
-           )
-
-        ax.set_ylim(-8.1, 8.1)
-        ax.set_xlim(-8.1, 8.1)
-
-        CS_bit = ax.contour(X, Y, Z_bit, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
-                     linestyles='dashed',linewidths=(4,))
-
-        CS_lt = ax.contour(X, Y, Z_lt, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
-                     linestyles='solid',linewidths=(4,))
-
-        fmt_bit = {}
-        strs_bit = ['BIT, 68%', 'BIT, 95%']
-        for l, s in zip(CS_bit.levels, strs_bit):
-            fmt_bit[l] = s
-
-        fmt_lt = {}
-        strs_lt = ['LT, 68%', 'LT, 95%']
-        for l, s in zip(CS_lt.levels, strs_lt):
-            fmt_lt[l] = s
-
-
-        # Label every other level using strings
-        ax.clabel(CS_bit, CS_bit.levels, inline=True, fmt=fmt_bit, fontsize=10)
-        ax.clabel(CS_lt, CS_lt.levels, inline=True, fmt=fmt_lt, fontsize=10)
-
-        plt.show()
-
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.png')
-        fig.savefig('/home/users/dspitzba/public_html/tW_scattering/scan_comparison.pdf')
-
-    elif False:
+    if False:
         # NOTE this does something completely unrelated and should be retired...
 
         rx = np.arange(-7,8,1)
@@ -698,8 +647,8 @@ if __name__ == '__main__':
 
         fig.colorbar(cax)
 
-        fig.savefig(f'{plot_dir}/inclusive_scaling.png')
-        fig.savefig(f'{plot_dir}/inclusive_scaling.pdf')
+        fig.savefig(f'{base_dir}/inclusive_scaling.png')
+        fig.savefig(f'{base_dir}/inclusive_scaling.pdf')
 
         fig, ax = plt.subplots()
 
@@ -719,5 +668,5 @@ if __name__ == '__main__':
 
         fig.colorbar(cax)
 
-        fig.savefig(f'{plot_dir}/high_E_scaling.png')
-        fig.savefig(f'{plot_dir}/high_E_scaling.pdf')
+        fig.savefig(f'{base_dir}/high_E_scaling.png')
+        fig.savefig(f'{base_dir}/high_E_scaling.pdf')
