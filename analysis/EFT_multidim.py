@@ -5,7 +5,7 @@ This should run the final analyis:
 - create inputs for data card
 - run fits
 '''
-
+from __future__ import division
 import os
 import re
 import time
@@ -31,6 +31,8 @@ from Tools.dataCard import dataCard
 from Tools.HyperPoly import HyperPoly 
 from Tools.limits import regroup_and_rebin, get_systematics, add_signal_systematics
 from Tools.EFT_tools import make_scan
+
+from scipy import interpolate
 
 # Taken from the NanoAOD-tools module
 def get_points(points):
@@ -118,8 +120,8 @@ def write_card(output, year, region, axis, cpt, cpqm,
     observation = output[histo_name][(data_pattern, sm_point, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
     observation = observation.rebin(axis.name, axis)
     # unblind the first 8 bins. this is hacky.
-    unblind = observation._sumw[()][:8]
-    blind   = np.zeros_like(observation._sumw[()][8:])
+    unblind = observation._sumw[()][:0]
+    blind   = np.zeros_like(observation._sumw[()][0:])
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
@@ -520,23 +522,66 @@ if __name__ == '__main__':
             results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
 
     if fit and len(xr)>4:
+
+
+        nodes = np.array( [
+            [13, 9],
+            [12, 10],
+            [9, 10],
+            [5, 8],
+            [0, 4],
+            [-5, -3],
+            [-6, -5],
+            [-7.5, -10],
+            [-7.5, -14],
+            [-7, -16],
+            [-6, -18],
+            [-5, -19],
+            [-2.5, -20],
+            [0, -19],
+            [2, -18],
+            [1, -16],
+            [0, -14],
+            [-1, -10],
+            [0, -4],
+            [2.5, 0],
+            [5, 3],
+            [10, 6],
+            [12, 7.5],
+            [12.7, 8],
+            [13, 9],
+        ] )
+
+        ttz_x = nodes[:,0]
+        ttz_y = nodes[:,1]
+
+        tck,u     = interpolate.splprep( [ttz_x,ttz_y] ,s = 0 )
+        ttz_xnew, ttz_ynew = interpolate.splev( np.linspace( 0, 1, 100 ), tck,der = 0)
+
+
+
+        results[(2, -4)] = 3
+        results[(-3, 7)] = 13
+
         Z = np.array(list(results.values()))
         Z = np.reshape(Z, X.shape)
 
         fig, ax, = plt.subplots(1,1,figsize=(10,10))
         hep.cms.label(
-            "Work in progress",
-            data=True,
+            "WIP",
+            data=False,
             #year=2018,
-            lumi=60,
+            lumi=137,
             loc=0,
             ax=ax,
             )
 
-        ax.set_ylim(-8.1, 8.1)
-        ax.set_xlim(-8.1, 8.1)
+        ax.set_ylim(-25, 20)
+        ax.set_xlim(-15, 20)
 
-        CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['blue', 'red'], # 68/95 % CL
+        ax.set_xlabel(r'$C_{\varphi Q}^{-}/\Lambda^{2} (TeV^{-2})$')
+        ax.set_ylabel(r'$C_{\varphi t}/\Lambda^{2} (TeV^{-2})$')
+        CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['#FF595E', '#5bc0de'], # 68/95 % CL
                         linestyles=('-',),linewidths=(4,))
         fmt = {}
         strs = ['68%', '95%']
@@ -545,6 +590,16 @@ if __name__ == '__main__':
 
         # Label every other level using strings
         ax.clabel(CS, CS.levels, inline=True, fmt=fmt, fontsize=10)
+
+        ax.plot( ttz_xnew, ttz_ynew, linewidth=4, color='#525B76')
+
+        # make a manual legend
+        import matplotlib.patches as mpatches
+        patch1 = mpatches.Patch(color='#FF595E', label='68% CL expected')
+        patch2 = mpatches.Patch(color='#5bc0de', label='95% CL expected')
+        patch3 = mpatches.Patch(color='#525B76', label='95% CL observed, TOP-21-001')
+
+        ax.legend(handles=[patch1, patch2, patch3])
 
         plt.show()
 
