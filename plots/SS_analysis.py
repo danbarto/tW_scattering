@@ -7,6 +7,7 @@ except ImportError:
 from coffea import processor, hist
 import copy
 import numpy as np
+import re
 
 from Tools.config_helpers import loadConfig, make_small
 
@@ -17,9 +18,105 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-from plots.helpers import makePlot
+from plots.helpers import makePlot, make_plot_from_dict
 
-from klepto.archives import dir_archive
+from Tools.config_helpers import get_merged_output
+
+def get_histograms(output, histograms, total=False):
+    '''
+    output - e.g. output['MET'] selected histogram
+    histograms - list of histograms to get, e.g. ['TTW', 'np_est_data']
+
+    keep systematic axes and kinematic axes, integrate/project away all others
+    '''
+    wildcard = re.compile('.')
+    out = {}
+    # remove EFT axes that's not always there
+    if 'EFT' in output.axes():
+        tmp = output.integrate('EFT', 'central').copy()
+    else:
+        tmp = output.copy()
+
+    all_axes = tmp.axes()
+    for hist in histograms:
+        # find whether the histogram is in predicitions or datasets
+        for i, ax in enumerate(all_axes):
+            ax_name = ax.name
+            if hist in [x.name for x in ax.identifiers()]:
+                break
+
+        if ax_name == 'prediction':
+            out[hist] = tmp[(wildcard, hist)].sum('dataset', 'prediction')
+        elif ax_name == 'dataset':
+            out[hist] = tmp[(hist, 'central')].sum('dataset', 'prediction')
+
+    if total:
+        tmp = out[list(histograms)[0]].copy()
+        tmp.clear()
+        for hist in histograms:
+            tmp.add(out[hist])
+        return tmp
+    else:
+        return out
+
+def get_standard_plot(
+        output,
+        hist,
+        axis,
+        name,
+        log=False,
+        lumi=1,
+        blind=False,
+        overflow = 'over',
+        systematics = True,
+):
+    mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TTH', 'cf_est_data', 'np_est_data'])
+    data_options = ['DoubleMuon', 'SingleMuon', 'MuonEG', 'EGamma', 'DoubleEG', 'SingleElectron']
+    identifiers = [x.name for x in output[hist].axes()[0].identifiers()]
+    datasets = []
+    for d in data_options:
+        if d in identifiers:
+            datasets.append(d)
+
+    data = get_histograms(output[hist], datasets, total=True)
+
+    make_plot_from_dict(
+        mc, axis = axis,
+        data = data.integrate('systematic', 'central') if not blind else None,
+        save = plot_dir+sub_dir+name,
+        overflow = overflow,
+        log = log,
+        lumi = lumi,
+        systematics = systematics,
+    )
+
+def get_nonprompt_plot(output, hist, axis, name, log=False, overflow='over'):
+    mc = get_histograms(output[hist], ['np_est_mc'])
+    data = get_histograms(output[hist], ['np_obs_mc'], total=True)
+
+    make_plot_from_dict(
+        mc, axis = axis,
+        data = data.integrate('systematic', 'central'),
+        save = plot_dir+sub_dir+name,
+        overflow = overflow,
+        log = log,
+        data_label = 'Nonprompt observed',
+#        systematics = False,
+    )
+
+def get_chargeflip_plot(output, hist, axis, name, log=False, overflow='over'):
+    mc = get_histograms(output[hist], ['cf_est_mc'])
+    data = get_histograms(output[hist], ['cf_obs_mc'], total=True)
+
+    make_plot_from_dict(
+        mc, axis = axis,
+        data = data.integrate('systematic', 'central'),
+        save = plot_dir+sub_dir+name,
+        overflow = overflow,
+        log = log,
+        data_label = 'Charge flip obs',
+#        systematics = False,
+    )
 
 
 if __name__ == '__main__':
@@ -29,51 +126,52 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description = "Argument parser")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--normalize', action='store_true', default=None, help="Normalize?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--version', action='store', default='v21', help="Version of the NN training. Just changes subdir.")
+    argParser.add_argument('--sample', action='store', default=None, help="Plot single sample")
+    argParser.add_argument('--postfix', action='store', default='', help="postfix for plot directory")
     args = argParser.parse_args()
 
     small       = args.small
     verysmall   = args.verysmall
     if verysmall:
         small = True
+    TFnormalize = args.normalize
     year        = args.year
     cfg         = loadConfig()
 
-    if year == '2019':
-        # load the results
-        lumi = 35.9+41.5+60.0
-        first = True
-        for y in ['2016', '2016APV', '2017', '2018']:
-            cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'SS_analysis_%s'%y), serialized=True)
-            cache.load()
-            tmp_output = cache.get('simple_output')
-            if first:
-                output = copy.deepcopy(tmp_output)
-            else:
-                for key in tmp_output:
-                    if type(tmp_output[key]) == hist.hist_tools.Hist:
-                        try:
-                            output[key].add(tmp_output[key])
-                        except KeyError:
-                            print ("Key %s not present in all years. Skipping."%key)
-            first = False
-            del cache
-
+    if year == '2018':
+        data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
+    elif year == '2019':
+        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron', 'EGamma']
     else:
-        cacheName = 'SS_analysis_%s'%year
-        if small: cacheName += '_small'
-        cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
+        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
+    order = ['topW_lep', 'diboson', 'rare', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
 
-        cache.load()
-        output = cache.get('simple_output')
+    datasets = data + order
 
-        lumi        = cfg['lumi'][(int(year) if year != '2016APV' else year)]
+    try:
+        lumi_year = int(year)
+    except:
+        lumi_year = year
+    if year == '2019':
+        lumi = sum([cfg['lumi'][y] for y in [2016, '2016APV', 2017, 2018]])
+    else:
+        lumi = cfg['lumi'][lumi_year]
 
-    plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'SS/%s_v21/'%cfg['meta']['version'])
-    
-    NN = len(output['node0_score_incl'].values().keys())>0
-    
+    if year == '2019':
+        outputs = []
+        for y in ['2016', '2016APV', '2017', '2018']:
+            outputs.append(get_merged_output("SS_analysis", year=y))
+        output = accumulate(outputs)
+        del outputs
+    else:
+        output = get_merged_output("SS_analysis", year=year, postfix='cpt_0_cpqm_0')
+
+    #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
+    plot_dir    = os.path.join("/home/daniel/TTW/tW_scattering/plots/images/", str(year), 'SS', args.version)
+
     # defining some new axes for rebinning.
     N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
     N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
@@ -86,967 +184,178 @@ if __name__ == '__main__':
     ht_bins_red = hist.Bin('ht', r'$p_{T}\ (GeV)$', 7,100,800)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
     score_bins = hist.Bin("score",          r"N", 8, 0, 1)  # FIXME update to 8
- 
-
-    my_labels = {
-        'topW_v3': 'top-W scat.',
-        'topW_EFT_cp8': 'EFT, cp8',
-        'topW_EFT_mix': 'EFT mix',
-        'TTZ': r'$t\bar{t}Z$',
-        'TTW': r'$t\bar{t}W$',
-        'TTH': r'$t\bar{t}H$',
-        'diboson': 'VV/VVV',
-        'rare': 'rare',
-        'ttbar': r'$t\bar{t}$',
-        'XG': 'XG',  # this is bare XG
-        'conv_mc': 'conversion',
-        'np_obs_mc': 'nonprompt (MC true)',
-        'np_est_mc': 'nonprompt (MC est)',
-        'cf_obs_mc': 'charge flip (MC true)',
-        'cf_est_mc': 'charge flip (MC est)',
-        'np_est_data': 'nonprompt (est)',
-        'cf_est_data': 'charge flip (est)',
-    }
-    
-    my_colors = {
-        'topW_v3': '#FF595E',
-        'topW_EFT_cp8': '#000000',
-        'topW_EFT_mix': '#0F7173',
-        'TTZ': '#FFCA3A',
-        'TTW': '#8AC926',
-        'TTH': '#34623F',
-        'diboson': '#525B76',
-        'rare': '#EE82EE',
-        'ttbar': '#1982C4',
-        'XG': '#5bc0de',
-        'conv_mc': '#5bc0de',
-        'np_obs_mc': '#1982C4',
-        'np_est_mc': '#1982C4',
-        'np_est_data': '#1982C4',
-        'cf_obs_mc': '#0F7173',
-        'cf_est_mc': '#0F7173',
-        'cf_est_data': '#0F7173',
-    }
-
-
-    #for k in my_labels.keys():
-
-    ## DATA DRIVEN BKG ESTIMATES
-
-
-    all_processes = [ x[0] for x in output['N_ele'].values().keys() ]
-
-    if year == '2018':
-        data_all = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
-    else:
-        data_all = ['DoubleMuon', 'MuonEG', 'DoubleEG', 'SingleElectron', 'SingleMuon']
-
-
-    if True:
-
-        sub_dir = '/dd/'
-
-        data    = data_all
-        #order   = ['np_est_data', 'XG', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson', 'topW_v3']
-        order   = ['topW_v3', 'np_est_data', 'conv_mc', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson']
-        #order   = ['np_est_data', 'conv_mc', 'cf_est_data', 'TTW', 'TTH', 'TTZ','rare', 'diboson', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'MET', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=True, axis_label=r'$p_{T}^{miss}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'MET_pt'),
-            )
-
-        makePlot(output, 'fwd_jet', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=True, axis_label=r'$p_{T}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'fwd_jet_pt'),
-            )
-
-        makePlot(output, 'N_ele', 'multiplicity',
-             data=data,
-             bins=N_bins_red, log=False, normalize=True, axis_label=r'$N_{e}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'N_ele'),
-            )
-
-        if NN:
-            makePlot(output, 'LT_SR_pp', 'ht',
-                 data=[],
-                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'LT_SR_pp'),
-                )
-
-            makePlot(output, 'LT_SR_mm', 'ht',
-                 data=[],
-                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'LT_SR_mm'),
-                )
-
-            makePlot(output, 'LT', 'ht',
-                 data=[],
-                 bins=ht_bins_red, log=True, normalize=False, axis_label=r'$L_T\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'LT'),
-                )
-
-            makePlot(output, 'node', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=False, normalize=False, axis_label='best node',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit,
-                 ymax = 850 if year=='2019' else False,
-                 save=os.path.expandvars(plot_dir+sub_dir+'best_node'),
-                )
-
-            makePlot(output, 'node0_score', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score'),
-                )
-
-            makePlot(output, 'node0_score_transform_pp', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_transform_pp'),
-                )
-
-            makePlot(output, 'node0_score_transform_mm', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_transform_mm'),
-                )
-
-            makePlot(output, 'node0_score_pp', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_pp'),
-                )
-
-            makePlot(output, 'node0_score_mm', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_mm'),
-                )
-
-            makePlot(output, 'node1_score', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node1_score'),
-                )
-
-            makePlot(output, 'node2_score', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node2_score'),
-                )
-
-            makePlot(output, 'node3_score', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node3_score'),
-                )
-
-            makePlot(output, 'node4_score', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node4_score'),
-                )
-
-            makePlot(output, 'node0_score_incl', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node0_score_incl'),
-                )
-
-            makePlot(output, 'node1_score_incl', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node1_score_incl'),
-                )
-
-            makePlot(output, 'node2_score_incl', 'score',
-                 data=[],
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node2_score_incl'),
-                )
-
-            makePlot(output, 'node3_score_incl', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node3_score_incl'),
-                )
-
-            makePlot(output, 'node4_score_incl', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit,
-                 save=os.path.expandvars(plot_dir+sub_dir+'node4_score_incl'),
-                )
-
-    ## MC DRIVEN BKG ESTIMATES
-
-    sub_dir = '/mc/'
-
-    if True:
-
-        data    = []
-        order   = ['topW_v3', 'np_obs_mc', 'conv_mc', 'cf_obs_mc', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', ]
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'MET', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}^{miss}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'MET_pt'),
-            )
-
-        makePlot(output, 'fwd_jet', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'fwd_jet_pt'),
-            )
-
-        makePlot(output, 'HT', 'ht',
-             data=data,
-             bins=ht_bins, log=False, normalize=False, axis_label=r'$H_{T}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'HT'),
-            )
-
-        makePlot(output, 'N_ele', 'multiplicity',
-             data=data,
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{ele}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'N_ele'),
-            )
-
-        makePlot(output, 'N_fwd', 'multiplicity',
-             data=data,
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{fwd\ jet}$',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'N_fwd'),
-            )
-
-
-    if NN:
-
-        data    = []
-        order   = ['np_est_mc', 'conv_mc', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_est_mc', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label='best node',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'best_node'),
-            )
-
-        data    = []
-        order   = ['np_obs_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_obs_mc', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label='best node',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'best_node_MC'),
-            )
-
-
-        data    = []
-        order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_est_mc', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node0_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node0_score'),
-            )
-
-        data    = []
-        order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node0_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             shape=True, ymax=0.25,
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node0_score_shape'),
-            )
-
-
-        data    = []
-        order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'rare', 'diboson', 'cf_est_mc', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node0_score_incl', 'score',
-             data=[],
-             bins=score_bins, log=True, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node0_score_incl'),
-            )
-
-        makePlot(output, 'node1_score_incl', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node1_score_incl'),
-            )
-
-        makePlot(output, 'node2_score_incl', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node2_score_incl'),
-            )
-
-        makePlot(output, 'node3_score_incl', 'score',
-             data=data,
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'node3_score_incl'),
-            )
-
-        makePlot(output, 'node4_score_incl', 'score',
-             data=data,
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=order,
-             signals=signals,
-             omit=omit,
-             save=os.path.expandvars(plot_dir+sub_dir+'node4_score_incl'),
-            )
-
-        data    = []
-        order   = ['np_est_mc', 'XG', 'TTW', 'TTH', 'TTZ', 'topW_v3']
-        signals = []
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'node0_score_incl', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label='Score',
-             shape=True, ymax=0.35,
-             new_colors=my_colors, new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'node0_score_incl_shape'),
-            )
-
-
-    ### Charge flip closure test
-
-    order   = ['cf_est_mc']
-    #data    = ['np_obs_mc']
-    #signals = []
-
-    for shape in [False, True]:
-
-        postfix = '_shape' if shape else ''
-        ymax = 0.6 if shape else False
-        if shape:
-            signals = ['cf_obs_mc']
-            data    = []
-        else:
-            signals = []
-            data    = ['cf_obs_mc']
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        makePlot(output, 'HT', 'ht',
-             data=data,
-             bins=ht_bins, log=False, normalize=False, axis_label=r'$H_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_ht'+postfix),
-            )
-
-        makePlot(output, 'ST', 'ht',
-             data=data,
-             bins=ht_bins, log=False, normalize=False, axis_label=r'$S_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_st'+postfix),
-            )
-
-        makePlot(output, 'lead_lep', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_lead_lep_pt'+postfix),
-            )
-
-        if NN:
-            makePlot(output, 'node', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=False, normalize=False, axis_label='best node',
-                 new_colors={'cf_est_mc': my_colors['ttbar'], 'cf_obs_mc': my_colors['TTW']},
-                 new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'cf_closure_best_node'+postfix),
-                )
-
-
-    ### NP estimate closure test for inputs ###
-
-    order   = ['np_est_mc']
-    #data    = ['np_obs_mc']
-    #signals = []
-
-    for shape in [False, True]:
-
-        postfix = '_shape' if shape else ''
-        ymax = 0.6 if shape else False
-        if shape:
-            signals = ['np_obs_mc']
-            data    = []
-        else:
-            signals = []
-            data    = ['np_obs_mc']
-        omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-        if NN:
-            makePlot(output, 'node', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=False, normalize=False, axis_label='best node',
-                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-                 new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_best_node'+postfix),
-                )
-
-            makePlot(output, 'node0_score_transform_pp', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-                 new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_node0_score_transform_pp'),
-                )
-
-            makePlot(output, 'node0_score_transform_mm', 'score',
-                 data=data,
-                 bins=score_bins, log=False, normalize=False, axis_label='Score',
-                 new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-                 new_labels=my_labels, lumi=lumi,
-                 order=order,
-                 signals=signals,
-                 omit=omit+data,
-                 save=os.path.expandvars(plot_dir+sub_dir+'np_closure_node0_score_transform_mm'),
-                )
-
-        makePlot(output, 'HT', 'ht',
-             data=data,
-             bins=ht_bins, log=False, normalize=False, axis_label=r'$H_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_ht'+postfix),
-            )
-
-        makePlot(output, 'ST', 'ht',
-             data=data,
-             bins=ht_bins, log=False, normalize=False, axis_label=r'$S_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_st'+postfix),
-            )
-
-        makePlot(output, 'lead_lep', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_lead_lep_pt'+postfix),
-            )
-
-        makePlot(output, 'trail_lep', 'pt',
-             data=data,
-             bins=pt_bins_coarse_red, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_trail_lep_pt'+postfix),
-            )
-
-        makePlot(output, 'lead_lep', 'eta',
-             data=data,
-             bins=eta_bins, log=False, normalize=False, axis_label=r'$\eta$',
-             shape=shape, ymax=0.2,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_lead_lep_eta'+postfix),
-            )
-
-        makePlot(output, 'MET', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_MET_pt'+postfix),
-            )
-
-        makePlot(output, 'fwd_jet', 'pt',
-             data=data,
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ (GeV)$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_fwd_jet_pt'+postfix),
-            )
-
-        makePlot(output, 'N_fwd', 'multiplicity',
-             data=data,
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{fwd\ jet}$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_N_fwd'+postfix),
-            )
-
-        makePlot(output, 'N_ele', 'multiplicity',
-             data=data,
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'$N_{electrons}$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_N_ele'+postfix),
-            )
-
-        makePlot(output, 'N_jet', 'multiplicity',
-             data=data,
-             bins=N_bins, log=False, normalize=False, axis_label=r'$N_{jet}$',
-             shape=shape, ymax=ymax,
-             new_colors={'np_est_mc': my_colors['ttbar'], 'np_obs_mc': my_colors['TTW']},
-             new_labels=my_labels, lumi=lumi,
-             order=order,
-             signals=signals,
-             omit=omit+data,
-             save=os.path.expandvars(plot_dir+sub_dir+'np_closure_N_jet'+postfix),
-            )
 
+
+    sub_dir = '/dd/'
+
+    blind = True
+
+    # Object multiplicities
+    axis = hist.Bin('multiplicity', r'$N_{fwd\ jet}$', 5, -0.5, 4.5)
+    get_standard_plot(output, 'N_fwd', axis, name='N_fwd', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'N_fwd', axis, name='np_N_fwd', log=False)
+    get_chargeflip_plot(output, 'N_fwd', axis, name='cf_N_fwd', log=False)
+
+    axis = hist.Bin('multiplicity', r'$N_{jet}$', 6, 3.5, 9.5)
+    get_standard_plot(output, 'N_jet', axis, name='N_jet', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'N_jet', axis, name='np_N_jet', log=False)
+    get_chargeflip_plot(output, 'N_jet', axis, name='cf_N_jet', log=False)
+
+    axis = hist.Bin('multiplicity', r'$N_{central}$', 6, 2.5, 8.5)
+    get_standard_plot(output, 'N_central', axis, name='N_central', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'N_central', axis, name='np_N_central', log=False)
+    get_chargeflip_plot(output, 'N_central', axis, name='cf_N_central', log=False)
+
+    axis = hist.Bin('multiplicity', r'$N_{b}$', 6, -0.5, 5.5)
+    get_standard_plot(output, 'N_b', axis, name='N_b', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'N_b', axis, name='np_N_b', log=False)
+    get_chargeflip_plot(output, 'N_b', axis, name='cf_N_b', log=False)
+
+    axis = hist.Bin('multiplicity', r'$N_{e}$', 3, -0.5, 2.5)
+    get_standard_plot(output, 'N_ele', axis, name='N_ele', log=False, lumi=lumi, blind=False, overflow='none')
+    get_nonprompt_plot(output, 'N_ele', axis, name='np_N_ele', log=False, overflow='none')
+    get_chargeflip_plot(output, 'N_ele', axis, name='cf_N_ele', log=False, overflow='none')
+
+    axis = hist.Bin('multiplicity', r'$N_{\tau}$', 3, -0.5, 2.5)
+    get_standard_plot(output, 'N_tau', axis, name='N_tau', log=False, lumi=lumi, blind=False, overflow='none')
+    get_nonprompt_plot(output, 'N_tau', axis, name='np_N_tau', log=False, overflow='none')
+    get_chargeflip_plot(output, 'N_tau', axis, name='cf_N_tau', log=False, overflow='none')
+
+    # Event kinematics
+    axis = hist.Bin('pt', r'$p_{T}^{miss}\ (GeV)$', 10, 0, 300)
+    get_standard_plot(output, 'MET', axis, name='MET_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'MET', axis, name='np_MET_pt', log=False)
+    get_chargeflip_plot(output, 'MET', axis, name='cf_MET_pt', log=False)
+
+    axis = hist.Bin("ht", r"$L_{T}$ (GeV)", 25, 0, 1000)
+    get_standard_plot(output, 'LT', axis, name='LT', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'LT', axis, name='np_LT', log=False)
+    get_chargeflip_plot(output, 'LT', axis, name='cf_LT', log=False)
+
+    axis = hist.Bin("ht", r"$H_{T}$ (GeV)", 25, 0, 1000)
+    get_standard_plot(output, 'HT', axis, name='HT', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'HT', axis, name='np_HT', log=False)
+    get_chargeflip_plot(output, 'HT', axis, name='cf_HT', log=False)
+
+    axis = hist.Bin("ht", r"$S_{T}$ (GeV)", 25, 0, 1000)
+    get_standard_plot(output, 'ST', axis, name='ST', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'ST', axis, name='np_ST', log=False)
+    get_chargeflip_plot(output, 'ST', axis, name='cf_ST', log=False)
+
+    # Forward jet
+    axis = hist.Bin('pt', r'$p_{T}(fwd\ jet)\ (GeV)$', 10, 0, 300)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'fwd_jet', axis, name='np_fwd_jet_pt', log=False)
+    get_chargeflip_plot(output, 'fwd_jet', axis, name='cf_fwd_jet_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(fwd\ jet)$', 25, -5, 5)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'fwd_jet', axis, name='np_fwd_jet_eta', log=False)
+    get_chargeflip_plot(output, 'fwd_jet', axis, name='cf_fwd_jet_eta', log=False)
+
+    axis = hist.Bin("p", r"$p$ (GeV)", 20, 0, 2000)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_p', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'fwd_jet', axis, name='np_fwd_jet_p', log=False)
+    get_chargeflip_plot(output, 'fwd_jet', axis, name='cf_fwd_jet_p', log=False)
+
+    # leptons
+    axis = hist.Bin('pt', r'$p_{T}(leading\ lep)\ (GeV)$', 10, 0, 300)
+    get_standard_plot(output, 'lead_lep', axis, name='lead_lep_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'lead_lep', axis, name='np_lead_lep_pt', log=False)
+    get_chargeflip_plot(output, 'lead_lep', axis, name='cf_lead_lep_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(leading\ lep)$', 25, -5, 5)
+    get_standard_plot(output, 'lead_lep', axis, name='lead_lep_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'lead_lep', axis, name='np_lead_lep_eta', log=False)
+    get_chargeflip_plot(output, 'lead_lep', axis, name='cf_lead_lep_eta', log=False)
+
+    axis = hist.Bin('pt', r'$p_{T}(trailing\ lep)\ (GeV)$', 10, 0, 200)
+    get_standard_plot(output, 'trail_lep', axis, name='trail_lep_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'trail_lep', axis, name='np_trail_lep_pt', log=False)
+    get_chargeflip_plot(output, 'trail_lep', axis, name='cf_trail_lep_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(trailing\ lep)$', 25, -5, 5)
+    get_standard_plot(output, 'trail_lep', axis, name='trail_lep_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'trail_lep', axis, name='np_trail_lep_eta', log=False)
+    get_chargeflip_plot(output, 'trail_lep', axis, name='cf_trail_lep_eta', log=False)
+
+    # jets
+    axis = hist.Bin('pt', r'$p_{T}(leading\ jet)\ (GeV)$', 24, 20, 500)
+    get_standard_plot(output, 'lead_jet', axis, name='lead_jet_pt', log=False, lumi=lumi, blind=blind, systematics=False)  # FIXME some syst currently broken
+    get_nonprompt_plot(output, 'lead_jet', axis, name='np_lead_jet_pt', log=False)
+    get_chargeflip_plot(output, 'lead_jet', axis, name='cf_lead_jet_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(leading\ jet)$', 25, -5, 5)
+    get_standard_plot(output, 'lead_jet', axis, name='lead_jet_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'lead_jet', axis, name='np_lead_jet_eta', log=False)
+    get_chargeflip_plot(output, 'lead_jet', axis, name='cf_lead_jet_eta', log=False)
+
+    axis = hist.Bin('pt', r'$p_{T}(subleading\ jet)\ (GeV)$', 23, 20, 250)
+    get_standard_plot(output, 'sublead_jet', axis, name='sublead_jet_pt', log=False, lumi=lumi, blind=blind, systematics=False)  # FIXME some syst currently broken
+    get_nonprompt_plot(output, 'sublead_jet', axis, name='np_sublead_jet_pt', log=False)
+    get_chargeflip_plot(output, 'sublead_jet', axis, name='cf_sublead_jet_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(subleading\ jet)$', 25, -5, 5)
+    get_standard_plot(output, 'sublead_jet', axis, name='sublead_jet_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'sublead_jet', axis, name='np_sublead_jet_eta', log=False)
+    get_chargeflip_plot(output, 'sublead_jet', axis, name='cf_sublead_jet_eta', log=False)
+
+    axis = hist.Bin('pt', r'$p_{T}(leading\ bjet)\ (GeV)$', 24, 20, 500)
+    get_standard_plot(output, 'lead_bjet', axis, name='lead_bjet_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'lead_bjet', axis, name='np_lead_bjet_pt', log=False)
+    get_chargeflip_plot(output, 'lead_bjet', axis, name='cf_lead_bjet_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(leading\ bjet)$', 25, -5, 5)
+    get_standard_plot(output, 'lead_bjet', axis, name='lead_bjet_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'lead_bjet', axis, name='np_lead_bjet_eta', log=False)
+    get_chargeflip_plot(output, 'lead_bjet', axis, name='cf_lead_bjet_eta', log=False)
+
+    axis = hist.Bin('pt', r'$p_{T}(subleading\ bjet)\ (GeV)$', 23, 20, 250)
+    get_standard_plot(output, 'sublead_bjet', axis, name='sublead_bjet_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'sublead_bjet', axis, name='np_sublead_bjet_pt', log=False)
+    get_chargeflip_plot(output, 'sublead_bjet', axis, name='cf_sublead_bjet_pt', log=False)
+
+    axis = hist.Bin('eta', r'$\eta(subleading\ bjet)$', 25, -5, 5)
+    get_standard_plot(output, 'sublead_bjet', axis, name='sublead_bjet_eta', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'sublead_bjet', axis, name='np_sublead_bjet_eta', log=False)
+    get_chargeflip_plot(output, 'sublead_bjet', axis, name='cf_sublead_bjet_eta', log=False)
+
+    # more event variables
+    axis = hist.Bin('mass', r'$M(jj)\ (GeV)$', 20, 0, 2000)
+    get_standard_plot(output, 'mjj_max', axis, name='mjj_max', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'mjj_max', axis, name='np_mjj_max', log=False)
+    get_chargeflip_plot(output, 'mjj_max', axis, name='cf_mjj_max', log=False)
+
+    axis = hist.Bin('mass', r'$M(\ell\ell)\ (GeV)$', 20, 0, 200)
+    get_standard_plot(output, 'dilepton_mass', axis, name='dilepton_mass', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'dilepton_mass', axis, name='np_dilepton_mass', log=False)
+    get_chargeflip_plot(output, 'dilepton_mass', axis, name='cf_dilepton_mass', log=False)
+
+    axis = hist.Bin('mass', r'$min\ M_{T}(lep, p_{T}^{miss})\ (GeV)$', 20, 0, 200)
+    get_standard_plot(output, 'min_mt_lep_met', axis, name='min_mt_lep_met', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'min_mt_lep_met', axis, name='np_min_mt_lep_met', log=False)
+    get_chargeflip_plot(output, 'min_mt_lep_met', axis, name='cf_min_mt_lep_met', log=False)
+
+    axis = hist.Bin("delta", r"$\Delta\eta(jj)$", 25, 0, 10)
+    get_standard_plot(output, 'delta_eta_jj', axis, name='delta_eta_jj', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'delta_eta_jj', axis, name='np_delta_eta_jj', log=False)
+    get_chargeflip_plot(output, 'delta_eta_jj', axis, name='cf_delta_eta_jj', log=False)
+
+    axis = hist.Bin("delta", r"$min\ \Delta R(bjet, \ell)$", 25, 0, 10)
+    get_standard_plot(output, 'min_bl_dR', axis, name='min_bl_dR', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'min_bl_dR', axis, name='np_min_bl_dR', log=False)
+    get_chargeflip_plot(output, 'min_bl_dR', axis, name='cf_min_bl_dR', log=False)
+
+    axis = hist.Bin('pt', r'$p_{T}(\ell\ell)\ (GeV)$', 15, 0, 300)
+    get_standard_plot(output, 'dilepton_pt', axis, name='dilepton_pt', log=False, lumi=lumi, blind=blind)
+    get_nonprompt_plot(output, 'dilepton_pt', axis, name='np_dilepton_pt', log=False)
+    get_chargeflip_plot(output, 'dilepton_pt', axis, name='cf_dilepton_pt', log=False)
 
     if False:
 
-        makePlot(output, 'nGenL', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson'],
-             signals=[],
-             omit=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             overlay=output['nGenL']['topW_v3'],
-             save=os.path.expandvars(plot_dir+'/SS/nGenL_test'),
-            )
-
-        makePlot(output, 'nGenL', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nGenL'),
-            )
-
-        makePlot(output, 'nGenTau', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nGenTau'),
-            )
-
-        makePlot(output, 'nLepFromW', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nLepFromW'),
-            )
-
-        makePlot(output, 'nLepFromZ', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nLepFromZ'),
-            )
-
-        makePlot(output, 'nLepFromTau', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nLepFromTau'),
-            )
-
-        makePlot(output, 'nLepFromTop', 'multiplicity',
-             data=[],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nLepFromTop'),
-            )
-
-        makePlot(output, 'chargeFlip_vs_nonprompt', 'n1',
-             data=[],
-             bins=None, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nChargeFlip'),
-            )
-
-        makePlot(output, 'chargeFlip_vs_nonprompt', 'n2',
-             data=[],
-             bins=None, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nNonprompt'),
-            )
-
-        makePlot(output, 'chargeFlip_vs_nonprompt', 'n2',
-             data=[],
-             bins=None, log=True, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/nNonprompt_log'),
-            )
-
-        makePlot(output, 'node', 'multiplicity',
-             data=['DoubleMuon', 'MuonEG', 'EGamma'],
-             bins=N_bins_red, log=False, normalize=False, axis_label=r'node',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node'),
-            )
-
-        makePlot(output, 'node0_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label=r'score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node0_score'),
-            )
-
-        makePlot(output, 'lead_lep', 'pt',
-             data=[],
-             bins=pt_bins_coarse, log=True, normalize=False, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/lead_lep_pt'),
-            )
-
-        makePlot(output, 'lead_lep', 'pt',
-             data=[],
-             bins=pt_bins_coarse, log=False, normalize=False, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['TTW'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'TTH', 'TTZ', 'ttbar'],
-             save=os.path.expandvars(plot_dir+'/SS/lead_lep_pt_signals'),
-            )
-
-        makePlot(output, 'node1_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label=r'score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node1_score'),
-            )
-
-        makePlot(output, 'node2_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label=r'score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node2_score'),
-            )
-
-        makePlot(output, 'node3_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label=r'score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node3_score'),
-            )
-
-        makePlot(output, 'node4_score', 'score',
-             data=['DoubleMuon', 'MuonEG', 'EGamma'],
-             #data=[],
-             bins=score_bins, log=False, normalize=True, axis_label=r'score',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             #omit=['DoubleMuon', 'MuonEG', 'EGamma'],
-             omit=[],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node4_score'),
-            )
-
-        makePlot(output, 'MET', 'pt',
-             data=['DoubleMuon', 'MuonEG', 'EGamma'],
-             bins=pt_bins_coarse, log=False, normalize=True, axis_label=r'$p_{T}^{miss}$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar'],
-             signals=['topW_v3'],
-             omit=['topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/MET_pt'),
-            )
-
-        makePlot(output, 'MET', 'pt',
-             data=[],
-             normalize=False,
-             bins=pt_bins_coarse, log=False, shape=True, axis_label=r'$p_{T}^{miss}$',
-             new_colors=my_colors, new_labels=my_labels,
-             ymax=0.4,
-             order=['TTW', 'topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             #signals=['topW_v3'],
-             omit=['ttbar', 'diboson', 'TTZ', 'TTH', 'DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/MET_pt_shape'),
-            )
-
-        makePlot(output, 'MET', 'pt',
-             data=[],
-             normalize=False,
-             bins=pt_bins_coarse, log=False, axis_label=r'$p_{T}^{miss}$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['TTW'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['ttbar', 'diboson', 'TTZ', 'TTH', 'DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/MET_pt_signals'),
-            )
-
-        makePlot(output, 'ST', 'pt',
-             data=[],
-             normalize=False,
-             bins=pt_bins_ext, log=False, axis_label=r'$S_{T}$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['TTW'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['ttbar', 'diboson', 'TTZ', 'TTH', 'DoubleMuon', 'MuonEG', 'EGamma'],
-             save=os.path.expandvars(plot_dir+'/SS/ST_signals'),
-            )
-
-        makePlot(output, 'PV_npvsGood', 'multiplicity',
-             data=['DoubleMuon', 'MuonEG', 'EGamma'],
-             bins=None, log=False, normalize=True, axis_label=r'$N_{PV}$',
-             new_colors=my_colors, new_labels=my_labels,
-             order=['diboson', 'TTW', 'TTH', 'TTZ', 'ttbar', 'topW_v3'],
-             signals=[],
-             omit=['topW_EFT_cp8', 'topW_EFT_mix'],
-             save=os.path.expandvars(plot_dir+'/SS/PV_npvsGood'),
-            )
-
-
-        ## shapes
-
-        makePlot(output, 'node0_score', 'score',
-             data=[],
-             bins=score_bins, log=False, normalize=False, axis_label=r'score', shape=True, ymax=0.35,
-             new_colors=my_colors, new_labels=my_labels,
-             order=['TTW'],
-             signals=['topW_v3', 'topW_EFT_cp8', 'topW_EFT_mix'],
-             omit=['DoubleMuon', 'MuonEG', 'EGamma', 'diboson', 'ttbar', 'TTH', 'TTZ'],
-             save=os.path.expandvars(plot_dir+'/SS/ML_node0_score_shape'),
-            )
-
-
+        '''
+        Look if we can reintegrate this plot? Do we need it?
+        '''
         fig, ax  = plt.subplots(1,1,figsize=(10,10) )
         ax = hist.plot2d(
             output['chargeFlip_vs_nonprompt']['ttbar'].sum('n_ele').sum('dataset'),
