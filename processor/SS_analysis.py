@@ -552,7 +552,7 @@ class SS_analysis(processor.ProcessorABC):
                     reg_sel = [
                         BL&add_sel,
                         conv_sel&add_sel,
-                    ],
+                    ]
                     fill_multiple(
                         hist,
                         dataset = dataset,
@@ -561,10 +561,10 @@ class SS_analysis(processor.ProcessorABC):
                             "conv_mc",
                         ],
                         arrays=arrays,
-                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        selections=reg_sel,
                         weights=[
-                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
-                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
                         ],
                         systematic = var_name,
                         other = other,
@@ -575,7 +575,7 @@ class SS_analysis(processor.ProcessorABC):
                         BL&add_sel,
                         np_est_sel_data&add_sel,
                         cf_est_sel_data&add_sel,
-                    ],
+                    ]
                     fill_multiple(
                         hist,
                         dataset = dataset,
@@ -585,11 +585,11 @@ class SS_analysis(processor.ProcessorABC):
                             "cf_est_data",
                         ],
                         arrays=arrays,
-                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        selections=reg_sel,
                         weights=[
-                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
-                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]]*weight_np_data[reg_sel[0][1]],
-                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_cf_data[reg_sel[0][2]],
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]]*weight_np_data[reg_sel[1]],
+                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_cf_data[reg_sel[2]],
                         ],
                         systematic = var_name,
                         other = other,
@@ -607,7 +607,7 @@ class SS_analysis(processor.ProcessorABC):
                         cf_est_sel_data&add_sel,
                         conv_sel&add_sel,
                         np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
-                    ],
+                    ]
                     fill_multiple(
                         hist,
                         dataset = dataset,
@@ -624,18 +624,18 @@ class SS_analysis(processor.ProcessorABC):
                             "np_est_mc_qcd",  # MC based NP estimate with QCD FR
                         ],
                         arrays=arrays,
-                        selections=reg_sel[0],  # no idea where the additional dimension is coming from...
+                        selections=reg_sel,
                         weights=[
-                            weight_multiplier[reg_sel[0][0]]*weight.weight(modifier=shift)[reg_sel[0][0]],
-                            weight_multiplier[reg_sel[0][1]]*weight.weight(modifier=shift)[reg_sel[0][1]],
-                            weight_multiplier[reg_sel[0][2]]*weight.weight(modifier=shift)[reg_sel[0][2]]*weight_np_mc[reg_sel[0][2]],
-                            weight_multiplier[reg_sel[0][3]]*weight.weight(modifier=shift)[reg_sel[0][3]],
-                            weight_multiplier[reg_sel[0][4]]*weight.weight(modifier=shift)[reg_sel[0][4]]*weight_np_data[reg_sel[0][4]],
-                            weight_multiplier[reg_sel[0][5]]*weight.weight(modifier=shift)[reg_sel[0][5]]*weight_cf_mc[reg_sel[0][5]],
-                            weight_multiplier[reg_sel[0][6]]*weight.weight(modifier=shift)[reg_sel[0][6]],
-                            weight_multiplier[reg_sel[0][7]]*weight.weight(modifier=shift)[reg_sel[0][7]]*weight_cf_data[reg_sel[0][7]],
-                            weight_multiplier[reg_sel[0][8]]*weight.weight(modifier=shift)[reg_sel[0][8]],
-                            weight_multiplier[reg_sel[0][9]]*weight.weight(modifier=shift)[reg_sel[0][9]]*weight_np_mc_qcd[reg_sel[0][9]],
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
+                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_mc[reg_sel[2]],
+                            weight_multiplier[reg_sel[3]]*weight.weight(modifier=shift)[reg_sel[3]],
+                            weight_multiplier[reg_sel[4]]*weight.weight(modifier=shift)[reg_sel[4]]*weight_np_data[reg_sel[4]],
+                            weight_multiplier[reg_sel[5]]*weight.weight(modifier=shift)[reg_sel[5]]*weight_cf_mc[reg_sel[5]],
+                            weight_multiplier[reg_sel[6]]*weight.weight(modifier=shift)[reg_sel[6]],
+                            weight_multiplier[reg_sel[7]]*weight.weight(modifier=shift)[reg_sel[7]]*weight_cf_data[reg_sel[7]],
+                            weight_multiplier[reg_sel[8]]*weight.weight(modifier=shift)[reg_sel[8]],
+                            weight_multiplier[reg_sel[9]]*weight.weight(modifier=shift)[reg_sel[9]]*weight_np_mc_qcd[reg_sel[9]],
                         ],
                         systematic = var_name,
                         other = other,
