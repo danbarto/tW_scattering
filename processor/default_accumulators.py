@@ -46,22 +46,22 @@ desired_output = {
             
             "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, phi_axis),
             
-            "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "j3":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "j3":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
-            "b1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "b2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "b1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "b2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
             "chargeFlip_vs_nonprompt": hist.Hist("Counts", dataset_axis, n1_axis, n2_axis, n_ele_axis),
             
             "high_p_fwd_p":      hist.Hist("Counts", dataset_axis, systematic_axis, p_axis),
                         
-            "electron":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "muon":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "lead_lep":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep":          hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "fwd_jet":            hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "electron":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "muon":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "lead_lep":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "trail_lep":          hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "fwd_jet":            hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
             "N_b" :               hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
             "N_central" :         hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
