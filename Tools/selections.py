@@ -178,8 +178,8 @@ class Selection:
 
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
-        offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))  # FIXME maybe use 4vecs instead???
-        onZ = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
+        offZ = (ak.all(abs((OS_dimu['0'].p4+OS_dimu['1'].p4).mass-91.2)>10, axis=1) & ak.all(abs((OS_diele['0'].p4+OS_diele['1'].p4).mass-91.2)>10, axis=1))
+        onZ = (ak.any(abs((SFOS['0'].p4+SFOS['1'].p4).mass-91.2)<10, axis=1))
 
         # get lepton vectors for trigger
         lepton = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)
