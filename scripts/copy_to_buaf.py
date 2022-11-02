@@ -35,7 +35,7 @@ def make_copy(in_n_out):
 
 if __name__ == '__main__':
 
-    ul = "UL17"
+    ul = "UL16"
 
     samples = get_samples("samples_%s.yaml"%ul)
 
@@ -47,7 +47,8 @@ if __name__ == '__main__':
 
         print (sample)
 
-        all_files = [ f.replace('topW_v0.7.0_dilep', 'topW_v0.7.1_trilep') for f in  samples[sample]['files'] ]
+        #all_files = [ f.replace('topW_v0.7.0_dilep', 'topW_v0.7.1_trilep') for f in  samples[sample]['files'] ]  # FIXME something is wrong with the skim names?
+        all_files = [ f.replace('topW_v0.7.1_SS', 'topW_v0.7.1_trilep') for f in  samples[sample]['files'] ]
 
         for f in all_files:
 
