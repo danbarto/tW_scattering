@@ -166,6 +166,7 @@ class trilep_analysis(processor.ProcessorABC):
 
         trilep = choose(lepton, 3)
         M3l = (trilep['0'].p4 + trilep['1'].p4 + trilep['2'].p4).mass
+        trilep_q = ak.sum(electron.charge, axis=1) + ak.sum(muon.charge, axis=1)
 
         if not re.search(data_pattern, dataset):
             n_nonprompt = getNonPromptFromFlavour(electron) + getNonPromptFromFlavour(muon)
@@ -193,6 +194,7 @@ class trilep_analysis(processor.ProcessorABC):
             shift    = var['weight']
 
             met = getMET(ev, pt_var=pt_var)
+            lt = ak.sum(electron.p4.pt, axis=1) + ak.sum(muon.p4.pt, axis=1) + met.pt
 
             ## Jets
             jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var=pt_var)
@@ -407,6 +409,17 @@ class trilep_analysis(processor.ProcessorABC):
                     output['dilepton_mass_topW'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
                     add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+                )
+
+                fill_multiple_np(
+                    output['signal_region_topW'],
+                    {
+                        'lt': lt,
+                        'N': N_SFOS,
+                        'charge': trilep_q,
+                        },
+                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+
                 )
 
                 fill_multiple_np(
@@ -629,6 +642,10 @@ if __name__ == '__main__':
                     exe = processor.DaskExecutor(client=c, status=True, retries=3)
 
                 from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, pred_axis, systematic_axis, mass_axis, pred_axis
+                sr_axis = hist.Bin("lt",  r"LT", 10, 0, 1000)
+                charge_axis = hist.Bin("charge",  r"q", 3, -1.5, 1.5)
+                nossf_axis = hist.Bin("N",  r"N", 3, -0.5, 2.5)
+
                 desired_output.update({
                     "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
                     "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
@@ -652,6 +669,7 @@ if __name__ == '__main__':
                     "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
+                    "signal_region_topW": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),  # NOTE this will also need the EFT axis
                 })
 
                 print ("I'm running now")
