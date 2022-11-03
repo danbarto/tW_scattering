@@ -641,7 +641,7 @@ if __name__ == '__main__':
 
                     exe = processor.DaskExecutor(client=c, status=True, retries=3)
 
-                from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, pred_axis, systematic_axis, mass_axis, pred_axis
+                from processor.default_accumulators import multiplicity_axis, dataset_axis, score_axis, pt_axis, ht_axis, pred_axis, systematic_axis, mass_axis, pred_axis, eft_axis
                 sr_axis = hist.Bin("lt",  r"LT", 10, 0, 1000)
                 charge_axis = hist.Bin("charge",  r"q", 3, -1.5, 1.5)
                 nossf_axis = hist.Bin("N",  r"N", 3, -0.5, 2.5)
@@ -664,12 +664,12 @@ if __name__ == '__main__':
                     "N_jet" :       hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
                     "N_fwd" :       hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
                     "N_tau" :       hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
-                    "dilepton_mass": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_WZ": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
-                    "signal_region_topW": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),  # NOTE this will also need the EFT axis
+                    "dilepton_mass": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "dilepton_mass_WZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),  # NOTE this will also need the EFT axis
                 })
 
                 print ("I'm running now")
