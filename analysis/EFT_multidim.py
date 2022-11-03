@@ -124,47 +124,47 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     signal = histogram[('topW_lep', sm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
     signal = signal.rebin(axis.name, axis)
 
-    systematics= [
-        ('signal_norm', 1.1, 'signal'),
-        ('TTW_norm', 1.15, 'TTW'),
-        ('TTZ_norm', 1.10, 'TTZ'),
-        ('TTH_norm', 1.15, 'TTH'),
-        ('conv_norm', 1.20, 'conv'),
-        ('diboson_norm', 1.20, 'diboson'),
-        ('nonprompt_norm', 1.30, 'nonprompt'),
-    ]
-    #if systematics:
-    #    # NOTE this loads background systematics.
-    #    # Not fully complete, but most important systematics are here
-    #    print ("Getting Background systematics")
-    #    systematics = get_systematics(output, histo_name, year, sm_point,
-    #                                    correlated=False,
-    #                                    signal=False,
-    #                                    overflow='none',
-    #                                    samples=samples[year],
-    #                                    mapping=mapping[f'UL{ul}'],
-    #                                    )
-    #    if year.count('2016'):
-    #        print ("lumi uncertainties for 2016")
-    #        systematics += lumi_systematics_2016
-    #    elif year.count('2017'):
-    #        print ("lumi uncertainties for 2017")
-    #        systematics += lumi_systematics_2017
-    #    elif year.count('2018'):
-    #        print ("lumi uncertainties for 2018")
-    #        systematics += lumi_systematics_2018
-    #    else:
-    #        print ("No lumi systematic assigned.")
+    #systematics= [
+    #    ('signal_norm', 1.1, 'signal'),
+    #    ('TTW_norm', 1.15, 'TTW'),
+    #    ('TTZ_norm', 1.10, 'TTZ'),
+    #    ('TTH_norm', 1.15, 'TTH'),
+    #    ('conv_norm', 1.20, 'conv'),
+    #    ('diboson_norm', 1.20, 'diboson'),
+    #    ('nonprompt_norm', 1.30, 'nonprompt'),
+    #]
+    if systematics:
+        # NOTE this loads background systematics.
+        # Not fully complete, but most important systematics are here
+        print ("Getting Background systematics")
+        systematics = get_systematics(histogram, year, sm_point,
+                                        correlated=False,
+                                        signal=False,
+                                        overflow='none',
+                                        samples=samples[year],
+                                        mapping=mapping[f'UL{ul}'],
+                                        )
+        if year.count('2016'):
+            print ("lumi uncertainties for 2016")
+            systematics += lumi_systematics_2016
+        elif year.count('2017'):
+            print ("lumi uncertainties for 2017")
+            systematics += lumi_systematics_2017
+        elif year.count('2018'):
+            print ("lumi uncertainties for 2018")
+            systematics += lumi_systematics_2018
+        else:
+            print ("No lumi systematic assigned.")
 
-    #    print ("Getting signal systematics")
-    #    systematics = add_signal_systematics(output, histo_name, year, sm_point,
-    #                                            systematics=systematics,
-    #                                            correlated=False,
-    #                                            proc='topW_lep',
-    #                                            overflow='none',
-    #                                            samples=samples[year],
-    #                                            mapping=mapping[f'UL{ul}'],
-    #                                            )
+        print ("Getting signal systematics")
+        systematics = add_signal_systematics(histogram, year, sm_point,
+                                                systematics=systematics,
+                                                correlated=False,
+                                                proc='topW_lep',
+                                                overflow='none',
+                                                samples=samples[year],
+                                                mapping=mapping[f'UL{ul}'],
+                                                )
 
 
     sm_card = makeCardFromHist(
