@@ -272,9 +272,21 @@ def get_systematics(histogram, year, eft_point,
         ]
 
     systematics += [
-        ('ttz_norm', 1.10, 'TTZ'),
-        ('ttw_norm', 1.15, 'TTW'),
-        ('tth_norm', 1.15, 'TTH'),
+        #('signal_norm', 1.10, 'signal'),
+        ('signal_pdf_norm', 1.012, 'signal'),
+        ('signal_scale_norm', 1.17, 'signal'),
+        #('ttz_norm', 1.10, 'TTZ'),
+        ('ttz_scale_norm', 1.113, 'TTZ'),
+        ('ttz_pdf_norm', 1.028, 'TTZ'),
+        ('ttz_as_norm', 1.028, 'TTZ'),
+        #('ttw_norm', 1.15, 'TTW'),
+        ('ttw_pdf_norm', 1.01, 'TTW'),
+        ('ttw_scale_norm', 1.11, 'TTW'),  # NOTE could be asymetrized.
+        #('tth_norm', 1.15, 'TTH'),
+        ('tth_pdf_norm', 1.030, 'TTH'),
+        ('tth_as_norm', 1.020, 'TTH'),
+        #('tth_scale_norm', [0.915, 1.058], 'TTH'),  # NOTE this is not very secure
+        ('tth_scale_norm', 1.092, 'TTH'),
         ('rare_norm', 1.20, 'rare'),
         ('diboson_norm', 1.20, 'diboson'),
         ('nonprompt_norm', 1.30, 'nonprompt'),
@@ -456,6 +468,13 @@ def makeCardFromHist(
                     fout[proc+'_'+systematic] = val_h
 
                 card.specifyUncertainty(systematic, 'Bin0', proc, 1)
+
+            elif isinstance(mag, type([])):
+                # FIXME this is not implemented yet. can't have asymmetric lnNs in my card file writer
+                if not card.checkUncertaintyExists(systematic):
+                    card.addUncertainty(systematic, 'lnN')
+                    print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
+                card.specifyUncertainty(systematic, 'Bin0', proc, (mag[0], mag[1]))
             else:
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'lnN')
