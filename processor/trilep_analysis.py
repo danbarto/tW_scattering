@@ -363,6 +363,10 @@ class trilep_analysis(processor.ProcessorABC):
                     other = other,
                 )
 
+            ttZ_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
+            WZ_sel  = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
+            XG_sel  = sel.trilep_baseline(only=['N_btag=0', 'offZ'])
+            sig_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
 
             if var['name'] == 'central':
                 '''
@@ -390,25 +394,25 @@ class trilep_analysis(processor.ProcessorABC):
                 fill_multiple_np(
                     output['dilepton_mass_WZ'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
+                    add_sel = WZ_sel
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_ttZ'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
+                    add_sel = ttZ_sel
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_XG'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'offZ'])
+                    add_sel = XG_sel
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_topW'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+                    add_sel = sig_sel
                 )
 
                 fill_multiple_np(
@@ -418,8 +422,7 @@ class trilep_analysis(processor.ProcessorABC):
                         'N': N_SFOS,
                         'charge': trilep_q,
                         },
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
-
+                    add_sel = sig_sel
                 )
 
                 fill_multiple_np(
@@ -437,6 +440,84 @@ class trilep_analysis(processor.ProcessorABC):
                         'eta': pad_and_flatten(trailing_lepton.eta),
                     },
                 )
+
+
+                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                    add_sel = sig_sel
+                    for i in range(1,101):
+                        pdf_ext = "pdf_%s"%i
+                        output['signal_region_topW'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = 'central',
+                            lt          = lt[(BL & add_sel)],
+                            N           = N_SFOS[(BL & add_sel)],
+                            charge      = trilep_q[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                        pdf_ext = "scale_%s"%i
+                        output['signal_region_topW'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = "central",
+                            lt          = lt[(BL & add_sel)],
+                            N           = N_SFOS[(BL & add_sel)],
+                            charge      = trilep_q[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "PS_%s"%i
+                            output['signal_region_topW'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = "central",
+                                lt          = lt[(BL & add_sel)],
+                                N           = N_SFOS[(BL & add_sel)],
+                                charge      = trilep_q[(BL & add_sel)],
+                                weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
+                            )
+
+                    add_sel = ttZ_sel
+                    for i in range(1,101):
+                        pdf_ext = "pdf_%s"%i
+                        output['dilepton_mass_ttZ'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = 'central',
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                        pdf_ext = "scale_%s"%i
+                        output['dilepton_mass_ttZ'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = "central",
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "PS_%s"%i
+                            output['dilepton_mass_ttZ'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = "central",
+                                mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                                weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
+                            )
             
                 #output['j1'].fill(
                 #    dataset = dataset,
@@ -468,9 +549,28 @@ class trilep_analysis(processor.ProcessorABC):
                     },
                 )
             else:
-                # FIXME implement filling the variations for central predictions
-                # similar to SS_analysis
-                pass
+                if not re.search(data_pattern, dataset):
+                    # similar to SS_analysis
+                    # Don't fill for data
+                    output['signal_region_topW'].fill(
+                        dataset     = dataset,
+                        systematic  = var['name'],
+                        prediction  = 'central',
+                        EFT         = 'central',
+                        lt          = lt[(BL & sig_sel)],
+                        N           = N_SFOS[(BL & sig_sel)],
+                        charge      = trilep_q[(BL & sig_sel)],
+                        weight      = weight.weight(modifier=shift)[(BL & sig_sel)],
+                    )
+
+                    output['dilepton_mass_ttZ'].fill(
+                        dataset     = dataset,
+                        systematic  = var['name'],
+                        prediction  = 'central',
+                        EFT         = 'central',
+                        mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & ttZ_sel)],
+                        weight      = weight.weight(modifier=shift)[(BL & ttZ_sel)],
+                    )
                 
 
         return output
