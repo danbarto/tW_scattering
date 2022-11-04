@@ -433,7 +433,7 @@ class trilep_analysis(processor.ProcessorABC):
                             'N': N_SFOS,
                             'charge': trilep_q,
                             },
-                        add_sel = sig_sel
+                        add_sel = sig_sel,
                         other = {'EFT': f'eft_cpt_{x}_cpqm_{y}'},
                         weight_multiplier = eft_weight,
                     )
