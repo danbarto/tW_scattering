@@ -34,7 +34,7 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transfo
 
 
 class trilep_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, weights=[], hyperpoly=None, points=[[]]):
         self.variations = variations
         self.year = year
         self.era = era  # this is here for 2016 APV
@@ -48,6 +48,12 @@ class trilep_analysis(processor.ProcessorABC):
         self.nonpromptWeight = NonpromptWeight(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
+
+        #self.weights = weights
+        self.hyperpoly = hyperpoly
+        self.points = points
+        self.coeff = np.array([1.000000,0.072813,-0.098492,0.005049,-0.002042,0.003988])
+        self.coeffs = np.transpose([self.coeff])
 
     @property
     def accumulator(self):
@@ -329,6 +335,7 @@ class trilep_analysis(processor.ProcessorABC):
             
             dummy = (np.ones(len(ev))==1)
             dummy_weight = Weights(len(ev))
+
             def fill_multiple_np(hist, arrays, add_sel=dummy, other=None, weight_multiplier=dummy_weight.weight()):
                 reg_sel = [
                     BL&add_sel,
@@ -368,7 +375,6 @@ class trilep_analysis(processor.ProcessorABC):
                 '''
                 Don't fill these histograms for the variations
                 '''
-
                 # first, make a few super inclusive plots
                 output['PV_npvs'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvs, weight=weight_BL)
                 output['PV_npvsGood'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
@@ -390,37 +396,43 @@ class trilep_analysis(processor.ProcessorABC):
                 fill_multiple_np(
                     output['dilepton_mass_WZ'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
+                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30']),
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_ttZ'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
+                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30']),
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_XG'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'offZ'])
+                    add_sel = sel.trilep_baseline(only=['N_btag=0', 'offZ']),
                 )
 
                 fill_multiple_np(
                     output['dilepton_mass_topW'],
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0']),
                 )
 
-                fill_multiple_np(
-                    output['signal_region_topW'],
-                    {
-                        'lt': lt,
-                        'N': N_SFOS,
-                        'charge': trilep_q,
-                        },
-                    add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+                for p in self.points:
+                    x,y = p['point']
+                    point = p['point']
 
-                )
+                    eft_weight = np.array([self.hyperpoly.eval(self.coeff, point)]*len(ev))
+                    fill_multiple_np(
+                        output['signal_region_topW'],
+                        {
+                            'lt': lt,
+                            'N': N_SFOS,
+                            'charge': trilep_q,
+                            },
+                        add_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0']),
+                        other = {'EFT': f'eft_cpt_{x}_cpqm_{y}'},
+                        weight_multiplier = eft_weight,
+                    )
 
                 fill_multiple_np(
                     output['lead_lep'],
@@ -545,6 +557,23 @@ if __name__ == '__main__':
 
     if args.central: variations = variations[:1]
 
+    
+    # define points
+    if args.scan:
+        x = np.arange(-7,8,1)
+        y = np.arange(-7,8,1)
+    else:
+        x = x = np.array([int(args.cpt)])
+        y = np.array([int(args.cpqm)])
+
+    CPT, CPQM = np.meshgrid(x, y)
+    
+    points = []
+    for cpt, cpqm in zip(CPT.flatten(), CPQM.flatten()):
+        points.append({
+            'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
+            'point': [cpt, cpqm],
+        })
 
 
     if args.buaf == 'remote':
@@ -557,6 +586,10 @@ if __name__ == '__main__':
     coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
     coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
     ref_coordinates = [0,0]
+
+    from Tools.HyperPoly import *
+    hp = HyperPoly(2)
+    hp.initialize(coordinates,ref_coordinates)
 
 
     samples = get_samples("samples_%s.yaml"%ul)
@@ -576,7 +609,6 @@ if __name__ == '__main__':
 
     for sample in sample_list:
         # NOTE we could also rescale processes here?
-        #
         print (f"Working on samples: {sample}")
 
         # NOTE we could also rescale processes here?
@@ -669,7 +701,7 @@ if __name__ == '__main__':
                     "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
-                    "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),  # NOTE this will also need the EFT axis
+                    "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis, eft_axis),
                 })
 
                 print ("I'm running now")
@@ -696,8 +728,8 @@ if __name__ == '__main__':
                         era=era,
                         #weights=eft_weights,
                         #reweight=reweight,
-                        #points=points,
-                        #hyperpoly=hp,
+                        points=points,
+                        hyperpoly=hp,
                         #minimal=args.minimal,
                     ),
                 )
