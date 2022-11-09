@@ -802,7 +802,7 @@ if __name__ == '__main__':
                     "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
                     "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
-                    "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis, eft_axis),
+                    "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),
                 })
 
                 print ("I'm running now")
