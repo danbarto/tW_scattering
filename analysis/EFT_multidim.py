@@ -87,7 +87,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
 
-    sm_point = 'central'
+    sm_point = 'eft_cpt_0_cpqm_0'
     ul = str(year)[2:]
 
     print ("Filling background histogram")
@@ -513,6 +513,8 @@ if __name__ == '__main__':
         "trilep_ttZ",
         "trilep_topW_qm_0Z",
         "trilep_topW_qp_0Z",
+        "trilep_topW_qm_1Z",
+        "trilep_topW_qp_1Z",
     ]
 
     # Define a scan
