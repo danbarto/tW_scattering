@@ -424,8 +424,7 @@ class trilep_analysis(processor.ProcessorABC):
                 for p in self.points:
                     x,y = p['point']
                     point = p['point']
-
-                    eft_weight = np.array([self.hyperpoly.eval(self.coeff, point)]*len(ev))
+                    eft_weight = self.hyperpoly.eval(np.transpose(ev.Pol), point)
                     fill_multiple_np(
                         output['signal_region_topW'],
                         {
