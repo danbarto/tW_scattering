@@ -205,7 +205,7 @@ class SS_analysis(processor.ProcessorABC):
         # this is where the real JEC dependent stuff happens
 
         if re.search(data_pattern, dataset):
-            variations = self.variations[:1]
+            variations = self.variations[:1] + [var for var in self.variations if var['name'].count('fake')]
         else:
             variations = self.variations
 
@@ -367,8 +367,9 @@ class SS_analysis(processor.ProcessorABC):
 
                 data_sel = (baseline & ~baseline)  # this has to be false
 
-                weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT')
-                weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD')
+                #if var["name"].count("fake")
+                weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT', variation=(var["ext"] if var["name"].count("fake") else ''))
+                weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD', variation=(var["ext"] if var["name"].count("fake") else ''))
                 weight_cf_mc = self.chargeflipWeight.get(el_t_p)
 
             else:
@@ -534,7 +535,7 @@ class SS_analysis(processor.ProcessorABC):
                     #print (bit_pred)
 
             weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
-            weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data')
+            weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data', variation=(var["ext"] if var["name"].count("fake") else ''))
             weight_cf_data = self.chargeflipWeight.get(el_t)
 
             #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
@@ -1450,7 +1451,28 @@ if __name__ == '__main__':
         {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
         {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
         {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_up',  'ext': 'el_up',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_down',  'ext': 'el_down',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_up',  'ext': 'mu_up',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_down',  'ext': 'mu_down',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_pt1',  'ext': 'mu_pt1',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_pt2',  'ext': 'mu_pt2',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_pt1',  'ext': 'el_pt1',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_pt2',  'ext': 'el_pt2',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_be1',  'ext': 'mu_be1',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_be2',  'ext': 'mu_be2',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_be1',  'ext': 'el_be1',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_be2',  'ext': 'el_be2',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_closure_up',  'ext': 'mu_closure_up',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_mu_closure_down',  'ext': 'mu_closure_down',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_closure_up',  'ext': 'el_closure_up',             'weight': None,    'pt_var': 'pt_nom'},
+        {'name': 'fake_el_closure_down',  'ext': 'el_closure_down',             'weight': None,    'pt_var': 'pt_nom'},
         ]
+
+    # FIXME do sth like this??
+    data_variations = [
+
+    ]
 
     if args.central: variations = variations[:1]
 

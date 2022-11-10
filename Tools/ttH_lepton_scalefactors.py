@@ -243,7 +243,15 @@ if __name__ == '__main__':
     samples = get_samples("samples_UL18.yaml")
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    fileset = make_fileset(['TTW'], samples, year='UL18', skim=True, small=True, n_max=1)
+    fileset = make_fileset(
+        ['TTW'],
+        samples,
+        year='UL18',
+        skim='topW_v0.7.0_dilep',
+        small=True,
+        buaf='local',
+        merged=True,
+        n_max=1)
     filelist = fileset[list(fileset.keys())[0]]
 
     # load a subset of events
@@ -258,19 +266,19 @@ if __name__ == '__main__':
 
     sel = ((ak.num(el)==1)&(ak.num(mu)==1))
 
-    sf_central  = sf16.get(el[sel], mu[sel], variation='central')
+    sf_central  = sf18.get(el[sel], mu[sel], variation='central')
     print ("Mean value of SF (central): %.3f"%ak.mean(sf_central))
-    sf_up       = sf16.get(el[sel], mu[sel], variation='up')
+    sf_up       = sf18.get(el[sel], mu[sel], variation='up')
     print ("Mean value of SF (up, all): %.3f"%ak.mean(sf_up))
-    sf_down     = sf16.get(el[sel], mu[sel], variation='down')
+    sf_down     = sf18.get(el[sel], mu[sel], variation='down')
     print ("Mean value of SF (down, all): %.3f"%ak.mean(sf_down))
 
-    sf_up       = sf16.get(el[sel], mu[sel], variation='up', collection='ele')
+    sf_up       = sf18.get(el[sel], mu[sel], variation='up', collection='ele')
     print ("Mean value of SF (up, ele): %.3f"%ak.mean(sf_up))
-    sf_down     = sf16.get(el[sel], mu[sel], variation='down', collection='ele')
+    sf_down     = sf18.get(el[sel], mu[sel], variation='down', collection='ele')
     print ("Mean value of SF (down, ele): %.3f"%ak.mean(sf_down))
 
-    sf_up       = sf16.get(el[sel], mu[sel], variation='up', collection='mu')
+    sf_up       = sf18.get(el[sel], mu[sel], variation='up', collection='mu')
     print ("Mean value of SF (up, mu): %.3f"%ak.mean(sf_up))
-    sf_down     = sf16.get(el[sel], mu[sel], variation='down', collection='mu')
+    sf_down     = sf18.get(el[sel], mu[sel], variation='down', collection='mu')
     print ("Mean value of SF (down, mu): %.3f"%ak.mean(sf_down))
