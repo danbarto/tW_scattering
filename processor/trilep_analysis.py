@@ -429,7 +429,10 @@ class trilep_analysis(processor.ProcessorABC):
                 for p in eft_points:
                     x,y = p['point']
                     point = p['point']
-                    eft_weight = self.hyperpoly.eval(ev.Pol, point)
+                    if dataset.count('EFT'):
+                        eft_weight = self.hyperpoly.eval(ev.Pol, point)
+                    else:
+                        eft_weight = dummy_weight.weight()
                     fill_multiple_np(
                         output['signal_region_topW'],
                         {
