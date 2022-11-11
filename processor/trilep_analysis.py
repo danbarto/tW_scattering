@@ -419,7 +419,14 @@ class trilep_analysis(processor.ProcessorABC):
                     add_sel = sig_sel
                 )
 
-                for p in self.points:
+                if dataset.count('EFT'):
+                    eft_points = self.points
+                else:
+                    eft_points = [{
+                        'name': f'eft_cpt_0_cpqm_0',
+                        'point': [0,0],
+                    }]
+                for p in eft_points:
                     x,y = p['point']
                     point = p['point']
                     eft_weight = self.hyperpoly.eval(ev.Pol, point)
