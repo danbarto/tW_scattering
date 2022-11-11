@@ -525,8 +525,8 @@ if __name__ == '__main__':
         xr = np.arange(-7,8,1)
         yr = np.arange(-7,8,1)
         if args.extended:
-            xr = np.arange(-30,18,2)  # this is Y on the plots!
-            yr = np.arange(-10,28,2)  # this is X on the plots!
+            xr = np.arange(-30,31,5)  # this is Y on the plots!
+            yr = np.arange(-30,31,5)  # this is X on the plots!
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])

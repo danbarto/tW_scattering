@@ -52,8 +52,6 @@ class trilep_analysis(processor.ProcessorABC):
         #self.weights = weights
         self.hyperpoly = hyperpoly
         self.points = points
-        self.coeff = np.array([1.000000,0.072813,-0.098492,0.005049,-0.002042,0.003988])
-        self.coeffs = np.transpose([self.coeff])
 
     @property
     def accumulator(self):
@@ -424,7 +422,7 @@ class trilep_analysis(processor.ProcessorABC):
                 for p in self.points:
                     x,y = p['point']
                     point = p['point']
-                    eft_weight = self.hyperpoly.eval(np.transpose(ev.Pol), point)
+                    eft_weight = self.hyperpoly.eval(ev.Pol, point)
                     fill_multiple_np(
                         output['signal_region_topW'],
                         {
@@ -687,7 +685,7 @@ if __name__ == '__main__':
     coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
     ref_coordinates = [0,0]
 
-    from Tools.HyperPoly import *
+    from Tools.awkwardHyperPoly import *
     hp = HyperPoly(2)
     hp.initialize(coordinates,ref_coordinates)
 
