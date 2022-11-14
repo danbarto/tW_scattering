@@ -89,7 +89,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
 
     if region == 'trilep_ttZ':
         sm_point = 'central'
-        bsm_point = f"bsm_cpt_{cpt}_cpqm_{cpqm}"
+        bsm_point = 'central'
     else:
         sm_point = 'eft_cpt_0_cpqm_0'
         bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
@@ -596,7 +596,7 @@ if __name__ == '__main__':
             ]
         elif args.regions == 'trilep':
             regions = [
-                #("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+                ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
                 ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
