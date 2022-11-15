@@ -87,7 +87,12 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
 
-    sm_point = 'central'
+    if region == 'trilep_ttZ':
+        sm_point = 'central'
+        bsm_point = 'central'
+    else:
+        sm_point = 'eft_cpt_0_cpqm_0'
+        bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
     ul = str(year)[2:]
 
     print ("Filling background histogram")
@@ -121,7 +126,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
-    signal = histogram[('topW_lep', sm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
+    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
     signal = signal.rebin(axis.name, axis)
 
     #systematics= [
@@ -513,6 +518,8 @@ if __name__ == '__main__':
         "trilep_ttZ",
         "trilep_topW_qm_0Z",
         "trilep_topW_qp_0Z",
+        "trilep_topW_qm_1Z",
+        "trilep_topW_qp_1Z",
     ]
 
     # Define a scan
@@ -520,8 +527,8 @@ if __name__ == '__main__':
         xr = np.arange(-7,8,1)
         yr = np.arange(-7,8,1)
         if args.extended:
-            xr = np.arange(-30,18,2)  # this is Y on the plots!
-            yr = np.arange(-10,28,2)  # this is X on the plots!
+            xr = np.arange(-30,31,5)  # this is Y on the plots!
+            yr = np.arange(-30,31,5)  # this is X on the plots!
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
@@ -589,7 +596,7 @@ if __name__ == '__main__':
             ]
         elif args.regions == 'trilep':
             regions = [
-                #("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+                ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
                 ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
