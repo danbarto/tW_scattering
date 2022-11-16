@@ -1132,15 +1132,12 @@ class SS_analysis(processor.ProcessorABC):
             if not self.minimal:
                 '''
                 Don't fill these histograms for the variations
-                        'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
-                        'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
-                        'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
-                        'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
                 '''
 
                 output['PV_npvs'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvs, weight=weight_BL)
                 output['PV_npvsGood'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
                 if var['name'] == 'central':
+                    # NOTE we don't have systematic uncertainties on the NP estimate for the histograms below.
                     fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
                     fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
                     fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
@@ -1164,6 +1161,11 @@ class SS_analysis(processor.ProcessorABC):
                             'pt':  pad_and_flatten(leading_lepton.p4.pt),
                             'eta': pad_and_flatten(leading_lepton.eta),
                         },
+                    )
+                    fill_multiple_np(
+                        output['dilepton_mass_onZ'],
+                        {'mass': pad_and_flatten(dilepton_mass)},
+                        add_sel = (sel.dilep_baseline(only=['SSee_onZ']) & ak.num(electron, axis=1)),
                     )
 
                     fill_multiple_np(
@@ -1235,6 +1237,14 @@ class SS_analysis(processor.ProcessorABC):
                     output['min_bl_dR'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=ak.fill_none(min_bl_dR,0)[BL], weight=weight_BL)
                     output['min_mt_lep_met'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(min_mt_lep_met,0)[BL], weight=weight_BL)
 
+                    SSee_onZ = sel.dilep_baseline(only=['SSee_onZ'])
+                    output['dilepton_mass_onZ'].fill(
+                        dataset=dataset,
+                        systematic=var['name'],
+                        prediction='central',
+                        mass=pad_and_flatten(dilepton_mass)[(BL & SSee_onZ & ak.num(electron, axis=1))],
+                        weight=weight.weight(modifier=shift)[(BL & SSee_onZ & ak.num(electron, axis=1))],
+                    )
                     # just moving the histograms below cut the memory consumption by 30-50%
                     output['lead_lep'].fill(
                         dataset=dataset,
@@ -1716,6 +1726,7 @@ if __name__ == '__main__':
                         "mjj_max":      hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ext_mass_axis),
                         "delta_eta_jj": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, delta_axis),
                         "dilepton_mass": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
+                        "dilepton_mass_onZ": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
                         "dilepton_pt": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, pt_axis),
                         "min_bl_dR": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, delta_axis),
                         "min_mt_lep_met": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, mass_axis),
@@ -1808,9 +1819,9 @@ if __name__ == '__main__':
         for key in output[dataset_0]:
             cutflow_output[sample][key] = 0.
             for dataset in mapping[ul][sample]:
-                try:
+                if float(samples[dataset]['sumWeight'])>0:
                     cutflow_output[sample][key] += (renorm[dataset]*output[dataset][key] * float(samples[dataset]['xsec']) * cfg['lumi'][year] * 1000 / float(samples[dataset]['sumWeight']))
-                except ZeroDivisionError:
+                else:
                     cutflow_output[sample][key] += output[dataset][key]
 
         if not local:
@@ -1821,7 +1832,12 @@ if __name__ == '__main__':
             c.restart()
 
     from Tools.helpers import getCutFlowTable
-    processes = ['topW_lep', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'top'] if args.sample == 'MCall' else [args.sample]
+    #if args.sample == 'MCall':
+    #    processes = ['topW_lep', 'TTW', 'TTZ', 'TTH', 'rare', 'diboson', 'XG', 'top']
+    #elif args.sample == 'data':
+    #    processes = []
+    #else:
+    #    processes = [args.sample]
     lines= [
             'filter',
             'dilep',
@@ -1839,7 +1855,7 @@ if __name__ == '__main__':
         ]
 
     print (getCutFlowTable(cutflow_output,
-                           processes=processes,
+                           processes=sample_list,
                            lines=lines,
                            significantFigures=3,
                            absolute=True,
