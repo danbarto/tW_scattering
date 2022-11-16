@@ -423,12 +423,13 @@ class trilep_analysis(processor.ProcessorABC):
                     eft_points = self.points
                 else:
                     eft_points = [{
-                        'name': f'eft_cpt_0_cpqm_0',
+                        'name': 'central',
                         'point': [0,0],
                     }]
                 for p in eft_points:
                     x,y = p['point']
                     point = p['point']
+                    eft_point = 'central' if (x==0 and y==0) else f'eft_cpt_{x}_cpqm_{y}'
                     if dataset.count('EFT'):
                         eft_weight = self.hyperpoly.eval(ev.Pol, point)
                     else:
@@ -441,7 +442,7 @@ class trilep_analysis(processor.ProcessorABC):
                             'charge': trilep_q,
                             },
                         add_sel = sig_sel,
-                        other = {'EFT': f'eft_cpt_{x}_cpqm_{y}'},
+                        other = {'EFT': eft_point},
                         weight_multiplier = eft_weight,
                     )
 
@@ -668,8 +669,8 @@ if __name__ == '__main__':
     
     # define points
     if args.scan:
-        x = np.arange(-30,31,5)
-        y = np.arange(-30,31,5)
+        x = np.arange(-20,21,2)
+        y = np.arange(-20,21,2)
     else:
         x = x = np.array([int(args.cpt)])
         y = np.array([int(args.cpqm)])
@@ -678,10 +679,16 @@ if __name__ == '__main__':
     
     points = []
     for cpt, cpqm in zip(CPT.flatten(), CPQM.flatten()):
-        points.append({
-            'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
-            'point': [cpt, cpqm],
-        })
+        if cpt == 0 and cpqm == 0:
+            points.append({
+                'name': 'central',
+                'point': [0, 0],
+            })
+        else:
+            points.append({
+                'name': f'eft_cpt_{cpt}_cpqm_{cpqm}',
+                'point': [cpt, cpqm],
+            })
 
 
     if args.buaf == 'remote':

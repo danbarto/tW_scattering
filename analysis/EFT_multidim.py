@@ -91,8 +91,12 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         sm_point = 'central'
         bsm_point = 'central'
     else:
-        sm_point = 'eft_cpt_0_cpqm_0'
-        bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
+        sm_point = 'central'
+        #sm_point = 'eft_cpt_0_cpqm_0'
+        if cpt == 0 and cpqm == 0:
+            bsm_point = 'central'
+        else:
+            bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
     ul = str(year)[2:]
 
     print ("Filling background histogram")
@@ -142,7 +146,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         # NOTE this loads background systematics.
         # Not fully complete, but most important systematics are here
         print ("Getting Background systematics")
-        systematics = get_systematics(histogram, year, sm_point,
+        systematics = get_systematics(histogram, year, 'central',
                                         correlated=False,
                                         signal=False,
                                         overflow='none',
@@ -162,7 +166,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
             print ("No lumi systematic assigned.")
 
         print ("Getting signal systematics")
-        systematics = add_signal_systematics(histogram, year, sm_point,
+        systematics = add_signal_systematics(histogram, year, 'central',
                                                 systematics=systematics,
                                                 correlated=False,
                                                 proc='topW_lep',
@@ -170,7 +174,6 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                                                 samples=samples[year],
                                                 mapping=mapping[f'UL{ul}'],
                                                 )
-
 
     sm_card = makeCardFromHist(
         backgrounds,
@@ -527,8 +530,8 @@ if __name__ == '__main__':
         xr = np.arange(-7,8,1)
         yr = np.arange(-7,8,1)
         if args.extended:
-            xr = np.arange(-30,31,5)  # this is Y on the plots!
-            yr = np.arange(-30,31,5)  # this is X on the plots!
+            xr = np.arange(-20,21,2)  # this is Y on the plots!
+            yr = np.arange(-20,21,2)  # this is X on the plots!
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
