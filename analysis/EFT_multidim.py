@@ -741,6 +741,24 @@ if __name__ == '__main__':
         Z = np.array(list(results.values()))
         Z = np.reshape(Z, X.shape)
 
+
+        Z[np.where(Z<0)] = 0
+
+        fig, ax = plt.subplots(1,1,figsize=(10,10))
+
+        from matplotlib.colors import LogNorm
+        im = ax.matshow(Z)
+        #ax.set_xticks(range(df.select_dtypes(['number']).shape[1]))
+        #ax.set_xticklabels(df.select_dtypes(['number']).columns, rotation=90, fontdict={'fontsize':12})
+        #ax.set_yticks(range(df.select_dtypes(['number']).shape[1]))
+        #ax.set_yticklabels(df.select_dtypes(['number']).columns, fontdict={'fontsize':12})
+        cbar = ax.figure.colorbar(im, norm=LogNorm(vmin=0.01, vmax=100))
+        #cbar.ax.tick_params(labelsize=12)
+
+        ax.set_title('Limits', fontsize=16)
+        fig.savefig('./plots/limits_2D_test.png')
+
+
         fig, ax, = plt.subplots(1,1,figsize=(10,10))
         hep.cms.label(
             "WIP",
