@@ -189,7 +189,7 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
     for key in output.keys():
         if isinstance(output[key], hist.Hist):
             try:
-                print (f"Merging histogram {key}")
+                print ("Merging histogram", key)
                 output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
             except:
                 print ("Scale and merge failed for:",key)
