@@ -30,7 +30,7 @@ class Selection:
         self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
-    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True, DY=False, Zsel='none'):
+    def dilep_baseline(self, omit=[], add=[], only=[], cutflow=None, tight=False, SS=True, DY=False, Zsel='none'):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
@@ -53,10 +53,14 @@ class Selection:
 
         OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
+        SS_diele    = diele[(diele['0'].charge*diele['1'].charge > 0)]
         SFOS        = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ    = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
         onZ     = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
+
+        SSee_offZ = ak.all(abs(SS_diele.mass-91.2)>10, axis=1)
+        SSee_onZ  = ak.any(abs(SS_diele.mass-91.2)<10, axis=1)
 
         is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
         is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
@@ -92,6 +96,8 @@ class Selection:
         self.selection.add('ST>600',        (st>600) )
         self.selection.add('offZ',          offZ )
         self.selection.add('onZ',           onZ )
+        self.selection.add('SSee_onZ',      SSee_onZ )
+        self.selection.add('SSee_offZ',     SSee_offZ )
         self.selection.add('min_mll',       (min_mll) )
         
         reqs = [
@@ -108,7 +114,8 @@ class Selection:
             'N_light>0',
             'MET>30',
             'N_fwd>0',
-            'min_mll'
+            'min_mll',
+            'SSee_offZ',
         ]
 
         reqs_DY = [
@@ -121,7 +128,7 @@ class Selection:
             'N_jet>1',
             'N_central>1',
             'N_btag=0',
-            'min_mll'
+            'min_mll',
         ]
         
         if tight:
@@ -140,6 +147,12 @@ class Selection:
 
         if Zsel == 'onZ':
             reqs += ['onZ']
+
+        for a in add:
+            reqs.append(a)
+
+        if len(only)>0:
+            reqs = only
 
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)
