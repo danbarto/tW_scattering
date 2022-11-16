@@ -246,7 +246,16 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     weight.add("btag", self.btagSF.Method1a(btag, light_central))
 
                 # lepton SFs
-                weight.add("lepton", self.leptonSF.get(electron, muon))
+                if var['name'] == 'ele_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
+                elif var['name'] == 'ele_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
+                elif var['name'] == 'mu_up':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
+                elif var['name'] == 'mu_down':
+                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
+                else:
+                    weight.add("lepton", self.leptonSF.get(electron, muon))
 
                 # trigger SFs
                 weight.add("trigger", self.triggerSF.get(electron, muon))
@@ -271,21 +280,23 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
             if var_name == 'central':
                 cutflow = Cutflow(output, ev, weight=weight)
-                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
+                BL = sel.trilep_baseline(cutflow=cutflow)
 
             # Selection for ttZ / tZq / Z+V/VV region
-            BL = sel.trilep_baseline(omit=['N_fwd>0'])
+            BL = sel.trilep_baseline()
             if not re.search(data_pattern, dataset):
                 BL = add_conversion_req(dataset, BL)
 
-            # Selection for conversion region
-            BL_offZ = sel.trilep_baseline(
-                add=['offZ', 'N_btag=0', 'N_jet>0', 'N_central>0'],
-                omit=['N_fwd>0', 'onZ', 'MET>50', 'N_jet>2', 'N_central>1'],
-            )
+            BL_WZ = sel.trilep_baseline(channel='WZ')
+            BL_ttZ = sel.trilep_baseline(channel='ttZ')
+            BL_XG = sel.trilep_baseline(channel='XG')
+            BL_SR = sel.trilep_baseline(channel='topW')
 
             if not re.search(data_pattern, dataset):
-                BL_offZ = add_conversion_req(dataset, BL_offZ)
+                BL_WZ = add_conversion_req(dataset, BL_WZ)
+                BL_ttZ = add_conversion_req(dataset, BL_ttZ)
+                BL_XG = add_conversion_req(dataset, BL_XG)
+                BL_SR = add_conversion_req(dataset, BL_SR)
 
 
             output['lead_lep'].fill(
@@ -294,7 +305,6 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 n_ele = n_ele[BL],
                 pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
                 eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
-                phi = ak.to_numpy(ak.flatten(leading_lepton[BL].phi)),
                 weight = weight.weight()[BL]
             )
 
@@ -304,7 +314,6 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 n_ele = n_ele[BL],
                 pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
                 eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
-                phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
                 weight = weight.weight()[BL]
             )
 
@@ -314,19 +323,10 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 n_ele = n_ele[BL],
                 pt  = ak.to_numpy(ak.flatten(second_lepton[BL].pt)),
                 eta = ak.to_numpy(ak.flatten(second_lepton[BL].eta)),
-                phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
                 weight = weight.weight()[BL]
             )
 
-            output['N_jet_offZ'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_offZ],
-                multiplicity=ak.num(jet)[BL_offZ],
-                weight=weight.weight()[BL_offZ],
-            )
-
-            output['N_jet_onZ'].fill(
+            output['N_jet'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -334,16 +334,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-
-            output['N_b_offZ'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_offZ],
-                multiplicity=ak.num(btag)[BL_offZ],
-                weight=weight.weight()[BL_offZ],
-            )
-
-            output['N_b_onZ'].fill(
+            output['N_b'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -351,16 +342,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-
-            output['N_fwd_offZ'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_offZ],
-                multiplicity=ak.num(fwd)[BL_offZ],
-                weight=weight.weight()[BL_offZ],
-            )
-
-            output['N_fwd_onZ'].fill(
+            output['N_fwd'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -374,7 +356,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['dilep_pt_onZ'].fill(
+            output['dilep_pt'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -382,7 +364,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['dilep_eta_onZ'].fill(
+            output['dilep_eta'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -390,7 +372,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['M3l_onZ'].fill(
+            output['M3l'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -398,15 +380,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['M3l_offZ'].fill(
-                dataset=dataset,
-                systematic = var_name,
-                n_ele = n_ele[BL_offZ],
-                mass=(trilep_m[BL_offZ]),
-                weight=weight.weight()[BL_offZ],
-            )
-
-            output['best_M_ll_onZ'].fill(
+            output['dilep_mass'].fill(
                 dataset=dataset,
                 systematic = var_name,
                 n_ele = n_ele[BL],
@@ -414,14 +388,14 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 weight=weight.weight()[BL],
             )
 
-            output['best_M_ll_offZ'].fill(
-                dataset=dataset,
+            output['MET'].fill(
+                dataset = dataset,
                 systematic = var_name,
-                n_ele = n_ele[BL_offZ],
-                mass=ak.flatten(OS_dilepton_mass[BL_offZ]),
-                weight=weight.weight()[BL_offZ],
+                n_ele = n_ele[BL],
+                pt  = met[BL].pt,
+                phi  = met[BL].phi,
+                weight = weight.weight()[BL]
             )
-
 
         return output
 
@@ -450,7 +424,10 @@ if __name__ == '__main__':
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
+    argParser.add_argument('--workers', action='store', default=10, help="How many threads for local running?")
     argParser.add_argument('--sample', action='store', default='all', )
+    argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
+    argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -508,7 +485,16 @@ if __name__ == '__main__':
         from Tools.nano_mapping import make_fileset
         from default_accumulators import add_processes_to_output, desired_output
 
-        fileset = make_fileset([sample], samples, year=ul, skim=True, small=small, n_max=1)
+        fileset = make_fileset(
+            [sample],
+            samples,
+            year=ul,
+            skim=args.skim,
+            small=small,
+            n_max=1,
+            buaf=args.buaf,
+            merged=True,
+        )
 
         add_processes_to_output(fileset, desired_output)
 
@@ -522,12 +508,16 @@ if __name__ == '__main__':
             {'name': 'b_down',      'ext': '_bDown',            'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_up',        'ext': '_lUp',              'weight': None,    'pt_var': 'pt_nom'},
             {'name': 'l_down',      'ext': '_lDown',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_up',      'ext': '_eleUp',            'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'ele_down',    'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_up',       'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
+            {'name': 'mu_down',     'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
            ]
 
         if args.central: variations = variations[:1]
 
         if local:# and not profile:
-            exe = processor.FuturesExecutor(workers=10)
+            exe = processor.FuturesExecutor(workers=int(args.workers))
 
         elif iterative:
             exe = processor.IterativeExecutor()
@@ -543,25 +533,25 @@ if __name__ == '__main__':
 
 
         desired_output.update({
-            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
-            "second_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis, phi_axis),
-            "N_jet_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_jet_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_b_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_b_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_fwd_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "N_fwd_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
-            "M3l_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, ext_mass_axis),
-            "M3l_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, ext_mass_axis),
+            "lead_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "trail_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "second_lep": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, eta_axis),
+            "N_jet": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_jet_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_b": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_b_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "N_fwd": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            #"N_fwd_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, multiplicity_axis),
+            "M3l": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, ext_mass_axis),
+            #"M3l_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, ext_mass_axis),
             "ST": hist.Hist("Counts", dataset_axis, ht_axis),
             "HT": hist.Hist("Counts", dataset_axis, ht_axis),
             "LT": hist.Hist("Counts", dataset_axis, ht_axis),
-            "dilep_pt_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
-            "dilep_eta_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, eta_axis),
+            "dilep_pt": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis),
+            "dilep_eta": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, eta_axis),
+            "dilep_mass": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "min_mass_SFOS": hist.Hist("Counts", dataset_axis, mass_axis),
-            "best_M_ll_onZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
-            "best_M_ll_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
+            #"best_M_ll_offZ": hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, mass_axis),
             "M_ll_worst": hist.Hist("Counts", dataset_axis, mass_axis),
             "M_ll_all": hist.Hist("Counts", dataset_axis, mass_axis),
         })

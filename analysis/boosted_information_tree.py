@@ -272,6 +272,7 @@ if __name__ == '__main__':
     df_bkg = df_in[((df_in['SS']==1)&(df_in['n_fwd']>=1))]
 
     # NOTE this is new and slightly changes the results of BITs versions < 41
+    print (f"Number of variables: {len(variables)}")
     for var in variables:
         for df in [df_signal, df_np, df_bkg]:
             df[var] = abs(df[var])

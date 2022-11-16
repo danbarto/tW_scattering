@@ -17,11 +17,11 @@ systematic_axis         = hist.Cat("systematic",    "Systematic variation")
 eft_axis                = hist.Cat("EFT",           "EFT point")
 pred_axis               = hist.Cat("prediction",    "Prediction")
 charge_axis             = hist.Bin("charge",        r"$\Sigma_{lep}Q$", 7, -3.5, 3.5)
-pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)",   100, 0, 500)  # 5 GeV is fine enough
-p_axis                  = hist.Bin("p",             r"$p$ (GeV)",       250, 0, 2500)  # 10 GeV is fine enough
+pt_axis                 = hist.Bin("pt",            r"$p_{T}$ (GeV)",   50, 0, 500)  # 10 GeV is fine enough
+p_axis                  = hist.Bin("p",             r"$p$ (GeV)",       40, 0, 2000)  # 10 GeV is fine enough
 ht_axis                 = hist.Bin("ht",            r"$H_{T}$ (GeV)",   250, 0, 5000) 
 mass_axis               = hist.Bin("mass",          r"M (GeV)",         200, 0, 200)  # for any real resonance, like W, Z, maybe even top
-ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         1000, 0, 2000)  # for any other mass
+ext_mass_axis           = hist.Bin("mass",          r"M (GeV)",         100, 0, 2000)  # for any other mass
 eta_axis                = hist.Bin("eta",           r"$\eta$",          50, -5.0, 5.0)
 delta_eta_axis          = hist.Bin("eta",           r"$\eta$",          150, -5.0, 10.0)
 phi_axis                = hist.Bin("phi",           r"$\phi$",          64, -3.2, 3.2)
@@ -46,22 +46,22 @@ desired_output = {
             
             "MET" :             hist.Hist("Counts", dataset_axis, systematic_axis, n_ele_axis, pt_axis, phi_axis),
             
-            "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "j3":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "j1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "j2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "j3":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
-            "b1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "b2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "b1":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "b2":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
             "chargeFlip_vs_nonprompt": hist.Hist("Counts", dataset_axis, n1_axis, n2_axis, n_ele_axis),
             
             "high_p_fwd_p":      hist.Hist("Counts", dataset_axis, systematic_axis, p_axis),
                         
-            "electron":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "muon":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "lead_lep":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "trail_lep":          hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
-            "fwd_jet":            hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis, phi_axis),
+            "electron":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "muon":               hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "lead_lep":           hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "trail_lep":          hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
+            "fwd_jet":            hist.Hist("Counts", dataset_axis, systematic_axis, pt_axis, eta_axis),
 
             "N_b" :               hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),
             "N_central" :         hist.Hist("Counts", dataset_axis, systematic_axis, multiplicity_axis),

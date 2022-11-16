@@ -204,8 +204,8 @@ def mt(pt1, phi1, pt2, phi2):
     '''
     return np.sqrt( 2*pt1*pt2 * (1 - np.cos(phi1-phi2)) )
 
-def pad_and_flatten(val): 
-    import awkward as ak
+def pad_and_flatten(val):
+    # this is relatively fast
     try:
         return ak.flatten(ak.fill_none(ak.pad_none(val, 1, clip=True), 0))
         #return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)

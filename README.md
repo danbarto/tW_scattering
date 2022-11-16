@@ -219,6 +219,8 @@ scram b -j 8
 
 ## Combine in docker
 
+Might only work in `/bin/bash`
+
 ``` shell
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 scram p CMSSW CMSSW_10_2_13

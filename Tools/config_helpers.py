@@ -137,13 +137,15 @@ def get_merged_output(name, year, samples=None, postfix=None, quiet=False, selec
 
     renorm   = {}
 
-    if year in ['2018', '2022']:
-        data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
-    else:
-        data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG', 'rare']
+    ## FIXME what the hell is this actually??
+    #if year in ['2018', '2022']:
+    #    data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
+    #else:
+    #    data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
+    #order = ['topW_lep', 'diboson', 'TTW', 'TTH', 'TTZ', 'TZX', 'DY', 'top', 'XG', 'rare']
 
-    datasets = data + order
+    #datasets = data + order
+    datasets = list(mapping[ul].keys())
 
     if isinstance(select_datasets, list):
         datasets = select_datasets

@@ -30,7 +30,7 @@ class Selection:
         self.filters   = getFilters(self.events, year=self.year, dataset=self.dataset)
 
 
-    def dilep_baseline(self, omit=[], cutflow=None, tight=False, SS=True, DY=False, Zsel='none'):
+    def dilep_baseline(self, omit=[], add=[], only=[], cutflow=None, tight=False, SS=True, DY=False, Zsel='none'):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
@@ -53,10 +53,14 @@ class Selection:
 
         OS_dimu     = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele    = diele[(diele['0'].charge*diele['1'].charge < 0)]
+        SS_diele    = diele[(diele['0'].charge*diele['1'].charge > 0)]
         SFOS        = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
         offZ    = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
         onZ     = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
+
+        SSee_offZ = ak.all(abs(SS_diele.mass-91.2)>10, axis=1)
+        SSee_onZ  = ak.any(abs(SS_diele.mass-91.2)<10, axis=1)
 
         is_SS = ( ak.sum(lepton.charge, axis=1)!=0 )
         is_OS = ( ak.sum(lepton.charge, axis=1)==0 )
@@ -92,6 +96,8 @@ class Selection:
         self.selection.add('ST>600',        (st>600) )
         self.selection.add('offZ',          offZ )
         self.selection.add('onZ',           onZ )
+        self.selection.add('SSee_onZ',      SSee_onZ )
+        self.selection.add('SSee_offZ',     SSee_offZ )
         self.selection.add('min_mll',       (min_mll) )
         
         reqs = [
@@ -108,7 +114,8 @@ class Selection:
             'N_light>0',
             'MET>30',
             'N_fwd>0',
-            'min_mll'
+            'min_mll',
+            'SSee_offZ',
         ]
 
         reqs_DY = [
@@ -121,7 +128,7 @@ class Selection:
             'N_jet>1',
             'N_central>1',
             'N_btag=0',
-            'min_mll'
+            'min_mll',
         ]
         
         if tight:
@@ -141,6 +148,12 @@ class Selection:
         if Zsel == 'onZ':
             reqs += ['onZ']
 
+        for a in add:
+            reqs.append(a)
+
+        if len(only)>0:
+            reqs = only
+
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)
 
@@ -156,15 +169,16 @@ class Selection:
         return selection
 
 
-    def trilep_baseline(self, omit=[], add=[], cutflow=None, tight=False):
+    def trilep_baseline(self, omit=[], add=[], only=[], cutflow=None, channel='none'):
         '''
         give it a cutflow object if you want it to be filed.
         cuts in the omit list will not be applied
         every quantity in trilep should be calculated from loose leptons
+        channels should be none (=inclusive), WZ, ttZ, XG, topW
         '''
         self.selection = PackedSelection()
 
-        is_trilep  = ( ((ak.num(self.ele_veto) + ak.num(self.mu_veto))>=3) & ((ak.num(self.ele) + ak.num(self.mu))>=3) )
+        is_trilep  = ( ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==3) & ((ak.num(self.ele) + ak.num(self.mu))==3) )  # NOTE: all 3 leptons need to be tight
         lep0pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>25)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>25)]))>0)
         lep1pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>20)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>20)]))>1)
         lep2pt     = ((ak.num(self.ele_veto[(get_pt(self.ele_veto)>10)]) + ak.num(self.mu_veto[(get_pt(self.mu_veto)>10)]))>2)
@@ -177,18 +191,11 @@ class Selection:
 
         SFOS = ak.concatenate([OS_diele, OS_dimu], axis=1)  # do we have SF OS?
 
-        offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
-        #onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))  # FIXME this looks wrong?
-        onZ = (ak.any(abs(SFOS.mass-91.2)<10, axis=1))
-
-        lepton_tight = ak.concatenate([self.ele, self.mu], axis=1)
-        SS_dilep = ( ak.sum(lepton_tight.charge, axis=1)!=0 )  # this makes sure that at least the SS leptons are tight, or all 3 leptons are tight
+        offZ = (ak.all(abs((OS_dimu['0'].p4+OS_dimu['1'].p4).mass-91.2)>10, axis=1) & ak.all(abs((OS_diele['0'].p4+OS_diele['1'].p4).mass-91.2)>10, axis=1))
+        onZ = (ak.any(abs((SFOS['0'].p4+SFOS['1'].p4).mass-91.2)<10, axis=1))
 
         # get lepton vectors for trigger
         lepton = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)
-
-        vetolepton   = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)    
-        vetotrilep = choose3(vetolepton, 3)
 
         pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
         neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
@@ -207,7 +214,6 @@ class Selection:
         min_mll = ak.all(dilep.mass>12, axis=1)
 
         self.selection.add('trilep',        is_trilep)
-        self.selection.add('SS_dilep',      SS_dilep)
         self.selection.add('p_T(lep0)>25',  lep0pt)
         self.selection.add('p_T(lep1)>20',  lep1pt)
         self.selection.add('p_T(lep2)>10',  lep2pt)
@@ -224,6 +230,7 @@ class Selection:
         self.selection.add('N_btag=0',      (ak.num(self.jet_btag)==0 ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
+        self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('ST>600',        (st_veto>600) )
         self.selection.add('offZ',          offZ )
         self.selection.add('onZ',           onZ )
@@ -231,38 +238,50 @@ class Selection:
 
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
-        
-        reqs = [
+
+        baseline = [
             'filter',
+            'trigger',
             'trilep',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
             'p_T(lep2)>10',
-            'trigger',
-            'SS_dilep',
-            #'offZ',
-            'onZ',
-            'MET>50',
-            'N_jet>2',
+            'N_jet>1',
             'N_central>1',
-            #'N_btag>0',
-            'N_fwd>0',
-            #'SFOS>=1',
-            #'charge_sum',
             'min_mll',
         ]
-        
-        if tight:
-            reqs += [
-                'N_jet>3',
-                'N_central>2',
-                'ST>600',
-                #'MET>50',
-                #'delta_eta',
+
+        all_reqs = {
+            'none': baseline,
+            'WZ': baseline + [
+                'N_btag=0',
+                'onZ',
+                'MET>30',
+            ],
+            'ttZ': baseline + [
+                'N_btag>0',
+                'onZ',
+                'MET>30',
+            ],
+            'XG': baseline + [
+                'N_btag=0',
+                'offZ',
+            ],
+            'topW': baseline + [
+                'N_jet>2',
+                'N_btag>0',
+                'N_fwd>0',
+                'offZ',
             ]
+        }
+
+        reqs = all_reqs[channel]
 
         for a in add:
             reqs.append(a)
+
+        if len(only)>0:
+            reqs = only
 
         reqs_d = { sel: True for sel in reqs if not sel in omit }
         selection = self.selection.require(**reqs_d)
