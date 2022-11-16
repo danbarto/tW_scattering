@@ -31,7 +31,7 @@ class charge_flip:
 
         # NOTE lookup as function of pt and abs(eta)
         self.fr_lookup = dense_lookup.dense_lookup(fr_hist.values()[()], [fr_hist.axis("pt").edges(), fr_hist.axis("eta").edges()])
-        self.sf = chargeflip_sf_dict[f'UL{year}{era}']
+        self.sf = chargeflip_sf_dict[f'UL{year}{era}']  # this is the data/MC SF for the flip rate
 
     def get(self, electron):
 
@@ -40,7 +40,8 @@ class charge_flip:
 
         # I'm using ak.prod and ak.sum to replace empty arrays by 1 and 0, respectively
         # FIXME check that this is actually necessary?
-        weight = ak.sum(f_1/(1-f_1), axis=1)*ak.prod(1-f_2/(1-f_2), axis=1) + ak.sum(f_2/(1-f_2), axis=1)*ak.prod(1-f_1/(1-f_1), axis=1)
+        #weight = ak.sum(f_1/(1-f_1), axis=1)*ak.prod(1-f_2/(1-f_2), axis=1) + ak.sum(f_2/(1-f_2), axis=1)*ak.prod(1-f_1/(1-f_1), axis=1)
+        weight = ak.sum(f_1, axis=1) + ak.sum(f_2, axis=1)  # NOTE this is following what ttH is doing. The above is the complete formula imho
 
         return weight
 
