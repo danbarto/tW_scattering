@@ -152,6 +152,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                                         overflow='none',
                                         samples=samples[year],
                                         mapping=mapping[f'UL{ul}'],
+                                        rebin=axis,
                                         )
         if year.count('2016'):
             print ("lumi uncertainties for 2016")
@@ -173,6 +174,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                                                 overflow='none',
                                                 samples=samples[year],
                                                 mapping=mapping[f'UL{ul}'],
+                                                rebin=axis,
                                                 )
 
     sm_card = makeCardFromHist(
