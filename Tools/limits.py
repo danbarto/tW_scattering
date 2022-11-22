@@ -405,7 +405,9 @@ def makeCardFromHist(
 
     # we write out the BSM histograms!
     for p in processes:
-        fout[p] = h_tmp_bsm[p].to_hist()
+        out_hist_tmp = h_tmp_bsm[p].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout[p] = out_hist_tmp
 
     #fout['signal'] = h_tmp_bsm['signal'].to_hist()
     fout['data_obs'] = pdata_hist  # this should work directly
