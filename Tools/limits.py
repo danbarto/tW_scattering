@@ -460,6 +460,7 @@ def makeCardFromHist(
                     central = h_tmp_bsm[proc].values()[()]  # get BSM scaled prediction
 
                     val = np.nan_to_num(mag[0].values(), nan=1.0) * central
+                    val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     incl_rel = sum(val_h.values())/sum(central)
                     print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
@@ -468,10 +469,12 @@ def makeCardFromHist(
 
                     fout[proc+'_'+systematic+'Up']   = val_h
                     val = np.nan_to_num(mag[1].values(), nan=1.0) * central
+                    val = np.maximum(val, np.zeros_like(val))
                     val_h = make_bh(val, val, mag[1].axes[0].edges)
                     fout[proc+'_'+systematic+'Down'] = val_h
                 else:
                     val = np.nan_to_num(mag[0].values(), nan=1.0) * h_tmp_bsm[proc].values()[()]
+                    val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     fout[proc+'_'+systematic] = val_h
 
