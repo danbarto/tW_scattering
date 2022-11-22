@@ -391,13 +391,17 @@ def makeCardFromHist(
     if bsm_hist:
         if isinstance(bsm_hist, bh.Histogram):
             h_tmp_bsm['signal'] = bsm_hist
-            fout['signal'] = h_tmp_bsm['signal']
+            out_hist_tmp = h_tmp_bsm['signal']
         else:
             h_tmp_bsm['signal'] = bsm_hist.sum('dataset')
-            fout['signal'] = h_tmp_bsm['signal'].to_hist()
+            out_hist_tmp = h_tmp_bsm['signal'].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout['signal'] = out_hist_tmp
     else:
         h_tmp_bsm['signal'] = h_tmp['signal']
-        fout['signal'] = h_tmp_bsm['signal'].to_hist()
+        out_hist_tmp = h_tmp['signal'].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout['signal'] = out_hist_tmp
 
     # we write out the BSM histograms!
     for p in processes:
@@ -410,7 +414,7 @@ def makeCardFromHist(
     totals = {}
 
     for p in processes + ['signal']:
-        totals[p] = h_tmp_bsm[p].values()[()].sum()
+        totals[p] = np.maximum(h_tmp_bsm[p].values()[()], 0.01*np.ones_like(h_tmp_bsm[p].values()[()])).sum()
 
     totals['observation'] = pdata_hist.values().sum()
 
