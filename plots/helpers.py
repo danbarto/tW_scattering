@@ -175,6 +175,7 @@ def make_plot_from_dict(
 
     if data:
         data_h = data.project(axis.name).rebin(axis.name, axis).copy()
+        data_val = data_h.values(overflow=overflow)[()]
 
     #total = np.zeros_like(hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()])
     total = hist_d[list(processes)[0]].copy()
@@ -183,12 +184,17 @@ def make_plot_from_dict(
         total.add(hist_d[p])#.integrate('systematic', 'central').values(overflow=overflow)[()]
 
     central = total.integrate('systematic', 'central').values(overflow=overflow)[()]
+    if data and normalize:
+        norm = sum(data_val)/sum(central)
+        central = norm*central
+    else:
+        norm = 1
 
     y_max = np.max(central)*1.3 if not log else np.max(central)*30
     y_min = 0 if not log else max(np.min(central)*0.03, 0.03)
     edges = axis.edges(overflow=overflow)
     hep.histplot(
-        [ hist_d[p].integrate('systematic', 'central').values(overflow=overflow)[()] for p in processes],
+        [ norm*hist_d[p].integrate('systematic', 'central').values(overflow=overflow)[()] for p in processes],
         edges,
         histtype="fill",
         stack=True,
@@ -298,6 +304,9 @@ def make_plot_from_dict(
         loc=0,
         ax=ax,
     )
+
+    if normalize:
+        fig.text(0.55, 0.55, 'Data/MC = %s'%round(norm,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
 
     if save:

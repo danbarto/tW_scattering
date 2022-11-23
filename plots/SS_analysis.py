@@ -5,6 +5,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist
+from coffea.processor import accumulate
 import copy
 import numpy as np
 import re
@@ -69,6 +70,7 @@ def get_standard_plot(
         blind=False,
         overflow = 'over',
         systematics = True,
+        normalize = False,
 ):
     mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TTH', 'cf_est_data', 'np_est_data'])
     data_options = ['DoubleMuon', 'SingleMuon', 'MuonEG', 'EGamma', 'DoubleEG', 'SingleElectron']
@@ -88,6 +90,7 @@ def get_standard_plot(
         log = log,
         lumi = lumi,
         systematics = systematics,
+        normalize = normalize,
     )
 
 def get_nonprompt_plot(output, hist, axis, name, log=False, overflow='over'):
@@ -127,6 +130,7 @@ if __name__ == '__main__':
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--normalize', action='store_true', default=None, help="Normalize?")
+    argParser.add_argument('--unblind', action='store_true', default=None, help="Unblind?")
     argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--version', action='store', default='v21', help="Version of the NN training. Just changes subdir.")
     argParser.add_argument('--sample', action='store', default=None, help="Plot single sample")
@@ -163,7 +167,8 @@ if __name__ == '__main__':
     if year == '2019':
         outputs = []
         for y in ['2016', '2016APV', '2017', '2018']:
-            outputs.append(get_merged_output("SS_analysis", year=y))
+            print (y)
+            outputs.append(get_merged_output("SS_analysis", year=y, postfix='cpt_0_cpqm_0'))
         output = accumulate(outputs)
         del outputs
     else:
@@ -188,7 +193,9 @@ if __name__ == '__main__':
 
     sub_dir = '/dd/'
 
-    blind = True
+    blind = not args.unblind
+    if not blind:
+        sub_dir = '/dd_unblinded/'
 
     # Object multiplicities
     axis = hist.Bin('multiplicity', r'$N_{fwd\ jet}$', 5, -0.5, 4.5)

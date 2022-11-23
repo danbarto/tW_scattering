@@ -7,6 +7,7 @@ except ImportError:
     import awkward as ak
 
 from coffea import processor, hist
+from coffea.processor import accumulate
 import copy
 import numpy as np
 import re
@@ -71,6 +72,7 @@ def get_standard_plot(
         blind=False,
         overflow = 'over',
         systematics = True,
+        normalize = False,
 ):
     mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TTH', 'np_est_data'])
     data_options = ['DoubleMuon', 'SingleMuon', 'MuonEG', 'EGamma', 'DoubleEG', 'SingleElectron']
@@ -90,6 +92,7 @@ def get_standard_plot(
         log = log,
         lumi = lumi,
         systematics = systematics,
+        normalize = normalize,
     )
 
 def get_nonprompt_plot(output, hist, axis, name, log=False, overflow='over'):
@@ -173,7 +176,7 @@ if __name__ == '__main__':
     blind = False
 
     # Object multiplicities
-    axis = hist.Bin('mass', r'$m_{\ell\ell}$', 20, 0, 200)
+    axis = hist.Bin('mass', r'$m_{\ell\ell} (GeV)$', 20, 0, 200)
     get_standard_plot(output, 'dilepton_mass', axis, name='dilepton_mass', log=False, lumi=lumi, blind=blind)
     #get_nonprompt_plot(output, 'N_fwd', axis, name='np_N_fwd', log=False)
     #get_chargeflip_plot(output, 'N_fwd', axis, name='cf_N_fwd', log=False)
@@ -182,3 +185,9 @@ if __name__ == '__main__':
     get_standard_plot(output, 'dilepton_mass_XG', axis, name='dilepton_mass_XG', log=False, lumi=lumi, blind=blind)
     get_standard_plot(output, 'dilepton_mass_ttZ', axis, name='dilepton_mass_ttZ', log=False, lumi=lumi, blind=blind)
     get_standard_plot(output, 'dilepton_mass_topW', axis, name='dilepton_mass_topW', log=False, lumi=lumi, blind=blind)
+
+    axis = hist.Bin('pt', r'$p_{T} (GeV)$', 25, 0, 500)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+
+    axis = hist.Bin('pt', r'$p_{T}^{miss} (GeV)$', 25, 0, 500)
+    get_standard_plot(output, 'MET', axis, name='MET_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
