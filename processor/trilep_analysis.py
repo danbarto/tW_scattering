@@ -669,8 +669,8 @@ if __name__ == '__main__':
     
     # define points
     if args.scan:
-        x = np.arange(-20,21,2)
-        y = np.arange(-20,21,2)
+        x = np.arange(-20,21,1)
+        y = np.arange(-20,21,1)
     else:
         x = x = np.array([int(args.cpt)])
         y = np.array([int(args.cpqm)])

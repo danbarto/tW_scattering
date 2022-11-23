@@ -87,12 +87,10 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
 
+    sm_point = 'central'
     if region == 'trilep_ttZ':
-        sm_point = 'central'
         bsm_point = 'central'
     else:
-        sm_point = 'central'
-        #sm_point = 'eft_cpt_0_cpqm_0'
         if cpt == 0 and cpqm == 0:
             bsm_point = 'central'
         else:
@@ -146,7 +144,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         # NOTE this loads background systematics.
         # Not fully complete, but most important systematics are here
         print ("Getting Background systematics")
-        systematics = get_systematics(histogram, year, 'central',
+        systematics = get_systematics(histogram, year, sm_point,
                                         correlated=False,
                                         signal=False,
                                         overflow='none',
@@ -167,7 +165,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
             print ("No lumi systematic assigned.")
 
         print ("Getting signal systematics")
-        systematics = add_signal_systematics(histogram, year, 'central',
+        systematics = add_signal_systematics(histogram, year, sm_point,
                                                 systematics=systematics,
                                                 correlated=False,
                                                 proc='topW_lep',
