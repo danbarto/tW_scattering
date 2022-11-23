@@ -245,6 +245,7 @@ def get_systematics(histogram, year, eft_point,
                     overflow='all',
                     samples=None,
                     mapping=None,
+                    rebin=None,
                     ):
     if correlated:
         year = "cor"
@@ -255,20 +256,20 @@ def get_systematics(histogram, year, eft_point,
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, overflow=overflow, quiet=True), proc),
-            ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, overflow=overflow, quiet=True), proc),
-            ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, overflow=overflow, quiet=True), proc),
-            ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, overflow=overflow, quiet=True), proc),
-            ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, overflow=overflow, quiet=True), proc),
-            ('PU',              get_unc(histogram, proc, 'PU',   eft_point, overflow=overflow, quiet=True), proc),
+            ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
         ]
 
     for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
         systematics += [
-            ('pdf', get_pdf_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
-            ('FSR', get_FSR_unc(histogram, proc, eft_point, overflow=overflow), proc),
-            ('ISR', get_ISR_unc(histogram, proc, eft_point, overflow=overflow), proc),
-            ('scale', get_scale_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
+            ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+            ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+            ('scale', get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
 
     systematics += [
@@ -302,18 +303,19 @@ def add_signal_systematics(histogram, year, eft_point,
                            overflow='all',
                            samples=None,
                            mapping=None,
+                           rebin=None,
                            ):
     if correlated:
         year = "cor"
     systematics += [
-        ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, overflow=overflow, quiet=True), "signal"),
-        ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, overflow=overflow, quiet=True), "signal"),
-        ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, overflow=overflow, quiet=True), "signal"),
-        ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, overflow=overflow, quiet=True), "signal"),
-        ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, overflow=overflow, quiet=True), "signal"),
-        ('PU',              get_unc(histogram, proc, 'PU',   eft_point, overflow=overflow, quiet=True), "signal"),
-        ('pdf',             get_pdf_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
-        ('scale',           get_scale_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
+        ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('pdf',             get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
+        ('scale',           get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
     ]
     return systematics
 
