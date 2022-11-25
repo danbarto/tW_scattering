@@ -60,11 +60,10 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     histogram = histogram.copy()
     histogram.scale(bsm_scales, axis='dataset')
 
+    sm_point = 'central'
     if region == 'trilep_ttZ':
-        sm_point = 'central'
         bsm_point = 'central'
     else:
-        sm_point = 'central'
         bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
     ul = str(year)[2:]
 
@@ -224,7 +223,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plt.close(fig)
     del fig, ax, rax
 
-    return plot_name
+    return signal, backgrounds
 
 
 
@@ -312,8 +311,11 @@ if __name__ == '__main__':
 
     def scalePolyLO(xt, xQM):
         return 1 + 0.068485*xt - 0.104991*xQM + 0.003982*xt**2 - 0.002534*xt*xQM + 0.004144*xQM**2
-    
-    years = args.year.split(',')
+
+    if args.year == 'all':
+        years = ['2016','2016APV','2017','2018']
+    else: 
+        years = args.year.split(',')
 
     # load outputs (coffea histograms)
     # histograms are created per sample,
@@ -353,7 +355,8 @@ if __name__ == '__main__':
         bsm_scales = {'TTZ': 1}
 
     for year in years:
-
+        print(f'=============={year}==============')
+        results[year] = {}
         ul = str(year)[2:]
         if year == '2016APV':
             lumi = cfg['lumi'][year]
@@ -361,6 +364,7 @@ if __name__ == '__main__':
             lumi = cfg['lumi'][int(year)]
 
         for region, axis, get_histo in regions:
+            print(f' *  Region: {region}')
             if region in trilep_regions:
                 output = outputs_tri[year]
             else:
@@ -368,6 +372,110 @@ if __name__ == '__main__':
 
             histogram_incl = None
 
-            write_trilep_card(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
+            signal, backgrounds = write_trilep_card(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
+            results[year][region] = {'signal':signal, 'backgrounds':backgrounds}
+
+    # also plot for all years combined
+    if args.year == 'all':
+        print('==============all==============')
+        bg_list = ['signal','rare','diboson','conv','nonprompt','TTZ','TTH','TTW']
+        for region, axis, get_histo in regions:
+            print(f' * Region: {region}')
+            signals = []
+            for year in years:
+                signals.append(results[year][region]['signal'])
+            signal = accumulate(signals)
+            del signals
+
+            backgrounds = {}
+            for bg in bg_list:
+                bgs = []
+                for year in years:
+                    bgs.append(results[year][region]['backgrounds'][bg])
+                backgrounds[bg] = accumulate(bgs)
+                del bgs
+                 
+            print ("Making plot")
+            print ("...prepping the plots")
+            global hist_list
+            hist_list = [
+                backgrounds['signal'],
+                backgrounds['rare'],
+                backgrounds['diboson'],
+                backgrounds['conv'],
+                backgrounds['nonprompt'],
+                backgrounds['TTZ'],
+                backgrounds['TTH'],
+                backgrounds['TTW'],
+                ]
+            edges = backgrounds['signal'].sum('dataset').axes()[0].edges()
+
+            labels = [
+                'SM scat.',
+                'Rare',
+                r'$VV/VVV$',
+                r'$X\gamma$',
+                'nonprompt',
+                r'$t\bar{t}Z$',
+                r'$t\bar{t}H$',
+                r'$t\bar{t}W$',
+                ]
+
+            hist_colors = [
+                colors['signal'],
+                colors['rare'],
+                colors['diboson'],
+                colors['XG'],
+                colors['non prompt'],
+                colors['TTZ'],
+                colors['TTH'],
+                colors['TTW'],
+                ]
+
+            fig, (ax, rax) = plt.subplots(2,1,figsize=(12,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+            hep.cms.label(
+                "Work in Progress",
+                data=True,
+                lumi=lumi,
+                com=13,
+                loc=0,
+                ax=ax,
+                )
+
+            print ("...building histogram")
+
+            hep.histplot(
+                [ x.sum('dataset').values()[()] for x in hist_list],
+                edges,
+                histtype="fill",
+                stack=True,
+                label=labels,
+                color=hist_colors,
+                ax=ax)
+
+            hep.histplot(
+                [ signal.sum('dataset').values()[()]],
+                edges,
+                histtype="step",
+                label=[r'$C_{\varphi t}=%s, C_{\varphi Q}^{-}=%s$'%(x,y)],
+                color=['black'],
+                ax=ax)
+
+            ax.legend(ncol=3)
+            # labels
+            rax.set_xlabel(backgrounds['signal'].sum('dataset').axes()[0].label)
+            ax.set_xlim(edges[0],edges[-1])
+            rax.set_ylabel(r'rel. unc.')
+            ax.set_ylabel(r'Events')
+
+            print ("...storing plots")
+
+            plot_name = f'BIT_cpt_{x}_cpqm_{y}_{region}_ALLYEARS_{args.scaling}'
+            fig.savefig(f'{base_dir}/{plot_name}.png')
+            fig.savefig(f'{base_dir}/{plot_name}.pdf')
+
+            plt.close(fig)
+            del fig, ax, rax
 
     print('Done!')
