@@ -378,6 +378,9 @@ if __name__ == '__main__':
     # also plot for all years combined
     if args.year == 'all':
         print('==============all==============')
+        lumi = 0
+        for l in cfg['lumi']:
+            lumi += cfg['lumi'][l]
         bg_list = ['signal','rare','diboson','conv','nonprompt','TTZ','TTH','TTW']
         for region, axis, get_histo in regions:
             print(f' * Region: {region}')
