@@ -34,13 +34,26 @@ from ML.multiclassifier_tools import load_onnx_model, predict_onnx, load_transfo
 
 
 class trilep_analysis(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None, weights=[], hyperpoly=None, points=[[]]):
+    def __init__(self,
+                 year=2016,
+                 variations=[],
+                 accumulator={},
+                 evaluate=False,
+                 training='v8',
+                 dump=False,
+                 era=None,
+                 weights=[],
+                 hyperpoly=None,
+                 points=[[]],
+                 minimal=False,
+                 ):
         self.variations = variations
         self.year = year
         self.era = era  # this is here for 2016 APV
         self.evaluate = evaluate
         self.training = training
         self.dump = dump
+        self.minimal = minimal
         
         self.btagSF = btag_scalefactor(year, era=era)
         
@@ -335,38 +348,81 @@ class trilep_analysis(processor.ProcessorABC):
             dummy_weight = Weights(len(ev))
 
             def fill_multiple_np(hist, arrays, add_sel=dummy, other=None, weight_multiplier=dummy_weight.weight()):
-                reg_sel = [
-                    BL&add_sel,
-                    BL_incl&add_sel,
-                    np_est_sel_mc&add_sel,
-                    np_obs_sel_mc&add_sel,
-                    np_est_sel_data&add_sel,
-                    conv_sel&add_sel,
-                ]
-                fill_multiple(
-                    hist,
-                    dataset=dataset,
-                    predictions = [
-                        "central",
-                        "inclusive", # everything from process (inclusive MC truth)
-                        "np_est_mc", # MC based NP estimate
-                        "np_obs_mc", # MC based NP observation
-                        "np_est_data",
-                        "conv_mc",
-                    ],
-                    arrays=arrays,
-                    selections=reg_sel,
-                    weights=[
-                        weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
-                        weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
-                        weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_mc[reg_sel[2]],
-                        weight_multiplier[reg_sel[3]]*weight.weight(modifier=shift)[reg_sel[3]],
-                        weight_multiplier[reg_sel[4]]*weight.weight(modifier=shift)[reg_sel[4]]*weight_np_data[reg_sel[4]],
-                        weight_multiplier[reg_sel[5]]*weight.weight(modifier=shift)[reg_sel[5]],
-                    ],
-                    systematic=var_name,
-                    other = other,
-                )
+                if not re.search(data_pattern, dataset) and self.minimal:
+                    reg_sel = [
+                        BL&add_sel,
+                        conv_sel&add_sel,
+                    ]
+                    fill_multiple(
+                        hist,
+                        dataset=dataset,
+                        predictions = [
+                            "central",
+                            "conv_mc",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel,
+                        weights=[
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
+                        ],
+                        systematic=var_name,
+                        other = other,
+                    )
+                elif re.search(data_pattern, dataset) and self.minimal:
+                    reg_sel = [
+                        BL&add_sel,
+                        np_est_sel_data&add_sel,
+                    ]
+                    fill_multiple(
+                        hist,
+                        dataset=dataset,
+                        predictions = [
+                            "central",
+                            "np_est_data",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel,
+                        weights=[
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]]*weight_np_data[reg_sel[1]],
+                        ],
+                        systematic=var_name,
+                        other = other,
+                    )
+                else:
+                    reg_sel = [
+                        BL&add_sel,
+                        BL_incl&add_sel,
+                        np_est_sel_mc&add_sel,
+                        np_obs_sel_mc&add_sel,
+                        np_est_sel_data&add_sel,
+                        conv_sel&add_sel,
+                    ]
+                    fill_multiple(
+                        hist,
+                        dataset=dataset,
+                        predictions = [
+                            "central",
+                            "inclusive", # everything from process (inclusive MC truth)
+                            "np_est_mc", # MC based NP estimate
+                            "np_obs_mc", # MC based NP observation
+                            "np_est_data",
+                            "conv_mc",
+                        ],
+                        arrays=arrays,
+                        selections=reg_sel,
+                        weights=[
+                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
+                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_mc[reg_sel[2]],
+                            weight_multiplier[reg_sel[3]]*weight.weight(modifier=shift)[reg_sel[3]],
+                            weight_multiplier[reg_sel[4]]*weight.weight(modifier=shift)[reg_sel[4]]*weight_np_data[reg_sel[4]],
+                            weight_multiplier[reg_sel[5]]*weight.weight(modifier=shift)[reg_sel[5]],
+                        ],
+                        systematic=var_name,
+                        other = other,
+                    )
 
             ttZ_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
             WZ_sel  = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
@@ -845,7 +901,7 @@ if __name__ == '__main__':
                         #reweight=reweight,
                         points=points,
                         hyperpoly=hp,
-                        #minimal=args.minimal,
+                        minimal=args.minimal,
                     ),
                 )
 

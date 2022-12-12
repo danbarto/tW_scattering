@@ -148,7 +148,7 @@ if __name__ == '__main__':
     if year == '2019':
         outputs = []
         for y in ['2016', '2016APV', '2017', '2018']:
-            outputs.append(get_merged_output("trilep_analysis", year=y))
+            outputs.append(get_merged_output("trilep_analysis", year=y, postfix='cpt_0_cpqm_0'))
         output = accumulate(outputs)
         del outputs
     else:
