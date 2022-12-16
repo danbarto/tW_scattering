@@ -38,7 +38,7 @@ class tau_scalefactor:
         self.effs = self.ext.make_evaluator()
 
 
-    def lookup(self, pt, decay_mode, genmatch, var='nom', WP='loose'):
+    def lookup(self, pt, decay_mode, genmatch, var='nom', WP='Loose'):
         # sf1 = corr1.evaluate(pt,dm,1,wp,"nom","pt")
         return ak.unflatten(
             self.reader["DeepTau2017v2p1VSjet"].evaluate(
@@ -48,11 +48,11 @@ class tau_scalefactor:
                 WP,
                 var,
                 "pt",
-                )
+                ),
             ak.num(pt),
         )
 
-    def get(self, tau, var='nom', WP='loose'):
+    def get(self, tau, var='nom', WP='Loose'):
         return ak.prod(
             self.lookup(tau.pt, tau.decayMode, tau.genPartFlav, var=var, WP=WP),
             axis=1,
@@ -104,5 +104,5 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print ("Using correctionlib")
-    sf_central = sf17.get(tau, var='nom', WP='loose')
+    sf_central = sf17.get(tau, var='nom', WP='Loose')
     print ("Took %.2f s"%(time.time()-start_time))
