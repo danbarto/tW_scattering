@@ -88,6 +88,8 @@ if __name__ == '__main__':
         n_max=1)
     filelist = fileset[list(fileset.keys())[0]]
 
+    filelist = ['/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tree.root']
+
     # load a subset of events
     n_max = 5000
     events = NanoEventsFactory.from_root(
