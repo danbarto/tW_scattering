@@ -167,7 +167,15 @@ if __name__ == '__main__':
     samples = get_samples("samples_UL18.yaml")
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    fileset = make_fileset(['TTW'], samples, year='UL18', skim=True, small=True, n_max=1)
+    fileset = make_fileset(
+        ['TTW'],
+        samples,
+        year='UL18',
+        skim='topW_v0.7.0_dilep',
+        small=True,
+        buaf='local',
+        merged=True,
+        n_max=1)
     filelist = fileset[list(fileset.keys())[0]]
 
     # load a subset of events

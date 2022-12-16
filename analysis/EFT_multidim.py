@@ -87,12 +87,14 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
 
+    sm_point = 'central'
     if region == 'trilep_ttZ':
-        sm_point = 'central'
         bsm_point = 'central'
     else:
-        sm_point = 'eft_cpt_0_cpqm_0'
-        bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
+        if cpt == 0 and cpqm == 0:
+            bsm_point = 'central'
+        else:
+            bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
     ul = str(year)[2:]
 
     print ("Filling background histogram")
@@ -148,6 +150,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                                         overflow='none',
                                         samples=samples[year],
                                         mapping=mapping[f'UL{ul}'],
+                                        rebin=axis,
                                         )
         if year.count('2016'):
             print ("lumi uncertainties for 2016")
@@ -169,8 +172,8 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                                                 overflow='none',
                                                 samples=samples[year],
                                                 mapping=mapping[f'UL{ul}'],
+                                                rebin=axis,
                                                 )
-
 
     sm_card = makeCardFromHist(
         backgrounds,
@@ -481,32 +484,32 @@ if __name__ == '__main__':
     # NOTE placeholder systematics if run without --systematics
     mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
     systematics= [
-        ('signal_norm', 1.1, 'signal'),
-        ('TTW_norm', 1.15, 'TTW'),
-        ('TTZ_norm', 1.10, 'TTZ'),
-        ('TTH_norm', 1.15, 'TTH'),
-        ('conv_norm', 1.20, 'conv'),
-        ('diboson_norm', 1.20, 'diboson'),
-        ('nonprompt_norm', 1.30, 'nonprompt'),
+        ('signal_norm',     1.10, 'signal'),
+        ('TTW_norm',        1.15, 'TTW'),
+        ('TTZ_norm',        1.10, 'TTZ'),
+        ('TTH_norm',        1.15, 'TTH'),
+        ('conv_norm',       1.20, 'conv'),
+        ('diboson_norm',    1.20, 'diboson'),
+        ('nonprompt_norm',  1.30, 'nonprompt'),
         ('chargeflip_norm', 1.20, 'chargeflip'),
     ]
 
     # lumi systematics following https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopSystematics#Luminosity
-    lumi_systematics_2016  = [ ('lumi16', 1.01, p) for p in mc_process_names ]
+    lumi_systematics_2016  = [ ('lumi16',     1.01,  p) for p in mc_process_names ]
     lumi_systematics_2016 += [ ('lumi161718', 1.006, p) for p in mc_process_names ]
-    lumi_systematics_2017  = [ ('lumi17', 1.02, p) for p in mc_process_names ]
+    lumi_systematics_2017  = [ ('lumi17',     1.02,  p) for p in mc_process_names ]
     lumi_systematics_2017 += [ ('lumi161718', 1.009, p) for p in mc_process_names ]
-    lumi_systematics_2017 += [ ('lumi1718', 1.006, p) for p in mc_process_names ]
-    lumi_systematics_2018  = [ ('lumi18', 1.015, p) for p in mc_process_names ]
-    lumi_systematics_2018 += [ ('lumi161718', 1.02, p) for p in mc_process_names ]
-    lumi_systematics_2018 += [ ('lumi1718', 1.002, p) for p in mc_process_names ]
+    lumi_systematics_2017 += [ ('lumi1718',   1.006, p) for p in mc_process_names ]
+    lumi_systematics_2018  = [ ('lumi18',     1.015, p) for p in mc_process_names ]
+    lumi_systematics_2018 += [ ('lumi161718', 1.02,  p) for p in mc_process_names ]
+    lumi_systematics_2018 += [ ('lumi1718',   1.002, p) for p in mc_process_names ]
 
-    lt_axis      = hist.Bin("ht",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,2000])
-    lt_red_axis  = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [0, 400, 1000])
-    #bit_axis     = hist.Bin("bit",           r"N",               10, 0, 1)
-    #bit_axis     = hist.Bin("bit",           r"N",         [0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0])
-    bit_axis     = hist.Bin("bit",           r"BIT score",         20,0,1)
-    mass_axis     = hist.Bin("mass",           r"dilepton mass",   1,0,200)  # make this completely inclusive
+    lt_axis      = hist.Bin("ht",   r"$L_{T}$ (GeV)", [100,200,300,400,500,600,700,2000])
+    lt_red_axis  = hist.Bin("lt",   r"$L_{T}$ (GeV)", [0,400,1000])
+    #bit_axis     = hist.Bin("bit",  r"N",             10, 0, 1)
+    #bit_axis     = hist.Bin("bit",  r"N",             [0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0])
+    bit_axis     = hist.Bin("bit",  r"BIT score",      20,0,1)
+    mass_axis    = hist.Bin("mass", r"dilepton mass",  1,0,200)  # make this completely inclusive
 
 
     all_cards = []
@@ -527,8 +530,8 @@ if __name__ == '__main__':
         xr = np.arange(-7,8,1)
         yr = np.arange(-7,8,1)
         if args.extended:
-            xr = np.arange(-30,31,5)  # this is Y on the plots!
-            yr = np.arange(-30,31,5)  # this is X on the plots!
+            xr = np.arange(-20,21,2)  # this is Y on the plots!
+            yr = np.arange(-20,21,2)  # this is X on the plots!
     else:
         xr = np.array([int(args.cpt)])
         yr = np.array([int(args.cpqm)])
@@ -598,15 +601,15 @@ if __name__ == '__main__':
             regions = [
                 ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
                 ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice(-0.5,0.5))),
+                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice( 0.5,2.5))),
+                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice( 0.5,2.5))),
             ]
         elif args.regions == 'all':
             regions = [
                 ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
                 ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
-                ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+                ("trilep_ttZ",  mass_axis, lambda x: x['dilepton_mass_ttZ']),
                 #("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
                 #("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
                 #("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),

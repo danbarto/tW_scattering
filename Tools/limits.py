@@ -245,6 +245,7 @@ def get_systematics(histogram, year, eft_point,
                     overflow='all',
                     samples=None,
                     mapping=None,
+                    rebin=None,
                     ):
     if correlated:
         year = "cor"
@@ -255,20 +256,20 @@ def get_systematics(histogram, year, eft_point,
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, overflow=overflow, quiet=True), proc),
-            ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, overflow=overflow, quiet=True), proc),
-            ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, overflow=overflow, quiet=True), proc),
-            ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, overflow=overflow, quiet=True), proc),
-            ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, overflow=overflow, quiet=True), proc),
-            ('PU',              get_unc(histogram, proc, 'PU',   eft_point, overflow=overflow, quiet=True), proc),
+            ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
         ]
 
     for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
         systematics += [
-            ('pdf', get_pdf_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
-            ('FSR', get_FSR_unc(histogram, proc, eft_point, overflow=overflow), proc),
-            ('ISR', get_ISR_unc(histogram, proc, eft_point, overflow=overflow), proc),
-            ('scale', get_scale_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
+            ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+            ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+            ('scale', get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
 
     systematics += [
@@ -302,18 +303,19 @@ def add_signal_systematics(histogram, year, eft_point,
                            overflow='all',
                            samples=None,
                            mapping=None,
+                           rebin=None,
                            ):
     if correlated:
         year = "cor"
     systematics += [
-        ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, overflow=overflow, quiet=True), "signal"),
-        ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, overflow=overflow, quiet=True), "signal"),
-        ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, overflow=overflow, quiet=True), "signal"),
-        ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, overflow=overflow, quiet=True), "signal"),
-        ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, overflow=overflow, quiet=True), "signal"),
-        ('PU',              get_unc(histogram, proc, 'PU',   eft_point, overflow=overflow, quiet=True), "signal"),
-        ('pdf',             get_pdf_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
-        ('scale',           get_scale_unc(histogram, proc, eft_point, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
+        ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('pdf',             get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
+        ('scale',           get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
     ]
     return systematics
 
@@ -389,17 +391,23 @@ def makeCardFromHist(
     if bsm_hist:
         if isinstance(bsm_hist, bh.Histogram):
             h_tmp_bsm['signal'] = bsm_hist
-            fout['signal'] = h_tmp_bsm['signal']
+            out_hist_tmp = h_tmp_bsm['signal']
         else:
             h_tmp_bsm['signal'] = bsm_hist.sum('dataset')
-            fout['signal'] = h_tmp_bsm['signal'].to_hist()
+            out_hist_tmp = h_tmp_bsm['signal'].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout['signal'] = out_hist_tmp
     else:
         h_tmp_bsm['signal'] = h_tmp['signal']
-        fout['signal'] = h_tmp_bsm['signal'].to_hist()
+        out_hist_tmp = h_tmp['signal'].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout['signal'] = out_hist_tmp
 
     # we write out the BSM histograms!
     for p in processes:
-        fout[p] = h_tmp_bsm[p].to_hist()
+        out_hist_tmp = h_tmp_bsm[p].to_hist()
+        out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
+        fout[p] = out_hist_tmp
 
     #fout['signal'] = h_tmp_bsm['signal'].to_hist()
     fout['data_obs'] = pdata_hist  # this should work directly
@@ -408,7 +416,7 @@ def makeCardFromHist(
     totals = {}
 
     for p in processes + ['signal']:
-        totals[p] = h_tmp_bsm[p].values()[()].sum()
+        totals[p] = np.maximum(h_tmp_bsm[p].values()[()], 0.01*np.ones_like(h_tmp_bsm[p].values()[()])).sum()
 
     totals['observation'] = pdata_hist.values().sum()
 
@@ -452,6 +460,7 @@ def makeCardFromHist(
                     central = h_tmp_bsm[proc].values()[()]  # get BSM scaled prediction
 
                     val = np.nan_to_num(mag[0].values(), nan=1.0) * central
+                    val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     incl_rel = sum(val_h.values())/sum(central)
                     print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
@@ -460,10 +469,12 @@ def makeCardFromHist(
 
                     fout[proc+'_'+systematic+'Up']   = val_h
                     val = np.nan_to_num(mag[1].values(), nan=1.0) * central
+                    val = np.maximum(val, np.zeros_like(val))
                     val_h = make_bh(val, val, mag[1].axes[0].edges)
                     fout[proc+'_'+systematic+'Down'] = val_h
                 else:
                     val = np.nan_to_num(mag[0].values(), nan=1.0) * h_tmp_bsm[proc].values()[()]
+                    val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     fout[proc+'_'+systematic] = val_h
 
