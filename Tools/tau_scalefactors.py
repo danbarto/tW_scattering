@@ -42,13 +42,14 @@ class tau_scalefactor:
         # sf1 = corr1.evaluate(pt,dm,1,wp,"nom","pt")
         return ak.unflatten(
             self.reader["DeepTau2017v2p1VSjet"].evaluate(
-                pt,
-                decay_mode,
-                genmatch,
+                ak.to_numpy(ak.flatten(pt)),
+                ak.to_numpy(ak.flatten(decay_mode)),
+                ak.to_numpy(ak.flatten(genmatch)),
                 WP,
                 var,
                 "pt",
                 )
+            ak.num(pt),
         )
 
     def get(self, tau, var='nom', WP='loose'):
