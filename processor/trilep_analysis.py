@@ -103,7 +103,7 @@ class trilep_analysis(processor.ProcessorABC):
         ## Muons
         mu_v     = Collections(ev, "Muon", "vetoTTH", year=year).get()  # these include all muons, tight and fakeable
         mu_t     = Collections(ev, "Muon", "tightTTH", year=year).get()
-        mu_f     = Collections(ev, "Muon", "fakeableSSTTH", year=year).get()
+        mu_f     = Collections(ev, "Muon", "fakeableTTH", year=year).get()
         
         mu_v_mask = Collections(ev, "Muon", "vetoTTH", year=year)
         mu_f_mask = Collections(ev, "Muon", "fakeableTTH", year=year)
