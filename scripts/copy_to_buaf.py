@@ -13,7 +13,7 @@ redirector = 'root://redirector.t2.ucsd.edu:1095//'
 
 local_dir = "/data/"
 
-skim = 'topW_v0.7.1_trilep'
+skim = 'topW_v0.8.0_SS'
 
 def xrdcp(source, target):
     cmd = ['xrdcp', '-f', source, target]
@@ -71,8 +71,8 @@ if __name__ == '__main__':
                 copy_list.append((f_in, target))
 #                os.system('xrdcp %s %s'%(f_in, out_dir))
 
-    #print (copy_list)
-    #raise NotImplementedError
+    print (copy_list)
+    raise NotImplementedError
 
     #copy_list = copy_list[:2]
 
