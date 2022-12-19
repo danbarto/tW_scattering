@@ -234,7 +234,7 @@ if __name__ == '__main__':
     get_nonprompt_plot(output, 'MET', axis, name='np_MET_pt', log=False)
     get_chargeflip_plot(output, 'MET', axis, name='cf_MET_pt', log=False)
 
-    axis = hist.Bin("ht", r"$L_{T}$ (GeV)", 25, 0, 1000)
+    axis = hist.Bin("ht", r"$L_{T}$ (GeV)", 10, 0, 600)  # rebin from 20 GeV bins
     get_standard_plot(output, 'LT', axis, name='LT', log=False, lumi=lumi, blind=blind)
     get_nonprompt_plot(output, 'LT', axis, name='np_LT', log=False)
     get_chargeflip_plot(output, 'LT', axis, name='cf_LT', log=False)
@@ -244,7 +244,7 @@ if __name__ == '__main__':
     get_nonprompt_plot(output, 'HT', axis, name='np_HT', log=False)
     get_chargeflip_plot(output, 'HT', axis, name='cf_HT', log=False)
 
-    axis = hist.Bin("ht", r"$S_{T}$ (GeV)", 25, 0, 1000)
+    axis = hist.Bin("ht", r"$S_{T}$ (GeV)", 15, 200, 2000)
     get_standard_plot(output, 'ST', axis, name='ST', log=False, lumi=lumi, blind=blind)
     get_nonprompt_plot(output, 'ST', axis, name='np_ST', log=False)
     get_chargeflip_plot(output, 'ST', axis, name='cf_ST', log=False)
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     get_nonprompt_plot(output, 'lead_lep', axis, name='np_lead_lep_eta', log=False)
     get_chargeflip_plot(output, 'lead_lep', axis, name='cf_lead_lep_eta', log=False)
 
-    axis = hist.Bin('pt', r'$p_{T}(trailing\ lep)\ (GeV)$', 10, 0, 200)
+    axis = hist.Bin('pt', r'$p_{T}(trailing\ lep)\ (GeV)$', 15, 0, 150)
     get_standard_plot(output, 'trail_lep', axis, name='trail_lep_pt', log=False, lumi=lumi, blind=blind)
     get_nonprompt_plot(output, 'trail_lep', axis, name='np_trail_lep_pt', log=False)
     get_chargeflip_plot(output, 'trail_lep', axis, name='cf_trail_lep_pt', log=False)
@@ -348,7 +348,7 @@ if __name__ == '__main__':
     get_nonprompt_plot(output, 'delta_eta_jj', axis, name='np_delta_eta_jj', log=False)
     get_chargeflip_plot(output, 'delta_eta_jj', axis, name='cf_delta_eta_jj', log=False)
 
-    axis = hist.Bin("delta", r"$min\ \Delta R(bjet, \ell)$", 25, 0, 10)
+    axis = hist.Bin("delta", r"$min\ \Delta R(bjet, \ell)$", 10, 0, 4)
     get_standard_plot(output, 'min_bl_dR', axis, name='min_bl_dR', log=False, lumi=lumi, blind=blind)
     get_nonprompt_plot(output, 'min_bl_dR', axis, name='np_min_bl_dR', log=False)
     get_chargeflip_plot(output, 'min_bl_dR', axis, name='cf_min_bl_dR', log=False)
