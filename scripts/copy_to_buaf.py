@@ -13,7 +13,7 @@ redirector = 'root://redirector.t2.ucsd.edu:1095//'
 
 local_dir = "/data/"
 
-skim = 'topW_v0.7.1_trilep'
+skim = 'topW_v0.8.0_SS'
 
 def xrdcp(source, target):
     cmd = ['xrdcp', '-f', source, target]
@@ -35,7 +35,7 @@ def make_copy(in_n_out):
 
 if __name__ == '__main__':
 
-    ul = "UL16"
+    ul = "UL18"
 
     samples = get_samples("samples_%s.yaml"%ul)
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         print (sample)
 
         #all_files = [ f.replace('topW_v0.7.0_dilep', 'topW_v0.7.1_trilep') for f in  samples[sample]['files'] ]  # FIXME something is wrong with the skim names?
-        all_files = [ f.replace('topW_v0.7.1_SS', 'topW_v0.7.1_trilep') for f in  samples[sample]['files'] ]
+        all_files = [ f.replace('topW_v0.8.0_dilep', 'topW_v0.8.0_SS') for f in  samples[sample]['files'] ]
 
         for f in all_files:
 
@@ -71,8 +71,8 @@ if __name__ == '__main__':
                 copy_list.append((f_in, target))
 #                os.system('xrdcp %s %s'%(f_in, out_dir))
 
-    #print (copy_list)
-    #raise NotImplementedError
+    print (copy_list)
+    raise NotImplementedError
 
     #copy_list = copy_list[:2]
 
