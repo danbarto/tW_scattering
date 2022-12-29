@@ -239,6 +239,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
     argParser.add_argument('--scaling', action='store', choices=['LO','NLO'], help="run with scaling : LO or NLO?")
+    argParser.add_argument('--region', action='store', choices=['topW','TTZ','XG','WZ'], help="which region to run?")
 
     args = argParser.parse_args()
 
@@ -255,9 +256,9 @@ if __name__ == '__main__':
 
     # set directories to save to
     if not args.uaf:
-        base_dir = './plots_LT/'
+        base_dir = './trilep_plots/'
     else:
-        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/LTplots/'
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/trilep_plots/'
     finalizePlotDir(base_dir)
 
     # NOTE placeholder systematics if run without --systematics
@@ -328,13 +329,32 @@ if __name__ == '__main__':
 
     print (f"Working on point {x}, {y}")
 
-    regions = [
-        ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-        ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-        ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-        ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
-        ("trilep_topW", lt_red_axis, lambda x: x["signal_region_topW"].sum('charge').integrate('N', slice(0.5,2.5))),
-    ]
+    if args.region == 'topW':
+        regions = [
+            ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW", lt_red_axis, lambda x: x["signal_region_topW"].sum('charge').integrate('N', slice(0.5,2.5))),
+        ]
+    elif args.region == 'ttZ':
+        regions = [
+            ('lead_lep_pt_ttZ', pt_axis, lambda x: x['lead_lep_pt_ttZ'])
+            ('LT_ttZ', lt_red_axis, lambda x: x['LT_ttZ'])
+            ('N_jet_ttZ', multiplicity_axis, lambda x: x['N_jet_ttZ'])
+        ]
+    elif args.region == 'XG':
+        regions = [
+            ('lead_lep_pt_XG', pt_axis, lambda x: x['lead_lep_pt_XG'])
+            ('LT_XG', lt_red_axis, lambda x: x['LT_XG'])
+            ('trilep_mass_XG', mass_axis, lambda x: x['trilep_mass_XG'])
+        ]
+    elif args.region == 'WZ':
+        regions = [
+            ('lead_lep_pt_WZ', pt_axis, lambda x: x['lead_lep_pt_WZ'])
+            ('LT_WZ', lt_red_axis, lambda x: x['LT_WZ'])
+            ('N_jet_WZ', multiplicity_axis, lambda x: x['N_jet_WZ'])
+        ]
 
     if args.scaling == 'LO':
         bsm_scales = {'TTZ': scalePolyLO(x,y)}
