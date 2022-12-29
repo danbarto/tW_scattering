@@ -43,12 +43,12 @@ data_err_opts = {
 
 wildcard = re.compile('.')
 
-def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
-                      plot_dir='./',
-                      systematics=False,
-                      bsm_scales={'TTZ':1},
-                      scaling=None,
-                      ):
+def make_plot(histogram, year, region, axis, cpt, cpqm,
+              plot_dir='./',
+              systematics=False,
+              bsm_scales={'TTZ':1},
+              scaling=None,
+              ):
 
     x = cpt
     y = cpqm
@@ -293,15 +293,6 @@ if __name__ == '__main__':
     card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
 
-    trilep_regions = [
-        #"trilep_ttZ",
-        "trilep_topW_qm_0Z",
-        "trilep_topW_qp_0Z",
-        "trilep_topW_qm_1Z",
-        "trilep_topW_qp_1Z",
-        "trilep_topW"
-    ]
-
     x = args.cpt
     y = args.cpqm
 
@@ -321,7 +312,6 @@ if __name__ == '__main__':
     # histograms are created per sample,
     # x-secs and lumi scales are applied on the fly below
     outputs = {}
-    outputs_tri = {}
     samples = {}
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
@@ -339,7 +329,6 @@ if __name__ == '__main__':
     print (f"Working on point {x}, {y}")
 
     regions = [
-        #("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
         ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
         ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
         ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
@@ -365,14 +354,11 @@ if __name__ == '__main__':
 
         for region, axis, get_histo in regions:
             print(f' *  Region: {region}')
-            if region in trilep_regions:
-                output = outputs_tri[year]
-            else:
-                    output = outputs[year]
+            output = outputs[year]
 
             histogram_incl = None
 
-            signal, backgrounds = write_trilep_card(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
+            signal, backgrounds = make_plot(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
             results[year][region] = {'signal':signal, 'backgrounds':backgrounds}
 
     # also plot for all years combined
