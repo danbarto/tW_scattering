@@ -284,11 +284,9 @@ if __name__ == '__main__':
     lumi_systematics_2018 += [ ('lumi161718', 1.02, p) for p in mc_process_names ]
     lumi_systematics_2018 += [ ('lumi1718', 1.002, p) for p in mc_process_names ]
 
+    from processor.default_accumulators import multiplicity_axis, pt_axis, mass_axis
     lt_axis      = hist.Bin("ht",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,2000])
     lt_red_axis  = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [0,100,200,300,400,500,600,700,800,900,1000])
-    bit_axis     = hist.Bin("bit",           r"BIT score",         20,0,1)
-    mass_axis     = hist.Bin("mass",           r"dilepton mass",   1,0,200)  # make this completely inclusive
-
 
     all_cards = []
     card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
