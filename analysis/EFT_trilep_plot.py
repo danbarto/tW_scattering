@@ -98,7 +98,7 @@ def make_plot(histogram, year, region, axis, cpt, cpqm,
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
-    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
+    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     signal = signal.rebin(axis.name, axis)
 
     if systematics:
@@ -314,20 +314,12 @@ if __name__ == '__main__':
     samples = {}
     mapping = load_yaml(data_path+"nano_mapping.yaml")
 
-    for year in years:
-        ul = str(year)[2:]
-        samples[year] = get_samples(f"samples_UL{ul}.yaml")
-        outputs_tri[year] = get_merged_output(
-            'trilep_analysis',
-            year,
-            select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW'],
-        )#, date='20220624')
-
     results = {}
 
     print (f"Working on point {x}, {y}")
 
     if args.region == 'topW':
+        select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW']
         regions = [
             ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
             ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
@@ -335,22 +327,25 @@ if __name__ == '__main__':
             ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
             ("trilep_topW", lt_red_axis, lambda x: x["signal_region_topW"].sum('charge').integrate('N', slice(0.5,2.5))),
         ]
-    elif args.region == 'ttZ':
+    elif args.region == 'TTZ':
+        select_histograms = ['lead_lep_pt_ttZ','LT_ttZ','N_jet_ttZ']
         regions = [
-            ('lead_lep_pt_ttZ', pt_axis, lambda x: x['lead_lep_pt_ttZ'])
-            ('LT_ttZ', lt_red_axis, lambda x: x['LT_ttZ'])
+            ('lead_lep_pt_ttZ', pt_axis, lambda x: x['lead_lep_pt_ttZ']),
+            ('LT_ttZ', lt_red_axis, lambda x: x['LT_ttZ']),
             ('N_jet_ttZ', multiplicity_axis, lambda x: x['N_jet_ttZ'])
         ]
     elif args.region == 'XG':
+        select_histograms = ['lead_lep_pt_XG','LT_XG','trilep_mass_XG']
         regions = [
-            ('lead_lep_pt_XG', pt_axis, lambda x: x['lead_lep_pt_XG'])
-            ('LT_XG', lt_red_axis, lambda x: x['LT_XG'])
+            ('lead_lep_pt_XG', pt_axis, lambda x: x['lead_lep_pt_XG']),
+            ('LT_XG', lt_red_axis, lambda x: x['LT_XG']),
             ('trilep_mass_XG', mass_axis, lambda x: x['trilep_mass_XG'])
         ]
     elif args.region == 'WZ':
+        select_histograms = ['lead_lep_pt_WZ','LT_WZ','N_jet_WZ']
         regions = [
-            ('lead_lep_pt_WZ', pt_axis, lambda x: x['lead_lep_pt_WZ'])
-            ('LT_WZ', lt_red_axis, lambda x: x['LT_WZ'])
+            ('lead_lep_pt_WZ', pt_axis, lambda x: x['lead_lep_pt_WZ']),
+            ('LT_WZ', lt_red_axis, lambda x: x['LT_WZ']),
             ('N_jet_WZ', multiplicity_axis, lambda x: x['N_jet_WZ'])
         ]
 
@@ -362,6 +357,14 @@ if __name__ == '__main__':
         bsm_scales = {'TTZ': 1}
 
     for year in years:
+        ul = str(year)[2:]
+        samples[year] = get_samples(f"samples_UL{ul}.yaml")
+        outputs[year] = get_merged_output(
+            'trilep_analysis',
+            year,
+            select_histograms = select_histograms,
+        )
+
         print(f'=============={year}==============')
         results[year] = {}
         ul = str(year)[2:]
