@@ -43,12 +43,12 @@ data_err_opts = {
 
 wildcard = re.compile('.')
 
-def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
-                      plot_dir='./',
-                      systematics=False,
-                      bsm_scales={'TTZ':1},
-                      scaling=None,
-                      ):
+def make_plot(histogram, year, region, axis, cpt, cpqm,
+              plot_dir='./',
+              systematics=False,
+              bsm_scales={'TTZ':1},
+              scaling=None,
+              ):
 
     x = cpt
     y = cpqm
@@ -60,11 +60,10 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     histogram = histogram.copy()
     histogram.scale(bsm_scales, axis='dataset')
 
+    sm_point = 'central'
     if region == 'trilep_ttZ':
-        sm_point = 'central'
         bsm_point = 'central'
     else:
-        sm_point = 'central'
         bsm_point = f"eft_cpt_{cpt}_cpqm_{cpqm}"
     ul = str(year)[2:]
 
@@ -99,7 +98,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
-    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
+    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
     signal = signal.rebin(axis.name, axis)
 
     if systematics:
@@ -224,7 +223,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     plt.close(fig)
     del fig, ax, rax
 
-    return plot_name
+    return signal, backgrounds
 
 
 
@@ -240,6 +239,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
     argParser.add_argument('--scaling', action='store', choices=['LO','NLO'], help="run with scaling : LO or NLO?")
+    argParser.add_argument('--region', action='store', choices=['topW','TTZ','XG','WZ'], help="which region to run?")
 
     args = argParser.parse_args()
 
@@ -256,9 +256,9 @@ if __name__ == '__main__':
 
     # set directories to save to
     if not args.uaf:
-        base_dir = './plots_LT/'
+        base_dir = './trilep_plots/'
     else:
-        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/LTplots/'
+        base_dir = '/home/users/sjeon/public_html/tW_scattering/multidim/trilep_plots/'
     finalizePlotDir(base_dir)
 
     # NOTE placeholder systematics if run without --systematics
@@ -284,24 +284,13 @@ if __name__ == '__main__':
     lumi_systematics_2018 += [ ('lumi161718', 1.02, p) for p in mc_process_names ]
     lumi_systematics_2018 += [ ('lumi1718', 1.002, p) for p in mc_process_names ]
 
+    from processor.default_accumulators import multiplicity_axis, pt_axis, mass_axis
     lt_axis      = hist.Bin("ht",      r"$L_{T}$ (GeV)",   [100,200,300,400,500,600,700,2000])
     lt_red_axis  = hist.Bin("lt",      r"$L_{T}$ (GeV)",   [0,100,200,300,400,500,600,700,800,900,1000])
-    bit_axis     = hist.Bin("bit",           r"BIT score",         20,0,1)
-    mass_axis     = hist.Bin("mass",           r"dilepton mass",   1,0,200)  # make this completely inclusive
-
 
     all_cards = []
     card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     card_dir = os.path.expandvars('$TWHOME/data/cards/')
-
-    trilep_regions = [
-        #"trilep_ttZ",
-        "trilep_topW_qm_0Z",
-        "trilep_topW_qp_0Z",
-        "trilep_topW_qm_1Z",
-        "trilep_topW_qp_1Z",
-        "trilep_topW"
-    ]
 
     x = args.cpt
     y = args.cpqm
@@ -312,38 +301,53 @@ if __name__ == '__main__':
 
     def scalePolyLO(xt, xQM):
         return 1 + 0.068485*xt - 0.104991*xQM + 0.003982*xt**2 - 0.002534*xt*xQM + 0.004144*xQM**2
-    
-    years = args.year.split(',')
+
+    if args.year == 'all':
+        years = ['2016','2016APV','2017','2018']
+    else: 
+        years = args.year.split(',')
 
     # load outputs (coffea histograms)
     # histograms are created per sample,
     # x-secs and lumi scales are applied on the fly below
     outputs = {}
-    outputs_tri = {}
     samples = {}
     mapping = load_yaml(data_path+"nano_mapping.yaml")
-
-    for year in years:
-        ul = str(year)[2:]
-        samples[year] = get_samples(f"samples_UL{ul}.yaml")
-        outputs_tri[year] = get_merged_output(
-            'trilep_analysis',
-            year,
-            select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW'],
-        )#, date='20220624')
 
     results = {}
 
     print (f"Working on point {x}, {y}")
 
-    regions = [
-        #("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
-        ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-        ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-        ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-        ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
-        ("trilep_topW", lt_red_axis, lambda x: x["signal_region_topW"].sum('charge').integrate('N', slice(0.5,2.5))),
-    ]
+    if args.region == 'topW':
+        select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW']
+        regions = [
+            ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW", lt_red_axis, lambda x: x["signal_region_topW"].sum('charge').integrate('N', slice(0.5,2.5))),
+        ]
+    elif args.region == 'TTZ':
+        select_histograms = ['lead_lep_pt_ttZ','LT_ttZ','N_jet_ttZ']
+        regions = [
+            ('lead_lep_pt_ttZ', pt_axis, lambda x: x['lead_lep_pt_ttZ']),
+            ('LT_ttZ', lt_red_axis, lambda x: x['LT_ttZ']),
+            ('N_jet_ttZ', multiplicity_axis, lambda x: x['N_jet_ttZ'])
+        ]
+    elif args.region == 'XG':
+        select_histograms = ['lead_lep_pt_XG','LT_XG','trilep_mass_XG']
+        regions = [
+            ('lead_lep_pt_XG', pt_axis, lambda x: x['lead_lep_pt_XG']),
+            ('LT_XG', lt_red_axis, lambda x: x['LT_XG']),
+            ('trilep_mass_XG', mass_axis, lambda x: x['trilep_mass_XG'])
+        ]
+    elif args.region == 'WZ':
+        select_histograms = ['lead_lep_pt_WZ','LT_WZ','N_jet_WZ']
+        regions = [
+            ('lead_lep_pt_WZ', pt_axis, lambda x: x['lead_lep_pt_WZ']),
+            ('LT_WZ', lt_red_axis, lambda x: x['LT_WZ']),
+            ('N_jet_WZ', multiplicity_axis, lambda x: x['N_jet_WZ'])
+        ]
 
     if args.scaling == 'LO':
         bsm_scales = {'TTZ': scalePolyLO(x,y)}
@@ -353,7 +357,16 @@ if __name__ == '__main__':
         bsm_scales = {'TTZ': 1}
 
     for year in years:
+        ul = str(year)[2:]
+        samples[year] = get_samples(f"samples_UL{ul}.yaml")
+        outputs[year] = get_merged_output(
+            'trilep_analysis',
+            year,
+            select_histograms = select_histograms,
+        )
 
+        print(f'=============={year}==============')
+        results[year] = {}
         ul = str(year)[2:]
         if year == '2016APV':
             lumi = cfg['lumi'][year]
@@ -361,13 +374,118 @@ if __name__ == '__main__':
             lumi = cfg['lumi'][int(year)]
 
         for region, axis, get_histo in regions:
-            if region in trilep_regions:
-                output = outputs_tri[year]
-            else:
-                    output = outputs[year]
+            print(f' *  Region: {region}')
+            output = outputs[year]
 
             histogram_incl = None
 
-            write_trilep_card(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
+            signal, backgrounds = make_plot(get_histo(output), year, region, axis, x, y, base_dir, args.systematics, bsm_scales, args.scaling)
+            results[year][region] = {'signal':signal, 'backgrounds':backgrounds}
+
+    # also plot for all years combined
+    if args.year == 'all':
+        print('==============all==============')
+        lumi = 0
+        for l in cfg['lumi']:
+            lumi += cfg['lumi'][l]
+        bg_list = ['signal','rare','diboson','conv','nonprompt','TTZ','TTH','TTW']
+        for region, axis, get_histo in regions:
+            print(f' * Region: {region}')
+            signals = []
+            for year in years:
+                signals.append(results[year][region]['signal'])
+            signal = accumulate(signals)
+            del signals
+
+            backgrounds = {}
+            for bg in bg_list:
+                bgs = []
+                for year in years:
+                    bgs.append(results[year][region]['backgrounds'][bg])
+                backgrounds[bg] = accumulate(bgs)
+                del bgs
+                 
+            print ("Making plot")
+            print ("...prepping the plots")
+            global hist_list
+            hist_list = [
+                backgrounds['signal'],
+                backgrounds['rare'],
+                backgrounds['diboson'],
+                backgrounds['conv'],
+                backgrounds['nonprompt'],
+                backgrounds['TTZ'],
+                backgrounds['TTH'],
+                backgrounds['TTW'],
+                ]
+            edges = backgrounds['signal'].sum('dataset').axes()[0].edges()
+
+            labels = [
+                'SM scat.',
+                'Rare',
+                r'$VV/VVV$',
+                r'$X\gamma$',
+                'nonprompt',
+                r'$t\bar{t}Z$',
+                r'$t\bar{t}H$',
+                r'$t\bar{t}W$',
+                ]
+
+            hist_colors = [
+                colors['signal'],
+                colors['rare'],
+                colors['diboson'],
+                colors['XG'],
+                colors['non prompt'],
+                colors['TTZ'],
+                colors['TTH'],
+                colors['TTW'],
+                ]
+
+            fig, (ax, rax) = plt.subplots(2,1,figsize=(12,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+            hep.cms.label(
+                "Work in Progress",
+                data=True,
+                lumi=lumi,
+                com=13,
+                loc=0,
+                ax=ax,
+                )
+
+            print ("...building histogram")
+
+            hep.histplot(
+                [ x.sum('dataset').values()[()] for x in hist_list],
+                edges,
+                histtype="fill",
+                stack=True,
+                label=labels,
+                color=hist_colors,
+                ax=ax)
+
+            hep.histplot(
+                [ signal.sum('dataset').values()[()]],
+                edges,
+                histtype="step",
+                label=[r'$C_{\varphi t}=%s, C_{\varphi Q}^{-}=%s$'%(x,y)],
+                color=['black'],
+                ax=ax)
+
+            ax.legend(ncol=3)
+            # labels
+            rax.set_xlabel(backgrounds['signal'].sum('dataset').axes()[0].label)
+            ax.set_xlim(edges[0],edges[-1])
+            rax.set_ylabel(r'rel. unc.')
+            ax.set_ylabel(r'Events')
+
+            print ("...storing plots")
+
+            plot_name = f'BIT_cpt_{x}_cpqm_{y}_{region}_ALLYEARS_{args.scaling}'
+            fig.savefig(f'{base_dir}/{plot_name}.png')
+            fig.savefig(f'{base_dir}/{plot_name}.pdf')
+
+            plt.close(fig)
+            del fig, ax, rax
 
     print('Done!')
