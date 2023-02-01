@@ -28,7 +28,8 @@ def submit():
         #'TTZ_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTZ_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTH_5f_LO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTH_5f_LO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
         #'TTH_5f_NLO_SMEFT': '/ceph/cms/store/user/sjeon/tW_scattering/gridpacks/TTH_5f_NLO_SMEFT_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.tar.xz',
-        'ttlnuJet_all22WCs': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/ttlnuJet_all22WCsStartPtCheckdim6TopMay20GST_run0_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',
+        #'ttlnuJet_all22WCs': '/ceph/cms/store/user/dspitzba/tW_scattering/gridpacks/ttlnuJet_all22WCsStartPtCheckdim6TopMay20GST_run0_slc7_amd64_gcc630_CMSSW_9_3_16_tarball.tar.xz',
+        'TTWToLNu_SM': '/cvmfs/cms.cern.ch/phys_generator/gridpacks/UL/13TeV/madgraph/V5_2.6.5/TTWJetsToLNu_5f_NLO_FXFX/TTWJetsToLNu_5f_NLO_FXFX_slc7_amd64_gcc700_CMSSW_10_6_0_tarball.tar.xz',
     }
 
     total_summary = {}
@@ -55,6 +56,8 @@ def submit():
             exe = "executables/condor_executable_nanogen_nlo.sh"
         elif reqname.count("ttlnuJet"):
             exe = "executables/condor_executable_nanogen_ttW_LO.sh"
+        elif reqname.count("TTWToLNu_SM"):
+            exe = "executables/condor_executable_nanogen_ttW_NLO.sh"
         else:
             exe = "executables/condor_executable_nanogen.sh"
 
