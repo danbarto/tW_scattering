@@ -7,3 +7,6 @@
 [submodule "BIT"]
 	path = BIT
 	url = git@github.com:HephyAnalysisSW/BIT.git
+[submodule "analysis/Tools/jsonpog-integration"]
+	path = analysis/Tools/jsonpog-integration
+	url = ssh://git@gitlab.cern.ch:7999/cms-nanoAOD/jsonpog-integration.git
