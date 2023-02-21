@@ -766,6 +766,16 @@
   split: 14
   sumWeight: 14939986.0
   xsec: 0.0742
+/THW_ctcvcp_5f_Hincl_TuneCP5_13TeV_madgraph_pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
+  files: []
+  nEvents: 7484000
+  name: THW_ctcvcp_5f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1
+  nano: Not kept
+  path: null
+  reweight: LHEReweightingWeight,11
+  split: 8
+  sumWeight: 0.0
+  xsec: 0.0157
 /TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:

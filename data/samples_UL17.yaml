@@ -875,6 +875,26 @@
   split: 3
   sumWeight: 0
   xsec: -1.0
+/THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM:
+  files: []
+  nEvents: 7158996
+  name: THQ_ctcvcp_4f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2
+  nano: Not kept
+  path: null
+  reweight: LHEReweightingWeight,11
+  split: 8
+  sumWeight: 0.0
+  xsec: 0.0742
+/THW_ctcvcp_5f_Hincl_TuneCP5_13TeV_madgraph_pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM:
+  files: []
+  nEvents: 14325000
+  name: THW_ctcvcp_5f_Hincl_TuneCP5_13TeV_madgraph_pythia8_RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1
+  nano: Not kept
+  path: null
+  reweight: LHEReweightingWeight,11
+  split: 4
+  sumWeight: 0.0
+  xsec: 0.0157
 /TTGamma_Dilept_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v1/NANOAODSIM:
   LHEPdfWeight: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
