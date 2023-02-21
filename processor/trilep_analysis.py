@@ -490,6 +490,79 @@ class trilep_analysis(processor.ProcessorABC):
                         eft_weight = self.hyperpoly.eval(ev.Pol, point)
                     else:
                         eft_weight = dummy_weight.weight()
+
+                    fill_multiple_np(
+                        output['lead_lep_pt_WZ'],
+                        {'pt': pad_and_flatten(leading_lepton.p4.pt)},
+                        add_sel = WZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['LT_WZ'],
+                        {'lt': lt},
+                        add_sel = WZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['N_jet_WZ'],
+                        {'multiplicity': ak.num(jet)},
+                        add_sel = WZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['lead_lep_pt_ttZ'],
+                        {'pt': pad_and_flatten(leading_lepton.p4.pt)},
+                        add_sel = ttZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['LT_ttZ'],
+                        {'lt': lt},
+                        add_sel = ttZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['N_jet_ttZ'],
+                        {'multiplicity': ak.num(jet)},
+                        add_sel = ttZ_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['trilep_mass_XG'],
+                        {'mass': ak.fill_none(pad_and_flatten(M3l), 0)},
+                        add_sel = XG_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['lead_lep_pt_XG'],
+                        {'pt': pad_and_flatten(leading_lepton.p4.pt)},
+                        add_sel = XG_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
+                    fill_multiple_np(
+                        output['LT_XG'],
+                        {'lt': lt},
+                        add_sel = XG_sel,
+                        other = {'EFT': eft_point},
+                        weight_multiplier = eft_weight,
+                    )
+
                     fill_multiple_np(
                         output['signal_region_topW'],
                         {
@@ -868,9 +941,18 @@ if __name__ == '__main__':
                     "N_fwd" :       hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
                     "N_tau" :       hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, multiplicity_axis),
                     "dilepton_mass": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_WZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
-                    "dilepton_mass_XG": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "dilepton_mass_WZ":  hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "lead_lep_pt_WZ":    hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, pt_axis),
+                    "LT_WZ":             hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis),
+                    "N_jet_WZ":          hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, multiplicity_axis),
+                    "dilepton_mass_XG":  hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "trilep_mass_XG":    hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "lead_lep_pt_XG":    hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, pt_axis),
+                    "LT_XG":             hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis),
                     "dilepton_mass_ttZ": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
+                    "lead_lep_pt_ttZ":   hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, pt_axis),
+                    "LT_ttZ":            hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis),
+                    "N_jet_ttZ":         hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, multiplicity_axis),
                     "dilepton_mass_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, mass_axis),
                     "signal_region_topW": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, sr_axis, charge_axis, nossf_axis),
                 })
