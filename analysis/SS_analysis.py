@@ -103,17 +103,27 @@ class SS_analysis(processor.ProcessorABC):
 
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
-        
-        output = self.accumulator.identity()
-        
-        # use a very loose preselection to filter the events
+
         presel = ak.num(events.Jet)>2
-        
+
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-        output['totalEvents']['all'] += len(events)
+
+        if re.search(data_pattern, dataset):
+            variations = self.variations[:1] + [var for var in self.variations if var['name'].count('fake')]
+        else:
+            variations = self.variations
+
+        return processor.accumulate(self.process_shift(ev, var) for var in variations)
+
+    def process_shift(self, ev, var=None):
+        # use a very loose preselection to filter the events
+        output = self.accumulator.identity()
+
+        #output['totalEvents']['all'] += len(events)
         output['skimmedEvents']['all'] += len(ev)
+        dataset = ev.metadata['dataset']
         
         if not re.search(data_pattern, dataset):
             ## Generated leptons
@@ -198,798 +208,534 @@ class SS_analysis(processor.ProcessorABC):
         tau       = tau[~match(tau, muon, deltaRCut=0.4)] 
         tau       = tau[~match(tau, electron, deltaRCut=0.4)]
 
-        track     = getIsoTracks(ev)
-
         # this is where the real JEC dependent stuff happens
 
-        if re.search(data_pattern, dataset):
-            variations = self.variations[:1] + [var for var in self.variations if var['name'].count('fake')]
+        pt_var   = var['pt_var']
+        var_name = var['name']
+        shift    = var['weight']
+
+        met = getMET(ev, pt_var=pt_var)
+
+        ## Jets
+        jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var=pt_var)
+        jet       = jet[~match(jet, muon, deltaRCut=0.4)] # remove jets that overlap with muons
+        jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
+
+        central   = jet[(abs(jet.eta)<2.4)]
+        btag      = getBTagsDeepFlavB(jet, era=self.era, year=self.year)
+        light     = getBTagsDeepFlavB(jet, era=self.era, year=self.year, invert=True)
+        light_central = light[(abs(light.eta)<2.5)]
+        fwd       = getFwdJet(light)
+        #fwd_noPU  = getFwdJet(light, puId=False)
+
+        high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
+
+        bl          = cross(lepton, high_score_btag)
+        bl_dR       = delta_r(bl['0'], bl['1'])
+        min_bl_dR   = ak.min(bl_dR, axis=1)
+
+        ## forward jets
+        j_fwd = fwd[ak.singletons(ak.argmax(fwd.p4.p, axis=1))] # highest momentum spectator
+
+        # try to get either the most forward light jet, or if there's more than one with eta>1.7, the highest pt one
+        most_fwd = light[ak.argsort(abs(light.eta))][:,0:1]
+        best_fwd = ak.concatenate([j_fwd, most_fwd], axis=1)[:,0:1]
+
+        jf          = cross(j_fwd, jet)
+        mjf         = (jf['0'].p4+jf['1'].p4).mass
+        j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
+        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
+
+        ## other variables
+        ht = ak.sum(jet.p4.pt, axis=1)
+        st = met.pt + ht + ak.sum(lepton.p4.pt, axis=1)
+        lt = met.pt + ak.sum(lepton.p4.pt, axis=1)
+
+        mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, met.pt, met.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+
+        # define the weight
+        weight = Weights( len(ev) )
+
+        if not re.search(data_pattern, dataset):
+            # lumi weight
+            weight.add("weight", ev.genWeight)
+
+            if isinstance(self.reweight[dataset], int) or isinstance(self.reweight[dataset], float):
+                pass  # NOTE: this can be implemented later
+                #if self.reweight != 1:
+                #    weight.add("reweight", self.reweight[dataset])
+            else:
+                print(f"A reweight is applied to dataset {dataset}")
+                weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
+
+            ## PU weight
+            weight.add("PU",
+                       self.pu.reweight(ev.Pileup.nTrueInt.to_numpy()),
+                       weightUp = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='up'),
+                       weightDown = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='down'),
+                       shift=False,
+                       )
+
+            # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
+            if var['name'] == 'l_up':
+                weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='up'))
+            elif var['name'] == 'l_down':
+                weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='down'))
+            elif var['name'] == 'b_up':
+                weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='up', c_direction='central'))
+            elif var['name'] == 'b_down':
+                weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='down', c_direction='central'))
+            else:
+                weight.add("btag", self.btagSF.Method1a(btag, light_central))
+
+            # lepton SFs
+            if var['name'] == 'ele_up':
+                weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
+            elif var['name'] == 'ele_down':
+                weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
+            elif var['name'] == 'mu_up':
+                weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
+            elif var['name'] == 'mu_down':
+                weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
+            else:
+                weight.add("lepton", self.leptonSF.get(electron, muon))
+
+            # trigger SFs
+            weight.add("trigger", self.triggerSF.get(electron, muon))
+
+        if dataset.count('EFT'):
+            #print (self.points)
+            # FIXME legacy code ready to be retired
+            for point in self.points:
+                point['weight'] = Weights( len(ev) )
+                point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
+
+        # calculate everything from loose, require two tights on top
+        # since n_tight == n_loose == 2, the tight and loose leptons are the same in the end
+
+        # in this selection we'll get events with exactly two fakeable+tight and two loose leptons.
+        sel = Selection(
+            dataset = dataset,
+            events = ev,
+            year = self.year,
+            era = self.era,
+            ele = electron,
+            ele_veto = el_v,
+            mu = muon,
+            mu_veto = mu_v,
+            jet_all = jet,
+            jet_central = central,
+            jet_btag = btag,
+            jet_fwd = fwd,
+            jet_light = light,
+            met = met,
+        )
+
+        if var['name'] == 'central':
+            # Only fill the cutflow onece :)
+            cutflow     = Cutflow(output, ev, weight=weight)
+            baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
         else:
-            variations = self.variations
+            baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
+        baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
 
-        for var in variations:
+        # this defines all the dedicated selections for charge flip, nonprompt, conversions
+        if not re.search(data_pattern, dataset):
 
-            pt_var   = var['pt_var']
-            var_name = var['name']
-            shift    = var['weight']
+            BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
+            BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
 
-            met = getMET(ev, pt_var=pt_var)
+            np_est_sel_mc = (baseline & \
+                #((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
+                ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # FIXME check if not requiring electron charge consistency actually makes a difference
+            np_sub_sel_mc = (baseline & \
+                ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_p)+ak.num(mu_f_p))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_p)+ak.num(mu_f_p))==2)) ))
+            np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
+            np_est_sel_data = (baseline & ~baseline)  # this has to be false
 
-            ## Jets
-            jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var=pt_var)
-            jet       = jet[~match(jet, muon, deltaRCut=0.4)] # remove jets that overlap with muons
-            jet       = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
-            
-            central   = jet[(abs(jet.eta)<2.4)]
-            btag      = getBTagsDeepFlavB(jet, era=self.era, year=self.year)
-            light     = getBTagsDeepFlavB(jet, era=self.era, year=self.year, invert=True)
-            light_central = light[(abs(light.eta)<2.5)]
-            fwd       = getFwdJet(light)
-            #fwd_noPU  = getFwdJet(light, puId=False)
-            
-            high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
+            cf_est_sel_mc = (baseline_OS & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))
+            cf_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_p_cf))>=1) )  # two tight leptons, at least one electron charge flip
+            cf_est_sel_data = (baseline & ~baseline)  # this has to be false
 
-            bl          = cross(lepton, high_score_btag)
-            bl_dR       = delta_r(bl['0'], bl['1'])
-            min_bl_dR   = ak.min(bl_dR, axis=1)
-
-            ## forward jets
-            j_fwd = fwd[ak.singletons(ak.argmax(fwd.p4.p, axis=1))] # highest momentum spectator
-
-            # try to get either the most forward light jet, or if there's more than one with eta>1.7, the highest pt one
-            most_fwd = light[ak.argsort(abs(light.eta))][:,0:1]
-            best_fwd = ak.concatenate([j_fwd, most_fwd], axis=1)[:,0:1]
-            
-            jf          = cross(j_fwd, jet)
-            mjf         = (jf['0'].p4+jf['1'].p4).mass
-            j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
-            delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
-
-            ## other variables
-            ht = ak.sum(jet.p4.pt, axis=1)
-            st = met.pt + ht + ak.sum(lepton.p4.pt, axis=1)
-            lt = met.pt + ak.sum(lepton.p4.pt, axis=1)
-
-            mt_lep_met = mt(lepton.p4.pt, lepton.p4.phi, met.pt, met.phi)
-            min_mt_lep_met = ak.min(mt_lep_met, axis=1)
-
-            # define the weight
-            weight = Weights( len(ev) )
-
-            if not re.search(data_pattern, dataset):
-                # lumi weight
-                weight.add("weight", ev.genWeight)
-
-                if isinstance(self.reweight[dataset], int) or isinstance(self.reweight[dataset], float):
-                    pass  # NOTE: this can be implemented later
-                    #if self.reweight != 1:
-                    #    weight.add("reweight", self.reweight[dataset])
-                else:
-                    weight.add("reweight", getattr(ev, self.reweight[dataset][0])[:,self.reweight[dataset][1]])
-
-                ## PU weight
-                weight.add("PU",
-                           self.pu.reweight(ev.Pileup.nTrueInt.to_numpy()),
-                           weightUp = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='up'),
-                           weightDown = self.pu.reweight(ev.Pileup.nTrueInt.to_numpy(), to='down'),
-                           shift=False,
-                           )
-
-                # b-tag SFs # NOTE this is not super sophisticated rn, but we need more than two shifts
-                if var['name'] == 'l_up':
-                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='up'))
-                elif var['name'] == 'l_down':
-                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='central', c_direction='down'))
-                elif var['name'] == 'b_up':
-                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='up', c_direction='central'))
-                elif var['name'] == 'b_down':
-                    weight.add("btag", self.btagSF.Method1a(btag, light_central, b_direction='down', c_direction='central'))
-                else:
-                    weight.add("btag", self.btagSF.Method1a(btag, light_central))
-
-                # lepton SFs
-                if var['name'] == 'ele_up':
-                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='ele'))
-                elif var['name'] == 'ele_down':
-                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='ele'))
-                elif var['name'] == 'mu_up':
-                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='up', collection='mu'))
-                elif var['name'] == 'mu_down':
-                    weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
-                else:
-                    weight.add("lepton", self.leptonSF.get(electron, muon))
-
-                # trigger SFs
-                weight.add("trigger", self.triggerSF.get(electron, muon))
-            
-            if dataset.count('EFT'):
-                #print (self.points)
-                # FIXME legacy code ready to be retired
-                for point in self.points:
-                    point['weight'] = Weights( len(ev) )
-                    point['weight'].add("EFT", self.hyperpoly.eval(ev.Pol, point['point']))
-
-            # slightly restructured
-            # calculate everything from loose, require two tights on top
-            # since n_tight == n_loose == 2, the tight and loose leptons are the same in the end
-
-            # in this selection we'll get events with exactly two fakeable+tight and two loose leptons.
-            sel = Selection(
-                dataset = dataset,
-                events = ev,
-                year = self.year,
-                era = self.era,
-                ele = electron,
-                ele_veto = el_v,
-                mu = muon,
-                mu_veto = mu_v,
-                jet_all = jet,
-                jet_central = central,
-                jet_btag = btag,
-                jet_fwd = fwd,
-                jet_light = light,
-                met = met,
-            )
-
-            if var['name'] == 'central':
-                # Only fill the cutflow onece :)
-                cutflow     = Cutflow(output, ev, weight=weight)
-                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
+            if dataset.count("TTTo") or dataset.count("DY"):
+                conv_sel = BL  # anything that has tight, prompt, charge-consistent, non-external-conv, same-sign dileptons has to be internal conversion.
+            elif dataset.count("Gamma") or dataset.count("WGTo") or dataset.count("ZGTo") or dataset.count("WZG_"):
+                conv_sel = BL_incl & (((ak.num(el_t_conv)+ak.num(mu_t_conv))>0))
             else:
-                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
-            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
-            
-            # this defines all the dedicated selections for charge flip, nonprompt, conversions
-            if not re.search(data_pattern, dataset):
-
-                BL = (baseline & ((ak.num(el_t_p_cc)+ak.num(mu_t_p))==2))  # this is the MC baseline for events with two tight prompt leptons
-                BL_incl = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2)) # this is the MC baseline for events with two tight leptons
-
-                np_est_sel_mc = (baseline & \
-                    #((((ak.num(el_t_p_cc)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p_cc)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # no overlap between tight and nonprompt, and veto on additional leptons. this should be enough
-                    ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_np)+ak.num(mu_f_np))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_np)+ak.num(mu_f_np))==2)) ))  # FIXME check if not requiring electron charge consistency actually makes a difference
-                np_sub_sel_mc = (baseline & \
-                    ((((ak.num(el_t_p)+ak.num(mu_t_p))==1) & ((ak.num(el_f_p)+ak.num(mu_f_p))==1)) | (((ak.num(el_t_p)+ak.num(mu_t_p))==0) & ((ak.num(el_f_p)+ak.num(mu_f_p))==2)) ))
-                np_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_np)+ak.num(mu_t_np))>=1) )  # two tight leptons, at least one nonprompt
-                np_est_sel_data = (baseline & ~baseline)  # this has to be false
-
-                cf_est_sel_mc = (baseline_OS & ((ak.num(el_t_p)+ak.num(mu_t_p))==2))
-                cf_obs_sel_mc = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2) & ((ak.num(el_t_p_cf))>=1) )  # two tight leptons, at least one electron charge flip
-                cf_est_sel_data = (baseline & ~baseline)  # this has to be false
-
-                if dataset.count("TTTo") or dataset.count("DY"):
-                    conv_sel = BL  # anything that has tight, prompt, charge-consistent, non-external-conv, same-sign dileptons has to be internal conversion.
-                elif dataset.count("Gamma") or dataset.count("WGTo") or dataset.count("ZGTo") or dataset.count("WZG_"):
-                    conv_sel = BL_incl & (((ak.num(el_t_conv)+ak.num(mu_t_conv))>0))
-                else:
-                    conv_sel = (baseline & ~baseline)  # this has to be false
-
-
-                data_sel = (baseline & ~baseline)  # this has to be false
-
-                #if var["name"].count("fake")
-                weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT', variation=(var["ext"] if var["name"].count("fake") else ''))
-                #weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT', variation=(var["ext"] if var["name"].count("fake") else ''))  # define one for subtraction??
-                weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD', variation=(var["ext"] if var["name"].count("fake") else ''))
-                weight_cf_mc = self.chargeflipWeight.get(el_t_p)
-
-            else:
-                BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
-
-                BL_incl = BL
-
-                np_est_sel_mc = (baseline & ~baseline)
-                np_sub_sel_mc = (baseline & ~baseline)
-                np_obs_sel_mc = (baseline & ~baseline)
-                np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
-
-                cf_est_sel_mc = (baseline & ~baseline)
-                cf_obs_sel_mc = (baseline & ~baseline)
-                cf_est_sel_data = (baseline_OS & ((ak.num(el_t)+ak.num(mu_t))==2) )
                 conv_sel = (baseline & ~baseline)  # this has to be false
 
-                weight_np_mc = np.zeros(len(ev))
-                weight_np_mc_qcd = np.zeros(len(ev))
-                weight_cf_mc = np.zeros(len(ev))
 
-                #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
-                run_ = ak.to_numpy(ev.run)
-                lumi_ = ak.to_numpy(ev.luminosityBlock)
-                event_ = ak.to_numpy(ev.event)
+            data_sel = (baseline & ~baseline)  # this has to be false
 
-                data_sel = (baseline | ~baseline)  # this is always true
+            #if var["name"].count("fake")
+            weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT', variation=(var["ext"] if var["name"].count("fake") else ''))
+            #weight_np_mc = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='TT', variation=(var["ext"] if var["name"].count("fake") else ''))  # define one for subtraction??
+            weight_np_mc_qcd = self.nonpromptWeight.get(el_f_np, mu_f_np, meas='QCD', variation=(var["ext"] if var["name"].count("fake") else ''))
+            weight_cf_mc = self.chargeflipWeight.get(el_t_p)
 
-                if False:
-                    output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
-                    output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
-                    output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
+        else:
+            BL = (baseline & ((ak.num(el_t)+ak.num(mu_t))==2))
 
-            out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
+            BL_incl = BL
 
-            if self.evaluate or self.dump:
-                # define the inputs to the NN
-                # this is super stupid. there must be a better way.
-                # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
+            np_est_sel_mc = (baseline & ~baseline)
+            np_sub_sel_mc = (baseline & ~baseline)
+            np_obs_sel_mc = (baseline & ~baseline)
+            np_est_sel_data = (baseline & (ak.num(el_t)+ak.num(mu_t)==1) & (ak.num(el_f)+ak.num(mu_f)==1) )
 
-                NN_inputs_d = {
-                    'n_jet':            ak.to_numpy(ak.num(jet)),
-                    'n_fwd':            ak.to_numpy(ak.num(fwd)),
-                    'n_b':              ak.to_numpy(ak.num(btag)),
-                    'n_tau':            ak.to_numpy(ak.num(tau)),
-                    #'n_track':          ak.to_numpy(ak.num(track)),
-                    'st':               ak.to_numpy(st),
-                    'met':              ak.to_numpy(met.pt),
-                    'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
-                    'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
-                    'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
-                    'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
-                    'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
-                    'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
-                    'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
-                    'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
-                    'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.p4.pt)),
-                    'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p4.p)),
-                    'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.p4.eta)),
-                    'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.pt)),
-                    'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.pt)),
-                    'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.eta)),
-                    'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.eta)),
-                    'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.pt)),
-                    'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.pt)),
-                    'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.eta)),
-                    'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
-                    'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
-                    'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
-                }
+            cf_est_sel_mc = (baseline & ~baseline)
+            cf_obs_sel_mc = (baseline & ~baseline)
+            cf_est_sel_data = (baseline_OS & ((ak.num(el_t)+ak.num(mu_t))==2) )
+            conv_sel = (baseline & ~baseline)  # this has to be false
 
+            weight_np_mc = np.zeros(len(ev))
+            weight_np_mc_qcd = np.zeros(len(ev))
+            weight_cf_mc = np.zeros(len(ev))
 
-                if self.dump and var['name'] == 'central':
-                    for k in NN_inputs_d.keys():
-                        output['dump_'+dataset][k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
-                    if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
-                        for w in self.weights:
-                            #print (w)
-                            output['dump_'+dataset][w] += processor.column_accumulator(ak.to_numpy(getattr(ev.LHEWeight, w))[out_sel])
+            #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
+            run_ = ak.to_numpy(ev.run)
+            lumi_ = ak.to_numpy(ev.luminosityBlock)
+            event_ = ak.to_numpy(ev.event)
 
-                    output['dump_'+dataset]['event'] += processor.column_accumulator(ak.to_numpy(ev.event)[out_sel])
-                    output['dump_'+dataset]['nLepFromTop'] += processor.column_accumulator(ak.to_numpy(ev.nLepFromTop)[out_sel])
-                            #NN_inputs_d.update({w: ak.to_numpy(getattr(ev.LHEWeight, w))})
+            data_sel = (baseline | ~baseline)  # this is always true
 
-                if self.evaluate:
-                
-                    NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
+            if False:
+                output['%s_run'%dataset] += processor.column_accumulator(run_[BL])
+                output['%s_lumi'%dataset] += processor.column_accumulator(lumi_[BL])
+                output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
 
-                    NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+        out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
 
-                    NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
+        ## NOTE LEGACY DNN CODE START
+        #if self.evaluate or self.dump:
+        #    # define the inputs to the NN
+        #    # this is super stupid. there must be a better way.
+        #    # used a np.stack which is ok performance wise. pandas data frame seems to be slow and memory inefficient
 
-                    #model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
-                    model, scaler = load_onnx_model(self.training)
-
-                    try:
-                        NN_inputs_scaled = scaler.transform(NN_inputs)
-                        NN_pred    = predict_onnx(model, NN_inputs_scaled)
-
-                        best_score = np.argmax(NN_pred, axis=1)
+        #    NN_inputs_d = {
+        #        'n_jet':            ak.to_numpy(ak.num(jet)),
+        #        'n_fwd':            ak.to_numpy(ak.num(fwd)),
+        #        'n_b':              ak.to_numpy(ak.num(btag)),
+        #        'n_tau':            ak.to_numpy(ak.num(tau)),
+        #        'st':               ak.to_numpy(st),
+        #        'met':              ak.to_numpy(met.pt),
+        #        'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
+        #        'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
+        #        'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
+        #        'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
+        #        'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
+        #        'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
+        #        'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
+        #        'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
+        #        'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.p4.pt)),
+        #        'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p4.p)),
+        #        'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.p4.eta)),
+        #        'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.pt)),
+        #        'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.pt)),
+        #        'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.eta)),
+        #        'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.eta)),
+        #        'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.pt)),
+        #        'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.pt)),
+        #        'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.eta)),
+        #        'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
+        #        'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
+        #        'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
+        #    }
 
 
-                    except ValueError:
-                        print ("Problem with prediction. Showing the shapes here:")
-                        print (np.shape(NN_inputs))
-                        NN_pred = np.array([])
-                        best_score = np.array([])
-                        NN_inputs_scaled = NN_inputs
-                        raise
+        #    if self.dump and var['name'] == 'central':
+        #        for k in NN_inputs_d.keys():
+        #            output['dump_'+dataset][k] += processor.column_accumulator(NN_inputs_d[k][out_sel])
+        #        if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
+        #            for w in self.weights:
+        #                #print (w)
+        #                output['dump_'+dataset][w] += processor.column_accumulator(ak.to_numpy(getattr(ev.LHEWeight, w))[out_sel])
 
-                    del NN_inputs, NN_inputs_d
+        #        output['dump_'+dataset]['event'] += processor.column_accumulator(ak.to_numpy(ev.event)[out_sel])
+        #        output['dump_'+dataset]['nLepFromTop'] += processor.column_accumulator(ak.to_numpy(ev.nLepFromTop)[out_sel])
+        #                #NN_inputs_d.update({w: ak.to_numpy(getattr(ev.LHEWeight, w))})
 
-            if self.bit:
-                ## Evaluate the BIT ##
-                BIT_inputs_d = {
-                    'n_jet':            ak.to_numpy(ak.num(jet)),
-                    'n_fwd':            ak.to_numpy(ak.num(fwd)),
-                    'n_b':              ak.to_numpy(ak.num(btag)),
-                    'n_tau':            ak.to_numpy(ak.num(tau)),
-                    'st':               ak.to_numpy(st),
-                    'lt':               ak.to_numpy(lt),
-                    'met':              ak.to_numpy(met.pt),
-                    'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
-                    'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
-                    'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
-                    'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
-                    'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
-                    'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
-                    'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
-                    'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
-                    'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.p4.pt)),
-                    'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p4.p)),
-                    'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.p4.eta)),
-                    'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.pt)),
-                    'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.pt)),
-                    'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.eta)),
-                    'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.eta)),
-                    'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.pt)),
-                    'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.pt)),
-                    'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.eta)),
-                    'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
-                    'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
-                    'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
-                }
+        #    if self.evaluate:
 
-                #print (sorted(BIT_inputs_d.keys()))  # NOTE: the order is already correct
-                #BIT_inputs = np.stack( [BIT_inputs_d[k] for k in sorted(BIT_inputs_d.keys())] )
-                #BIT_inputs = np.nan_to_num(BIT_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
-                #BIT_inputs = np.moveaxis(BIT_inputs, 0, 1)
-                #
-                variables = sorted(BIT_inputs_d.keys())
-                BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
-                BIT_inputs = BIT_inputs_df[variables].values
+        #        NN_inputs = np.stack( [NN_inputs_d[k] for k in NN_inputs_d.keys()] )
 
-                bit_file = 'analysis/Tools/data/networks/bits_v40.pkl'  # was v31
-                with open(bit_file, 'rb') as f:
-                    bits = pickle.load(f)
+        #        NN_inputs = np.nan_to_num(NN_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
 
-                bit_pred = {}
-                for i in range(6):
-                    bit_pred["pred_%s"%i] = bits[i].vectorized_predict(BIT_inputs)
+        #        NN_inputs = np.moveaxis(NN_inputs, 0, 1)  # this is needed for a np.stack (old version)
 
-                bit_pred = pd.DataFrame(bit_pred)
-                #print (bit_pred)
+        #        #model, scaler = load_onnx_model('%s%s_%s'%(self.year, self.era, self.training))
+        #        model, scaler = load_onnx_model(self.training)
 
-            weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
-            weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data', variation=(var["ext"] if var["name"].count("fake") else ''))
-            weight_cf_data = self.chargeflipWeight.get(el_t)
+        #        try:
+        #            NN_inputs_scaled = scaler.transform(NN_inputs)
+        #            NN_pred    = predict_onnx(model, NN_inputs_scaled)
 
-            #out_sel = (BL | np_est_sel_mc | cf_est_sel_mc)
+        #            best_score = np.argmax(NN_pred, axis=1)
 
-            dummy = (np.ones(len(ev))==1)
-            dummy_weight = Weights(len(ev))
-            def fill_multiple_np(hist, arrays, add_sel=dummy, other=None, weight_multiplier=dummy_weight.weight()):
-                #reg_sel = [BL, np_est_sel_mc, np_obs_sel_mc, np_est_sel_data, cf_est_sel_mc, cf_obs_sel_mc, cf_est_sel_data],
-                #print ('len', len(reg_sel[0]))
-                #print ('sel', reg_sel[0])
 
-                if not re.search(data_pattern, dataset) and self.minimal:
-                    # NOTE:
-                    # For minimal we don't need all the different predictions for MC
-                    reg_sel = [
-                        BL&add_sel,
-                        conv_sel&add_sel,
-                        np_sub_sel_mc&add_sel,
-                    ]
-                    fill_multiple(
-                        hist,
-                        dataset = dataset,
-                        predictions=[
-                            "central", # only prompt contribution from process
-                            "conv_mc",
-                            "np_sub_mc",  # NOTE prompt subtraction - WIP
-                        ],
-                        arrays=arrays,
-                        selections=reg_sel,
-                        weights=[
-                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
-                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
-                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_data[reg_sel[2]],
-                        ],
-                        systematic = var_name,
-                        other = other,
-                        )
+        #        except ValueError:
+        #            print ("Problem with prediction. Showing the shapes here:")
+        #            print (np.shape(NN_inputs))
+        #            NN_pred = np.array([])
+        #            best_score = np.array([])
+        #            NN_inputs_scaled = NN_inputs
+        #            raise
 
-                elif re.search(data_pattern, dataset) and self.minimal:
-                    reg_sel = [
-                        BL&add_sel,
-                        np_est_sel_data&add_sel,
-                        cf_est_sel_data&add_sel,
-                    ]
-                    fill_multiple(
-                        hist,
-                        dataset = dataset,
-                        predictions=[
-                            "central", # only prompt contribution from process
-                            "np_est_data",
-                            "cf_est_data",
-                        ],
-                        arrays=arrays,
-                        selections=reg_sel,
-                        weights=[
-                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
-                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]]*weight_np_data[reg_sel[1]],
-                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_cf_data[reg_sel[2]],
-                        ],
-                        systematic = var_name,
-                        other = other,
+        #        del NN_inputs, NN_inputs_d
+        ## NOTE LEGACY DNN CODE END
+
+        if self.bit:
+            ## Evaluate the BIT ##
+            BIT_inputs_d = {
+                'n_jet':            ak.to_numpy(ak.num(jet)),
+                'n_fwd':            ak.to_numpy(ak.num(fwd)),
+                'n_b':              ak.to_numpy(ak.num(btag)),
+                'n_tau':            ak.to_numpy(ak.num(tau)),
+                'st':               ak.to_numpy(st),
+                'lt':               ak.to_numpy(lt),
+                'met':              ak.to_numpy(met.pt),
+                'mjj_max':          ak.to_numpy(ak.fill_none(ak.max(mjf, axis=1),0)),
+                'delta_eta_jj':     ak.to_numpy(pad_and_flatten(delta_eta)),
+                'lead_lep_pt':      ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt)),
+                'lead_lep_eta':     ak.to_numpy(pad_and_flatten(leading_lepton.p4.eta)),
+                'sublead_lep_pt':   ak.to_numpy(pad_and_flatten(trailing_lepton.p4.pt)),
+                'sublead_lep_eta':  ak.to_numpy(pad_and_flatten(trailing_lepton.p4.eta)),
+                'dilepton_mass':    ak.to_numpy(pad_and_flatten(dilepton_mass)),
+                'dilepton_pt':      ak.to_numpy(pad_and_flatten(dilepton_pt)),
+                'fwd_jet_pt':       ak.to_numpy(pad_and_flatten(best_fwd.p4.pt)),
+                'fwd_jet_p':        ak.to_numpy(pad_and_flatten(best_fwd.p4.p)),
+                'fwd_jet_eta':      ak.to_numpy(pad_and_flatten(best_fwd.p4.eta)),
+                'lead_jet_pt':      ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.pt)),
+                'sublead_jet_pt':   ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.pt)),
+                'lead_jet_eta':     ak.to_numpy(pad_and_flatten(jet[:, 0:1].p4.eta)),
+                'sublead_jet_eta':  ak.to_numpy(pad_and_flatten(jet[:, 1:2].p4.eta)),
+                'lead_btag_pt':     ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.pt)),
+                'sublead_btag_pt':  ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.pt)),
+                'lead_btag_eta':    ak.to_numpy(pad_and_flatten(high_score_btag[:, 0:1].p4.eta)),
+                'sublead_btag_eta': ak.to_numpy(pad_and_flatten(high_score_btag[:, 1:2].p4.eta)),
+                'min_bl_dR':        ak.to_numpy(ak.fill_none(min_bl_dR, 0)),
+                'min_mt_lep_met':   ak.to_numpy(ak.fill_none(min_mt_lep_met, 0)),
+            }
+
+            #print (sorted(BIT_inputs_d.keys()))  # NOTE: the order is already correct
+            #BIT_inputs = np.stack( [BIT_inputs_d[k] for k in sorted(BIT_inputs_d.keys())] )
+            #BIT_inputs = np.nan_to_num(BIT_inputs, 0, posinf=1e5, neginf=-1e5)  # events with posinf/neginf/nan will not pass the BL selection anyway
+            #BIT_inputs = np.moveaxis(BIT_inputs, 0, 1)
+            #
+            variables = sorted(BIT_inputs_d.keys())
+            BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
+            BIT_inputs = BIT_inputs_df[variables].values
+
+            bit_file = 'analysis/Tools/data/networks/bits_v40.pkl'  # was v31
+            with open(bit_file, 'rb') as f:
+                bits = pickle.load(f)
+
+            bit_pred = {}
+            for i in range(6):
+                bit_pred["pred_%s"%i] = bits[i].vectorized_predict(BIT_inputs)
+
+            bit_pred = pd.DataFrame(bit_pred)
+
+        weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
+        weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data', variation=(var["ext"] if var["name"].count("fake") else ''))
+        weight_cf_data = self.chargeflipWeight.get(el_t)
+
+        dummy = (np.ones(len(ev))==1)
+        dummy_weight = Weights(len(ev))
+        def fill_multiple_np(hist, arrays, add_sel=dummy, other=None, weight_multiplier=dummy_weight.weight()):
+
+            if not re.search(data_pattern, dataset) and self.minimal:
+                # NOTE:
+                # For minimal we don't need all the different predictions for MC
+                reg_sel = [
+                    BL&add_sel,
+                    conv_sel&add_sel,
+                    np_sub_sel_mc&add_sel,
+                ]
+                fill_multiple(
+                    hist,
+                    dataset = dataset,
+                    predictions=[
+                        "central", # only prompt contribution from process
+                        "conv_mc",
+                        "np_sub_mc",  # NOTE prompt subtraction - WIP
+                    ],
+                    arrays=arrays,
+                    selections=reg_sel,
+                    weights=[
+                        weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                        weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
+                        weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_data[reg_sel[2]],
+                    ],
+                    systematic = var_name,
+                    other = other,
                     )
 
+            elif re.search(data_pattern, dataset) and self.minimal:
+                reg_sel = [
+                    BL&add_sel,
+                    np_est_sel_data&add_sel,
+                    cf_est_sel_data&add_sel,
+                ]
+                fill_multiple(
+                    hist,
+                    dataset = dataset,
+                    predictions=[
+                        "central", # only prompt contribution from process
+                        "np_est_data",
+                        "cf_est_data",
+                    ],
+                    arrays=arrays,
+                    selections=reg_sel,
+                    weights=[
+                        weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                        weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]]*weight_np_data[reg_sel[1]],
+                        weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_cf_data[reg_sel[2]],
+                    ],
+                    systematic = var_name,
+                    other = other,
+                )
+
+            else:
+                reg_sel = [
+                    BL&add_sel,
+                    BL_incl&add_sel,
+                    np_est_sel_mc&add_sel,
+                    np_obs_sel_mc&add_sel,
+                    np_est_sel_data&add_sel,
+                    cf_est_sel_mc&add_sel,
+                    cf_obs_sel_mc&add_sel,
+                    cf_est_sel_data&add_sel,
+                    conv_sel&add_sel,
+                    np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
+                    np_sub_sel_mc&add_sel,  # prompt subtraction
+                ]
+                fill_multiple(
+                    hist,
+                    dataset = dataset,
+                    predictions=[
+                        "central", # only prompt contribution from process
+                        "inclusive", # everything from process (inclusive MC truth)
+                        "np_est_mc", # MC based NP estimate
+                        "np_obs_mc", # MC based NP observation
+                        "np_est_data",
+                        "cf_est_mc",
+                        "cf_obs_mc",
+                        "cf_est_data",
+                        "conv_mc",
+                        "np_est_mc_qcd",  # MC based NP estimate with QCD FR
+                        "np_sub_mc",  # NOTE prompt subtraction - WIP
+                    ],
+                    arrays=arrays,
+                    selections=reg_sel,
+                    weights=[
+                        weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
+                        weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
+                        weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_mc[reg_sel[2]],
+                        weight_multiplier[reg_sel[3]]*weight.weight(modifier=shift)[reg_sel[3]],
+                        weight_multiplier[reg_sel[4]]*weight.weight(modifier=shift)[reg_sel[4]]*weight_np_data[reg_sel[4]],
+                        weight_multiplier[reg_sel[5]]*weight.weight(modifier=shift)[reg_sel[5]]*weight_cf_mc[reg_sel[5]],
+                        weight_multiplier[reg_sel[6]]*weight.weight(modifier=shift)[reg_sel[6]],
+                        weight_multiplier[reg_sel[7]]*weight.weight(modifier=shift)[reg_sel[7]]*weight_cf_data[reg_sel[7]],
+                        weight_multiplier[reg_sel[8]]*weight.weight(modifier=shift)[reg_sel[8]],
+                        weight_multiplier[reg_sel[9]]*weight.weight(modifier=shift)[reg_sel[9]]*weight_np_mc_qcd[reg_sel[9]],
+                        weight_multiplier[reg_sel[10]]*weight.weight(modifier=shift)[reg_sel[10]]*weight_np_data[reg_sel[10]],
+                    ],
+                    systematic = var_name,
+                    other = other,
+                )
+
+        if self.bit:
+
+            for p in self.points:
+                x,y = p['point']
+                point = p['point']
+                qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
+                score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
+
+                # Get the weights
+                if dataset.count('EFT'):
+                    eft_weight = self.hyperpoly.eval(ev.Pol, point)
                 else:
-                    reg_sel = [
-                        BL&add_sel,
-                        BL_incl&add_sel,
-                        np_est_sel_mc&add_sel,
-                        np_obs_sel_mc&add_sel,
-                        np_est_sel_data&add_sel,
-                        cf_est_sel_mc&add_sel,
-                        cf_obs_sel_mc&add_sel,
-                        cf_est_sel_data&add_sel,
-                        conv_sel&add_sel,
-                        np_est_sel_mc&add_sel,  # MC based NP estimate with QCD FR
-                        np_sub_sel_mc&add_sel,  # prompt subtraction
-                    ]
-                    fill_multiple(
-                        hist,
-                        dataset = dataset,
-                        predictions=[
-                            "central", # only prompt contribution from process
-                            "inclusive", # everything from process (inclusive MC truth)
-                            "np_est_mc", # MC based NP estimate
-                            "np_obs_mc", # MC based NP observation
-                            "np_est_data",
-                            "cf_est_mc",
-                            "cf_obs_mc",
-                            "cf_est_data",
-                            "conv_mc",
-                            "np_est_mc_qcd",  # MC based NP estimate with QCD FR
-                            "np_sub_mc",  # NOTE prompt subtraction - WIP
-                        ],
-                        arrays=arrays,
-                        selections=reg_sel,
-                        weights=[
-                            weight_multiplier[reg_sel[0]]*weight.weight(modifier=shift)[reg_sel[0]],
-                            weight_multiplier[reg_sel[1]]*weight.weight(modifier=shift)[reg_sel[1]],
-                            weight_multiplier[reg_sel[2]]*weight.weight(modifier=shift)[reg_sel[2]]*weight_np_mc[reg_sel[2]],
-                            weight_multiplier[reg_sel[3]]*weight.weight(modifier=shift)[reg_sel[3]],
-                            weight_multiplier[reg_sel[4]]*weight.weight(modifier=shift)[reg_sel[4]]*weight_np_data[reg_sel[4]],
-                            weight_multiplier[reg_sel[5]]*weight.weight(modifier=shift)[reg_sel[5]]*weight_cf_mc[reg_sel[5]],
-                            weight_multiplier[reg_sel[6]]*weight.weight(modifier=shift)[reg_sel[6]],
-                            weight_multiplier[reg_sel[7]]*weight.weight(modifier=shift)[reg_sel[7]]*weight_cf_data[reg_sel[7]],
-                            weight_multiplier[reg_sel[8]]*weight.weight(modifier=shift)[reg_sel[8]],
-                            weight_multiplier[reg_sel[9]]*weight.weight(modifier=shift)[reg_sel[9]]*weight_np_mc_qcd[reg_sel[9]],
-                            weight_multiplier[reg_sel[10]]*weight.weight(modifier=shift)[reg_sel[10]]*weight_np_data[reg_sel[10]],
-                        ],
-                        systematic = var_name,
-                        other = other,
-                    )
+                    eft_weight = dummy_weight.weight()
 
-            if self.bit:
+                SR_sel_pp = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)>0))
+                SR_sel_mm = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)<0))
 
-                ## NOTE Define a scan here?
-                ## FIXME this should be done somewhere outside.
-                #x = np.arange(-7,8,1)
-                #y = np.arange(-7,8,1)
-                #X, Y = np.meshgrid(x, y)
-                for p in self.points:
-                    x,y = p['point']
-                    point = p['point']
-                #for x, y in zip(X.flatten(), Y.flatten()):
-                #    point = [x, y]
-                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
-                    score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
-
-                    # Get the weights
-                    if dataset.count('EFT'):
-                        eft_weight = self.hyperpoly.eval(ev.Pol, point)
-                    else:
-                        eft_weight = dummy_weight.weight()
-
-                    SR_sel_pp = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)>0))
-                    SR_sel_mm = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)<0))
-
-                    if dataset.count('EFT'):
-                        fill_multiple_np(
-                            output['bit_score_incl'],
-                            {'bit': score_trans},
-                            add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
-                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
-                            weight_multiplier = eft_weight,
-                           )
-
-                        fill_multiple_np(
-                            output['bit_score_pp'],
-                            {'bit': score_trans},
-                            add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
-                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
-                            weight_multiplier = eft_weight,
-                           )
-
-                        fill_multiple_np(
-                            output['bit_score_mm'],
-                            {'bit': score_trans},
-                            add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
-                            other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
-                            weight_multiplier = eft_weight,
-                           )
-
+                if dataset.count('EFT'):
                     fill_multiple_np(
                         output['bit_score_incl'],
                         {'bit': score_trans},
                         add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
-                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
                        )
 
                     fill_multiple_np(
                         output['bit_score_pp'],
                         {'bit': score_trans},
                         add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
-                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
                        )
 
                     fill_multiple_np(
                         output['bit_score_mm'],
                         {'bit': score_trans},
                         add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
-                        other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                        other={'EFT': f"bsm_cpt_{x}_cpqm_{y}"},
+                        weight_multiplier = eft_weight,
                        )
+                # ENDIF
 
-                    if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
-                        #print ("Running PDFs")
-                        # if we just run central (len(variations)=1) we don't need the PDF variations either
-                        for i in range(1,101):
-                            pdf_ext = "pdf_%s"%i
+                fill_multiple_np(
+                    output['bit_score_incl'],
+                    {'bit': score_trans},
+                    add_sel = (ak.num(fwd)>0),  # NOTE: this is to sync with the BIT development script
+                    other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                   )
 
-                            output['bit_score_pp'].fill(
-                                dataset     = dataset,
-                                systematic  = pdf_ext,
-                                prediction  = 'central',
-                                EFT         = f"cpt_{x}_cpqm_{y}",
-                                bit         = score_trans[(BL & SR_sel_pp)],
-                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
-                            )
+                fill_multiple_np(
+                    output['bit_score_pp'],
+                    {'bit': score_trans},
+                    add_sel = SR_sel_pp,  # NOTE: this is to sync with the BIT development script
+                    other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                   )
 
-                            output['bit_score_mm'].fill(
-                                dataset     = dataset,
-                                systematic  = pdf_ext,
-                                prediction  = 'central',
-                                EFT         = f"cpt_{x}_cpqm_{y}",
-                                bit         = score_trans[(BL & SR_sel_mm)],
-                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
-                            )
+                fill_multiple_np(
+                    output['bit_score_mm'],
+                    {'bit': score_trans},
+                    add_sel = SR_sel_mm,  # NOTE: this is to sync with the BIT development script
+                    other={'EFT': f"cpt_{x}_cpqm_{y}"},
+                   )
 
-                        for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
-                            # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
-                            # SAMPLES WITH JUST 8 SCALE WEIGHTS: EFT SIGNALS, ZZTo2Q2L_mllmin4p0
-                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0"; [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
-                            # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
-                            pdf_ext = "scale_%s"%i
-
-                            output['bit_score_pp'].fill(
-                                dataset     = dataset,
-                                systematic  = pdf_ext,
-                                prediction  = 'central',
-                                EFT         = f"cpt_{x}_cpqm_{y}",
-                                bit         = score_trans[(BL & SR_sel_pp)],
-                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
-                            )
-
-                            output['bit_score_mm'].fill(
-                                dataset     = dataset,
-                                systematic  = pdf_ext,
-                                prediction  = 'central',
-                                EFT         = f"cpt_{x}_cpqm_{y}",
-                                bit         = score_trans[(BL & SR_sel_mm)],
-                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
-                            )
-
-                        if len(ev.PSWeight[0]) > 1:
-                            for i in range(4):
-                                pdf_ext = "PS_%s"%i
-
-                                output['bit_score_pp'].fill(
-                                    dataset     = dataset,
-                                    systematic  = pdf_ext,
-                                    prediction  = 'central',
-                                    EFT         = f"cpt_{x}_cpqm_{y}",
-                                    bit         = score_trans[(BL & SR_sel_pp)],
-                                    weight      = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
-                                )
-
-                                output['bit_score_mm'].fill(
-                                    dataset     = dataset,
-                                    systematic  = pdf_ext,
-                                    prediction  = 'central',
-                                    EFT         = f"cpt_{x}_cpqm_{y}",
-                                    bit         = score_trans[(BL & SR_sel_mm)],
-                                    weight      = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
-                                )
-
-            #if self.evaluate or self.dump:
-            if self.evaluate and not self.minimal:
-                blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
-                if var['name'] == 'central':
-
-                    #fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
-                    fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
-                    fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
-                    fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
-                    fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
-                    fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
-                    
-                    fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
-                    #fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
-                    fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
-                    fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
-                    fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
-
-                SR_sel_pp = ((best_score==0) & (ak.sum(lepton.charge, axis=1)>0))
-                SR_sel_mm = ((best_score==0) & (ak.sum(lepton.charge, axis=1)<0))
-
-                CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
-                CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
-
-
-                if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
-
-                    for point in self.points:
-                        # FIXME this is legacy EFT stuff and can go?
-                        output['lead_lep_SR_pp'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
-                        )
-
-                        output['lead_lep_SR_mm'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
-                        )
-
-                        output['LT_SR_pp'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
-                        )
-
-                        output['LT_SR_mm'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
-                        )
-
-                    for point in self.weights:
-                        output['lead_lep_SR_pp'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point,
-                            prediction = 'central',
-                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
-                        )
-
-                        output['lead_lep_SR_mm'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point,
-                            prediction = 'central',
-                            pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
-                        )
-
-                        output['LT_SR_pp'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point,
-                            prediction = 'central',
-                            ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
-                        )
-
-                        output['LT_SR_mm'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point,
-                            prediction = 'central',
-                            ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
-                            weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
-                        )
-
-                else:
-
-                    fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
-
-                    fill_multiple_np(output['LT_SR_pp'], {'ht':  lt}, add_sel=SR_sel_pp)
-                    fill_multiple_np(output['LT_SR_mm'], {'ht':  lt}, add_sel=SR_sel_mm)
-
-                fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
-                fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
-
-                fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
-
-                fill_multiple_np(output['node1_score_pp'], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
-                fill_multiple_np(output['node1_score_mm'], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
-
-                #transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
-                transformer = load_transformer(self.training)
-
-                NN_pred_0_trans = transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()
-
-                fill_multiple_np(output['node0_score_transform_pp'], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
-                fill_multiple_np(output['node0_score_transform_mm'], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
-
-                if var['name'] == 'central':
-                    output["norm"].fill(
-                        dataset = dataset,
-                        systematic = var['name'],
-                        one   = ak.ones_like(met.pt),
-                        weight  = weight.weight(),
-                    )
-
-                # Manually hack in the PDF weights - we don't really want to have them for all the distributions
-                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
-                    print ("Running PDFs")
+                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(self.variations) > 1 and False:
+                    # FIXME this is turned off for debugging!!
+                    # this might fix the memory issue?
+                    #
+                    #print ("Running PDFs")
                     # if we just run central (len(variations)=1) we don't need the PDF variations either
                     for i in range(1,101):
                         pdf_ext = "pdf_%s"%i
 
-                        #output['pdf'].fill(
-                        #    dataset = dataset,
-                        #    systematic = pdf_ext,
-                        #    one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
-                        #    weight  = weight.weight() * ev.LHEPdfWeight[:,i] if len(ev.LHEPdfWeight[0])>0 else weight.weight(),
-                        #)
-
-                        output['node0_score_transform_pp'].fill(
-                            dataset = dataset,
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            score   = NN_pred_0_trans[(BL & SR_sel_pp)],
-                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                        output['bit_score_pp'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = f"cpt_{x}_cpqm_{y}",
+                            bit         = score_trans[(BL & SR_sel_pp)],
+                            weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
 
-                        output['node0_score_transform_mm'].fill(
-                            dataset = dataset,
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            score   = NN_pred_0_trans[(BL & SR_sel_mm)],
-                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        output['bit_score_mm'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = f"cpt_{x}_cpqm_{y}",
+                            bit         = score_trans[(BL & SR_sel_mm)],
+                            weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
-
-                        output['node1_score'].fill(
-                            dataset = dataset,
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            score = NN_pred[:,1][(BL & (best_score==1))],
-                            weight = weight.weight()[(BL & (best_score==1))] * ev.LHEPdfWeight[:,i][(BL & (best_score==1))] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
-                        )
-
-                        output['node'].fill(
-                            dataset = dataset,
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            multiplicity = best_score[(BL & blind_sel)],
-                            weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
-                        )
-
-                        output['LT_SR_pp'].fill(
-                            dataset = dataset,
-                            EFT = 'central',
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            ht = lt[(BL & SR_sel_pp)],
-                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
-                        )
-
-                        output['LT_SR_mm'].fill(
-                            dataset = dataset,
-                            EFT = 'central',
-                            systematic = pdf_ext,
-                            prediction = 'central',
-                            ht = lt[(BL & SR_sel_mm)],
-                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
-                        )
-
 
                     for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
                         # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
@@ -998,11 +744,319 @@ class SS_analysis(processor.ProcessorABC):
                         # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
                         pdf_ext = "scale_%s"%i
 
-                        #output['scale'].fill(
+                        output['bit_score_pp'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = f"cpt_{x}_cpqm_{y}",
+                            bit         = score_trans[(BL & SR_sel_pp)],
+                            weight      = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                        )
+
+                        output['bit_score_mm'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = f"cpt_{x}_cpqm_{y}",
+                            bit         = score_trans[(BL & SR_sel_mm)],
+                            weight      = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                        )
+
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "PS_%s"%i
+
+                            output['bit_score_pp'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_pp)],
+                                weight      = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
+                            )
+
+                            output['bit_score_mm'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = f"cpt_{x}_cpqm_{y}",
+                                bit         = score_trans[(BL & SR_sel_mm)],
+                                weight      = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
+                            )
+
+        #if self.evaluate or self.dump:
+        if self.evaluate and not self.minimal:
+            blind_sel = ((data_sel & (best_score>1)) | ~data_sel)
+            if var['name'] == 'central':
+
+                #fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
+                fill_multiple_np(output['node0_score_incl'], {'score':NN_pred[:,0]})
+                fill_multiple_np(output['node1_score_incl'], {'score':NN_pred[:,1]})
+                fill_multiple_np(output['node2_score_incl'], {'score':NN_pred[:,2]})
+                fill_multiple_np(output['node3_score_incl'], {'score':NN_pred[:,3]})
+                fill_multiple_np(output['node4_score_incl'], {'score':NN_pred[:,4]})
+
+                fill_multiple_np(output['node0_score'], {'score':NN_pred[:,0]}, add_sel=(best_score==0))
+                #fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+                fill_multiple_np(output['node2_score'], {'score':NN_pred[:,2]}, add_sel=(best_score==2))
+                fill_multiple_np(output['node3_score'], {'score':NN_pred[:,3]}, add_sel=(best_score==3))
+                fill_multiple_np(output['node4_score'], {'score':NN_pred[:,4]}, add_sel=(best_score==4))
+
+            SR_sel_pp = ((best_score==0) & (ak.sum(lepton.charge, axis=1)>0))
+            SR_sel_mm = ((best_score==0) & (ak.sum(lepton.charge, axis=1)<0))
+
+            CR_sel_pp = ((best_score==1) & (ak.sum(lepton.charge, axis=1)>0))
+            CR_sel_mm = ((best_score==1) & (ak.sum(lepton.charge, axis=1)<0))
+
+
+            if dataset.count('TTW_5f_EFT') or dataset.count('EFT'):
+
+                for point in self.points:
+                    # FIXME this is legacy EFT stuff and can go?
+                    output['lead_lep_SR_pp'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                    )
+
+                    output['lead_lep_SR_mm'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                    )
+
+                    output['LT_SR_pp'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(point['weight'].weight()[(BL&SR_sel_pp)]))
+                    )
+
+                    output['LT_SR_mm'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(point['weight'].weight()[(BL&SR_sel_mm)]))
+                    )
+
+                for point in self.weights:
+                    output['lead_lep_SR_pp'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point,
+                        prediction = 'central',
+                        pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_pp)])),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
+                    )
+
+                    output['lead_lep_SR_mm'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point,
+                        prediction = 'central',
+                        pt  = ak.to_numpy(pad_and_flatten(leading_lepton.p4.pt[(BL&SR_sel_mm)])),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
+                    )
+
+                    output['LT_SR_pp'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point,
+                        prediction = 'central',
+                        ht  = ak.to_numpy(lt[(BL&SR_sel_pp)]),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_pp)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]))
+                    )
+
+                    output['LT_SR_mm'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point,
+                        prediction = 'central',
+                        ht  = ak.to_numpy(lt[(BL&SR_sel_mm)]),
+                        weight = (weight.weight(modifier=shift)[(BL&SR_sel_mm)]*(getattr(ev.LHEWeight, point)[(BL&SR_sel_mm)]))
+                    )
+
+            else:
+
+                fill_multiple_np(output['lead_lep_SR_pp'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['lead_lep_SR_mm'], {'pt':  pad_and_flatten(leading_lepton.p4.pt)}, add_sel=SR_sel_mm)
+
+                fill_multiple_np(output['LT_SR_pp'], {'ht':  lt}, add_sel=SR_sel_pp)
+                fill_multiple_np(output['LT_SR_mm'], {'ht':  lt}, add_sel=SR_sel_mm)
+
+            fill_multiple_np(output['node'], {'multiplicity':best_score}, add_sel=blind_sel)  # this should blind me
+            fill_multiple_np(output['node1_score'], {'score':NN_pred[:,1]}, add_sel=(best_score==1))
+
+            fill_multiple_np(output['node0_score_pp'], {'score': NN_pred[:,0]}, add_sel=SR_sel_pp)
+            fill_multiple_np(output['node0_score_mm'], {'score': NN_pred[:,0]}, add_sel=SR_sel_mm)
+
+            fill_multiple_np(output['node1_score_pp'], {'score': NN_pred[:,1]}, add_sel=CR_sel_pp)
+            fill_multiple_np(output['node1_score_mm'], {'score': NN_pred[:,1]}, add_sel=CR_sel_mm)
+
+            #transformer = load_transformer('%s%s_%s'%(self.year, self.era, self.training))
+            transformer = load_transformer(self.training)
+
+            NN_pred_0_trans = transformer.transform(NN_pred[:,0].reshape(-1, 1)).flatten()
+
+            fill_multiple_np(output['node0_score_transform_pp'], {'score': NN_pred_0_trans}, add_sel=SR_sel_pp)
+            fill_multiple_np(output['node0_score_transform_mm'], {'score': NN_pred_0_trans}, add_sel=SR_sel_mm)
+
+            if var['name'] == 'central':
+                output["norm"].fill(
+                    dataset = dataset,
+                    systematic = var['name'],
+                    one   = ak.ones_like(met.pt),
+                    weight  = weight.weight(),
+                )
+
+            # Manually hack in the PDF weights - we don't really want to have them for all the distributions
+            if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(self.variations) > 1:
+                print ("Running PDFs")
+                # if we just run central (len(variations)=1) we don't need the PDF variations either
+                for i in range(1,101):
+                    pdf_ext = "pdf_%s"%i
+
+                    #output['pdf'].fill(
+                    #    dataset = dataset,
+                    #    systematic = pdf_ext,
+                    #    one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
+                    #    weight  = weight.weight() * ev.LHEPdfWeight[:,i] if len(ev.LHEPdfWeight[0])>0 else weight.weight(),
+                    #)
+
+                    output['node0_score_transform_pp'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score   = NN_pred_0_trans[(BL & SR_sel_pp)],
+                        weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                    )
+
+                    output['node0_score_transform_mm'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score   = NN_pred_0_trans[(BL & SR_sel_mm)],
+                        weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                    )
+
+                    output['node1_score'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score = NN_pred[:,1][(BL & (best_score==1))],
+                        weight = weight.weight()[(BL & (best_score==1))] * ev.LHEPdfWeight[:,i][(BL & (best_score==1))] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
+                    )
+
+                    output['node'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        multiplicity = best_score[(BL & blind_sel)],
+                        weight = weight.weight()[(BL & blind_sel)] * ev.LHEPdfWeight[:,i][(BL & blind_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & blind_sel)],
+                    )
+
+                    output['LT_SR_pp'].fill(
+                        dataset = dataset,
+                        EFT = 'central',
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        ht = lt[(BL & SR_sel_pp)],
+                        weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                    )
+
+                    output['LT_SR_mm'].fill(
+                        dataset = dataset,
+                        EFT = 'central',
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        ht = lt[(BL & SR_sel_mm)],
+                        weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                    )
+
+
+                for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                    # NOTE I have no idea why there are less weights in some samples. Confirmed correct indices.
+                    # SAMPLES WITH JUST 8 SCALE WEIGHTS: EFT SIGNALS, ZZTo2Q2L_mllmin4p0
+                    # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0"; [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+                    # LHE scale variation weights (w_var / w_nominal); [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5"; [3] is MUF="0.5" MUR="1.0"; [4] is MUF="2.0" MUR="1.0"; [5] is MUF="0.5" MUR="2.0"; [6] is MUF="1.0" MUR="2.0"; [7] is MUF="2.0" MUR="2.0"
+                    pdf_ext = "scale_%s"%i
+
+                    #output['scale'].fill(
+                    #    dataset = dataset,
+                    #    systematic = pdf_ext,
+                    #    one   = ak.ones_like(ev.LHEScaleWeight[:,i]),
+                    #    weight  = weight.weight() * ev.LHEScaleWeight[:,i] if len(ev.LHEScaleWeight[0])>0 else weight.weight(),
+                    #)
+
+                    output['node0_score_transform_pp'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score   = NN_pred_0_trans[(BL & SR_sel_pp)],
+                        weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                    )
+
+                    output['node0_score_transform_mm'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score   = NN_pred_0_trans[(BL & SR_sel_mm)],
+                        weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                    )
+
+                    output['node1_score'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        score = NN_pred[:,1][(BL & (best_score==1))],
+                        weight = weight.weight()[(BL & (best_score==1))] * ev.LHEScaleWeight[:,i][(BL & (best_score==1))] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
+                    )
+
+                    output['node'].fill(
+                        dataset = dataset,
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        multiplicity = best_score[(BL & blind_sel)],
+                        weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
+                    )
+
+                    output['LT_SR_pp'].fill(
+                        dataset = dataset,
+                        EFT = 'central',
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        ht = lt[(BL & SR_sel_pp)],
+                        weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                    )
+
+                    output['LT_SR_mm'].fill(
+                        dataset = dataset,
+                        EFT = 'central',
+                        systematic = pdf_ext,
+                        prediction = 'central',
+                        ht = lt[(BL & SR_sel_mm)],
+                        weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                    )
+
+                if len(ev.PSWeight[0]) > 1:
+                    for i in range(4):
+                        pdf_ext = "PS_%s"%i
+
+                        #output['PS'].fill( # NOTE: these should be obsolete now
                         #    dataset = dataset,
                         #    systematic = pdf_ext,
-                        #    one   = ak.ones_like(ev.LHEScaleWeight[:,i]),
-                        #    weight  = weight.weight() * ev.LHEScaleWeight[:,i] if len(ev.LHEScaleWeight[0])>0 else weight.weight(),
+                        #    one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
+                        #    weight  = weight.weight() * ev.PSWeight[:,i],
                         #)
 
                         output['node0_score_transform_pp'].fill(
@@ -1010,7 +1064,7 @@ class SS_analysis(processor.ProcessorABC):
                             systematic = pdf_ext,
                             prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_pp)],
-                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
+                            weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
                         )
 
                         output['node0_score_transform_mm'].fill(
@@ -1018,7 +1072,7 @@ class SS_analysis(processor.ProcessorABC):
                             systematic = pdf_ext,
                             prediction = 'central',
                             score   = NN_pred_0_trans[(BL & SR_sel_mm)],
-                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEScaleWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
+                            weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
                         )
 
                         output['node1_score'].fill(
@@ -1026,7 +1080,7 @@ class SS_analysis(processor.ProcessorABC):
                             systematic = pdf_ext,
                             prediction = 'central',
                             score = NN_pred[:,1][(BL & (best_score==1))],
-                            weight = weight.weight()[(BL & (best_score==1))] * ev.LHEScaleWeight[:,i][(BL & (best_score==1))] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & (best_score==1))],
+                            weight = weight.weight()[(BL & (best_score==1))] * ev.PSWeight[:,i][(BL & (best_score==1))],
                         )
 
                         output['node'].fill(
@@ -1034,7 +1088,7 @@ class SS_analysis(processor.ProcessorABC):
                             systematic = pdf_ext,
                             prediction = 'central',
                             multiplicity = best_score[(BL & blind_sel)],
-                            weight = weight.weight()[(BL & blind_sel)] * ev.LHEScaleWeight[:,i][(BL & blind_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & blind_sel)]
+                            weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
                         )
 
                         output['LT_SR_pp'].fill(
@@ -1045,7 +1099,7 @@ class SS_analysis(processor.ProcessorABC):
                             ht = lt[(BL & SR_sel_pp)],
                             weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
                         )
-
+    
                         output['LT_SR_mm'].fill(
                             dataset = dataset,
                             EFT = 'central',
@@ -1054,351 +1108,290 @@ class SS_analysis(processor.ProcessorABC):
                             ht = lt[(BL & SR_sel_mm)],
                             weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
                         )
-
-                    if len(ev.PSWeight[0]) > 1:
-                        for i in range(4):
-                            pdf_ext = "PS_%s"%i
-
-                            #output['PS'].fill( # NOTE: these should be obsolete now
-                            #    dataset = dataset,
-                            #    systematic = pdf_ext,
-                            #    one   = ak.ones_like(ev.LHEPdfWeight[:,i]),
-                            #    weight  = weight.weight() * ev.PSWeight[:,i],
-                            #)
-
-                            output['node0_score_transform_pp'].fill(
-                                dataset = dataset,
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                score   = NN_pred_0_trans[(BL & SR_sel_pp)],
-                                weight  = weight.weight()[(BL & SR_sel_pp)] * ev.PSWeight[:,i][(BL & SR_sel_pp)],
-                            )
-
-                            output['node0_score_transform_mm'].fill(
-                                dataset = dataset,
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                score   = NN_pred_0_trans[(BL & SR_sel_mm)],
-                                weight  = weight.weight()[(BL & SR_sel_mm)] * ev.PSWeight[:,i][(BL & SR_sel_mm)],
-                            )
-
-                            output['node1_score'].fill(
-                                dataset = dataset,
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                score = NN_pred[:,1][(BL & (best_score==1))],
-                                weight = weight.weight()[(BL & (best_score==1))] * ev.PSWeight[:,i][(BL & (best_score==1))],
-                            )
-
-                            output['node'].fill(
-                                dataset = dataset,
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                multiplicity = best_score[(BL & blind_sel)],
-                                weight = weight.weight()[(BL & blind_sel)] * ev.PSWeight[:,i][(BL & blind_sel)]
-                            )
-
-                            output['LT_SR_pp'].fill(
-                                dataset = dataset,
-                                EFT = 'central',
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                ht = lt[(BL & SR_sel_pp)],
-                                weight  = weight.weight()[(BL & SR_sel_pp)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_pp)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_pp)],
-                            )
-    
-                            output['LT_SR_mm'].fill(
-                                dataset = dataset,
-                                EFT = 'central',
-                                systematic = pdf_ext,
-                                prediction = 'central',
-                                ht = lt[(BL & SR_sel_mm)],
-                                weight  = weight.weight()[(BL & SR_sel_mm)] * ev.LHEPdfWeight[:,i][(BL & SR_sel_mm)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & SR_sel_mm)],
-                            )
-                #del model
-                #del scaler
-                #del NN_inputs
-                #del NN_inputs_scaled, NN_pred
+            #del model
+            #del scaler
+            #del NN_inputs
+            #del NN_inputs_scaled, NN_pred
 
 
-            if self.dump and var['name']=='central' and not self.minimal:
-                #output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
-                output['dump_'+dataset]['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
-                output['dump_'+dataset]['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
-                output['dump_'+dataset]['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
-                output['dump_'+dataset]['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
-                output['dump_'+dataset]['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
-                output['dump_'+dataset]['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
-                output['dump_'+dataset]['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
-                output['dump_'+dataset]['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
-                output['dump_'+dataset]['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
+        if self.dump and var['name']=='central' and not self.minimal:
+            #output['label']     += processor.column_accumulator(np.ones(len(ev[out_sel])) * label_mult)
+            output['dump_'+dataset]['SS']        += processor.column_accumulator(ak.to_numpy(BL[out_sel]))
+            output['dump_'+dataset]['OS']        += processor.column_accumulator(ak.to_numpy(cf_est_sel_mc[out_sel]))
+            output['dump_'+dataset]['AR']        += processor.column_accumulator(ak.to_numpy(np_est_sel_mc[out_sel]))
+            output['dump_'+dataset]['LL']        += processor.column_accumulator(ak.to_numpy(LL[out_sel]))
+            output['dump_'+dataset]['conv']      += processor.column_accumulator(ak.to_numpy(conv_sel[out_sel]))
+            output['dump_'+dataset]['weight']    += processor.column_accumulator(ak.to_numpy(weight.weight()[out_sel]))
+            output['dump_'+dataset]['weight_np'] += processor.column_accumulator(ak.to_numpy(weight_np_mc[out_sel]))
+            output['dump_'+dataset]['weight_cf'] += processor.column_accumulator(ak.to_numpy(weight_cf_mc[out_sel]))
+            output['dump_'+dataset]['total_charge'] += processor.column_accumulator(ak.to_numpy(ak.sum(lepton.charge, axis=1)[out_sel]))
 
-            # first, make a few super inclusive plots
+        # first, make a few super inclusive plots
 
-            #print (var['name'], self.minimal)
-            #if var['name'] == 'central' and not self.minimal:
-            if not self.minimal:
-                '''
-                Don't fill these histograms for the variations
-                '''
+        #print (var['name'], self.minimal)
+        #if var['name'] == 'central' and not self.minimal:
+        if not self.minimal:
+            '''
+            Don't fill these histograms for the variations
+            '''
 
-                output['PV_npvs'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvs, weight=weight_BL)
-                output['PV_npvsGood'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
-                if var['name'] == 'central':
-                    # NOTE we don't have systematic uncertainties on the NP estimate for the histograms below.
-                    fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
-                    fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
-                    fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
-                    fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
-                    fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
-                    fill_multiple_np(output['N_tau'],     {'multiplicity':ak.num(tau)})
-                    fill_multiple_np(output['ST'],        {'ht': st})
-                    fill_multiple_np(output['HT'],        {'ht': ht})
-                    fill_multiple_np(output['MET'],       {'pt':met.pt, 'phi':met.phi})
-                    fill_multiple_np(output['LT'],        {'ht':lt})
-                    fill_multiple_np(output['mjj_max'],   {'mass':ak.fill_none(ak.max(mjf, axis=1),0)})
-                    fill_multiple_np(output['delta_eta_jj'],   {'delta': pad_and_flatten(delta_eta)})
-                    fill_multiple_np(output['dilepton_mass'],  {'mass': pad_and_flatten(dilepton_mass)})
-                    fill_multiple_np(output['dilepton_pt'],    {'pt': pad_and_flatten(dilepton_pt)})
-                    fill_multiple_np(output['min_bl_dR'],      {'delta': ak.fill_none(min_bl_dR,0)})
-                    fill_multiple_np(output['min_mt_lep_met'], {'mass': ak.fill_none(min_mt_lep_met,0)})
+            output['PV_npvs'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvs, weight=weight_BL)
+            output['PV_npvsGood'].fill(dataset=dataset, systematic=var['name'], multiplicity=ev.PV[BL].npvsGood, weight=weight_BL)
+            if var['name'] == 'central':
+                # NOTE we don't have systematic uncertainties on the NP estimate for the histograms below.
+                fill_multiple_np(output['N_jet'],     {'multiplicity': ak.num(jet)})
+                fill_multiple_np(output['N_b'],       {'multiplicity': ak.num(btag)})
+                fill_multiple_np(output['N_central'], {'multiplicity': ak.num(central)})
+                fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
+                fill_multiple_np(output['N_fwd'],     {'multiplicity':ak.num(fwd)})
+                fill_multiple_np(output['N_tau'],     {'multiplicity':ak.num(tau)})
+                fill_multiple_np(output['ST'],        {'ht': st})
+                fill_multiple_np(output['HT'],        {'ht': ht})
+                fill_multiple_np(output['MET'],       {'pt':met.pt, 'phi':met.phi})
+                fill_multiple_np(output['LT'],        {'ht':lt})
+                fill_multiple_np(output['mjj_max'],   {'mass':ak.fill_none(ak.max(mjf, axis=1),0)})
+                fill_multiple_np(output['delta_eta_jj'],   {'delta': pad_and_flatten(delta_eta)})
+                fill_multiple_np(output['dilepton_mass'],  {'mass': pad_and_flatten(dilepton_mass)})
+                fill_multiple_np(output['dilepton_pt'],    {'pt': pad_and_flatten(dilepton_pt)})
+                fill_multiple_np(output['min_bl_dR'],      {'delta': ak.fill_none(min_bl_dR,0)})
+                fill_multiple_np(output['min_mt_lep_met'], {'mass': ak.fill_none(min_mt_lep_met,0)})
 
-                    fill_multiple_np(
-                        output['lead_lep'],
-                        {
-                            'pt':  pad_and_flatten(leading_lepton.p4.pt),
-                            'eta': pad_and_flatten(leading_lepton.eta),
-                        },
+                fill_multiple_np(
+                    output['lead_lep'],
+                    {
+                        'pt':  pad_and_flatten(leading_lepton.p4.pt),
+                        'eta': pad_and_flatten(leading_lepton.eta),
+                    },
+                )
+                fill_multiple_np(
+                    output['dilepton_mass_onZ'],
+                    {'mass': pad_and_flatten(dilepton_mass)},
+                    add_sel = (sel.dilep_baseline(only=['SSee_onZ']) & ak.num(electron, axis=1)),
+                )
+
+                fill_multiple_np(
+                    output['trail_lep'],
+                    {
+                        'pt':  pad_and_flatten(trailing_lepton.p4.pt),
+                        'eta': pad_and_flatten(trailing_lepton.eta),
+                    },
+                )
+
+                fill_multiple_np(
+                    output['fwd_jet'],
+                    {
+                        'p':   pad_and_flatten(best_fwd.p4.p),
+                        'pt':  pad_and_flatten(best_fwd.p4.pt),
+                        'eta': pad_and_flatten(best_fwd.p4.eta),
+                    },
+                )
+
+                fill_multiple_np(
+                    output['lead_jet'],
+                    {
+                        'pt':  pad_and_flatten(jet[:, 0:1].p4.pt),
+                        'eta': pad_and_flatten(jet[:, 0:1].p4.eta),
+                    },
+                )
+
+                fill_multiple_np(
+                    output['sublead_jet'],
+                    {
+                        'pt':  pad_and_flatten(jet[:, 1:2].p4.pt),
+                        'eta': pad_and_flatten(jet[:, 1:2].p4.eta),
+                    },
+                )
+
+                fill_multiple_np(
+                    output['lead_bjet'],
+                    {
+                        'pt':  pad_and_flatten(high_score_btag[:, 0:1].p4.pt),
+                        'eta': pad_and_flatten(high_score_btag[:, 0:1].p4.eta),
+                    },
+                )
+
+                fill_multiple_np(
+                    output['sublead_bjet'],
+                    {
+                        'pt':  pad_and_flatten(high_score_btag[:, 1:2].p4.pt),
+                        'eta': pad_and_flatten(high_score_btag[:, 1:2].p4.eta),
+                    },
+                )
+
+            else:
+                # NOTE we run into memory issues when filling too many histograms. don't fill the alternative predictions for variations
+                # this is probably not needed except maybe (??) for conversions
+                output['N_jet'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(jet)[BL], weight=weight_BL)
+                output['N_b'].fill(dataset=dataset, systematic=var['name'], prediction='central',  multiplicity=ak.num(btag)[BL], weight=weight_BL)
+                output['N_central'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(central)[BL], weight=weight_BL)
+                output['N_ele'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(electron)[BL], weight=weight_BL)
+                output['N_fwd'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(fwd)[BL], weight=weight_BL)
+                output['N_tau'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(tau)[BL], weight=weight_BL)
+                output['ST'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=st[BL], weight=weight_BL)
+                output['HT'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=ht[BL], weight=weight_BL)
+                output['MET'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', pt=met.pt[BL], phi=met.phi[BL], weight=weight_BL)
+                output['LT'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', ht=lt[BL], weight=weight_BL)
+                output['mjj_max'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(ak.max(mjf, axis=1),0)[BL], weight=weight_BL)
+                output['delta_eta_jj'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=pad_and_flatten(delta_eta)[BL], weight=weight_BL)
+                output['dilepton_mass'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=pad_and_flatten(dilepton_mass)[BL], weight=weight_BL)
+                output['dilepton_pt'].fill(dataset=dataset, systematic=var['name'], prediction='central', pt=pad_and_flatten(dilepton_pt)[BL], weight=weight_BL)
+                output['min_bl_dR'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=ak.fill_none(min_bl_dR,0)[BL], weight=weight_BL)
+                output['min_mt_lep_met'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(min_mt_lep_met,0)[BL], weight=weight_BL)
+
+                SSee_onZ = sel.dilep_baseline(only=['SSee_onZ'])
+                output['dilepton_mass_onZ'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    mass=pad_and_flatten(dilepton_mass)[(BL & SSee_onZ & ak.num(electron, axis=1))],
+                    weight=weight.weight(modifier=shift)[(BL & SSee_onZ & ak.num(electron, axis=1))],
+                )
+                # just moving the histograms below cut the memory consumption by 30-50%
+                output['lead_lep'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    EFT='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(leading_lepton.p4.pt)[BL],
+                    eta=pad_and_flatten(leading_lepton.eta)[BL],
+                )
+
+                output['trail_lep'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    EFT='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(trailing_lepton.p4.pt)[BL],
+                    eta=pad_and_flatten(trailing_lepton.eta)[BL],
+                )
+
+                output['fwd_jet'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    weight=weight_BL,
+                    p=pad_and_flatten(best_fwd.p4.p)[BL],
+                    pt=pad_and_flatten(best_fwd.p4.pt)[BL],
+                    eta=pad_and_flatten(best_fwd.p4.eta)[BL],
+                )
+
+                output['lead_jet'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(jet[:, 0:1].p4.pt)[BL],
+                    eta=pad_and_flatten(jet[:, 0:1].p4.eta)[BL],
+                )
+
+                output['sublead_jet'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(jet[:, 1:2].p4.pt)[BL],
+                    eta=pad_and_flatten(jet[:, 1:2].p4.eta)[BL],
+                )
+
+                output['lead_jet'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(high_score_btag[:, 0:1].p4.pt)[BL],
+                    eta=pad_and_flatten(high_score_btag[:, 0:1].p4.eta)[BL],
+                )
+
+                output['sublead_jet'].fill(
+                    dataset=dataset,
+                    systematic=var['name'],
+                    prediction='central',
+                    weight=weight_BL,
+                    pt=pad_and_flatten(high_score_btag[:, 1:2].p4.pt)[BL],
+                    eta=pad_and_flatten(high_score_btag[:, 1:2].p4.eta)[BL],
+                )
+
+            if not re.search(data_pattern, dataset):
+                # NOTE: gen quantities - don't care about systematics
+                output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
+                output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
+                output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
+                output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight_BL)
+                output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight_BL)
+                output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
+                output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
+
+                output['lead_gen_lep'].fill(
+                    dataset = dataset,
+                    pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(leading_gen_lep[BL].phi)),
+                    weight = weight_BL
+                )
+
+                output['trail_gen_lep'].fill(
+                    dataset = dataset,
+                    pt  = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].pt)),
+                    eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
+                    phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
+                    weight = weight_BL
+                )
+
+            if dataset.count('EFT'):
+                # FIXME these should potentially be different histograms???
+                for point in self.points:
+                    output['MET'].fill(
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        pt  = met[BL].pt,
+                        phi  = met[BL].phi,
+                        weight = weight_BL*(point['weight'].weight()[BL])
                     )
-                    fill_multiple_np(
-                        output['dilepton_mass_onZ'],
-                        {'mass': pad_and_flatten(dilepton_mass)},
-                        add_sel = (sel.dilep_baseline(only=['SSee_onZ']) & ak.num(electron, axis=1)),
-                    )
 
-                    fill_multiple_np(
-                        output['trail_lep'],
-                        {
-                            'pt':  pad_and_flatten(trailing_lepton.p4.pt),
-                            'eta': pad_and_flatten(trailing_lepton.eta),
-                        },
-                    )
-
-                    fill_multiple_np(
-                        output['fwd_jet'],
-                        {
-                            'p':   pad_and_flatten(best_fwd.p4.p),
-                            'pt':  pad_and_flatten(best_fwd.p4.pt),
-                            'eta': pad_and_flatten(best_fwd.p4.eta),
-                        },
-                    )
-
-                    fill_multiple_np(
-                        output['lead_jet'],
-                        {
-                            'pt':  pad_and_flatten(jet[:, 0:1].p4.pt),
-                            'eta': pad_and_flatten(jet[:, 0:1].p4.eta),
-                        },
-                    )
-
-                    fill_multiple_np(
-                        output['sublead_jet'],
-                        {
-                            'pt':  pad_and_flatten(jet[:, 1:2].p4.pt),
-                            'eta': pad_and_flatten(jet[:, 1:2].p4.eta),
-                        },
-                    )
-
-                    fill_multiple_np(
-                        output['lead_bjet'],
-                        {
-                            'pt':  pad_and_flatten(high_score_btag[:, 0:1].p4.pt),
-                            'eta': pad_and_flatten(high_score_btag[:, 0:1].p4.eta),
-                        },
-                    )
-
-                    fill_multiple_np(
-                        output['sublead_bjet'],
-                        {
-                            'pt':  pad_and_flatten(high_score_btag[:, 1:2].p4.pt),
-                            'eta': pad_and_flatten(high_score_btag[:, 1:2].p4.eta),
-                        },
-                    )
-
-                else:
-                    # NOTE we run into memory issues when filling too many histograms. don't fill the alternative predictions for variations
-                    # this is probably not needed except maybe (??) for conversions
-                    output['N_jet'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(jet)[BL], weight=weight_BL)
-                    output['N_b'].fill(dataset=dataset, systematic=var['name'], prediction='central',  multiplicity=ak.num(btag)[BL], weight=weight_BL)
-                    output['N_central'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(central)[BL], weight=weight_BL)
-                    output['N_ele'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(electron)[BL], weight=weight_BL)
-                    output['N_fwd'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(fwd)[BL], weight=weight_BL)
-                    output['N_tau'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(tau)[BL], weight=weight_BL)
-                    output['ST'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=st[BL], weight=weight_BL)
-                    output['HT'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=ht[BL], weight=weight_BL)
-                    output['MET'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', pt=met.pt[BL], phi=met.phi[BL], weight=weight_BL)
-                    output['LT'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', ht=lt[BL], weight=weight_BL)
-                    output['mjj_max'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(ak.max(mjf, axis=1),0)[BL], weight=weight_BL)
-                    output['delta_eta_jj'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=pad_and_flatten(delta_eta)[BL], weight=weight_BL)
-                    output['dilepton_mass'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=pad_and_flatten(dilepton_mass)[BL], weight=weight_BL)
-                    output['dilepton_pt'].fill(dataset=dataset, systematic=var['name'], prediction='central', pt=pad_and_flatten(dilepton_pt)[BL], weight=weight_BL)
-                    output['min_bl_dR'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=ak.fill_none(min_bl_dR,0)[BL], weight=weight_BL)
-                    output['min_mt_lep_met'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(min_mt_lep_met,0)[BL], weight=weight_BL)
-
-                    SSee_onZ = sel.dilep_baseline(only=['SSee_onZ'])
-                    output['dilepton_mass_onZ'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        mass=pad_and_flatten(dilepton_mass)[(BL & SSee_onZ & ak.num(electron, axis=1))],
-                        weight=weight.weight(modifier=shift)[(BL & SSee_onZ & ak.num(electron, axis=1))],
-                    )
-                    # just moving the histograms below cut the memory consumption by 30-50%
                     output['lead_lep'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        EFT='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(leading_lepton.p4.pt)[BL],
-                        eta=pad_and_flatten(leading_lepton.eta)[BL],
+                        dataset = dataset,
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
+                        eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
+                        weight = weight_BL*(point['weight'].weight()[BL])
                     )
 
                     output['trail_lep'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        EFT='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(trailing_lepton.p4.pt)[BL],
-                        eta=pad_and_flatten(trailing_lepton.eta)[BL],
-                    )
-
-                    output['fwd_jet'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        weight=weight_BL,
-                        p=pad_and_flatten(best_fwd.p4.p)[BL],
-                        pt=pad_and_flatten(best_fwd.p4.pt)[BL],
-                        eta=pad_and_flatten(best_fwd.p4.eta)[BL],
-                    )
-
-                    output['lead_jet'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(jet[:, 0:1].p4.pt)[BL],
-                        eta=pad_and_flatten(jet[:, 0:1].p4.eta)[BL],
-                    )
-
-                    output['sublead_jet'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(jet[:, 1:2].p4.pt)[BL],
-                        eta=pad_and_flatten(jet[:, 1:2].p4.eta)[BL],
-                    )
-
-                    output['lead_jet'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(high_score_btag[:, 0:1].p4.pt)[BL],
-                        eta=pad_and_flatten(high_score_btag[:, 0:1].p4.eta)[BL],
-                    )
-
-                    output['sublead_jet'].fill(
-                        dataset=dataset,
-                        systematic=var['name'],
-                        prediction='central',
-                        weight=weight_BL,
-                        pt=pad_and_flatten(high_score_btag[:, 1:2].p4.pt)[BL],
-                        eta=pad_and_flatten(high_score_btag[:, 1:2].p4.eta)[BL],
-                    )
-
-                if not re.search(data_pattern, dataset):
-                    # NOTE: gen quantities - don't care about systematics
-                    output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight_BL)
-                    output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight_BL)
-                    output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight_BL)
-                    output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight_BL)
-                    output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight_BL)
-                    output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight_BL)
-                    output['chargeFlip_vs_nonprompt'].fill(dataset=dataset, n1=n_chargeflip[BL], n2=n_nonprompt[BL], n_ele=ak.num(electron)[BL], weight=weight_BL)
-
-                    output['lead_gen_lep'].fill(
                         dataset = dataset,
-                        pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
-                        eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
-                        phi = ak.to_numpy(ak.flatten(leading_gen_lep[BL].phi)),
-                        weight = weight_BL
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
+                        eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
+                        weight = weight_BL*(point['weight'].weight()[BL])
                     )
 
-                    output['trail_gen_lep'].fill(
+                    output['LT'].fill(
                         dataset = dataset,
-                        pt  = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].pt)),
-                        eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
-                        phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
-                        weight = weight_BL
+                        systematic = var_name,
+                        EFT = point['name'],
+                        prediction = 'central',
+                        ht = ak.to_numpy(lt)[BL],
+                        weight = weight_BL*(point['weight'].weight()[BL]),
                     )
 
-                if dataset.count('EFT'):
-                    # FIXME these should potentially be different histograms???
-                    for point in self.points:
-                        output['MET'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            pt  = met[BL].pt,
-                            phi  = met[BL].phi,
-                            weight = weight_BL*(point['weight'].weight()[BL])
-                        )
-
-                        output['lead_lep'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL].pt)),
-                            eta = ak.to_numpy(ak.flatten(leading_lepton[BL].eta)),
-                            weight = weight_BL*(point['weight'].weight()[BL])
-                        )
-                        
-                        output['trail_lep'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
-                            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
-                            weight = weight_BL*(point['weight'].weight()[BL])
-                        )
-
-                        output['LT'].fill(
-                            dataset = dataset,
-                            systematic = var_name,
-                            EFT = point['name'],
-                            prediction = 'central',
-                            ht = ak.to_numpy(lt)[BL],
-                            weight = weight_BL*(point['weight'].weight()[BL]),
-                        )
-
-                    # NOTE this was for debugging, I guess
-                    #for point in self.weights:
-                    #    #(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]
-                    #    output['LT'].fill(
-                    #        dataset = dataset,
-                    #        systematic = var_name,
-                    #        EFT = point,
-                    #        prediction = 'central',
-                    #        ht = ak.to_numpy(lt)[BL],
-                    #        weight = weight_BL*(getattr(ev.LHEWeight, point)[BL]),
-                    #    )
+                # NOTE this was for debugging, I guess
+                #for point in self.weights:
+                #    #(getattr(ev.LHEWeight, point)[(BL&SR_sel_pp)]
+                #    output['LT'].fill(
+                #        dataset = dataset,
+                #        systematic = var_name,
+                #        EFT = point,
+                #        prediction = 'central',
+                #        ht = ak.to_numpy(lt)[BL],
+                #        weight = weight_BL*(getattr(ev.LHEWeight, point)[BL]),
+                #    )
 
         
         return output
@@ -1494,8 +1487,8 @@ variations_jet_all_list = [
      'jesPileUpPtEC1',
      'jesPileUpPtEC2',
      'jesPileUpPtHF',
-     'jer',  # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#Smearing_procedures
- ]
+]
+
 
 def make_vars_from_list(in_list):
     vars = []
@@ -1508,6 +1501,8 @@ variations_jet_all = make_vars_from_list(variations_jet_all_list)
 
 base_variations = [
     {'name': 'central',                 'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+    {'name': 'jer_up',                  'ext': '_pt_jerUp',         'weight': None,   'pt_var': 'pt_jerUp'},# https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#Smearing_procedures
+    {'name': 'jer_down',                'ext': '_pt_jerDown',       'weight': None,   'pt_var': 'pt_jerDown'},
     {'name': 'jesTotal_up',             'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
     {'name': 'jesTotal_down',           'ext': '_pt_jesTotalDown',  'weight': None,   'pt_var': 'pt_jesTotalDown'},
     {'name': 'PU_up',                   'ext': '_PUUp',             'weight': 'PUUp', 'pt_var': 'pt_nom'},
@@ -1520,6 +1515,9 @@ base_variations = [
     {'name': 'ele_down',                'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'mu_up',                   'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'mu_down',                 'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
+    ]
+
+nonprompt_variations = [
     {'name': 'fake_el_up',              'ext': 'el_up',             'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'fake_el_down',            'ext': 'el_down',           'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'fake_mu_up',              'ext': 'mu_up',             'weight': None,    'pt_var': 'pt_nom'},
@@ -1540,7 +1538,14 @@ base_variations = [
 
 variations = base_variations + variations_jet_all
 
-
+def check_jes_components(output, in_list, direction='up'):
+    central = output['bit_score_pp'].integrate('EFT', 'cpt_0_cpqm_0').integrate('prediction', 'central').sum('bit').sum('dataset').integrate('systematic', 'central').values()[()]
+    unc = 0
+    for var in in_list:
+        if var['name'].count(direction):
+            var_tmp = output['bit_score_pp'].integrate('EFT', 'cpt_0_cpqm_0').integrate('prediction', 'central').sum('bit').sum('dataset').integrate('systematic', var['name']).values()[()]
+            unc += (var_tmp - central)**2
+    return np.sqrt(unc)
 
 if __name__ == '__main__':
 
