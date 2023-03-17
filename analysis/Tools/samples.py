@@ -310,11 +310,11 @@ class Samples:
     def get_sample_list(self, year='UL16', group='topW'):
         return self.df[((self.df.year == year) & (self.df.group==group))]['name'].to_list()
 
-    def get_fileset(self, year='UL16', group='topW'):
-        tmp = self.df[((self.df.year == year)&(self.df.group == group))]
+    def get_fileset(self, year='UL16', groups=['topW']):
+        tmp = self.df[((self.df.year == year)&(self.df.group.isin(groups)))]
         return dict(zip(tmp.name, tmp.skim_files))
 
-    def get_reweight(self, year='UL16', group='topW'):
+    def get_reweight(self):
         # NOTE could this be done at another stage?
         for k in self.db:
             if isinstance(self.db[k].reweight, tuple):
@@ -352,7 +352,7 @@ if __name__ == '__main__':
 
     if args.run:
         samples = Samples.from_txt(args.input, skim=args.skim)
-        samples.mapping_from_file('data/nano_mapping.yaml')
+        samples.mapping_from_file('analysis/Tools/data/nano_mapping.yaml')
         samples.to_yaml(args.output)
 
     if args.load:

@@ -5,13 +5,14 @@ import datetime
 import time
 import awkward as ak
 import glob
+import pandas as pd
 
 from coffea import processor, hist, util
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.processor import accumulate
 
 from analysis.Tools.samples import Samples
-from analysis.SS_analysis import SS_analysis, histograms, variations, base_variations, variations_jet_all
+from analysis.SS_analysis import SS_analysis, histograms, variations, base_variations, variations_jet_all, nonprompt_variations, central_variation
 from analysis.default_accumulators import add_processes_to_output, desired_output
 from analysis.Tools.config_helpers import loadConfig, data_pattern, get_latest_output, load_yaml
 from analysis.Tools.helpers import scale_and_merge, getCutFlowTable
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     argParser.add_argument('--rerun', action='store_true', default=False, help="Rerun or try using existing results??")
     argParser.add_argument('--minimal', action='store_true', default=False, help="Only run minimal set of histograms")
     argParser.add_argument('--dask', action='store_true', default=False, help="Run on a DASK cluster?")
-    argParser.add_argument('--central', action='store_true', default=False, help="Only run the central value (no systematics)")
+#    argParser.add_argument('--central', action='store_true', default=False, help="Only run the central value (no systematics)")
     argParser.add_argument('--profile', action='store_true', default=False, help="Memory profiling?")
     argParser.add_argument('--iterative', action='store_true', default=False, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=False, help="Run on a small subset?")
@@ -39,7 +40,8 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
     argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
     argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
-    argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
+    argParser.add_argument('--skim_file', action='store', default="samples_v0_8_0_SS.yaml", help="Define the skim to run on")
+    argParser.add_argument('--select_systematic', action='store', default="central", help="Define the skim to run on")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     argParser.add_argument('--skip_bit', action='store_true', default=None, help="Skip running BIT evaluation")
     args = argParser.parse_args()
@@ -55,8 +57,19 @@ if __name__ == '__main__':
     local       = not args.dask
     save        = True
 
-    variations = base_variations  # FIXME for now. maybe have to run some variations separately??
-    if args.central: variations = variations[:1]
+    variations =  central_variation + base_variations + variations_jet_all + nonprompt_variations
+    if args.select_systematic == 'all':
+        variations = variations  # lol
+    elif args.select_systematic == 'central':
+        variations = central_variation
+    elif args.select_systematic == 'base':
+        variations = base_variations
+    else:
+        variations = [v for v in variations if v['name'].count(args.select_systematic)]
+
+    print("Running variations:")
+    pd.set_option('display.max_rows', None)
+    print(pd.DataFrame(variations))
 
     coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
     ref_coordinates = [0,0]
@@ -100,7 +113,7 @@ if __name__ == '__main__':
     print (f"Data taking era {year}{era}")
     print (f"Will be using lumi {lumi} for scaled outputs.")
 
-    samples = Samples.from_yaml('analysis/Tools/data/samples.yaml')  # NOTE this could be era etc dependent
+    samples = Samples.from_yaml(f'analysis/Tools/data/{args.skim_file}')  # NOTE this could be era etc dependent
     mapping = load_yaml('analysis/Tools/data/nano_mapping.yaml')
     reweight = samples.get_reweight()  # this gets the reweighting weight name and index for the processor
     weights = samples.get_sample_weight(lumi=lumi)  # this gets renorm
@@ -157,76 +170,72 @@ if __name__ == '__main__':
         )
 
 
-    cutflow_output = {}
+    fileset = samples.get_fileset(year=ul, groups=sample_list)
 
-    outputs = []
-    for sample in sample_list:
+    # define the cache name
+    cache_name = f'./SS_analysis_{args.sample}_{args.select_systematic}_{year}{era}'
+    cache_dir = './outputs/'
+    if not args.scan:
+        cache_name += f'_cpt_{args.cpt}_cpqm_{args.cpqm}'
+    output = get_latest_output(cache_name, cache_dir)
+    # find an old existing output
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    cache_name += f'_{timestamp}.coffea'
+    if small: cache_name += '_small'
 
-        print (f"Working on samples: {sample}")
-        fileset = samples.get_fileset(year=ul, group=sample)
+    desired_output.update(histograms)
+    add_processes_to_output(fileset, desired_output)
 
-        # define the cache name
-        cache_name = f'./SS_analysis_{sample}_{year}{era}'
-        cache_dir = './outputs/'
-        if not args.scan:
-            cache_name += f'_cpt_{args.cpt}_cpqm_{args.cpqm}'
-        output = get_latest_output(cache_name, cache_dir)
-        # find an old existing output
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        cache_name += f'_{timestamp}.coffea'
-        if small: cache_name += '_small'
+    if output is None or args.rerun:
 
-        desired_output.update(histograms)
-        add_processes_to_output(fileset, desired_output)
+        if not local:
+            print("Waiting for at least one worker...")
+            client.wait_for_workers(1)
 
-        if output is None or args.rerun:
+        print ("I'm running now")
+        tic = time.time()
 
-            if not local:
-                print("Waiting for at least one worker...")
-                client.wait_for_workers(1)
+        runner = processor.Runner(
+            exe,
+            #retries=3,
+            savemetrics=True,
+            schema=NanoAODSchema,
+            chunksize=20000,
+            maxchunks=None,
+        )
 
-            print ("I'm running now")
-            tic = time.time()
+        output, metrics = runner(
+            fileset,
+            treename="Events",
+            processor_instance=SS_analysis(
+                year=year,
+                variations=variations,
+                accumulator=desired_output,
+                evaluate=args.evaluate,
+                bit=not args.skip_bit,
+                training=args.training,
+                dump=args.dump,
+                era=era,
+                weights=eft_weights,
+                reweight=reweight,
+                points=points,
+                hyperpoly=hp,
+                minimal=args.minimal,
+            ),
+        )
+        util.save(output, cache_dir+cache_name)
 
-            runner = processor.Runner(
-                exe,
-                #retries=3,
-                savemetrics=True,
-                schema=NanoAODSchema,
-                chunksize=50000,
-                maxchunks=None,
-            )
+        elapsed = time.time() - tic
+        #print(f"Metrics: {metrics}")
+        print(f"Finished in {elapsed:.1f}s")
+        print(f"Total events {round(metrics['entries']/1e6,2)}M, in {metrics['chunks']} chunks")
+        print(f"Events/s: {metrics['entries'] / elapsed:.0f}")
+        print(f"Output saved as {cache_dir}{cache_name}")
 
-            output, metrics = runner(
-                fileset,
-                treename="Events",
-                processor_instance=SS_analysis(
-                    year=year,
-                    variations=variations,
-                    accumulator=desired_output,
-                    evaluate=args.evaluate,
-                    bit=not args.skip_bit,
-                    training=args.training,
-                    dump=args.dump,
-                    era=era,
-                    weights=eft_weights,
-                    reweight=reweight,
-                    points=points,
-                    hyperpoly=hp,
-                    minimal=args.minimal,
-                ),
-            )
-            util.save(output, cache_dir+cache_name)
+        #outputs.append(output)
 
-            elapsed = time.time() - tic
-            #print(f"Metrics: {metrics}")
-            print(f"Finished in {elapsed:.1f}s")
-            print(f"Total events {round(metrics['entries']/1e6,2)}M, in {metrics['chunks']} chunks")
-            print(f"Events/s: {metrics['entries'] / elapsed:.0f}")
-
-        outputs.append(output)
-
-    output = accumulate(outputs)
+    # basic merging / scaling
+    #output = accumulate(outputs)
     output_scaled = {}
     for k in output:
         if isinstance(output[k], hist.Hist):
@@ -235,45 +244,48 @@ if __name__ == '__main__':
             except KeyError:
                 print (f"Failed to scale/merge histogram {k}")
 
-    output_cutflow = {}
-    print ("{:170}{}".format("Dataset", "Normalization"))
-    for group in mapping[ul]:
-        output_cutflow[group] = {}
-        first = True
-        for dataset in mapping[ul][group]:
-            if dataset in output:
-        #elif k in samples.db:
-                print ("{:170}{:.2f}".format(dataset, float(samples.db[dataset].xsec) * lumi * 1000))
-                if first:
-                    for key in output[dataset]:
-                        output_cutflow[group][key] = output[dataset][key]*weights[dataset]
-                else:
-                    for key in output[dataset]:
-                        output_cutflow[group][key] += output[dataset][key]*weights[dataset]
+    if 'central' in [v['name'] for v in variations ]:
 
-                first = False
+        # Cutflow business below
+        output_cutflow = {}
+        print ("{:170}{}".format("Dataset", "Normalization"))
+        for group in mapping[ul]:
+            output_cutflow[group] = {}
+            first = True
+            for dataset in mapping[ul][group]:
+                if dataset in output:
+            #elif k in samples.db:
+                    print ("{:170}{:.2f}".format(dataset, float(samples.db[dataset].xsec) * lumi * 1000))
+                    if first:
+                        for key in output[dataset]:
+                            output_cutflow[group][key] = output[dataset][key]*weights[dataset]
+                    else:
+                        for key in output[dataset]:
+                            output_cutflow[group][key] += output[dataset][key]*weights[dataset]
 
-    lines= [
-        'filter',
-        'dilep',
-        'p_T(lep0)>25',
-        'p_T(lep1)>20',
-        'trigger',
-        'SS',
-        'N_jet>3',
-        'N_central>2',
-        'N_btag>0',
-        'N_light>0',
-        'MET>30',
-        'N_fwd>0',
-        'min_mll'
-    ]
+                    first = False
 
-    print (getCutFlowTable(output_cutflow,
-                           processes=sample_list,
-                           lines=lines,
-                           significantFigures=3,
-                           absolute=True,
-                           #signal='topW_v3',
-                           total=False,
-                           ))
+        lines= [
+            'filter',
+            'dilep',
+            'p_T(lep0)>25',
+            'p_T(lep1)>20',
+            'trigger',
+            'SS',
+            'N_jet>3',
+            'N_central>2',
+            'N_btag>0',
+            'N_light>0',
+            'MET>30',
+            'N_fwd>0',
+            'min_mll'
+        ]
+
+        print (getCutFlowTable(output_cutflow,
+                            processes=sample_list,
+                            lines=lines,
+                            significantFigures=3,
+                            absolute=True,
+                            #signal='topW_v3',
+                            total=False,
+                            ))

@@ -7,9 +7,9 @@ class triggerSF:
     def __init__(self, year=2016):
         self.year = year
           
-        triggerSF_2016 = os.path.expandvars("data/trigger/TriggerSF_2016.root")
-        triggerSF_2017 = os.path.expandvars("data/trigger/TriggerSF_2017.root")
-        triggerSF_2018 = os.path.expandvars("data/trigger/TriggerSF_2018.root")
+        triggerSF_2016 = os.path.expandvars("analysis/Tools/data/trigger/TriggerSF_2016.root")
+        triggerSF_2017 = os.path.expandvars("analysis/Tools/data/trigger/TriggerSF_2017.root")
+        triggerSF_2018 = os.path.expandvars("analysis/Tools/data/trigger/TriggerSF_2018.root")
         
         
         self.ext = extractor()

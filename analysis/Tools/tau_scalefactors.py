@@ -18,20 +18,20 @@ class tau_scalefactor:
         if self.year == 2016:
             if era=='APV':
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16preVFP
-                SF_file = os.path.expandvars('jsonpog-integration/POG/TAU/2016preVFP_UL/')
+                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2016preVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
             else:
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16postVFP
-                SF_file = os.path.expandvars('jsonpog-integration/POG/TAU/2016postVFP_UL/')
+                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2016postVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         elif self.year == 2017:
-            SF_file = os.path.expandvars('jsonpog-integration/POG/TAU/2017_UL/')
+            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2017_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         elif self.year == 2018:
-            SF_file = os.path.expandvars('jsonpog-integration/POG/TAU/2018_UL/')
+            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2018_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         self.ext.finalize()
@@ -69,32 +69,19 @@ if __name__ == '__main__':
     
     ## Load a single file here, get leptons, eval SFs just to be sure everything works
     from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+    import hist
 
-    from Tools.helpers import get_samples
-    from Tools.basic_objects import getTaus
-    from Tools.config_helpers import loadConfig, make_small, load_yaml, data_path
-    from Tools.nano_mapping import make_fileset
+    from analysis.Tools.basic_objects import getTaus
+    from analysis.Tools.samples import Samples
 
-    samples = get_samples("samples_UL18.yaml")
-    mapping = load_yaml(data_path+"nano_mapping.yaml")
+    samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')
 
-    fileset = make_fileset(
-        ['TTW'],
-        samples,
-        year='UL18',
-        skim='topW_v0.7.0_dilep',
-        small=True,
-        buaf='local',
-        merged=True,
-        n_max=1)
-    filelist = fileset[list(fileset.keys())[0]]
-
-    filelist = ['/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tree.root']
+    fileset = samples.get_fileset(year='UL17', group='TTW')
 
     # load a subset of events
     n_max = 5000
     events = NanoEventsFactory.from_root(
-        filelist[0],
+        fileset[list(fileset.keys())[0]][0],
         schemaclass = NanoAODSchema,
         entry_stop = n_max).events()
 
@@ -104,5 +91,19 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print ("Using correctionlib")
-    sf_central = sf17.get(tau, var='nom', WP='Loose')
+    sf_central  = sf17.get(tau[(ak.num(tau, axis=1)>0)], var='nom', WP='Loose')
+    sf_up       = sf17.get(tau[(ak.num(tau, axis=1)>0)], var='up', WP='Loose')
+    sf_down     = sf17.get(tau[(ak.num(tau, axis=1)>0)], var='down', WP='Loose')
     print ("Took %.2f s"%(time.time()-start_time))
+
+    weight_axis = hist.axis.Regular(30, 0.8, 1.1, name="weight_ax", label="weight", underflow=True, overflow=True)
+
+    h_central = hist.Hist(weight_axis)
+    h_central.fill(sf_central)
+    h_central.show()
+
+    h_up = hist.Hist(weight_axis)
+    h_up.fill(sf_up)
+
+    h_down = hist.Hist(weight_axis)
+    h_down.fill(sf_down)

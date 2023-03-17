@@ -109,11 +109,8 @@ class SS_analysis(processor.ProcessorABC):
         ev = events[presel]
         dataset = ev.metadata['dataset']
         
-
-        if re.search(data_pattern, dataset):
-            variations = self.variations[:1] + [var for var in self.variations if var['name'].count('fake')]
-        else:
-            variations = self.variations
+        # don't distinguish between data and MC anymore
+        variations = self.variations
 
         return processor.accumulate(self.process_shift(ev, var) for var in variations)
 
@@ -632,10 +629,7 @@ class SS_analysis(processor.ProcessorABC):
                     other={'EFT': f"cpt_{x}_cpqm_{y}"},
                    )
 
-                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(self.variations) > 1 and False:
-                    # FIXME this is turned off for debugging!!
-                    # this might fix the memory issue?
-                    #
+                if not re.search(data_pattern, dataset) and var['name'] == 'central':
                     #print ("Running PDFs")
                     # if we just run central (len(variations)=1) we don't need the PDF variations either
                     for i in range(1,101):
@@ -887,7 +881,7 @@ class SS_analysis(processor.ProcessorABC):
                     eta=pad_and_flatten(jet[:, 1:2].p4.eta)[BL],
                 )
 
-                output['lead_jet'].fill(
+                output['lead_bjet'].fill(
                     dataset=dataset,
                     systematic=var['name'],
                     prediction='central',
@@ -896,7 +890,7 @@ class SS_analysis(processor.ProcessorABC):
                     eta=pad_and_flatten(high_score_btag[:, 0:1].p4.eta)[BL],
                 )
 
-                output['sublead_jet'].fill(
+                output['sublead_bjet'].fill(
                     dataset=dataset,
                     systematic=var['name'],
                     prediction='central',
@@ -1091,8 +1085,11 @@ def make_vars_from_list(in_list):
 
 variations_jet_all = make_vars_from_list(variations_jet_all_list)
 
-base_variations = [
+central_variation = [
     {'name': 'central',                 'ext': '',                  'weight': None,   'pt_var': 'pt_nom'},
+]
+
+base_variations = [
     {'name': 'jer_up',                  'ext': '_pt_jerUp',         'weight': None,   'pt_var': 'pt_jerUp'},# https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#Smearing_procedures
     {'name': 'jer_down',                'ext': '_pt_jerDown',       'weight': None,   'pt_var': 'pt_jerDown'},
     {'name': 'jesTotal_up',             'ext': '_pt_jesTotalUp',    'weight': None,   'pt_var': 'pt_jesTotalUp'},
@@ -1128,7 +1125,7 @@ nonprompt_variations = [
     {'name': 'fake_el_closure_down',    'ext': 'el_closure_down',   'weight': None,    'pt_var': 'pt_nom'},
     ]
 
-variations = base_variations + variations_jet_all
+variations = central_variation + base_variations + variations_jet_all
 
 def check_jes_components(output, in_list, direction='up'):
     central = output['bit_score_pp'].integrate('EFT', 'cpt_0_cpqm_0').integrate('prediction', 'central').sum('bit').sum('dataset').integrate('systematic', 'central').values()[()]

@@ -12,7 +12,7 @@ class LeptonSF:
     def __init__(self, year=2016, era=None):
         self.year = year
         self.era = era
-        self.base = os.path.expandvars("data/leptons/ttH/")
+        self.base = os.path.expandvars("analysis/Tools/data/leptons/ttH/")
 
         self.ext = extractor()
         self.ext1D = extractor()

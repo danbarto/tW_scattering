@@ -17,8 +17,8 @@ class NonpromptWeight:
 
         self.ext = extractor()
 
-        fr = os.path.expandvars("data/leptons/ttH/fakerate/fr_%s.root"%self.year)
-        fr_data = os.path.expandvars("data/leptons/ttH/fakerate/fr_%s_recorrected.root"%self.year)
+        fr = os.path.expandvars("analysis/Tools/data/leptons/ttH/fakerate/fr_%s.root"%self.year)
+        fr_data = os.path.expandvars("analysis/Tools/data/leptons/ttH/fakerate/fr_%s_recorrected.root"%self.year)
 
         self.ext.add_weight_sets(["el_QCD FR_mva090_el_QCD %s"%fr])
         self.ext.add_weight_sets(["el_QCD_NC FR_mva090_el_QCD_NC %s"%fr])

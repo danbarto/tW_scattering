@@ -24,7 +24,7 @@ class charge_flip:
         self.year = year
 
         year = str(year)[2:]
-        fr_in = os.path.expandvars(f"data/chargeflip/flip_probs_topcoffea_UL{year}{era}.pkl.gz")
+        fr_in = os.path.expandvars(f"analysis/Tools/data/chargeflip/flip_probs_topcoffea_UL{year}{era}.pkl.gz")
 
         with gzip.open(fr_in) as f_in:
             fr_hist = pickle.load(f_in)
