@@ -24,6 +24,13 @@ data_pattern = re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleEl
 
 data_path = os.path.expandvars('data/')
 
+lumi = {
+    '2016': 16.8,
+    '2016APV': 19.5,
+    '2017': 41.48,
+    '2018': 59.83,
+}
+
 def get_samples(f_in='samples.yaml'):
     with open(data_path+f_in) as f:
         return load(f, Loader=Loader)
@@ -123,13 +130,17 @@ def get_latest_output(cache_name, cache_dir, date=None, max_time='999999', selec
 def get_merged_output(
         name,
         year,
-        samples=None,
+        cache_dir,
+        samples,
+        mapping,
+        lumi=1,
         postfix=None,
         quiet=False,
         select_datasets=None,
         date=None,
         max_time='999999',
         select_histograms=False,
+        variations = ['central'],
 ):
     '''
     name: e.g. SS_analysis
@@ -140,10 +151,9 @@ def get_merged_output(
     from coffea import hist
     from analysis.Tools.helpers import scale_and_merge
     ul = "UL"+year[2:] if year != '2022' else "Run3_%s"%(year[2:])
-    if samples is None:
-        samples = get_samples("samples_%s.yaml"%ul)
-    mapping = load_yaml(data_path+"nano_mapping.yaml")
 
+    reweight = samples.get_reweight()  # this gets the reweighting weight name and index for the processor
+    weights = samples.get_sample_weight(lumi=lumi)  # this gets renorm
     renorm   = {}
 
     #datasets = data + order
@@ -152,36 +162,22 @@ def get_merged_output(
     if isinstance(select_datasets, list):
         datasets = select_datasets
 
-    cfg = loadConfig()
-
     outputs = []
 
-    lumi_year = int(year[:4])
-    lumi = cfg['lumi'][lumi_year]
 
-    for sample in datasets:
-        if not quiet: print ("Loading output for sample:", sample)
-        cache_name = '_'.join([name, sample, year])
-        #f'{name}_{sample}_{year}'
-        if postfix:
-            cache_name += postfix
-        print (cache_name)
-        outputs.append(get_latest_output(cache_name, cfg, date=date, max_time=max_time, select_histograms=select_histograms))
-
-        for dataset in mapping[ul][sample]:
-            if samples[dataset]['reweight'] == 1:
-                renorm[dataset] = 1
+    #for sample in datasets:
+    for variation in variations:
+        for sample in ['MCall', 'data']:
+            if not quiet: print ("Loading output for sample:", sample)
+            if variation != '':
+                cache_name = '_'.join([name, sample, variation, year])
             else:
-                # Currently only supporting a single reweight.
-                weight, index = samples[dataset]['reweight'].split(',')
-                index = int(index)
-                renorm[dataset] = samples[dataset]['sumWeight']/samples[dataset][weight][index]  # NOTE: needs to be divided out
-            try:
-                renorm[dataset] = (samples[dataset]['xsec']*1000*cfg['lumi'][lumi_year]/samples[dataset]['sumWeight'])*renorm[dataset]
-            except:
-                print ("Failed to renorm sample:", dataset)
-                renorm[dataset] = 1
-            #print (dataset, renorm[dataset])
+                cache_name = '_'.join([name, sample, year])
+            #f'{name}_{sample}_{year}'
+            if postfix:
+                cache_name += postfix
+            print (cache_name)
+            outputs.append(get_latest_output(cache_name, cache_dir, date=date, max_time=max_time, select_histograms=select_histograms))
 
     output = accumulate(outputs)
 
@@ -192,7 +188,7 @@ def get_merged_output(
         if isinstance(output[key], hist.Hist):
             try:
                 print ("Merging histogram", key)
-                output_scaled[key] = scale_and_merge(output[key], renorm, mapping[ul])
+                output_scaled[key] = scale_and_merge(output[key], weights, mapping[ul])
             except:
                 print ("Scale and merge failed for:",key)
                 print ("At least I tried.")

@@ -12,7 +12,8 @@ import copy
 import numpy as np
 import re
 
-from Tools.config_helpers import loadConfig, make_small
+from analysis.Tools.config_helpers import loadConfig, make_small, lumi, get_merged_output, load_yaml
+from analysis.Tools.samples import Samples
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,8 +23,6 @@ import mplhep as hep
 plt.style.use(hep.style.CMS)
 
 from plots.helpers import makePlot, make_plot_from_dict
-
-from Tools.config_helpers import get_merged_output
 
 def get_histograms(output, histograms, total=False):
     '''
@@ -124,7 +123,6 @@ if __name__ == '__main__':
 
     TFnormalize = args.normalize
     year        = args.year
-    cfg         = loadConfig()
 
     if year == '2018':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
@@ -135,27 +133,27 @@ if __name__ == '__main__':
     order = ['topW_lep', 'diboson', 'rare', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
 
     datasets = data + order
+    years = ['2016', '2016APV', '2017', '2018']
 
-    try:
-        lumi_year = int(year)
-    except:
-        lumi_year = year
     if year == '2019':
-        lumi = sum([cfg['lumi'][y] for y in [2016, '2016APV', 2017, 2018]])
+        lumi = sum([lumi[y] for y in years])
     else:
-        lumi = cfg['lumi'][lumi_year]
+        lumi = lumi[year]
+
+    samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_trilep.yaml')
+    mapping = load_yaml('analysis/Tools/data/nano_mapping.yaml')
 
     if year == '2019':
         outputs = []
-        for y in ['2016', '2016APV', '2017', '2018']:
-            outputs.append(get_merged_output("trilep_analysis", year=y, postfix='cpt_0_cpqm_0'))
+        for y in years:
+            outputs.append(get_merged_output("trilep_analysis", y, './outputs/', samples, mapping, lumi=lumi, postfix='_cpt_0_cpqm_0'))
         output = accumulate(outputs)
         del outputs
     else:
-        output = get_merged_output("trilep_analysis", year=year, postfix='cpt_0_cpqm_0')
+        output = get_merged_output("trilep_analysis", year,'./outputs/', samples, mapping, lumi=lumi, postfix='_cpt_0_cpqm_0')
 
     #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
-    plot_dir    = os.path.join("/home/daniel/TTW/tW_scattering/plots/images/", str(year), 'trilep', args.version)
+    plot_dir    = os.path.join("images/", str(year), 'trilep', args.version)
 
     # defining some new axes for rebinning.
     N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)

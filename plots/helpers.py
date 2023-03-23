@@ -1,11 +1,16 @@
 import numpy as np
 import os
+import shutil
 import matplotlib.pyplot as plt
-from Tools.helpers import finalizePlotDir
 from coffea import hist
 
 import re
 
+def finalizePlotDir( path ):
+    path = os.path.expandvars(path)
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    shutil.copy( os.path.expandvars( 'analysis/Tools/php/index.php' ), path )
 
 colors = {
     'tW_scattering': '#FF595E',
