@@ -894,6 +894,16 @@ if __name__ == '__main__':
         #bit_bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
+        # getting toys, only has to be done once
+        bkg_ = pd.concat([ttW, ttZ, ttH, rare, diboson, XG])
+        bkg_['weight'] = bkg_['weight']*2
+        bkg_ = pd.concat([bkg_, NP, sig_test])
+        indices = np.arange(len(bkg_))
+        toys = []
+        n_toys = 2
+        for i in range(n_toys):
+            toys.append(np.random.choice(indices, size=len(indices)))
+
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [x, y]
             print (f"Working on cpt={x}, cpqm={y} now")
@@ -924,6 +934,19 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="signal",     bit=q_event_cdf, weight=sig_test['weight'])
 
             print (bit_hist['signal'].values())
+
+
+            # fill a total hist for debugging
+            bit_hist.fill(dataset="total",        bit=get_bit_score(bkg_, cpt=x, cpqm=y, trans=qt), weight=bkg_['weight'])
+            for i in range(n_toys):
+                bit_hist.fill(dataset=f"toy_{i}",         bit=get_bit_score(bkg_.iloc[toys[i]], cpt=x, cpqm=y, trans=qt), weight=bkg_.iloc[toys[i]]['weight'])
+
+            print("Total @SM")
+            print(bit_hist['total'].values())
+            print("Toy 1 @SM")
+            print(bit_hist['toy_0'].values())
+            print("Toy 2 @SM")
+            print(bit_hist['toy_1'].values())
 
             hist_dict = {
                 'TTW': bit_hist['TTW'],
