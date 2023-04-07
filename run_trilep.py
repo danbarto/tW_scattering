@@ -12,7 +12,7 @@ from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 from coffea.processor import accumulate
 
 from analysis.Tools.samples import Samples
-from analysis.SS_analysis import SS_analysis, histograms, variations, base_variations, variations_jet_all, nonprompt_variations, central_variation
+from analysis.trilep_analysis import trilep_analysis, histograms, variations, base_variations, variations_jet_all, nonprompt_variations, central_variation
 from analysis.default_accumulators import add_processes_to_output, desired_output
 from analysis.Tools.config_helpers import loadConfig, data_pattern, get_latest_output, load_yaml
 from analysis.Tools.helpers import scale_and_merge, getCutFlowTable
@@ -40,11 +40,10 @@ if __name__ == '__main__':
     argParser.add_argument('--cpt', action='store', default=0, help="Select the cpt point")
     argParser.add_argument('--cpqm', action='store', default=0, help="Select the cpqm point")
     argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
-    argParser.add_argument('--skim_file', action='store', default="samples_v0_8_0_SS.yaml", help="Define the skim to run on")
+    argParser.add_argument('--skim_file', action='store', default="samples_v0_8_0_trilep.yaml", help="Define the skim to run on")
     argParser.add_argument('--select_systematic', action='store', default="central", help="Define the skim to run on")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     argParser.add_argument('--skip_bit', action='store_true', default=None, help="Skip running BIT evaluation")
-    argParser.add_argument('--fixed_template', action='store_true', default=None, help="Use a fixed template (hard coded to cpt=5, cpqm=5)")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -131,9 +130,6 @@ if __name__ == '__main__':
     #sample_list = ['top']
 
     if local:# and not profile:
-        print("Make sure you have BIT in your local path (unfortunately it's not properly packaged)")
-        print("This is automatically done on the workers")
-        print("export PYTHONPATH=${PYTHONPATH}:$PWD/analysis/BIT/")
         exe = processor.FuturesExecutor(workers=int(args.workers))
 
     elif iterative:
@@ -161,7 +157,7 @@ if __name__ == '__main__':
         )
         #cluster = LPCCondorCluster()
         # minimum > 0: https://github.com/CoffeaTeam/coffea/issues/465
-        cluster.adapt(minimum=1, maximum=1000)
+        cluster.adapt(minimum=1, maximum=100)
         client = Client(cluster)
 
 
@@ -177,12 +173,10 @@ if __name__ == '__main__':
     fileset = samples.get_fileset(year=ul, groups=sample_list)
 
     # define the cache name
-    cache_name = f'./SS_analysis_{args.sample}_{args.select_systematic}_{year}{era}'
+    cache_name = f'./trilep_analysis_{args.sample}_{args.select_systematic}_{year}{era}'
     cache_dir = './outputs/'
     if not args.scan:
         cache_name += f'_cpt_{args.cpt}_cpqm_{args.cpqm}'
-    if args.fixed_template:
-        cache_name += '_fixed'
     output = get_latest_output(cache_name, cache_dir)
     # find an old existing output
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -213,21 +207,19 @@ if __name__ == '__main__':
         output, metrics = runner(
             fileset,
             treename="Events",
-            processor_instance=SS_analysis(
+            processor_instance=trilep_analysis(
                 year=year,
                 variations=variations,
                 accumulator=desired_output,
                 evaluate=args.evaluate,
-                bit=not args.skip_bit,
                 training=args.training,
                 dump=args.dump,
                 era=era,
                 weights=eft_weights,
-                reweight=reweight,
+                #reweight=reweight,  # FIXME needs to be implemented
                 points=points,
                 hyperpoly=hp,
                 minimal=args.minimal,
-                fixed_template=args.fixed_template,
             ),
         )
         util.save(output, cache_dir+cache_name)
@@ -274,17 +266,12 @@ if __name__ == '__main__':
 
         lines= [
             'filter',
-            'dilep',
+            'trigger',
             'p_T(lep0)>25',
             'p_T(lep1)>20',
-            'trigger',
-            'SS',
-            'N_jet>3',
-            'N_central>2',
-            'N_btag>0',
-            'N_light>0',
-            'MET>30',
-            'N_fwd>0',
+            'p_T(lep2)>10',
+            'N_jet>1',
+            'N_central>1',
             'min_mll'
         ]
 

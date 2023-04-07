@@ -16,7 +16,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from coffea import hist
+from coffea import hist, util
 from coffea.processor import accumulate
 
 import matplotlib.pyplot as plt
@@ -24,15 +24,13 @@ import mplhep as hep
 plt.style.use(hep.style.CMS)
 
 from plots.helpers import makePlot, colors, finalizePlotDir
-from Tools.helpers import make_bh, get_samples
-from Tools.config_helpers import get_cache, loadConfig, data_pattern, load_yaml, data_path
-from Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
-from Tools.yahist_to_root import yahist_to_root
-from Tools.dataCard import dataCard
+from analysis.Tools.helpers import make_bh, get_samples
+from analysis.Tools.config_helpers import get_cache, loadConfig, data_pattern, load_yaml, data_path
+from analysis.Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
+from analysis.Tools.yahist_to_root import yahist_to_root
+from analysis.Tools.dataCard import dataCard
 
-from Tools.HyperPoly import HyperPoly 
-from Tools.limits import regroup_and_rebin, get_systematics, add_signal_systematics
-from Tools.EFT_tools import make_scan
+from analysis.Tools.limits import get_systematics, add_signal_systematics
 
 from scipy import interpolate
 
@@ -554,23 +552,29 @@ if __name__ == '__main__':
         # x-secs and lumi scales are applied on the fly below
         outputs = {}
         outputs_tri = {}
-        samples = {}
-        mapping = load_yaml(data_path+"nano_mapping.yaml")
+        samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')
+        mapping = load_yaml('analysis/Tools/data/nano_mapping.yaml')
 
         for year in years:
-            ul = str(year)[2:]
-            samples[year] = get_samples(f"samples_UL{ul}.yaml")
-            if args.regions in ['inclusive', 'all']:
-                outputs[year] = get_merged_output(
-                    'SS_analysis',
-                    year,
-                    select_histograms = ['bit_score_incl', 'bit_score_pp', 'bit_score_mm'] if args.bit else ['LT', 'LT_SR_pp', 'LT_SR_mm'],
-                )#, date='20220624')
-            outputs_tri[year] = get_merged_output(
-                'trilep_analysis',
-                year,
-                select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW'],
-            )#, date='20220624')
+            # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
+            outputs[year] = util.load(f'./outputs/{year}_merged.coffea')
+            #if args.regions in ['inclusive', 'all']:
+            #    outputs[year] = get_merged_output(
+            #        'SS_analysis',
+            #        year,
+            #        './outputs/',
+            #        samples, mapping,
+            #        lumi=lumi,
+            #        select_histograms = ['bit_score_incl', 'bit_score_pp', 'bit_score_mm'] if args.bit else ['LT', 'LT_SR_pp', 'LT_SR_mm'],
+            #    )#, date='20220624')
+            #outputs_tri[year] = get_merged_output(
+            #    'trilep_analysis',
+            #    year,
+            #    './outputs/',
+            #    samples, mapping,
+            #    lumi=lumi,
+            #    select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW'],
+            #)#, date='20220624')
 
     results = {}
 

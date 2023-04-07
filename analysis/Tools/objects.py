@@ -19,6 +19,8 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 def delta_phi(first, second):
     return (first.phi - second.phi + np.pi) % (2 * np.pi) - np.pi
 
@@ -182,7 +184,7 @@ def getChargeFlips(obj, gen=0):
     # gen is not needed, but keep to not break things
     return ak.num(obj[(obj.matched_gen.pdgId/abs(obj.matched_gen.pdgId) != obj.pdgId/abs(obj.pdgId))])
 
-with open(os.path.expandvars('analysis/Tools/data/objects.yaml')) as f:
+with open(os.path.join(here, 'data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
 
 prompt    = lambda x: x[((x.genPartFlav==1)|(x.genPartFlav==15))]

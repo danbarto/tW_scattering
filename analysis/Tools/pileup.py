@@ -4,6 +4,8 @@ import numpy as np
 
 import correctionlib
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 class pileup:
     
     def __init__(self, year, UL=True, era=None):
@@ -13,20 +15,21 @@ class pileup:
         if UL:
             if year == 2016:
                 if era=='APV':
-                    SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/LUM/2016preVFP_UL/')
+                    SF_file = os.path.join(here, 'jsonpog-integration/POG/LUM/2016preVFP_UL/')
                     self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "puWeights.json.gz"))['Collisions16_UltraLegacy_goldenJSON']
 
                 else:
-                    SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/LUM/2016postVFP_UL/')
+                    SF_file = os.path.join(here, 'jsonpog-integration/POG/LUM/2016postVFP_UL/')
                     self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "puWeights.json.gz"))['Collisions16_UltraLegacy_goldenJSON']
             elif year == 2017:
-                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/LUM/2017_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/LUM/2017_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "puWeights.json.gz"))['Collisions17_UltraLegacy_goldenJSON']
             elif year == 2018:
-                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/LUM/2018_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/LUM/2018_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "puWeights.json.gz"))['Collisions18_UltraLegacy_goldenJSON']
 
         else:
+            raise NotImplementedError
             if year == 2016:
                 mc          = Hist1D.from_json(os.path.expandvars('data/PU/Summer16_mc.json'))
                 data        = Hist1D.from_json(os.path.expandvars('data/PU/Summer16_data.json'))

@@ -3,26 +3,45 @@ import re
 from coffea import hist
 import uproot
 import numpy as np
-from Tools.dataCard import *
-from Tools.helpers import make_bh
+from analysis.Tools.dataCard import *
+from analysis.Tools.helpers import make_bh
 import boost_histogram as bh
+
+wildcard = re.compile(r'.', re.UNICODE)
 
 def get_norms(dataset, samples, mapping, name='pdf', weight='LHEPdfWeight'):
     '''
     this function does not need the actual histograms but the stored meta data
     from the samples database
     '''
-    central = sum([ samples[s]['xsec']/samples[s]['sumWeight'] for s in mapping[dataset] ])
-    total   = sum([ samples[s]['xsec']/samples[s][weight][:101] for s in mapping[dataset] ])  # some PDF sets don't include the alpha_S variations...
+    central = sum([ samples.db[s].xsec/samples.db[s].sumWeight for s in mapping[dataset] ])
+    total   = sum([ samples.db[s].xsec/np.array(getattr(samples.db[s], weight)[:101]) for s in mapping[dataset] ])  # some PDF sets don't include the alpha_S variations...
     norms   = {f'{name}_{i}': x for i,x in enumerate(total/central)}
     return norms
 
-def get_pdf_unc(histogram, process, eft_point, rebin=None, hessian=True, quiet=True, overflow='all', norms=None):
+def get_pdf_unc(
+        histogram,
+        process,
+        eft_point,
+        rebin=None,
+        hessian=True,
+        quiet=True,
+        overflow='all',
+        norms=None,
+        select_indices=False,
+):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
     
     '''
+    if select_indices:
+        if isinstance(select_indices, int):
+            indices = [select_indices]
+        else:
+            indices = select_indices
+    else:
+        indices = range(1,101)
     if not hessian:
         print ("Can't handle mc replicas.")
         return False
@@ -33,9 +52,8 @@ def get_pdf_unc(histogram, process, eft_point, rebin=None, hessian=True, quiet=T
         tmp_central = tmp_central.rebin(rebin.name, rebin)
     central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
     pdf_unc = np.zeros_like(central)
-    
-    
-    for i in range(1,101):
+
+    for i in indices:
         tmp_variation = histogram[(process, eft_point, 'central', f'pdf_{i}')].sum('EFT', 'systematic', 'prediction').copy()
         #print (tmp_variation.values())
         if rebin:
@@ -56,7 +74,7 @@ def get_pdf_unc(histogram, process, eft_point, rebin=None, hessian=True, quiet=T
         for i, val in enumerate(pdf_unc):
             print (i, round(val/central[i],2))
     
-        print (central)
+        #print (central)
 
     return  up_hist, down_hist
 
@@ -202,28 +220,47 @@ def get_FSR_unc(histogram, process, eft_point, rebin=None, quiet=True, overflow=
 
     return  up_hist, down_hist
 
-def get_unc(histogram, process, unc, eft_point, rebin=None, quiet=True, overflow='all'):
+def get_unc(
+        histogram,
+        process,
+        unc,
+        eft_point,
+        rebin=None,
+        quiet=True,
+        overflow='all',
+        prediction='central',
+        symmetric=False,
+):
     '''
     takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
     returns a histogram that can be used for systematic uncertainties
     '''
     # now get the actual values
-    tmp_central = histogram[(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
-    tmp_up      = histogram[(process, eft_point, 'central', unc+'_up')].sum('EFT', 'systematic', 'prediction').copy()
-    tmp_down    = histogram[(process, eft_point, 'central', unc+'_down')].sum('EFT', 'systematic', 'prediction').copy()
+    tmp_central = histogram[(process, eft_point, prediction, 'central')].sum('EFT', 'systematic', 'prediction').copy()
+    if not symmetric:
+        tmp_up      = histogram[(process, eft_point, prediction, unc+'_up')].sum('EFT', 'systematic', 'prediction').copy()
+        tmp_down    = histogram[(process, eft_point, prediction, unc+'_down')].sum('EFT', 'systematic', 'prediction').copy()
+    else:
+        tmp_up      = histogram[(process, eft_point, prediction, unc)].sum('EFT', 'systematic', 'prediction').copy()
+
     
     if rebin:
         tmp_central = tmp_central.rebin(rebin.name, rebin)
         tmp_up      = tmp_up.rebin(rebin.name, rebin)
-        tmp_down    = tmp_down.rebin(rebin.name, rebin)
+        if not symmetric:
+            tmp_down    = tmp_down.rebin(rebin.name, rebin)
         
     central  = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
     up_unc   = tmp_up[process].sum('dataset').values(overflow=overflow)[()]
-    down_unc = tmp_down[process].sum('dataset').values(overflow=overflow)[()]
+    if not symmetric:
+        down_unc = tmp_down[process].sum('dataset').values(overflow=overflow)[()]
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
-    down_hist = make_bh(down_unc/central, down_unc/central, edges)
+    if not symmetric:
+        down_hist = make_bh(down_unc/central, down_unc/central, edges)
+    else:
+        down_hist = make_bh(central/up_unc, central/up_unc, edges)
 
     if not quiet:
         print (process)
@@ -256,7 +293,7 @@ def get_systematics(histogram, year, eft_point,
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
@@ -266,11 +303,33 @@ def get_systematics(histogram, year, eft_point,
 
     for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
         systematics += [
-            ('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
+            #('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
             ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
             ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
             ('scale', get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
+        for i in range(1,101):
+            systematics.append(
+                (f'pdf_{i}', get_pdf_unc(histogram, proc, eft_point,
+                                         rebin=rebin, overflow=overflow,
+                                         select_indices = i,
+                                         norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
+            )
+
+    #systematics += [
+    #    ('fake_el_closure', get_unc(histogram, wildcard, 'fake_el_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+    #    ('fake_mu_closure', get_unc(histogram, wildcard, 'fake_mu_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+    #    ('fake_el', get_unc(histogram, wildcard, 'fake_el', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+    #    ('fake_mu', get_unc(histogram, wildcard, 'fake_mu', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+    #    ('fake_mu_pt1', get_unc(histogram, wildcard, 'fake_mu_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_mu_pt2', get_unc(histogram, wildcard, 'fake_mu_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_el_pt1', get_unc(histogram, wildcard, 'fake_el_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_el_pt2', get_unc(histogram, wildcard, 'fake_el_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_mu_be1', get_unc(histogram, wildcard, 'fake_mu_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_mu_be2', get_unc(histogram, wildcard, 'fake_mu_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_el_be1', get_unc(histogram, wildcard, 'fake_el_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #    ('fake_el_be2', get_unc(histogram, wildcard, 'fake_el_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    #]
 
     systematics += [
         #('signal_norm', 1.10, 'signal'),
@@ -308,15 +367,23 @@ def add_signal_systematics(histogram, year, eft_point,
     if correlated:
         year = "cor"
     systematics += [
-        ('jes_%s'%year,     get_unc(histogram, proc, 'jes',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
-        ('pdf',             get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
+        #('pdf',             get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
         ('scale',           get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
     ]
+    for i in range(1,101):
+        systematics.append(
+            (f'pdf_{i}', get_pdf_unc(histogram, proc, eft_point,
+                                        rebin=rebin, overflow=overflow,
+                                        select_indices = i,
+                                        norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal")
+        )
+
     return systematics
 
 def makeCardFromHist(
@@ -344,7 +411,9 @@ def makeCardFromHist(
 
     if not quiet:
         print ("Writing cards now")
-    card_dir = os.path.expandvars('data/cards/')
+    card_dir = os.path.abspath(os.path.expandvars('data/cards/')) + '/'
+    print ("#### CARD DIR ####")
+    print (card_dir)
     if not os.path.isdir(card_dir):
         os.makedirs(card_dir)
     
@@ -372,7 +441,7 @@ def makeCardFromHist(
     axis = h_tmp["signal"].axes()[0]
 
     # make observation boost histogram
-    from Tools.helpers import make_bh
+    from analysis.Tools.helpers import make_bh
 
     # FIXME: decide on how to handle overflows.
     total = np.sum([h_tmp[p].values()[()] for p in processes + ['signal']], axis=0)

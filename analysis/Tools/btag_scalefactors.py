@@ -9,6 +9,8 @@ import correctionlib
 from coffea.lookup_tools import extractor
 import numpy as np
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 class btag_scalefactor:
     def __init__(self, year, era=None, UL=True):
         self.year = year
@@ -18,33 +20,33 @@ class btag_scalefactor:
         if self.year == 2016:
             if era=='APV':
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16preVFP
-                SF_file = os.path.expandvars('analysis/Tools/data/jsonpog-integration/POG/BTV/2016preVFP_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/BTV/2016preVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "btagging.json.gz"))
 
                 # and load the efficiencies
-                self.ext.add_weight_sets([os.path.expandvars(f"* * analysis/Tools/data/btag/deepJet_eff_Summer20UL16APV.json")])
+                self.ext.add_weight_sets([f"* * {here}/data/btag/deepJet_eff_Summer20UL16APV.json"])
 
             else:
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16postVFP
-                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/BTV/2016postVFP_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/BTV/2016postVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "btagging.json.gz"))
 
                 # and load the efficiencies
-                self.ext.add_weight_sets([os.path.expandvars(f"* * analysis/Tools/data/btag/deepJet_eff_Summer20UL16.json")])
+                self.ext.add_weight_sets([f"* * {here}/data/btag/deepJet_eff_Summer20UL16.json"])
 
         elif self.year == 2017:
-            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/BTV/2017_UL/')
+            SF_file = os.path.join(here, 'jsonpog-integration/POG/BTV/2017_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "btagging.json.gz"))
 
             # and load the efficiencies
-            self.ext.add_weight_sets([os.path.expandvars(f"* * analysis/Tools/data/btag/deepJet_eff_Summer20UL17.json")])
+            self.ext.add_weight_sets([f"* * {here}/data/btag/deepJet_eff_Summer20UL17.json"])
 
         elif self.year == 2018:
-            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/BTV/2018_UL/')
+            SF_file = os.path.join(here, 'jsonpog-integration/POG/BTV/2018_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "btagging.json.gz"))
 
             # and load the efficiencies
-            self.ext.add_weight_sets([os.path.expandvars(f"* * analysis/Tools/data/btag/deepJet_eff_Summer20UL18.json")])
+            self.ext.add_weight_sets([f"* * {here}/data/btag/deepJet_eff_Summer20UL18.json"])
 
         self.ext.finalize()
         self.effs = self.ext.make_evaluator()
