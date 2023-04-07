@@ -167,6 +167,8 @@ if __name__ == '__main__':
     ht_bins_red = hist.Bin('ht', r'$p_{T}\ (GeV)$', 7,100,800)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
     score_bins = hist.Bin("score",          r"N", 8, 0, 1)  # FIXME update to 8
+    sr_axis     = hist.Bin("lt",  r"LT", 10, 0, 1000)
+    ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.5, 99.5) # e.g. for PV
 
 
     sub_dir = '/dd/'
@@ -178,14 +180,29 @@ if __name__ == '__main__':
     get_standard_plot(output, 'dilepton_mass', axis, name='dilepton_mass', log=False, lumi=lumi, blind=blind)
     #get_nonprompt_plot(output, 'N_fwd', axis, name='np_N_fwd', log=False)
     #get_chargeflip_plot(output, 'N_fwd', axis, name='cf_N_fwd', log=False)
+    get_standard_plot(output, 'dilepton_mass_topW', axis, name='dilepton_mass_topW', log=False, lumi=lumi, blind=blind)
+    get_standard_plot(output, 'trilep_mass_XG', axis, name='trilep_mass_XG', log=False, lumi=lumi, blind=blind)
 
+    axis = hist.Bin('mass', r'$m_{\ell\ell} (GeV)$', 20, 81, 101)
     get_standard_plot(output, 'dilepton_mass_WZ', axis, name='dilepton_mass_WZ', log=False, lumi=lumi, blind=blind)
     get_standard_plot(output, 'dilepton_mass_XG', axis, name='dilepton_mass_XG', log=False, lumi=lumi, blind=blind)
     get_standard_plot(output, 'dilepton_mass_ttZ', axis, name='dilepton_mass_ttZ', log=False, lumi=lumi, blind=blind)
-    get_standard_plot(output, 'dilepton_mass_topW', axis, name='dilepton_mass_topW', log=False, lumi=lumi, blind=blind)
 
     axis = hist.Bin('pt', r'$p_{T} (GeV)$', 25, 0, 500)
     get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
 
     axis = hist.Bin('pt', r'$p_{T}^{miss} (GeV)$', 25, 0, 500)
     get_standard_plot(output, 'MET', axis, name='MET_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+
+    axis = sr_axis
+    get_standard_plot(output, 'LT_ttZ', axis, name='LT_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_standard_plot(output, 'LT_XG', axis, name='LT_XG', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_standard_plot(output, 'LT_WZ', axis, name='LT_WZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+
+    axis = N_bins
+    get_standard_plot(output, 'N_jet_ttZ', axis, name='N_jet_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+
+    axis = ext_multiplicity_axis
+    # FIXME not yet working
+    #get_standard_plot(output, 'PV_npvsGood', axis, name='PV_npvsGood', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)

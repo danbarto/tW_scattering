@@ -16,20 +16,20 @@ import pickle
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
-from Tools.config_helpers import get_samples
-from Tools.helpers import make_bh, finalizePlotDir
-from Tools.HyperPoly import HyperPoly
-from Tools.reweighting import get_coordinates_and_ref, get_coordinates
-from plots.helpers import colors
+from analysis.Tools.config_helpers import get_samples
+from analysis.Tools.helpers import make_bh, finalizePlotDir
+from analysis.Tools.HyperPoly import HyperPoly
+from analysis.Tools.reweighting import get_coordinates_and_ref, get_coordinates
+#from plots.helpers import colors
 
-from BoostedInformationTreeP3 import BoostedInformationTree
+from analysis.BIT.BoostedInformationTreeP3 import BoostedInformationTree
 
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.utils import resample, shuffle
 
-from ML.multiclassifier_tools import store_transformer
+from analysis.Tools.multiclassifier_tools import store_transformer
 
-from yahist import Hist1D
+#from yahist import Hist1D
 
 import matplotlib.pyplot as plt
 import mplhep as hep

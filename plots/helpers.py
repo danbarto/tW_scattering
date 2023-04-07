@@ -1,11 +1,16 @@
 import numpy as np
 import os
+import shutil
 import matplotlib.pyplot as plt
-from Tools.helpers import finalizePlotDir
 from coffea import hist
 
 import re
 
+def finalizePlotDir( path ):
+    path = os.path.expandvars(path)
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    shutil.copy( os.path.expandvars( 'analysis/Tools/php/index.php' ), path )
 
 colors = {
     'tW_scattering': '#FF595E',
@@ -586,24 +591,6 @@ def addUncertainties(
                     'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0, 'zorder':100.}
     
     ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
-
-def scale_and_merge(histogram, scales, nano_mapping, quiet=False):
-    """
-    Scale NanoAOD samples to a physical cross section.
-    Merge NanoAOD samples into categories, e.g. several ttZ samples into one ttZ category.
-
-    histogram -- coffea histogram
-    scales -- scales to apply to each dataset
-    nano_mapping -- dictionary to map NanoAOD samples into categories
-    """
-    temp = histogram.copy()
-    # NOTE copy is not what is slow, but some histogram operations.
-    # This is probably a price we have to pay for flexibility
-
-    temp.scale(scales, axis='dataset')
-    temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
-
-    return temp
 
 def compute_darkness(r, g, b, a=1.0):
     """Compute the 'darkness' value from RGBA (darkness = 1 - luminance)
