@@ -186,10 +186,11 @@ if __name__ == '__main__':
     #df = pd.read_hdf('/hadoop/cms/store/user/dspitzba/ML/multiclass_input_2018_v2.h5')
 
     sample_list =  ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
-    years = ['2016APV', '2016', '2017', '2018']
+    years = ['2016APV', '2016', '2017', '2018'] if args.year == '2019' else [args.year]
     #years = ['2018']
     df = pd.DataFrame()
     for year in years:
+        print(f"Loading files for year {year}")
         tmp = pd.concat([pd.read_hdf(f"../processor/multiclass_input_{sample}_{year}.h5") for sample in sample_list])
         df = pd.concat([df, tmp])
     del tmp
