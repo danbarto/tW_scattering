@@ -333,7 +333,7 @@ def makeCardFromHist(
         integer=False,
         quiet=False,
         blind=True,
-        data=None,
+        data='observation',
 ):
     
     '''
@@ -368,6 +368,11 @@ def makeCardFromHist(
         h_tmp_bsm[p].scale(bsm_scales, axis='dataset')  # scale according to the processes
         h_tmp_bsm[p] = h_tmp_bsm[p].sum('dataset')  # reduce to 1D histogram
 
+    if data in histogram.keys():
+        print("Found observation histogram")
+        h_tmp[data] = histograms["observation"].copy()
+        h_tmp[data] = h_tmp["observation"].sum('dataset')  # reduce to 1D histogram
+
     # get an axis
     axis = h_tmp["signal"].axes()[0]
 
@@ -379,11 +384,18 @@ def makeCardFromHist(
     total_int = np.round(total, 0).astype(int)
 
     # this is how we get the expected results
-    pdata_hist = make_bh(
-        sumw  = total,
-        sumw2 = total,
-        edges = axis.edges(),
-    )
+    if not blind:
+        pdata_hist = make_bh(
+            sumw  = h_tmp[data].values()[()],
+            sumw2 = h_tmp[data].values()[()],
+            edges = axis.edges(),
+        )
+    else:
+        pdata_hist = make_bh(
+            sumw  = total,
+            sumw2 = total,
+            edges = axis.edges(),
+        )
 
     fout = uproot.recreate(shape_file)
 
