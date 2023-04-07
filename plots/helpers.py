@@ -6,11 +6,8 @@ from coffea import hist
 
 import re
 
-def finalizePlotDir( path ):
-    path = os.path.expandvars(path)
-    if not os.path.isdir(path):
-        os.makedirs(path)
-    shutil.copy( os.path.expandvars( 'analysis/Tools/php/index.php' ), path )
+from analysis.Tools.config_helpers import finalizePlotDir
+
 
 colors = {
     'tW_scattering': '#FF595E',

@@ -240,7 +240,7 @@ class dataCard:
 
         import uuid, os
         ustr          = str(uuid.uuid4())
-        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        uniqueDirname = os.path.abspath(os.path.join(self.releaseLocation, ustr))
         print("Creating %s"%uniqueDirname)
         os.makedirs(uniqueDirname)
 
@@ -257,7 +257,7 @@ class dataCard:
         combineCommand  = "cd "+uniqueDirname+"; eval `scramv1 runtime -sh`; combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
         print ("Executing %s"%combineCommand)
         os.system(combineCommand)
-        resFile = '/'+os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
+        resFile = os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
         f = resFile.split('/')[-1]
         resPath = resFile.replace(f, '')
         if not os.path.isdir(resPath):

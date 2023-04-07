@@ -34,6 +34,7 @@ from analysis.Tools.helpers import pad_and_flatten, mt, fill_multiple, zip_run_l
 from analysis.Tools.config_helpers import loadConfig, make_small, data_pattern, get_latest_output, load_yaml, data_path
 from analysis.Tools.triggers import getFilters, getTriggers
 from analysis.Tools.btag_scalefactors import btag_scalefactor
+from analysis.Tools.tau_scalefactors import tau_scalefactor
 from analysis.Tools.trigger_scalefactors import triggerSF
 from analysis.Tools.ttH_lepton_scalefactors import LeptonSF
 from analysis.Tools.selections import Selection, get_pt
@@ -66,6 +67,8 @@ class SS_analysis(processor.ProcessorABC):
                  weights=[],
                  reweight=1,
                  minimal=False,
+                 fixed_template=False,
+                 toys=0,
                  ):
         self.variations = variations
 
@@ -74,6 +77,7 @@ class SS_analysis(processor.ProcessorABC):
         self.evaluate = evaluate
         self.training = training
         self.dump = dump
+        self.fixed_template = fixed_template
 
         self.bit = bit
         self.minimal=minimal
@@ -83,6 +87,7 @@ class SS_analysis(processor.ProcessorABC):
         
         self.btagSF = btag_scalefactor(year, era=era)
         self.leptonSF = LeptonSF(year=year, era=era)
+        self.tauSF = tau_scalefactor(year=year, era=era)
         self.triggerSF = triggerSF(year=year)
         self.pu = pileup(year=year, UL=True, era=era)
 
@@ -297,6 +302,13 @@ class SS_analysis(processor.ProcessorABC):
                 weight.add("lepton", self.leptonSF.get(electron, muon, variation='down', collection='mu'))
             else:
                 weight.add("lepton", self.leptonSF.get(electron, muon))
+
+            if var['name'] == 'tau_up':
+                weight.add("tau", self.tauSF.get(tau, var='up', WP='Loose'))
+            elif var['name'] == 'tau_down':
+                weight.add("tau", self.tauSF.get(tau, var='down', WP='Loose'))
+            else:
+                weight.add("tau", self.tauSF.get(tau, var='nom', WP='Loose'))
 
             # trigger SFs
             weight.add("trigger", self.triggerSF.get(electron, muon))
@@ -570,8 +582,12 @@ class SS_analysis(processor.ProcessorABC):
             for p in self.points:
                 x,y = p['point']
                 point = p['point']
-                qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
-                score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
+                if self.fixed_template:
+                    qt = load_transformer(f'v40_cpt_5_cpqm_5')  # was v31
+                    score_trans = get_bit_score(bit_pred, cpt=5, cpqm=5, trans=qt)
+                else:
+                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
+                    score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
                 # Get the weights
                 if dataset.count('EFT'):
@@ -629,7 +645,16 @@ class SS_analysis(processor.ProcessorABC):
                     other={'EFT': f"cpt_{x}_cpqm_{y}"},
                    )
 
+
                 if not re.search(data_pattern, dataset) and var['name'] == 'central':
+
+                    ## poor mans (?) toys only for central value
+                    #weights_pp = (eft_weight*weight.weight())[(BL & SR_sel_pp)]
+                    #weights_mm = (eft_weight*weight.weight())[(BL & SR_sel_mm)]
+                    #for toy in range(toys):
+                    #    pass
+                    #    # FIXME on monday
+                    #    # https://github.com/HephyAnalysisSW/TMB/blob/main/plots/plotsRobert/limits-toy/limit-VH-toy-2D.py#L134-L139
                     #print ("Running PDFs")
                     # if we just run central (len(variations)=1) we don't need the PDF variations either
                     for i in range(1,101):

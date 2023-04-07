@@ -24,6 +24,8 @@ data_pattern = re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleEl
 
 data_path = os.path.expandvars('data/')
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 lumi = {
     '2016': 16.8,
     '2016APV': 19.5,
@@ -74,7 +76,7 @@ def finalizePlotDir( path ):
     path = os.path.expandvars(path)
     if not os.path.isdir(path):
         os.makedirs(path)
-    shutil.copy( os.path.expandvars( 'Tools/php/index.php' ), path )
+    shutil.copy( os.path.join(here, 'php/index.php' ), path )
 
 def make_small(fileset, small, n_max=1):
     if small:
@@ -111,11 +113,11 @@ def get_latest_output(cache_name, cache_dir, date=None, max_time='999999', selec
     # FIXME need to ensure that only <cache_name>_<datetime> is allowed
     filtered = [f for f in filtered if int(f.replace('.coffea','').split('_')[-1])<int(max_time)]
     filtered.sort(reverse=True)
-    print (filtered)
+    #print (filtered)
     try:
         latest = filtered[0]
     except:
-        print ("Couldn't find a suitable cache!")
+        #print ("Couldn't find a suitable cache!")
         return None
     print ("Found the following cache: %s"%latest)
 
@@ -136,7 +138,7 @@ def get_merged_output(
         lumi=1,
         postfix=None,
         quiet=False,
-        select_datasets=None,
+        select_datasets=['data', 'MCall'],
         date=None,
         max_time='999999',
         select_histograms=False,
@@ -167,8 +169,8 @@ def get_merged_output(
 
     #for sample in datasets:
     for variation in variations:
-        for sample in ['MCall', 'data']:
-            if not quiet: print ("Loading output for sample:", sample)
+        for sample in select_datasets:
+            #if not quiet: print ("Loading output for sample:", sample)
             if variation != '':
                 cache_name = '_'.join([name, sample, variation, year])
             else:
@@ -176,7 +178,7 @@ def get_merged_output(
             #f'{name}_{sample}_{year}'
             if postfix:
                 cache_name += postfix
-            print (cache_name)
+            print(cache_name)
             outputs.append(get_latest_output(cache_name, cache_dir, date=date, max_time=max_time, select_histograms=select_histograms))
 
     output = accumulate(outputs)
@@ -184,14 +186,17 @@ def get_merged_output(
     #res = scale_and_merge(output['N_jet'], renorm, mapping[ul])
 
     output_scaled = {}
-    for key in output.keys():
-        if isinstance(output[key], hist.Hist):
-            try:
-                print ("Merging histogram", key)
-                output_scaled[key] = scale_and_merge(output[key], weights, mapping[ul])
-            except:
-                print ("Scale and merge failed for:",key)
-                print ("At least I tried.")
+    if output == {} or output == None:
+        output_scaled = {}
+    else:
+        for key in output.keys():
+            if isinstance(output[key], hist.Hist):
+                try:
+                    print ("Merging histogram", key)
+                    output_scaled[key] = scale_and_merge(output[key], weights, mapping[ul])
+                except:
+                    print ("Scale and merge failed for:",key)
+                    print ("At least I tried.")
 
     del outputs, output
     return output_scaled

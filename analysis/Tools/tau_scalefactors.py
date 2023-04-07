@@ -9,6 +9,8 @@ import correctionlib
 from coffea.lookup_tools import extractor
 import numpy as np
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 class tau_scalefactor:
     def __init__(self, year, era=None, UL=True):
         self.year = year
@@ -18,20 +20,20 @@ class tau_scalefactor:
         if self.year == 2016:
             if era=='APV':
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16preVFP
-                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2016preVFP_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2016preVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
             else:
                 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16postVFP
-                SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2016postVFP_UL/')
+                SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2016postVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         elif self.year == 2017:
-            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2017_UL/')
+            SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2017_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         elif self.year == 2018:
-            SF_file = os.path.expandvars('analysis/Tools/jsonpog-integration/POG/TAU/2018_UL/')
+            SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2018_UL/')
             self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
         self.ext.finalize()
