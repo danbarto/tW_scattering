@@ -400,7 +400,7 @@ def makeCardFromHist(
         integer=False,
         quiet=False,
         blind=True,
-        data='observation',
+        data=False,
 ):
     
     '''
@@ -420,7 +420,7 @@ def makeCardFromHist(
     data_card = card_dir+ext+'_card.txt'
     shape_file = card_dir+ext+'_shapes.root'
 
-    processes = [ p for p in histograms.keys() if p != 'signal' ]
+    processes = [ p for p in histograms.keys() if p != 'signal']
 
     # make a copy of the histograms
     h_tmp = {}
@@ -437,10 +437,10 @@ def makeCardFromHist(
         h_tmp_bsm[p].scale(bsm_scales, axis='dataset')  # scale according to the processes
         h_tmp_bsm[p] = h_tmp_bsm[p].sum('dataset')  # reduce to 1D histogram
 
-    if data in histogram.keys():
+    if data:
         print("Found observation histogram")
-        h_tmp[data] = histograms["observation"].copy()
-        h_tmp[data] = h_tmp["observation"].sum('dataset')  # reduce to 1D histogram
+        h_tmp["observation"] = data.copy()
+        h_tmp["observation"] = h_tmp["observation"].sum('dataset')  # reduce to 1D histogram
 
     # get an axis
     axis = h_tmp["signal"].axes()[0]
@@ -455,8 +455,8 @@ def makeCardFromHist(
     # this is how we get the expected results
     if not blind:
         pdata_hist = make_bh(
-            sumw  = h_tmp[data].values()[()],
-            sumw2 = h_tmp[data].values()[()],
+            sumw  = h_tmp["observation"].values()[()],
+            sumw2 = h_tmp["observation"].values()[()],
             edges = axis.edges(),
         )
     else:

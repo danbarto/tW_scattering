@@ -16,20 +16,21 @@ import pickle
 
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
 
-from analysis.Tools.config_helpers import get_samples
-from analysis.Tools.helpers import make_bh, finalizePlotDir
+from analysis.Tools.config_helpers import finalizePlotDir
+from analysis.Tools.helpers import get_samples, make_bh
 from analysis.Tools.HyperPoly import HyperPoly
 from analysis.Tools.reweighting import get_coordinates_and_ref, get_coordinates
 #from plots.helpers import colors
 
-from analysis.BIT.BoostedInformationTreeP3 import BoostedInformationTree
+from BIT.BoostedInformationTreeP3 import BoostedInformationTree
 
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.utils import resample, shuffle
 
 from analysis.Tools.multiclassifier_tools import store_transformer
 
-#from yahist import Hist1D
+from yahist import Hist1D
+from plots.helpers import colors
 
 import matplotlib.pyplot as plt
 import mplhep as hep
@@ -243,20 +244,21 @@ if __name__ == '__main__':
     plot_dir = os.path.expandvars(f"{cfg['meta']['plots']}/BIT/{args.version}/")
     finalizePlotDir(plot_dir)
 
-    # Prepare hyper poly inputs
-    samples = get_samples("samples_UL18.yaml")
-    f_in    = samples['/ceph/cms/store/user/dspitzba/ProjectMetis/TTWToLNu_TtoAll_aTtoLep_5f_EFT_NLO_RunIISummer20UL18_NanoAODv9_NANO_v14/']['files'][0]
-    tree    = uproot.open(f_in)['Events']
-
     hp = HyperPoly(2)
-    coordinates, ref_coordinates = get_coordinates_and_ref(f_in)
-    ref_coordinates = [0.0,0.0]
+    coordinates = [(0.0, 0.0), (3.0, 0.0), (0.0, 3.0), (6.0, 0.0), (3.0, 3.0), (0.0, 6.0)]
+    ref_coordinates = [0,0]
 
     hp.initialize( coordinates, ref_coordinates )
-    weights = [ x.replace('LHEWeight_','') for x in tree.keys() if x.startswith('LHEWeight_c') ]
+    weights = [\
+        'cpt_0p_cpqm_0p_nlo',
+        'cpt_3p_cpqm_0p_nlo',
+        'cpt_0p_cpqm_3p_nlo',
+        'cpt_6p_cpqm_0p_nlo',
+        'cpt_3p_cpqm_3p_nlo',
+        'cpt_0p_cpqm_6p_nlo',
+    ]
 
     coeff = hp.get_parametrization( [df_signal[w].values for w in weights] )
-
 
     # Preprocessing inputs
     df_signal['lt'] = (df_signal['lead_lep_pt'].values + df_signal['sublead_lep_pt'].values + df_signal['met'].values)
@@ -545,6 +547,7 @@ if __name__ == '__main__':
     params = scaler.get_params()
 
     if os.path.isfile(bit_file) and not args.retrain:
+
         with open(bit_file, 'rb') as f:
             bits = pickle.load(f)
 
@@ -620,8 +623,8 @@ if __name__ == '__main__':
         x = np.arange(-7,8,1)
         y = np.arange(-7,8,1)
     else:
-        x = np.array([6])
-        y = np.array([0])
+        x = np.array([-6,-3,0,3,6])
+        y = np.array([-6,-3,0,3,6])
     X, Y = np.meshgrid(x, y)
 
     res_LT = {}
@@ -895,14 +898,18 @@ if __name__ == '__main__':
         bit_axis = hist.Bin("bit", r"BIT score", bit_bins)
 
         # getting toys, only has to be done once
+        #
+        NP['weight'] = NP["weight"]*NP["weight_np"]
         bkg_ = pd.concat([ttW, ttZ, ttH, rare, diboson, XG])
         bkg_['weight'] = bkg_['weight']*2
         bkg_ = pd.concat([bkg_, NP, sig_test])
         indices = np.arange(len(bkg_))
         toys = []
-        n_toys = 2
+        n_toys = 5
         for i in range(n_toys):
             toys.append(np.random.choice(indices, size=len(indices)))
+
+        results = {}
 
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [x, y]
@@ -927,14 +934,13 @@ if __name__ == '__main__':
             bit_hist.fill(dataset="TTW",        bit=get_bit_score(ttW, cpt=x, cpqm=y, trans=qt), weight=ttW['weight']*2)
             bit_hist.fill(dataset="TTZ",        bit=get_bit_score(ttZ, cpt=x, cpqm=y, trans=qt), weight=ttZ['weight']*2)
             bit_hist.fill(dataset="TTH",        bit=get_bit_score(ttH, cpt=x, cpqm=y, trans=qt), weight=ttH['weight']*2)
-            bit_hist.fill(dataset="NP",         bit=get_bit_score(NP, cpt=x, cpqm=y, trans=qt), weight=NP['weight']*NP['weight_np'])
+            bit_hist.fill(dataset="NP",         bit=get_bit_score(NP, cpt=x, cpqm=y, trans=qt), weight=NP['weight'])  # np weight already multiplied in
             bit_hist.fill(dataset="rare",       bit=get_bit_score(rare, cpt=x, cpqm=y, trans=qt), weight=rare['weight']*2)
             bit_hist.fill(dataset="diboson",    bit=get_bit_score(diboson, cpt=x, cpqm=y, trans=qt), weight=diboson['weight']*2)
             bit_hist.fill(dataset="XG",         bit=get_bit_score(XG, cpt=x, cpqm=y, trans=qt), weight=XG['weight']*2)
             bit_hist.fill(dataset="signal",     bit=q_event_cdf, weight=sig_test['weight'])
 
             print (bit_hist['signal'].values())
-
 
             # fill a total hist for debugging
             bit_hist.fill(dataset="total",        bit=get_bit_score(bkg_, cpt=x, cpqm=y, trans=qt), weight=bkg_['weight'])
@@ -970,6 +976,27 @@ if __name__ == '__main__':
 
                 res_sm = card.calcNLL(sm_card)
                 res_sm_ll = res_sm['nll0'][0]+res_sm['nll'][0]
+                results[f'SM_{x}_{y}'] = res_sm_ll
+
+                sm_card = makeCardFromHist(
+                    hist_dict,
+                    ext='_SM_asimov',
+                    systematics=systematics,
+                    blind=False,
+                    data=bit_hist['total'],
+                   )
+                res_tmp = card.calcNLL(sm_card)
+                results[f'SM_asimov_{x}_{y}'] = res_tmp['nll0'][0]+res_tmp['nll'][0]
+
+                sm_card = makeCardFromHist(
+                    hist_dict,
+                    ext='_SM_toy_0',
+                    systematics=systematics,
+                    blind=False,
+                    data=bit_hist['toy_0'],
+                   )
+                res_tmp = card.calcNLL(sm_card)
+                results[f'SM_toy_0_{x}_{y}'] = res_tmp['nll0'][0]+res_tmp['nll'][0]
 
             eft_weight = hp.eval(coeffs.transpose(), [x,y])
             #eft_weight = hp.eval(coeffs_train.transpose(), [x,y])
@@ -977,7 +1004,7 @@ if __name__ == '__main__':
             bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
             bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
 
-            #print (bsm_hist.values())
+            print (bsm_hist.values())
             #print (bsm_hist.variances())
             #bsm_hist.fill(q_event_cdf, weight=sig_train['weight']*eft_weight)
 
@@ -1079,6 +1106,7 @@ if __name__ == '__main__':
                 fig.savefig(f"{plot_dir}/bit_cpt_{x}_cpqm_{y}_transformed_sm.png")
 
             if args.fit:
+                # fill a total hist for debugging
 
                 print ("Counts and Variances")
                 print (bsm_hist.counts())
@@ -1091,6 +1119,7 @@ if __name__ == '__main__':
                     bsm_hist = bsm_hist,
                     #sm_vals = sm_hist,
                     systematics=systematics,
+                    blind=True,
                 )
 
                 simple_NLL = 2*np.sum(sm_hist.counts()[:8] - bsm_hist.counts()[:8] - bsm_hist.counts()[:8]*np.log(sm_hist.counts()[:8]/bsm_hist.counts()[:8]))
@@ -1102,10 +1131,27 @@ if __name__ == '__main__':
 
                 res_bsm[(x,y)] = card.calcNLL(bsm_card)
                 res_tmp = res_bsm[(x,y)]['nll0'][0]+res_bsm[(x,y)]['nll'][0]
+                results[f'BSM_{x}_{y}'] = res_tmp
                 nll = -2*(res_sm_ll-res_tmp)
                 z.append(nll)
                 print ('NLL: {:.2f}'.format(nll))
                 res_BIT[(x,y)] = nll
+
+                for i in range(n_toys):
+                    bsm_card = makeCardFromHist(
+                        hist_dict,
+                        #'SR',
+                        ext=f'_BSM2_toy_{i}',
+                        bsm_hist = bsm_hist,
+                        #sm_vals = sm_hist,
+                        systematics=systematics,
+                        blind=False,
+                        data=bit_hist[f"toy_{i}"],
+                    )
+                    res_bsm_tmp = card.calcNLL(bsm_card)
+                    res_tmp = res_bsm_tmp['nll0'][0]+res_bsm_tmp['nll'][0]
+                    results[f'BSM_toy_{i}_{x}_{y}'] = res_tmp
+
 
         if args.fit and args.plot and len(X)>1:
             Z = np.array(z)

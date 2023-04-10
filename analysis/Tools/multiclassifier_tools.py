@@ -10,6 +10,8 @@ import joblib
 
 import matplotlib.pyplot as plt
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 def get_one_hot(labels):
     from keras.utils import np_utils
     encoder = LabelEncoder()
@@ -41,7 +43,7 @@ def store_model(model, scaler, version='v5'):
     joblib.dump(scaler, 'networks/scaler_%s.joblib'%version)
 
 def store_transformer(transformer, version='v5'):
-    joblib.dump(transformer, os.path.expandvars('data/networks/transformer_%s.joblib'%version))
+    joblib.dump(transformer, os.path.join(here, 'data/networks/transformer_%s.joblib'%version))
 
 def load_model(version='v5'):
     model = tf.keras.models.load_model(os.path.expandvars('data/networks/weights_%s.h5a'%version))
@@ -49,7 +51,7 @@ def load_model(version='v5'):
     return model, scaler
 
 def load_transformer(version='v5'):
-    return joblib.load(os.path.expandvars('analysis/Tools/data/networks/transformer_%s.joblib'%version))
+    return joblib.load(os.path.join(here, 'data/networks/transformer_%s.joblib'%version))
 
 def get_class_weight(df, dim=6):
     '''

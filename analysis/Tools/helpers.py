@@ -64,13 +64,6 @@ def dasWrapper(DASname, query='file'):
     dbsOut = [ l.replace('\n','') for l in dbsOut ]
     return dbsOut
 
-def finalizePlotDir( path ):
-    path = os.path.expandvars(path)
-    if not os.path.isdir(path):
-        os.makedirs(path)
-    shutil.copy( os.path.expandvars( 'Tools/php/index.php' ), path )
-    
-
 def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
     Takes the output of a coffea processor (i.e. a python dictionary) and returns a formated cut-flow table of processes.

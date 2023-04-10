@@ -33,10 +33,6 @@ lumi = {
     '2018': 59.83,
 }
 
-def get_samples(f_in='samples.yaml'):
-    with open(data_path+f_in) as f:
-        return load(f, Loader=Loader)
-
 def load_yaml(f_in=data_path+'nano_mapping.yaml'):
     with open(f_in) as f:
         res = load(f, Loader=Loader)
@@ -48,7 +44,7 @@ def dump_yaml(data, f_out):
     return True
 
 def loadConfig():
-    return load_yaml(data_path+'config.yaml')
+    return load_yaml(os.path.join(here, 'data/config.yaml'))
 
 def get_cache(cache_name):
     from klepto.archives import dir_archive
