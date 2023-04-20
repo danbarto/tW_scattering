@@ -27,7 +27,7 @@ from BIT.BoostedInformationTreeP3 import BoostedInformationTree
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.utils import resample, shuffle
 
-from analysis.Tools.multiclassifier_tools import store_transformer
+from analysis.Tools.multiclassifier_tools import store_transformer, load_transformer
 
 from yahist import Hist1D
 from plots.helpers import colors
@@ -200,6 +200,10 @@ if __name__ == '__main__':
     argParser.add_argument('--max_label', action='store', type=int, default=100, help="Maximum label for backgrounds in training (strictly smaller!)")  # labels go from 1-7 (see below for definitions)
     argParser.add_argument('--use_weight', action='store_true', help="Use weights in training")
     argParser.add_argument('--runLT', action='store_true', default=None, help="Run classical LT analysis (does not change with different training versions)")
+    argParser.add_argument('--toys', action='store_true', default=None, help="Run a few toys at a fixed BSM point")
+    argParser.add_argument('--fixed_template', action='store_true', default=None, help="Run with a fixed template (BIT)")
+    argParser.add_argument('--temp_cpt', action='store', default=5, help="cpt point for template")
+    argParser.add_argument('--temp_cpqm', action='store', default=-5, help="cpqm point for template")
     argParser.add_argument('--version', action='store', default='v1', help="Version number for the output tree")
     argParser.add_argument('--year', action='store', default='2018', help="Version number for the output tree")
 
@@ -623,6 +627,10 @@ if __name__ == '__main__':
         x = np.arange(-7,8,1)
         y = np.arange(-7,8,1)
     else:
+        #x = np.array([-7,-5,-4,-3,-2,0,2,3,4,5,7])
+        #y = np.array([0])
+        #x = np.array([-7,-5,-2,0,2,5,7])
+        #y = np.array([-7,-5,-2,0,2,5,7])
         x = np.array([-6,-3,0,3,6])
         y = np.array([-6,-3,0,3,6])
     X, Y = np.meshgrid(x, y)
@@ -902,14 +910,22 @@ if __name__ == '__main__':
         NP['weight'] = NP["weight"]*NP["weight_np"]
         bkg_ = pd.concat([ttW, ttZ, ttH, rare, diboson, XG])
         bkg_['weight'] = bkg_['weight']*2
+        bkg_['weight_inj'] = 1
+        NP['weight_inj'] = 1
+        sig_test['weight_inj'] = hp.eval(coeffs.transpose(), [3,0])
+        #one_weight = np.ones_like(bkg_['weight'])
+        #eft_weight_injection = hp.eval(coeffs.transpose(), [3,0])  # slightly off of one of the points we're actually testing
         bkg_ = pd.concat([bkg_, NP, sig_test])
         indices = np.arange(len(bkg_))
         toys = []
-        n_toys = 5
+        n_toys = 0 if not args.toys else 5
         for i in range(n_toys):
             toys.append(np.random.choice(indices, size=len(indices)))
 
         results = {}
+
+        fix_temp = args.fixed_template
+        fix_temp_coord = (int(args.temp_cpt), int(args.temp_cpqm))
 
         for x, y in zip(X.flatten(), Y.flatten()):
             point = [x, y]
@@ -917,42 +933,59 @@ if __name__ == '__main__':
 
             bit_hist = hist.Hist("bit", dataset_axis, bit_axis)
 
-            sig_bit = get_bit_score(sig_test, cpt=x, cpqm=y, trans=None)
-            #sig_bit = get_bit_score(sig_train, cpt=x, cpqm=y, trans=None)
-            q_event = sig_bit
+            if fix_temp:
+                x_, y_ = fix_temp_coord
+            else:
+                x_, y_ = x, y
 
-            print (np.mean(sig_bit))
+            if args.fixed_template:
+                try:
+                    qt = load_transformer(f'{args.version}_cpt_{x_}_cpqm_{y_}')
+                except FileNotFoundError:
+                    q_event = get_bit_score(sig_test, cpt=x_, cpqm=y_, trans=None)
+                    qt = QuantileTransformer(n_quantiles=40, random_state=0)
+                    qt.fit(q_event.reshape(-1, 1))
+                    q_event_cdf = qt.transform(q_event.reshape(-1,1)).flatten()
+                    store_transformer(qt, version=f'{args.version}_cpt_{x_}_cpqm_{y_}')
+            else:
+                # just overwrite. this code is getting uglier and uglier by the minute
+                q_event = get_bit_score(sig_test, cpt=x_, cpqm=y_, trans=None)
+                qt = QuantileTransformer(n_quantiles=40, random_state=0)
+                qt.fit(q_event.reshape(-1, 1))
+                q_event_cdf = qt.transform(q_event.reshape(-1,1)).flatten()
+                store_transformer(qt, version=f'{args.version}_cpt_{x_}_cpqm_{y_}')
 
-            from sklearn.preprocessing import QuantileTransformer
-            qt = QuantileTransformer(n_quantiles=40, random_state=0)
-            qt.fit(q_event.reshape(-1, 1))
+            # getting the eft weight for a certain point
+            eft_weight = hp.eval(coeffs.transpose(), [x,y])
 
-            q_event_cdf = qt.transform(q_event.reshape(-1,1)).flatten()
-
-            store_transformer(qt, version=f'{args.version}_cpt_{x}_cpqm_{y}')
-
-            bit_hist.fill(dataset="TTW",        bit=get_bit_score(ttW, cpt=x, cpqm=y, trans=qt), weight=ttW['weight']*2)
-            bit_hist.fill(dataset="TTZ",        bit=get_bit_score(ttZ, cpt=x, cpqm=y, trans=qt), weight=ttZ['weight']*2)
-            bit_hist.fill(dataset="TTH",        bit=get_bit_score(ttH, cpt=x, cpqm=y, trans=qt), weight=ttH['weight']*2)
-            bit_hist.fill(dataset="NP",         bit=get_bit_score(NP, cpt=x, cpqm=y, trans=qt), weight=NP['weight'])  # np weight already multiplied in
-            bit_hist.fill(dataset="rare",       bit=get_bit_score(rare, cpt=x, cpqm=y, trans=qt), weight=rare['weight']*2)
-            bit_hist.fill(dataset="diboson",    bit=get_bit_score(diboson, cpt=x, cpqm=y, trans=qt), weight=diboson['weight']*2)
-            bit_hist.fill(dataset="XG",         bit=get_bit_score(XG, cpt=x, cpqm=y, trans=qt), weight=XG['weight']*2)
-            bit_hist.fill(dataset="signal",     bit=q_event_cdf, weight=sig_test['weight'])
+            bit_hist.fill(dataset="TTW",        bit=get_bit_score(ttW,      cpt=x_, cpqm=y_, trans=qt), weight=ttW['weight']*2)
+            bit_hist.fill(dataset="TTZ",        bit=get_bit_score(ttZ,      cpt=x_, cpqm=y_, trans=qt), weight=ttZ['weight']*2)
+            bit_hist.fill(dataset="TTH",        bit=get_bit_score(ttH,      cpt=x_, cpqm=y_, trans=qt), weight=ttH['weight']*2)
+            bit_hist.fill(dataset="NP",         bit=get_bit_score(NP,       cpt=x_, cpqm=y_, trans=qt), weight=NP['weight'])  # np weight already multiplied in
+            bit_hist.fill(dataset="rare",       bit=get_bit_score(rare,     cpt=x_, cpqm=y_, trans=qt), weight=rare['weight']*2)
+            bit_hist.fill(dataset="diboson",    bit=get_bit_score(diboson,  cpt=x_, cpqm=y_, trans=qt), weight=diboson['weight']*2)
+            bit_hist.fill(dataset="XG",         bit=get_bit_score(XG,       cpt=x_, cpqm=y_, trans=qt), weight=XG['weight']*2)
+            bit_hist.fill(dataset="signal",     bit=get_bit_score(sig_test, cpt=x_, cpqm=y_, trans=qt), weight=sig_test['weight'])
 
             print (bit_hist['signal'].values())
 
             # fill a total hist for debugging
-            bit_hist.fill(dataset="total",        bit=get_bit_score(bkg_, cpt=x, cpqm=y, trans=qt), weight=bkg_['weight'])
+            bit_hist.fill(dataset="total",        bit=get_bit_score(bkg_, cpt=x_, cpqm=y_, trans=qt), weight=bkg_['weight'])
             for i in range(n_toys):
-                bit_hist.fill(dataset=f"toy_{i}",         bit=get_bit_score(bkg_.iloc[toys[i]], cpt=x, cpqm=y, trans=qt), weight=bkg_.iloc[toys[i]]['weight'])
+                bit_hist.fill(
+                    dataset=f"toy_{i}",
+                    bit=get_bit_score(bkg_.iloc[toys[i]], cpt=x_, cpqm=y_, trans=qt),
+                    weight=(bkg_.iloc[toys[i]]['weight'] * np.nan_to_num(bkg_.iloc[toys[i]]['weight_inj'],0)),
+                )
 
-            print("Total @SM")
-            print(bit_hist['total'].values())
-            print("Toy 1 @SM")
-            print(bit_hist['toy_0'].values())
-            print("Toy 2 @SM")
-            print(bit_hist['toy_1'].values())
+            #print("Total @SM")
+            #print(bit_hist['total'].values())
+            #print("Toy 1 @SM")
+            #print(sum(bkg_.iloc[toys[0]]['weight'] * bkg_.iloc[toys[0]]['weight_inj']))
+            #print(bit_hist['toy_0'].values())
+            #print("Toy 2 @SM")
+            #print(bit_hist['toy_1'].values())
+            #print(sum(bkg_.iloc[toys[1]]['weight'] * bkg_.iloc[toys[1]]['weight_inj']))
 
             hist_dict = {
                 'TTW': bit_hist['TTW'],
@@ -988,21 +1021,23 @@ if __name__ == '__main__':
                 res_tmp = card.calcNLL(sm_card)
                 results[f'SM_asimov_{x}_{y}'] = res_tmp['nll0'][0]+res_tmp['nll'][0]
 
-                sm_card = makeCardFromHist(
-                    hist_dict,
-                    ext='_SM_toy_0',
-                    systematics=systematics,
-                    blind=False,
-                    data=bit_hist['toy_0'],
-                   )
-                res_tmp = card.calcNLL(sm_card)
-                results[f'SM_toy_0_{x}_{y}'] = res_tmp['nll0'][0]+res_tmp['nll'][0]
+                for i in range(n_toys):
+                    sm_card = makeCardFromHist(
+                        hist_dict,
+                        #'SR',
+                        ext=f'_SM_toy_{i}',
+                        #sm_vals = sm_hist,
+                        systematics=systematics,
+                        blind=False,
+                        data=bit_hist[f"toy_{i}"],
+                    )
+                    res_tmp = card.calcNLL(sm_card)
+                    results[f'SM_toy_{i}_{x}_{y}'] = res_tmp['nll0'][0]+res_tmp['nll'][0]
 
-            eft_weight = hp.eval(coeffs.transpose(), [x,y])
             #eft_weight = hp.eval(coeffs_train.transpose(), [x,y])
 
             bsm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
-            bsm_hist.fill(q_event_cdf, weight=sig_test['weight']*eft_weight)
+            bsm_hist.fill(get_bit_score(sig_test, cpt=x_, cpqm=y_, trans=qt), weight=sig_test['weight']*eft_weight)
 
             print (bsm_hist.values())
             #print (bsm_hist.variances())
@@ -1010,7 +1045,7 @@ if __name__ == '__main__':
 
             #sm_hist = bh.numpy.histogram([], bins=bit_bins, histogram=bh.Histogram)
             sm_hist = bh.Histogram(bh.axis.Variable(bit_bins), storage=bh.storage.Weight())
-            sm_hist.fill(q_event_cdf, weight=sig_test['weight'])
+            sm_hist.fill(get_bit_score(sig_test, cpt=x_, cpqm=y_, trans=qt), weight=sig_test['weight'])
             #sm_hist.fill(q_event_cdf, weight=sig_train['weight'])
 
             if args.plot:
@@ -1152,6 +1187,12 @@ if __name__ == '__main__':
                     res_tmp = res_bsm_tmp['nll0'][0]+res_bsm_tmp['nll'][0]
                     results[f'BSM_toy_{i}_{x}_{y}'] = res_tmp
 
+        if args.fixed_template:
+            f_out = f'results_with_fixed_template_{args.temp_cpt}_{args.temp_cpqm}.pkl'
+        else:
+            f_out = 'results_baseline.pkl'
+        with open(f_out, "wb") as f:
+            pickle.dump(results, f)
 
         if args.fit and args.plot and len(X)>1:
             Z = np.array(z)
