@@ -44,13 +44,14 @@ if __name__ == '__main__':
     argParser.add_argument('--select_systematic', action='store', default="central", help="Define the skim to run on")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     argParser.add_argument('--skip_bit', action='store_true', default=None, help="Skip running BIT evaluation")
-    argParser.add_argument('--fixed_template', action='store_true', default=None, help="Use a fixed template (hard coded to cpt=5, cpqm=5)")
+    argParser.add_argument('--parametrized', action='store_true', default=None, help="Run fully parametrized, otherwise use a fixed template (hard coded to cpt=5, cpqm=-5)")
     args = argParser.parse_args()
 
     profile     = args.profile
     iterative   = args.iterative
     overwrite   = args.rerun
     small       = args.small
+    fixed_template = not args.parametrized
 
     year        = int(args.year[0:4])
     ul          = "UL%s"%(args.year[2:])
@@ -152,11 +153,11 @@ if __name__ == '__main__':
             #log_directory = '/eos/user/a/anpotreb/condor/log',
             memory = '4000MB',
             shared_temp_directory='/tmp',
-            transfer_input_files="analysis",
+            transfer_input_files=["analysis", "plots"],
             worker_extra_args=['--worker-port 10000:10070', '--nanny-port 10070:10100', '--no-dashboard'],
             job_script_prologue=[
                 # https://jobqueue.dask.org/en/latest/advanced-tips-and-tricks.html#run-setup-commands-before-starting-the-worker-with-job-script-prologue
-                "export PYTHONPATH=${PYTHONPATH}:$PWD/analysis/BIT/",
+                "export PYTHONPATH=${PYTHONPATH}:$PWD/analysis/BIT/:$PWD/analysis/",
             ],
         )
         #cluster = LPCCondorCluster()
@@ -181,7 +182,7 @@ if __name__ == '__main__':
     cache_dir = './outputs/'
     if not args.scan:
         cache_name += f'_cpt_{args.cpt}_cpqm_{args.cpqm}'
-    if args.fixed_template:
+    if fixed_template:
         cache_name += '_fixed'
     output = get_latest_output(cache_name, cache_dir)
     # find an old existing output
@@ -227,7 +228,7 @@ if __name__ == '__main__':
                 points=points,
                 hyperpoly=hp,
                 minimal=args.minimal,
-                fixed_template=args.fixed_template,
+                fixed_template=fixed_template,
             ),
         )
         util.save(output, cache_dir+cache_name)

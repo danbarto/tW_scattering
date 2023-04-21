@@ -219,7 +219,7 @@ def make_plot_from_dict(
         hep.histplot(
             data_h.values(overflow=overflow)[()]/central,
             edges,
-            yerr=(np.sqrt(data_h.values(overflow=overflow, sumw2=True)[()][1])/central),
+            yerr=(np.sqrt(np.abs(data_h.values(overflow=overflow, sumw2=True)[()][1]))/np.abs(central)),
             histtype="errorbar",
             stack=False,
             label=data_label,

@@ -6,10 +6,11 @@ from coffea import processor, hist, util
 from coffea.processor import accumulate
 import copy
 import numpy as np
+import re
 
-from Tools.config_helpers import loadConfig, load_yaml, data_path, get_latest_output
-from Tools.config_helpers import get_merged_output
-from Tools.helpers import get_samples
+from analysis.Tools.config_helpers import loadConfig, make_small, load_yaml, get_merged_output
+from analysis.Tools.config_helpers import lumi as lumis
+from analysis.Tools.samples import Samples
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -18,7 +19,64 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-from plots.helpers import makePlot, scale_and_merge
+from plots.helpers import makePlot, make_plot_from_dict
+
+def get_histograms(output, histograms, total=False):
+    '''
+    output - e.g. output['MET'] selected histogram
+    histograms - list of histograms to get, e.g. ['TTW', 'np_est_data']
+
+    keep systematic axes and kinematic axes, integrate/project away all others
+    '''
+    wildcard = re.compile('.')
+    out = {}
+    tmp = output.copy()
+
+    for hist in histograms:
+        out[hist] = tmp[hist].sum('dataset')
+
+    if total:
+        tmp = out[list(histograms)[0]].copy()
+        tmp.clear()
+        for hist in histograms:
+            tmp.add(out[hist])
+        return tmp
+    else:
+        return out
+
+def get_standard_plot(
+        output,
+        hist,
+        axis,
+        name,
+        log=False,
+        lumi=1,
+        blind=False,
+        overflow = 'over',
+        systematics = True,
+        normalize = False,
+):
+    mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'TTZ', 'TTH', 'top'])
+    data_options = ['DoubleMuon', 'SingleMuon', 'MuonEG', 'EGamma', 'DoubleEG', 'SingleElectron']
+    identifiers = [x.name for x in output[hist].axes()[0].identifiers()]
+    datasets = []
+    for d in data_options:
+        if d in identifiers:
+            datasets.append(d)
+
+    data = get_histograms(output[hist], datasets, total=True)
+
+    make_plot_from_dict(
+        mc, axis = axis,
+        data = data.integrate('systematic', 'central') if not blind else None,
+        save = plot_dir+sub_dir+name,
+        overflow = overflow,
+        log = log,
+        lumi = lumi,
+        systematics = systematics,
+        normalize = normalize,
+    )
+
 
 if __name__ == '__main__':
 
@@ -42,54 +100,59 @@ if __name__ == '__main__':
     year        = args.year
     cfg         = loadConfig()
 
-    ##year = int(args.year)
-    #era = ''
-    #ul = f"UL{str(year)[2:]}{era}"
-    ##cfg = loadConfig()
-
-    #samples = get_samples(f"samples_{ul}.yaml")
-    #mapping = load_yaml(data_path+"nano_mapping.yaml")
-
-    #renorm   = {}
-
     if year == '2018':
         data = ['SingleMuon', 'DoubleMuon', 'EGamma', 'MuonEG']
     elif year == '2019':
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron', 'EGamma']
     else:
         data = ['SingleMuon', 'DoubleMuon', 'DoubleEG', 'MuonEG', 'SingleElectron']
-    order = ['topW_lep', 'diboson', 'rare', 'TTW', 'TTH', 'TTZ', 'DY', 'top', 'XG']
+    order = ['topW_lep', 'diboson', 'rare', 'TTW', 'TTH', 'TTZ', 'top', 'XG']
 
     datasets = data + order
 
-    try:
-        lumi_year = int(year)
-    except:
-        lumi_year = year
-    if year == '2019':
-        lumi = sum([cfg['lumi'][y] for y in [2016, '2016APV', 2017, 2018]])
-    else:
-        lumi = cfg['lumi'][lumi_year]
+    years = ['2016', '2016APV', '2017', '2018']
+    select_histograms = [
+        #'bit_score_pp', 'bit_score_mm',
+        'N_fwd', 'N_jet', 'N_central', 'N_b', 'N_ele',
+        'N_tau', 'MET',
+    ]
 
-    postfix = '_DY' if args.DY else None
+    if year == '2019':
+        lumi = sum([lumis[y] for y in years])
+    else:
+        lumi = lumis[year]
+
+    samples = Samples.from_yaml(f'../analysis/Tools/data/samples_v0_8_0_SS.yaml')
+    mapping = load_yaml('../analysis/Tools/data/nano_mapping.yaml')
 
     if year == '2019':
         outputs = []
-        for y in ['2016', '2016APV', '2017', '2018']:
-            outputs.append(get_merged_output("OS_analysis", year=y, postfix=postfix))
+        for y in years:
+            print (y)
+            outputs.append(
+                get_merged_output(
+                    "forward_jet", y,
+                    '../outputs/',
+                    samples, mapping,
+                    lumi=lumis[y],
+                    variations = ['central', 'fake'],  # NOTE: modify here to include more systematic variations
+                    select_histograms=select_histograms,
+                ))
         output = accumulate(outputs)
         del outputs
     else:
-        output = get_merged_output("OS_analysis", year=year, postfix=postfix)
+        output = get_merged_output(
+            "forward_jet", year,
+            '../outputs/',
+            samples, mapping,
+            lumi=lumi,
+            variations = ['central', 'fake'],  # NOTE: modify here to include more systematic variations
+            select_histograms=select_histograms,
+        )
 
-    #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
-    plot_dir    = os.path.join("/home/daniel/TTW/tW_scattering/plots/images/", str(year), 'OS', args.version)
+    plot_dir    = os.path.join("../images/", str(year), 'OS', args.version)
+    sub_dir = '/mc/'
 
-    if args.DY: plot_dir = plot_dir.replace('OS', 'DY')
-    if args.postfix:
-        plot_dir += '_%s'%args.postfix
-    if TFnormalize:
-        plot_dir += '/normalized/'
 
     N_bins = hist.Bin('multiplicity', r'$N$', 10, -0.5, 9.5)
     N_bins_red = hist.Bin('multiplicity', r'$N$', 5, -0.5, 4.5)
@@ -103,628 +166,8 @@ if __name__ == '__main__':
     mjf_bins = hist.Bin('mass', r'$M\ (GeV)$', 50, 0, 2000)
     deltaEta_bins = hist.Bin('eta', r'$\eta $', 20, 0, 10)
     jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 50, 0, 500)
-    
-    my_labels = {
-        'topW_lep': 'top-W scat.',
-        'TTZ': r'$t\bar{t}Z$',
-        'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
-        'TTW': r'$t\bar{t}W$',
-        'TTH': r'$t\bar{t}H$',
-        'diboson': 'VV/VVV',
-        'rare': 'rare',
-        'top': r'$t\bar{t}$',
-        'XG': 'XG',  # this is bare XG
-        'DY': 'Drell-Yan',  # this is bare XG
-        'conv_mc': 'conversion',
-        'np_obs_mc': 'nonprompt (MC true)',
-        'np_est_mc': 'nonprompt (MC est)',
-        'cf_obs_mc': 'charge flip (MC true)',
-        'cf_est_mc': 'charge flip (MC est)',
-        'np_est_data': 'nonprompt (est)',
-        'cf_est_data': 'charge flip (est)',
-    }
 
-    my_colors = {
-        'topW_lep': '#FF595E',
-        'TTZ': '#FFCA3A',
-        'TTXnoW': '#FFCA3A',
-        'TTW': '#8AC926',
-        'TTH': '#34623F',
-        'diboson': '#525B76',
-        'rare': '#EE82EE',
-        'top': '#1982C4',
-        'XG': '#5bc0de',
-        'conv_mc': '#5bc0de',
-        'DY': '#6A4C93',
-        'np_obs_mc': '#1982C4',
-        'np_est_mc': '#1982C4',
-        'np_est_data': '#1982C4',
-        'cf_obs_mc': '#0F7173',
-        'cf_est_mc': '#0F7173',
-        'cf_est_data': '#0F7173',
-    }
+    blind = False
 
-    all_processes = [ x[0] for x in output['N_jet'].values().keys() ]
-    #data = ['MuonEG','DoubleMuon','EGamma','SingleElectron','SingleMuon', 'DoubleEG']
-    #order = ['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar', 'XG']
-    #order = ['topW_v3', 'diboson', 'TTXnoW', 'DY', 'ttbar', 'XG']
-    signals = []
-    omit    = [ x for x in all_processes if (x not in signals and x not in order and x not in data) ]
-
-    scale = {'DY': 1.5}
-
-    for log in True, False:
-
-        plot_dir_temp = plot_dir + "/log/" if log else plot_dir + "/lin/"
-
-        makePlot(output, 'lead_lep', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'lead_lep_pt')
-                 )
-
-        makePlot(output, 'lead_lep', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='mm',
-                 save=os.path.expandvars(plot_dir_temp+'lead_lep_pt_mm')
-                 )
-
-        makePlot(output, 'lead_lep', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='em',
-                 save=os.path.expandvars(plot_dir_temp+'lead_lep_pt_em')
-                 )
-
-        makePlot(output, 'lead_lep', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ lead \ lep\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='ee',
-                 save=os.path.expandvars(plot_dir_temp+'lead_lep_pt_ee')
-                 )
-
-        makePlot(output, 'lead_lep', 'eta',
-                 data=data,
-                 bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ lead \ lep$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'lead_lep_eta')
-                 )
-
-        #makePlot(output, 'lead_lep', 'phi',
-        #         data=data,
-        #         bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi\ lead \ lep$',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         save=os.path.expandvars(plot_dir_temp+'lead_lep_phi'),
-        #         )
-
-        makePlot(output, 'trail_lep', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ trail \ lep\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'trail_lep_pt'),
-                 )
-
-        makePlot(output, 'trail_lep', 'eta',
-                 data=data,
-                 bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ trail \ lep$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'trail_lep_eta'),
-                 )
-
-        #makePlot(output, 'trail_lep', 'phi',
-        #         data=data,
-        #         bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi\ trail \ lep$',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         save=os.path.expandvars(plot_dir_temp+'trail_lep_phi'),
-        #         )
-
-
-        makePlot(output, 'PV_npvsGood', 'multiplicity',
-                 data=data,
-                 bins=None, log=log, normalize=TFnormalize, axis_label=r'$N_{PV}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'PV_npvsGood'),
-                 )
-
-        makePlot(output, 'N_fwd', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{fwd\ jets}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 save=os.path.expandvars(plot_dir_temp+'N_fwd'),
-                 )
-
-        makePlot(output, 'N_fwd', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{fwd\ jets}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'N_fwd_stat'),
-                 )
-
-        if not args.DY:
-            makePlot(output, 'fwd_jet', 'pt',
-                     data=data,
-                     bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ selected\ fwd\ jet$ (GeV)',
-                     new_colors=my_colors, new_labels=my_labels,
-                     order=order,
-                     omit=omit,
-                     signals=signals,
-                     lumi=lumi,
-                     #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                     save=os.path.expandvars(plot_dir_temp+'fwd_jet_pt'),
-                     )
-
-            makePlot(output, 'fwd_jet', 'eta',
-                     data=data,
-                     bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ selected\ fwd\ jet$',
-                     new_colors=my_colors, new_labels=my_labels,
-                     order=order,
-                     omit=omit,
-                     signals=signals,
-                     lumi=lumi,
-                     #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                     save=os.path.expandvars(plot_dir_temp+'fwd_jet_eta'),
-                     )
-
-            #makePlot(output, 'fwd_jet', 'phi',
-            #         data=data,
-            #         bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi\ selected\ fwd\ jet$ (GeV)',
-            #         new_colors=my_colors, new_labels=my_labels,
-            #         order=order,
-            #         omit=omit,
-            #         signals=signals,
-            #         lumi=lumi,
-            #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-            #         save=os.path.expandvars(plot_dir_temp+'fwd_jet_phi'),
-            #         )
-
-        makePlot(output, 'N_jet', 'multiplicity',
-                 data=data,
-                 bins=N_bins, log=log, normalize=TFnormalize, axis_label=r'$N_{jet}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 save=os.path.expandvars(plot_dir_temp+'N_jet'),
-                 )
-
-        makePlot(output, 'lead_jet', 'pt',
-                 data=data,
-                 bins=jet_pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'lead_jet_pt'),
-                 )
-
-        makePlot(output, 'lead_jet', 'eta',
-                 data=data,
-                 bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ leading\ jet$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'lead_jet_eta'),
-                 )
-
-        #makePlot(output, 'j1', 'phi',
-        #         data=data,
-        #         bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi\ leading\ jet$ (GeV)',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        #         save=os.path.expandvars(plot_dir_temp+'j1_phi'),
-        #         )
-
-        makePlot(output, 'sublead_jet', 'pt',
-                 data=data,
-                 bins=jet_pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ subleading\ jet$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'sublead_jet_pt'),
-                 )
-
-        makePlot(output, 'sublead_jet', 'eta',
-                 data=data,
-                 bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ subleading\ jet$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 save=os.path.expandvars(plot_dir_temp+'sublead_jet_eta'),
-                 )
-
-        makePlot(output, 'N_b', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 save=os.path.expandvars(plot_dir_temp+'N_b'),
-                 )
-
-        #makePlot(output, 'N_central', 'multiplicity',
-        #         data=data,
-        #         bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{central\ jet}$',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        #         save=os.path.expandvars(plot_dir_temp+'N_central'),
-        #         )
-
-        makePlot(output, 'N_jet', 'n_ele',
-                 data=data,
-                 bins=N_bins_ele, log=log, normalize=TFnormalize, axis_label=r'$N_{ele}$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'N_ele'),
-                 )
-
-
-        '''
-        makePlot(output, 'b1', 'pt',
-        data=data,
-        bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ b-jet$ (GeV)',
-        new_colors=my_colors, new_labels=my_labels,
-        order=order,
-        omit=omit,
-        signals=signals,
-        lumi=lumi,
-        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir_temp+'b1_pt'),
-        )
-        makePlot(output, 'b1', 'eta',
-        data=data,
-        bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$\eta\ leading\ b-jet$ (GeV)',
-        new_colors=my_colors, new_labels=my_labels,
-        order=order,
-        omit=omit,
-        signals=signals,
-        lumi=lumi,
-        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir_temp+'b1_eta'),
-        )
-        makePlot(output, 'b1', 'phi',
-        data=data,
-        bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi\ leading\ b-jet$ (GeV)',
-        new_colors=my_colors, new_labels=my_labels,
-        order=order,
-        omit=omit,
-        signals=signals,
-        lumi=lumi,
-        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        save=os.path.expandvars(plot_dir_temp+'b1_phi'),
-        )
-        '''
-
-        makePlot(output, 'MET', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}^{miss}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['jes_up'], downHists=['jes_down'],
-                 channel='ee',
-                 rescale=scale,
-                 save=os.path.expandvars(plot_dir_temp+'MET_pt_ee'),
-                 )
-
-        makePlot(output, 'MET', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}^{miss}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['jes_up'], downHists=['jes_down'],
-                 channel='em',
-                 rescale=scale,
-                 save=os.path.expandvars(plot_dir_temp+'MET_pt_em'),
-                 )
-
-        makePlot(output, 'MET', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}^{miss}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['jes_up'], downHists=['jes_down'],
-                 channel='mm',
-                 rescale=scale,
-                 save=os.path.expandvars(plot_dir_temp+'MET_pt_mm'),
-                 )
-
-        makePlot(output, 'MET', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}^{miss}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 rescale=scale,
-                 #upHists=['jes_up', 'PU_up', 'b_up', 'l_up'], downHists=['jes_down', 'PU_down', 'b_down', 'l_down'],
-                 #upHists=['jes_up'], downHists=['jes_down'],
-                 save=os.path.expandvars(plot_dir_temp+'MET_pt'),
-                 )
-
-        makePlot(output, 'MET', 'phi',
-                 data=data,
-                 bins=None, log=log, normalize=TFnormalize, axis_label=r'$\phi(p_{T}^{miss})$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'MET_phi'),
-                 )
-
-        makePlot(output, 'N_tau', 'multiplicity',
-                 data=data,
-                 bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{tau\ }$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'N_tau'),
-                 )
-
-        #makePlot(output, 'N_track', 'multiplicity',
-        #         data=data,
-        #         bins=N_bins_red, log=log, normalize=TFnormalize, axis_label=r'$N_{track\ }$',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-        #         save=os.path.expandvars(plot_dir_temp+'N_track'),
-        #         )
-
-        makePlot(output, 'dilep_pt', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$p_{T}(\ell\ell)\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'dilep_pt'),
-                 )
-
-
-        makePlot(output, 'dilep_mass', 'mass',
-                 data=data,
-                 bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='ee',
-                 save=os.path.expandvars(plot_dir_temp+'dilep_mass_ee'),
-                 )
-
-        makePlot(output, 'dilep_mass', 'mass',
-                 data=data,
-                 bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='mm',
-                 save=os.path.expandvars(plot_dir_temp+'dilep_mass_mm'),
-                 )
-
-        makePlot(output, 'dilep_mass', 'mass',
-                 data=data,
-                 bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 channel='em',
-                 save=os.path.expandvars(plot_dir_temp+'dilep_mass_em'),
-                 )
-
-        makePlot(output, 'dilep_mass', 'mass',
-                 data=data,
-                 bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'dilep_mass'),
-                 )
-
-        if not args.DY:
-            makePlot(output, 'deltaEta', 'eta',
-                     data=data,
-                     bins=deltaEta_bins, log=log, normalize=TFnormalize, axis_label=r'$\Delta \eta(jj)$',
-                     new_colors=my_colors, new_labels=my_labels,
-                     order=order,
-                     omit=omit,
-                     signals=signals,
-                     lumi=lumi,
-                     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                     save=os.path.expandvars(plot_dir_temp+'deltaEta'),
-                     )
-        makePlot(output, 'dilep_mass_high_mt', 'mass',
-                 data=data,
-                 bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 save=os.path.expandvars(plot_dir_temp+'dilep_mass_high_mt'),
-                 )
-        for ch in ['ee','mm','em']:
-            makePlot(output, 'dilep_mass_high_mt', 'mass',
-                     data=data,
-                     bins=mass_bins, log=log, normalize=TFnormalize, axis_label=r'$M_{\ell\ell}$ (GeV)',
-                     new_colors=my_colors, new_labels=my_labels,
-                     order=order,
-                     omit=omit,
-                     signals=signals,
-                     lumi=lumi,
-                     channel=ch,
-                     save=os.path.expandvars(plot_dir_temp+'dilep_mass_high_mt_'+ch),
-                     )
-            makePlot(output, 'min_mt_lep_met', 'pt',
-                     data=data,
-                     bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$min\ M_{T}(\ell, p_{T}^{miss})\ (GeV)$',
-                     new_colors=my_colors, new_labels=my_labels,
-                     order=order,
-                     omit=omit,
-                     signals=signals,
-                     lumi=lumi,
-                     channel=ch,
-                     #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                     save=os.path.expandvars(plot_dir_temp+'min_mt_lep_met_'+ch),
-                     )
-
-
-        #makePlot(output, 'mjf_max', 'mass',
-        #         data=data,
-        #         bins=mjf_bins, log=log, normalize=TFnormalize, axis_label='mjf_max (GeV)',
-        #         new_colors=my_colors, new_labels=my_labels,
-        #         order=order,
-        #         omit=omit,
-        #         signals=signals,
-        #         lumi=lumi,
-        #         save=os.path.expandvars(plot_dir_temp+'mjf_max'),
-        #         )
-
-        makePlot(output, 'min_bl_dR', 'eta',
-                 data=data,
-                 bins=eta_bins, log=log, normalize=TFnormalize, axis_label=r'$min \Delta R (b, \ell)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'min_bl_dR'),
-                 )
-
-        makePlot(output, 'min_mt_lep_met', 'pt',
-                 data=data,
-                 bins=pt_bins, log=log, normalize=TFnormalize, axis_label=r'$min\ M_{T}(\ell, p_{T}^{miss})\ (GeV)$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'min_mt_lep_met'),
-                 )
-
-        makePlot(output, 'delta_phi_lep_met', 'delta_phi',
-                 data=data,
-                 bins=delta_phi_bins, log=log, normalize=TFnormalize, axis_label=r'$\Delta \varphi (\ell, p_{T}^{miss})$',
-                 new_colors=my_colors, new_labels=my_labels,
-                 order=order,
-                 omit=omit,
-                 signals=signals,
-                 lumi=lumi,
-                 #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
-                 save=os.path.expandvars(plot_dir_temp+'delta_phi_lep_met'),
-                 )
+    axis = N_bins
+    get_standard_plot(output, 'N_b', axis, name='N_b', log=False, lumi=lumi, overflow='none', blind=blind)
