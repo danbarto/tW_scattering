@@ -111,7 +111,7 @@ class SS_analysis(processor.ProcessorABC):
 
         presel = ak.num(events.Jet)>2
 
-        skip_eval_selection = False
+        skip_eval_selection = False  # split train / eval datasets by setting to False
         ev = events[presel]
         dataset = ev.metadata['dataset']
         if not (dataset.count('EFT') or re.search(data_pattern, dataset) or skip_eval_selection):
@@ -122,7 +122,7 @@ class SS_analysis(processor.ProcessorABC):
         else:
             eval_weight = 1
 
-        print(f"Eval weight: {eval_weight}")
+        #print(f"Eval weight: {eval_weight}")
 
         # don't distinguish between data and MC anymore
         variations = self.variations
@@ -597,10 +597,10 @@ class SS_analysis(processor.ProcessorABC):
                 x,y = p['point']
                 point = p['point']
                 if self.fixed_template:
-                    qt = load_transformer(f'v40_cpt_5_cpqm_-5')  # 5, -5 shown to yield similar performance to parametrized version
+                    qt = load_transformer(f'v50_cpt_5_cpqm_-5')  # 5, -5 shown to yield similar performance to parametrized version
                     score_trans = get_bit_score(bit_pred, cpt=5, cpqm=-5, trans=qt)
                 else:
-                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
+                    qt = load_transformer(f'v50_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
                 # Get the weights

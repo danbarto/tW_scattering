@@ -134,7 +134,7 @@ if __name__ == '__main__':
     if local:# and not profile:
         print("Make sure you have BIT in your local path (unfortunately it's not properly packaged)")
         print("This is automatically done on the workers")
-        print("export PYTHONPATH=${PYTHONPATH}:$PWD/analysis/BIT/")
+        print("export PYTHONPATH=${PYTHONPATH}:$PWD/analysis/BIT/:$PWD/analysis/")
         exe = processor.FuturesExecutor(workers=int(args.workers))
 
     elif iterative:
@@ -162,7 +162,7 @@ if __name__ == '__main__':
         )
         #cluster = LPCCondorCluster()
         # minimum > 0: https://github.com/CoffeaTeam/coffea/issues/465
-        cluster.adapt(minimum=1, maximum=1000)
+        cluster.adapt(minimum=1, maximum=100)
         client = Client(cluster)
 
 
