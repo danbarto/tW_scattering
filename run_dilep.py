@@ -122,6 +122,7 @@ if __name__ == '__main__':
 
     if args.sample == 'MCall':
         sample_list = ['DY', 'topW_lep', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
+        #sample_list = ['DY', 'top', 'TTW', 'TTZ', 'TTH', 'XG', 'rare', 'diboson']
     elif args.sample == 'data':
         if year == 2018:
             sample_list = ['DoubleMuon', 'MuonEG', 'EGamma', 'SingleMuon']
@@ -207,7 +208,7 @@ if __name__ == '__main__':
             #retries=3,
             savemetrics=True,
             schema=NanoAODSchema,
-            chunksize=20000,
+            chunksize=10000,
             maxchunks=None,
         )
 
