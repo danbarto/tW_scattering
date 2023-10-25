@@ -181,6 +181,7 @@ def make_plot_from_dict(
         data_val = data_h.values(overflow=overflow)[()]
 
     if signal:
+        #signal_h = signal['topW_lep'].project(axis.name, 'systematic', 'EFT').rebin(axis.name, axis).copy()
         signal_h = signal['topW_lep'].project(axis.name, 'systematic').rebin(axis.name, axis).copy()
 
     #total = np.zeros_like(hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()])
@@ -240,7 +241,7 @@ def make_plot_from_dict(
             w2=signal_h.integrate('systematic', 'central').values(overflow=overflow, sumw2=True)[()][1],
             #histtype="",
             stack=False,
-            label=[r'$C_{\varphi t}=C_{\varphi Q}^{-}=10$'],
+            label=[r'$C_{\varphi t}=C_{\varphi Q}^{-}=7$'],
             color='red',
             ax=ax
         )
