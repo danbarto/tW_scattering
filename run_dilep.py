@@ -45,6 +45,7 @@ if __name__ == '__main__':
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
     argParser.add_argument('--skip_bit', action='store_true', default=None, help="Skip running BIT evaluation")
     argParser.add_argument('--parametrized', action='store_true', default=None, help="Run fully parametrized, otherwise use a fixed template (hard coded to cpt=5, cpqm=-5)")
+    argParser.add_argument('--invMET', action='store_true', default=None, help="Invert MET requirement for nonprompt closure check")
     args = argParser.parse_args()
 
     profile     = args.profile
@@ -58,6 +59,9 @@ if __name__ == '__main__':
     era         = args.year[4:7]
     local       = not args.dask
     save        = True
+
+    if args.invMET:
+        print("!!! Running with inverted MET cut !!!")
 
     variations =  central_variation + base_variations + variations_jet_all + nonprompt_variations
     if args.select_systematic == 'all':
@@ -185,6 +189,8 @@ if __name__ == '__main__':
         cache_name += f'_cpt_{args.cpt}_cpqm_{args.cpqm}'
     if fixed_template:
         cache_name += '_fixed'
+    if args.invMET:
+        cache_name += '_invMET'
     output = get_latest_output(cache_name, cache_dir)
     # find an old existing output
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -230,6 +236,7 @@ if __name__ == '__main__':
                 hyperpoly=hp,
                 minimal=args.minimal,
                 fixed_template=fixed_template,
+                invMET = args.invMET,
             ),
         )
         util.save(output, cache_dir+cache_name)
