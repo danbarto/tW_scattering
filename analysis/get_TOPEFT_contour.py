@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
+
+from scipy import interpolate
+
 if __name__ == '__main__':
 
     f_in = uproot.open("../Histos.Frozen.cpQMcpt.root")
@@ -44,20 +47,81 @@ if __name__ == '__main__':
     Z = hist.values().transpose()
     Z = Z + (Z==0)*1000  # replace zeros with large values to remove additional contours
 
-    CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['#FF595E', '#5bc0de'], # 68/95 % CL
+    #CS = ax.contour(X, Y, Z, levels = [2.28, 5.99], colors=['#FF595E', '#5bc0de'], # 68/95 % CL
+    CS = ax.contour(X, Y, Z, levels = [5.99], colors=['#FF595E'], # 95 % CL
                     linestyles=('-',),linewidths=(4,))
 
 
-    fmt = {}
-    strs = ['68%', '95%']
-    for l, s in zip(CS.levels, strs):
-        fmt[l] = s
-
     # Label every other level using strings
-    ax.clabel(CS, CS.levels, inline=True, fmt=fmt, fontsize=10)
+    #fmt = {}
+    #strs = ['68%', '95%']
+    #for l, s in zip(CS.levels, strs):
+    #    fmt[l] = s
+    #ax.clabel(
+    #    CS,
+    #    CS.levels,
+    #    inline=True,
+    #    fmt=fmt,
+    #    fontsize=10,
+    #)
+
+
+    # TTZ measurment results
+
+    nodes = np.array( [
+        [13, 9],
+        [12, 10],
+        [9, 10],
+        [5, 8],
+        [0, 4],
+        [-5, -3],
+        [-6, -5],
+        [-7.5, -10],
+        [-7.5, -14],
+        [-7, -16],
+        [-6, -18],
+        [-5, -19],
+        [-2.5, -20],
+        [0, -19],
+        [2, -18],
+        [1, -16],
+        [0, -14],
+        [-1, -10],
+        [0, -4],
+        [2.5, 0],
+        [5, 3],
+        [10, 6],
+        [12, 7.5],
+        [12.7, 8],
+        [13, 9],
+    ] )
+
+    ttz_x = nodes[:,0]
+    ttz_y = nodes[:,1]
+
+    tck,u     = interpolate.splprep( [ttz_x,ttz_y] ,s = 0 )
+    ttz_xnew, ttz_ynew = interpolate.splev( np.linspace( 0, 1, 100 ), tck,der = 0)
+
+    ax.plot( ttz_xnew, ttz_ynew, linewidth=4, color='#525B76')
+
+    import matplotlib.patches as mpatches
+    #patch1 = mpatches.Patch(color='#FF595E', label='68% CL expected')
+    patch2 = mpatches.Patch(color='#FF595E', label='95% CL exp, TOP-22-006')
+    patch3 = mpatches.Patch(color='#525B76', label='95% CL obs, TOP-21-001')
+
+    ax.legend(handles=[
+    #    patch1,
+        patch2,
+        patch3,
+    ])
 
     fig.savefig('TOPEFT_ver4.png')
-    
+
+
+    plt.show()
+
+
+
     if False:
         # NOTE old attempt to use the fit output directly, but this needs smoothing
         # that's why the above histograms are used
