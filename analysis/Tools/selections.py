@@ -92,6 +92,7 @@ class Selection:
         self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
+        self.selection.add('invMET',        (self.met.pt<30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
         self.selection.add('offZ',          offZ )
