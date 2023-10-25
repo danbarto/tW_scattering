@@ -5,6 +5,7 @@ import uproot
 import numpy as np
 from analysis.Tools.dataCard import *
 from analysis.Tools.helpers import make_bh
+from analysis.Tools.defaults import variations_jet_all_list
 import boost_histogram as bh
 
 wildcard = re.compile(r'.', re.UNICODE)
@@ -293,7 +294,8 @@ def get_systematics(histogram, year, eft_point,
 
     for proc in all_processes:
         systematics += [
-            ('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            #('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            #('jer_%s'%year,     get_unc(histogram, proc, 'jer',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
@@ -301,12 +303,17 @@ def get_systematics(histogram, year, eft_point,
             ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
         ]
 
+        for var in variations_jet_all_list:
+            systematics += [
+                (f'{var}_{year}',     get_unc(histogram, proc, var,  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ]
+
     for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
         systematics += [
             #('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
             ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
             ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
-            ('scale', get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('scale_%s'%proc, get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
         for i in range(1,101):
             systematics.append(
@@ -316,20 +323,20 @@ def get_systematics(histogram, year, eft_point,
                                          norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
             )
 
-    #systematics += [
-    #    ('fake_el_closure', get_unc(histogram, wildcard, 'fake_el_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
-    #    ('fake_mu_closure', get_unc(histogram, wildcard, 'fake_mu_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
-    #    ('fake_el', get_unc(histogram, wildcard, 'fake_el', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
-    #    ('fake_mu', get_unc(histogram, wildcard, 'fake_mu', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
-    #    ('fake_mu_pt1', get_unc(histogram, wildcard, 'fake_mu_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_mu_pt2', get_unc(histogram, wildcard, 'fake_mu_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_el_pt1', get_unc(histogram, wildcard, 'fake_el_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_el_pt2', get_unc(histogram, wildcard, 'fake_el_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_mu_be1', get_unc(histogram, wildcard, 'fake_mu_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_mu_be2', get_unc(histogram, wildcard, 'fake_mu_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_el_be1', get_unc(histogram, wildcard, 'fake_el_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #    ('fake_el_be2', get_unc(histogram, wildcard, 'fake_el_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
-    #]
+    systematics += [
+        ('fake_el_closure', get_unc(histogram, wildcard, 'fake_el_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+        ('fake_mu_closure', get_unc(histogram, wildcard, 'fake_mu_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+        ('fake_el', get_unc(histogram, wildcard, 'fake_el', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+        ('fake_mu', get_unc(histogram, wildcard, 'fake_mu', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
+        ('fake_mu_pt1', get_unc(histogram, wildcard, 'fake_mu_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_mu_pt2', get_unc(histogram, wildcard, 'fake_mu_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_el_pt1', get_unc(histogram, wildcard, 'fake_el_pt1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_el_pt2', get_unc(histogram, wildcard, 'fake_el_pt2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_mu_be1', get_unc(histogram, wildcard, 'fake_mu_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_mu_be2', get_unc(histogram, wildcard, 'fake_mu_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_el_be1', get_unc(histogram, wildcard, 'fake_el_be1', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+        ('fake_el_be2', get_unc(histogram, wildcard, 'fake_el_be2', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True, symmetric=True), 'nonprompt'),
+    ]
 
     systematics += [
         #('signal_norm', 1.10, 'signal'),
@@ -349,7 +356,8 @@ def get_systematics(histogram, year, eft_point,
         ('tth_scale_norm', 1.092, 'TTH'),
         ('rare_norm', 1.20, 'rare'),
         ('diboson_norm', 1.20, 'diboson'),
-        ('nonprompt_norm', 1.30, 'nonprompt'),
+        #
+        #('nonprompt_norm', 1.30, 'nonprompt'),
         ('chargeflip_norm', 1.20, 'chargeflip'),
         ('conv_norm', 1.20, 'conv')
     ]
@@ -367,14 +375,15 @@ def add_signal_systematics(histogram, year, eft_point,
     if correlated:
         year = "cor"
     systematics += [
-        ('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        #('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        #('jer_%s'%year,     get_unc(histogram, proc, 'jer',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('b_%s'%year,       get_unc(histogram, proc, 'b',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('light_%s'%year,   get_unc(histogram, proc, 'l',    eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('mu_%s'%year,      get_unc(histogram, proc, 'mu',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('ele_%s'%year,     get_unc(histogram, proc, 'ele',  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         ('PU',              get_unc(histogram, proc, 'PU',   eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
         #('pdf',             get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal"),
-        ('scale',           get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
+        ('scale_signal',    get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight'), indices=[0,1,3,4,6,7]), "signal"),
     ]
     for i in range(1,101):
         systematics.append(
@@ -383,6 +392,10 @@ def add_signal_systematics(histogram, year, eft_point,
                                         select_indices = i,
                                         norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), "signal")
         )
+    for var in variations_jet_all_list:
+        systematics += [
+            (f'{var}_{year}',     get_unc(histogram, proc, var,  eft_point, rebin=rebin, overflow=overflow, quiet=True), "signal"),
+        ]
 
     return systematics
 
@@ -440,7 +453,7 @@ def makeCardFromHist(
     if data:
         print("Found observation histogram")
         h_tmp["observation"] = data.copy()
-        h_tmp["observation"] = h_tmp["observation"].sum('dataset')  # reduce to 1D histogram
+        h_tmp["observation"] = h_tmp["observation"]#.sum('dataset')  # reduce to 1D histogram
 
     # get an axis
     axis = h_tmp["signal"].axes()[0]
