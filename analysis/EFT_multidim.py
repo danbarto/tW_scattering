@@ -26,9 +26,10 @@ plt.style.use(hep.style.CMS)
 from plots.helpers import makePlot, colors, finalizePlotDir
 from analysis.Tools.helpers import make_bh, get_samples
 from analysis.Tools.config_helpers import get_cache, loadConfig, data_pattern, load_yaml, data_path
+from analysis.Tools.config_helpers import lumi as lumis
 from analysis.Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
-from analysis.Tools.yahist_to_root import yahist_to_root
 from analysis.Tools.dataCard import dataCard
+from analysis.Tools.samples import Samples
 
 from analysis.Tools.limits import get_systematics, add_signal_systematics
 
@@ -200,7 +201,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
                plot_dir='./',
                systematics=True,
                bsm_scales={},
-               histogram_incl = None
+               histogram_incl = None,
+               signal_histogram = None,
                ):
 
     print (region)
@@ -255,7 +257,11 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
-    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
+    if signal_histogram:
+        pass
+    else:
+        signal_histogram = histogram
+    signal = signal_histogram[('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
     signal = signal.rebin(axis.name, axis)
 
     if systematics:
@@ -282,7 +288,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
             print ("No lumi systematic assigned.")
 
         print ("Getting signal systematics")
-        systematics = add_signal_systematics(histogram, year, sm_point,
+        systematics = add_signal_systematics(signal_histogram, year, sm_point,
                                                 systematics=systematics,
                                                 correlated=False,
                                                 proc='topW_lep',
@@ -557,7 +563,8 @@ if __name__ == '__main__':
 
         for year in years:
             # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
-            outputs[year] = util.load(f'./outputs/{year}_merged.coffea')
+            outputs[year] = util.load(f'./outputs/{year}_fixed_merged.coffea')
+            signal_outputs[year] = util.load(f'./outputs/{year}_signal_merged.coffea')
             #if args.regions in ['inclusive', 'all']:
             #    outputs[year] = get_merged_output(
             #        'SS_analysis',
@@ -637,10 +644,7 @@ if __name__ == '__main__':
             finalizePlotDir(plot_dir)
 
             ul = str(year)[2:]
-            if year == '2016APV':
-                lumi = cfg['lumi'][year]
-            else:
-                lumi = cfg['lumi'][int(year)]
+            lumi = lumis[year]
 
             for region, axis, get_histo in regions:
                 if args.overwrite:
@@ -655,7 +659,7 @@ if __name__ == '__main__':
                         histogram_incl = output['bit_score_incl']  # NOTE not nice, but need this for now
                     else:
                         histogram_incl = None
-                    cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl))
+                    cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl, get_hist(output_signal)))
                 #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
                 #                               plot_dir='./',
                 #                               systematics=True,
