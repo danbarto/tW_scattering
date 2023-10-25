@@ -45,7 +45,7 @@ from analysis.Tools.pileup import pileup
 import warnings
 warnings.filterwarnings("ignore")
 
-from analysis.Tools.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
+from analysis.Tools.multiclassifier_tools import load_transformer
 from analysis.BIT.BoostedInformationTreeP3 import BoostedInformationTree
 from analysis.boosted_information_tree import get_bit_score
 
@@ -68,7 +68,8 @@ class SS_analysis(processor.ProcessorABC):
                  reweight=1,
                  minimal=False,
                  fixed_template=True,
-                 toys=0,
+                 toys=0,  # old?
+                 invMET=False,
                  ):
         self.variations = variations
 
@@ -99,6 +100,7 @@ class SS_analysis(processor.ProcessorABC):
         self.weights = weights
 
         self.reweight = reweight
+        self.invMET = invMET
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -108,6 +110,9 @@ class SS_analysis(processor.ProcessorABC):
 
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
+
+        if self.invMET:
+            print("!!! Running with inverted MET cut !!!")
 
         presel = ak.num(events.Jet)>2
 
@@ -355,10 +360,19 @@ class SS_analysis(processor.ProcessorABC):
         if var['name'] == 'central':
             # Only fill the cutflow onece :)
             cutflow     = Cutflow(output, ev, weight=weight)
-            baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
+            if self.invMET:
+                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0', 'MET>30'], add=['invMET'])
+            else:
+                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
         else:
-            baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
-        baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
+            if self.invMET:
+                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0', 'MET>30'], add=['invMET'])
+            else:
+                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
+        if self.invMET:
+            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0', 'MET>30'], add=['invMET'])  # this is for charge flip estimation
+        else:
+            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
 
         # this defines all the dedicated selections for charge flip, nonprompt, conversions
         if not re.search(data_pattern, dataset):
