@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import numpy as np
 import pandas as pd
 import uproot
@@ -104,22 +105,54 @@ if __name__ == '__main__':
 
     ax.plot( ttz_xnew, ttz_ynew, linewidth=4, color='#525B76')
 
+
+
+    # load results from this analysis
+    with open("../results/results_bit_all_NLO_all_20231026_222110.json", "r") as f:
+        results = json.load(f)["data"]
+
+    rx = np.arange(-7,8,1)
+    ry = np.arange(-7,8,1)
+    X2, Y2 = np.meshgrid(rx, ry)
+    z_flat = []
+
+    scan = zip(X2.flatten(), Y2.flatten())
+    for x, y in scan:
+        z_flat.append(results[f"cpt_{y}_cpqm_{x}"])
+
+    z = np.array(z_flat)
+    Z2 = z.reshape(X2.shape)
+
+    Z2 = Z2*(Z2>0)*1 + Z2*(Z2<0)*(-0.1)  # replace zeros with large values to remove additional contours
+
+
+    CS2 = ax.contour(X2, Y2, Z2, levels = [5.99], colors=['#8AC926'], # 95 % CL
+                    linestyles=('-',),linewidths=(4,))
+
     import matplotlib.patches as mpatches
     #patch1 = mpatches.Patch(color='#FF595E', label='68% CL expected')
-    patch2 = mpatches.Patch(color='#FF595E', label='95% CL exp, TOP-22-006')
-    patch3 = mpatches.Patch(color='#525B76', label='95% CL obs, TOP-21-001')
+    patch2 = mpatches.Patch(color='#FF595E', label='95% CL exp, TOP-22-006 (multilepton)')
+    patch3 = mpatches.Patch(color='#525B76', label='95% CL obs, TOP-21-001 (ttZ/tZq)')
+    patch4 = mpatches.Patch(color='#8AC926', label='95% CL expected (top-W scattering + ttZ)')
 
     ax.legend(handles=[
     #    patch1,
         patch2,
         patch3,
+        patch4,
     ])
 
-    fig.savefig('TOPEFT_ver4.png')
+    ax.set_ylim(-20, 20)
+    ax.set_xlim(-20, 20)
+
+    ax.set_xlabel(r'$C_{\varphi Q}^{-}/\Lambda^{2} (TeV^{-2})$')
+    ax.set_ylabel(r'$C_{\varphi t}/\Lambda^{2} (TeV^{-2})$')
+
+
+    fig.savefig('TOPEFT_ver6.png')
 
 
     plt.show()
-
 
 
     if False:
