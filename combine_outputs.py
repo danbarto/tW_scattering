@@ -30,21 +30,36 @@ if __name__ == '__main__':
     mapping = load_yaml('analysis/Tools/data/nano_mapping.yaml')
 
     if args.signal:
-        outputs.append(get_merged_output(
-            'SS_analysis',
-            year,
-            './outputs/',
-            samples, mapping,
-            lumi=lumi,
-            postfix='_fixed',
-            select_datasets = ['topW_lep'],
-            variations = ['central', 'base', 'jes', 'jer'],
-            select_histograms = ['bit_score_incl', 'bit_score_pp', 'bit_score_mm'],
-            ))
-        output = accumulate(outputs)
-        util.save(output, f'./outputs/{year}_signal_merged.coffea')  # this will just always be the latest one
+        if args.trilep:
+            outputs.append(get_merged_output(
+                'trilep_analysis',
+                year,
+                './outputs/',
+                samples, mapping,
+                lumi=lumi,
+                postfix='',
+                select_datasets = ['topW_lep'],
+                variations = ['central', 'base', 'jes', 'jer'],
+                select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW', 'LT_WZ', 'LT_XG'],
+                ))
+            output = accumulate(outputs)
+            util.save(output, f'./outputs/{year}_signal_trilep_merged.coffea')  # this will just always be the latest one
+        else:
+            outputs.append(get_merged_output(
+                'SS_analysis',
+                year,
+                './outputs/',
+                samples, mapping,
+                lumi=lumi,
+                postfix='_fixed',
+                select_datasets = ['topW_lep'],
+                variations = ['central', 'base', 'jes', 'jer'],
+                select_histograms = ['bit_score_incl', 'bit_score_pp', 'bit_score_mm'],
+                ))
+            output = accumulate(outputs)
+            util.save(output, f'./outputs/{year}_signal_merged.coffea')  # this will just always be the latest one
         #
-    elif args.trilep:
+    if args.trilep and not args.signal:
         outputs.append(get_merged_output(
             'trilep_analysis',
             year,
@@ -54,13 +69,13 @@ if __name__ == '__main__':
             postfix='_cpt_0_cpqm_0',
             select_datasets = ['data', 'MCall'],
             variations = ['central', 'fake', 'base', 'jes', 'jer'],
-            select_histograms = ["dilepton_mass_ttZ", "signal_region_topW"],
+            select_histograms = ["dilepton_mass_ttZ", "signal_region_topW", "LT_WZ", "LT_XG"],
             ))
 
         output = accumulate(outputs)
         util.save(output, f'./outputs/{year}_trilep_merged.coffea')  # this will just always be the latest one
 
-    else:
+    elif not args.signal:
 
         if args.parametrized:
             # define the scan
