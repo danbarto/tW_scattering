@@ -200,6 +200,10 @@ class Selection:
 
         pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
         neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
+        trilep = choose(lepton, 3)
+        M3l = (trilep['0'].p4 + trilep['1'].p4 + trilep['2'].p4).mass
+        M3l_onZ = (ak.any(abs(M3l-91.2)<15, axis=1))
+
         
         #triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset, era=self.era)
         triggers  = getTriggers(self.events, year=self.year, dataset=self.dataset)
@@ -235,6 +239,7 @@ class Selection:
         self.selection.add('ST>600',        (st_veto>600) )
         self.selection.add('offZ',          offZ )
         self.selection.add('onZ',           onZ )
+        self.selection.add('M3l_onZ',       M3l_onZ )
         self.selection.add('min_mll',       (min_mll) )
 
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
@@ -267,6 +272,7 @@ class Selection:
             'XG': baseline + [
                 'N_btag=0',
                 'offZ',
+                'M3l_onZ',
             ],
             'topW': baseline + [
                 'N_jet>2',
