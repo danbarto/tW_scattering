@@ -487,8 +487,10 @@ def makeCardFromHist(
             h_tmp_bsm['signal'] = bsm_hist
             out_hist_tmp = h_tmp_bsm['signal']
         else:
+            # it is not a boost histogram for both SS and trilep
             h_tmp_bsm['signal'] = bsm_hist.sum('dataset')
             out_hist_tmp = h_tmp_bsm['signal'].to_hist()
+
         out_hist_tmp.view().value = np.maximum(out_hist_tmp.view().value, 0.01*np.ones_like(out_hist_tmp.view().value))
         fout['signal'] = out_hist_tmp
     else:
