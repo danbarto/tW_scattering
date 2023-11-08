@@ -25,7 +25,8 @@ plt.style.use(hep.style.CMS)
 
 from plots.helpers import makePlot, make_plot_from_dict
 
-def get_histograms(output, histograms, total=False):
+
+def get_histograms(output, histograms, total=False, subtract=[], eft='cpt_0_cpqm_0'):
     '''
     output - e.g. output['MET'] selected histogram
     histograms - list of histograms to get, e.g. ['TTW', 'np_est_data']
@@ -36,7 +37,11 @@ def get_histograms(output, histograms, total=False):
     out = {}
     # remove EFT axes that's not always there
     if 'EFT' in output.axes():
-        tmp = output.integrate('EFT', 'central').copy()
+        #tmp = output.integrate('EFT', 'central').copy()
+        if (eft,) in output.project('EFT').values():
+            tmp = output.integrate('EFT', eft).copy()
+        else:
+            tmp = output.integrate('EFT', 'central').copy()
     else:
         tmp = output.copy()
 
@@ -56,15 +61,75 @@ def get_histograms(output, histograms, total=False):
             except KeyError:
                 # for histograms without prediction axis
                 out[hist] = tmp[(hist, 'central')].sum('dataset')
+            #out[hist] = tmp[(hist, 'central')].sum('dataset', 'prediction')
+
+    for hist in subtract:
+        for i, ax in enumerate(all_axes):
+            ax_name = ax.name
+            if hist in [x.name for x in ax.identifiers()]:
+                break
+
+        tmp.scale({hist: -1}, axis=ax_name)
+        if ax_name == 'prediction':
+            out[hist] = tmp[(wildcard, hist)].sum('dataset', 'prediction')
+        elif ax_name == 'dataset':
+            try:
+                out[hist] = tmp[(hist, 'central')].sum('dataset', 'prediction')
+            except KeyError:
+                # for histograms without prediction axis
+                out[hist] = tmp[(hist, 'central')].sum('dataset')
+
 
     if total:
         tmp = out[list(histograms)[0]].copy()
         tmp.clear()
-        for hist in histograms:
+        for hist in histograms + subtract:
             tmp.add(out[hist])
         return tmp
     else:
         return out
+
+
+#def get_histograms(output, histograms, total=False):
+#    '''
+#    output - e.g. output['MET'] selected histogram
+#    histograms - list of histograms to get, e.g. ['TTW', 'np_est_data']
+#
+#    keep systematic axes and kinematic axes, integrate/project away all others
+#    '''
+#    wildcard = re.compile('.')
+#    out = {}
+#    # remove EFT axes that's not always there
+#    if 'EFT' in output.axes():
+#        tmp = output.integrate('EFT', 'central').copy()
+#    else:
+#        tmp = output.copy()
+#
+#    all_axes = tmp.axes()
+#    for hist in histograms:
+#        # find whether the histogram is in predicitions or datasets
+#        for i, ax in enumerate(all_axes):
+#            ax_name = ax.name
+#            if hist in [x.name for x in ax.identifiers()]:
+#                break
+#
+#        if ax_name == 'prediction':
+#            out[hist] = tmp[(wildcard, hist)].sum('dataset', 'prediction')
+#        elif ax_name == 'dataset':
+#            try:
+#                out[hist] = tmp[(hist, 'central')].sum('dataset', 'prediction')
+#            except KeyError:
+#                # for histograms without prediction axis
+#                out[hist] = tmp[(hist, 'central')].sum('dataset')
+#
+#    if total:
+#        tmp = out[list(histograms)[0]].copy()
+#        tmp.clear()
+#        for hist in histograms:
+#            tmp.add(out[hist])
+#        return tmp
+#    else:
+#        return out
 
 def get_standard_plot(
         output,
@@ -78,6 +143,7 @@ def get_standard_plot(
         systematics = True,
         normalize = False,
         dd=True,
+        signal = None,
 ):
     if dd:
         mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TTH', 'np_est_data'])
@@ -90,6 +156,8 @@ def get_standard_plot(
         if d in identifiers:
             datasets.append(d)
 
+    if signal:
+        signal = get_histograms(signal[hist], ['topW_lep'], eft='eft_cpt_7_cpqm_-7')
     data = get_histograms(output[hist], datasets, total=True)
 
     make_plot_from_dict(
@@ -101,6 +169,7 @@ def get_standard_plot(
         lumi = lumi,
         systematics = systematics,
         normalize = normalize,
+        signal = signal,
     )
 
 def get_nonprompt_plot(output, hist, axis, name, log=False, overflow='over'):
@@ -156,12 +225,16 @@ if __name__ == '__main__':
 
     if year == '2019':
         outputs = []
+        signal_outputs = []
         for y in years:
             outputs.append(get_merged_output("trilep_analysis", y, '../outputs/', samples, mapping, lumi=lumis[y], postfix='_cpt_0_cpqm_0'))
+            outputs.append(get_merged_output("trilep_analysis", y, '../outputs/', samples, mapping, lumi=lumis[y], postfix=''))
         output = accumulate(outputs)
+        signal_output = accumulate(signal_outputs)
         del outputs
     else:
         output = get_merged_output("trilep_analysis", year,'../outputs/', samples, mapping, lumi=lumi, postfix='_cpt_0_cpqm_0')
+        signal_output = get_merged_output("trilep_analysis", year,'../outputs/', samples, mapping, lumi=lumi, postfix='', select_datasets=['topW_lep'])
 
     #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
     plot_dir    = os.path.join("../images/", str(year), 'trilep', args.version)
@@ -199,8 +272,9 @@ if __name__ == '__main__':
 
     axis = hist.Bin('mass', r'$m_{\ell\ell} (GeV)$', 20, 81, 101)
     get_standard_plot(output, 'dilepton_mass_WZ', axis, name='dilepton_mass_WZ', log=False, lumi=lumi, blind=blind)
-    get_standard_plot(output, 'dilepton_mass_XG', axis, name='dilepton_mass_XG', log=False, lumi=lumi, blind=blind)
     get_standard_plot(output, 'dilepton_mass_ttZ', axis, name='dilepton_mass_ttZ', log=False, lumi=lumi, blind=blind)
+    axis = hist.Bin('mass', r'$m_{\ell\ell} (GeV)$', 20, 0, 200)
+    get_standard_plot(output, 'dilepton_mass_XG', axis, name='dilepton_mass_XG', log=False, lumi=lumi, blind=blind)
 
     axis = hist.Bin('pt', r'$p_{T} (GeV)$', 25, 0, 500)
     get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
@@ -212,7 +286,17 @@ if __name__ == '__main__':
     get_standard_plot(output, 'LT_ttZ', axis, name='LT_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'LT_XG', axis, name='LT_XG', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'LT_WZ', axis, name='LT_WZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
-    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW', log=False, lumi=lumi, blind=True, normalize=TFnormalize)
+    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW', log=False, lumi=lumi, blind=True, normalize=TFnormalize, signal=signal_output)
+
+
+    # actual signal region plots; and different projections
+    axis = hist.Bin('N', r"$N_{SF\ OS}$", 3, -0.5, 2.5)
+    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW_NSFOS', log=False, lumi=lumi, blind=True, normalize=TFnormalize)
+    axis = hist.Bin('charge', r"$\Sigma q$", 3, -1.5, 1.5)
+    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW_charge', log=False, lumi=lumi, blind=True, normalize=TFnormalize)
+    axis = hist.Bin('lt', r"$L_{T}\ (GeV)$", [0,400,1000])
+    get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW_lt', log=False, lumi=lumi, blind=True, normalize=TFnormalize, signal=signal_output)
+
 
     axis = N_bins
     get_standard_plot(output, 'N_jet_ttZ', axis, name='N_jet_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)

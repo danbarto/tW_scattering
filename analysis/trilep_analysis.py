@@ -422,9 +422,10 @@ class trilep_analysis(processor.ProcessorABC):
                         other = other,
                     )
 
+            # we always combine the below selections with the baseline, so we can use the *only* functionality
             ttZ_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
             WZ_sel  = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
-            XG_sel  = sel.trilep_baseline(only=['N_btag=0', 'offZ'])
+            XG_sel  = sel.trilep_baseline(only=['N_btag=0', 'offZ', 'M3l_onZ'])
             sig_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
 
             if var['name'] == 'central':
@@ -719,6 +720,25 @@ class trilep_analysis(processor.ProcessorABC):
                         mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & ttZ_sel)],
                         weight      = weight.weight(modifier=shift)[(BL & ttZ_sel)],
                     )
+
+                    output['LT_WZ'].fill(
+                        dataset     = dataset,
+                        systematic  = var['name'],
+                        prediction  = 'central',
+                        EFT         = 'central',
+                        lt          = lt[(BL & WZ_sel)],
+                        weight      = weight.weight(modifier=shift)[(BL & WZ_sel)],
+                    )
+
+                    output['LT_XG'].fill(
+                        dataset     = dataset,
+                        systematic  = var['name'],
+                        prediction  = 'central',
+                        EFT         = 'central',
+                        lt          = lt[(BL & XG_sel)],
+                        weight      = weight.weight(modifier=shift)[(BL & XG_sel)],
+                    )
+
                 
 
         return output
