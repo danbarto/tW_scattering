@@ -78,8 +78,11 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                       plot_dir='./',
                       systematics=False,
                       bsm_scales={},
+                      histogram_incl = None,
+                      signal_histogram = None,
                       ):
 
+    print(f"Making trilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
     x = cpt
     y = cpqm
     histo_name = region
@@ -127,52 +130,63 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     observation._sumw[()] = np.concatenate([unblind, blind])
 
     print ("Filling signal histogram")
-    signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
+    if signal_histogram:
+        pass
+    else:
+        signal_histogram = histogram
+    signal = signal_histogram[('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
     signal = signal.rebin(axis.name, axis)
+    #print()
+    #signal = histogram[('topW_lep', bsm_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()  # FIXME this will eventually need the EFT axis?
+    #print("!!!", signal.values())
+    #print(f"{axis.name=}")
+    #print(f"{region=}")
+    #signal = signal.rebin(axis.name, axis)
+    #print("!!!", signal.values())
 
-    #systematics= [
-    #    ('signal_norm', 1.1, 'signal'),
-    #    ('TTW_norm', 1.15, 'TTW'),
-    #    ('TTZ_norm', 1.10, 'TTZ'),
-    #    ('TTH_norm', 1.15, 'TTH'),
-    #    ('conv_norm', 1.20, 'conv'),
-    #    ('diboson_norm', 1.20, 'diboson'),
-    #    ('nonprompt_norm', 1.30, 'nonprompt'),
-    #]
-    if systematics:
-        # NOTE this loads background systematics.
-        # Not fully complete, but most important systematics are here
-        print ("Getting Background systematics")
-        systematics = get_systematics(histogram, year, sm_point,
-                                        correlated=False,
-                                        signal=False,
-                                        overflow='none',
-                                        samples=samples[year],
-                                        mapping=mapping[f'UL{ul}'],
-                                        rebin=axis,
-                                        )
-        if year.count('2016'):
-            print ("lumi uncertainties for 2016")
-            systematics += lumi_systematics_2016
-        elif year.count('2017'):
-            print ("lumi uncertainties for 2017")
-            systematics += lumi_systematics_2017
-        elif year.count('2018'):
-            print ("lumi uncertainties for 2018")
-            systematics += lumi_systematics_2018
-        else:
-            print ("No lumi systematic assigned.")
+    systematics= [
+        ('signal_norm', 1.1, 'signal'),
+        ('TTW_norm', 1.15, 'TTW'),
+        ('TTZ_norm', 1.10, 'TTZ'),
+        ('TTH_norm', 1.15, 'TTH'),
+        ('conv_norm', 1.20, 'conv'),
+        ('diboson_norm', 1.20, 'diboson'),
+        ('nonprompt_norm', 1.30, 'nonprompt'),
+    ]
+    #if systematics:
+    #    # NOTE this loads background systematics.
+    #    # Not fully complete, but most important systematics are here
+    #    print ("Getting Background systematics")
+    #    systematics = get_systematics(histogram, year, sm_point,
+    #                                    correlated=False,
+    #                                    signal=False,
+    #                                    overflow='none',
+    #                                    samples=samples,
+    #                                    mapping=mapping[f'UL{ul}'],
+    #                                    rebin=axis,
+    #                                    )
+    #    if year.count('2016'):
+    #        print ("lumi uncertainties for 2016")
+    #        systematics += lumi_systematics_2016
+    #    elif year.count('2017'):
+    #        print ("lumi uncertainties for 2017")
+    #        systematics += lumi_systematics_2017
+    #    elif year.count('2018'):
+    #        print ("lumi uncertainties for 2018")
+    #        systematics += lumi_systematics_2018
+    #    else:
+    #        print ("No lumi systematic assigned.")
 
-        print ("Getting signal systematics")
-        systematics = add_signal_systematics(histogram, year, sm_point,
-                                                systematics=systematics,
-                                                correlated=False,
-                                                proc='topW_lep',
-                                                overflow='none',
-                                                samples=samples[year],
-                                                mapping=mapping[f'UL{ul}'],
-                                                rebin=axis,
-                                                )
+    #    print ("Getting signal systematics")
+    #    systematics = add_signal_systematics(histogram, year, sm_point,
+    #                                            systematics=systematics,
+    #                                            correlated=False,
+    #                                            proc='topW_lep',
+    #                                            overflow='none',
+    #                                            samples=samples,
+    #                                            mapping=mapping[f'UL{ul}'],
+    #                                            rebin=axis,
+    #                                            )
 
     sm_card = makeCardFromHist(
         backgrounds,
@@ -205,13 +219,14 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
                signal_histogram = None,
                ):
 
-    print (region)
+    print(f"Making dilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
     if region.count('trilep'):  # == 'dilepton_mass_ttZ' or region == 'signal_region_topW':
-        return write_trilep_card(histogram, year, region, axis, cpt, cpqm, plot_dir, systematics, bsm_scales)
+        return write_trilep_card(histogram, year, region, axis, cpt, cpqm, plot_dir, systematics, bsm_scales, histogram_incl, signal_histogram)
 
     x = cpt
     y = cpqm
-    sm_point  = f"cpt_{x}_cpqm_{y}"
+    #sm_point  = f"cpt_{x}_cpqm_{y}"
+    sm_point  = f"cpt_0_cpqm_0"
     bsm_point = f"bsm_cpt_{x}_cpqm_{y}"
 
     histo_name = region
@@ -251,6 +266,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     print ("Filling data histogram. I can still stay blind!")
     observation = histogram[(data_pattern, sm_point, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
     observation = observation.rebin(axis.name, axis)
+    print(sm_point)
+    print(observation.values())
     # unblind the first 8 bins. this is hacky.
     unblind = observation._sumw[()][:0]
     blind   = np.zeros_like(observation._sumw[()][0:])
@@ -272,7 +289,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
                                         correlated=False,
                                         signal=False,
                                         overflow='none',
-                                        samples=samples[year],
+                                        samples=samples,
                                         mapping=mapping[f'UL{ul}'],
                                         )
         if year.count('2016'):
@@ -293,7 +310,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
                                                 correlated=False,
                                                 proc='topW_lep',
                                                 overflow='none',
-                                                samples=samples[year],
+                                                samples=samples,
                                                 mapping=mapping[f'UL{ul}'],
                                                 )
 
@@ -468,13 +485,13 @@ if __name__ == '__main__':
     import mplhep as hep
     plt.style.use(hep.style.CMS)
 
-    from Tools.config_helpers import get_merged_output, load_yaml
+    from analysis.Tools.config_helpers import get_merged_output, load_yaml
 
     #ref_values = 'cpt_0p_cpqm_0p_nlo'
     ref_values = [0,0]
 
 
-    cfg = loadConfig()
+    #cfg = loadConfig()
 
     # set directories to save to
     if not args.uaf:
@@ -518,11 +535,15 @@ if __name__ == '__main__':
 
     all_cards = []
     #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    card_dir = os.path.expandvars('$TWHOME/data/cards/')
+    card = dataCard(releaseLocation=os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card_dir = os.path.abspath(os.path.expandvars('./data/cards/')) + '/'
+    #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    #card_dir = os.path.expandvars('$TWHOME/data/cards/')
 
     trilep_regions = [
         "trilep_ttZ",
+        "trilep_WZ",
+        "trilep_XG",
         "trilep_topW_qm_0Z",
         "trilep_topW_qp_0Z",
         "trilep_topW_qm_1Z",
@@ -541,7 +562,9 @@ if __name__ == '__main__':
         yr = np.array([int(args.cpqm)])
 
     X, Y = np.meshgrid(xr, yr)
-    scan = zip(X.flatten(), Y.flatten())
+    scan = list(zip(X.flatten(), Y.flatten()))
+    if (0,0) not in scan:  # always add SM point to scan
+        scan = [(0,0)] + scan
 
     # Define Scaling Polynomial
     def scalePolyNLO(xt, xQM):
@@ -557,7 +580,9 @@ if __name__ == '__main__':
         # histograms are created per sample,
         # x-secs and lumi scales are applied on the fly below
         outputs = {}
+        signal_outputs = {}
         outputs_tri = {}
+        signal_outputs_tri = {}
         samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')
         mapping = load_yaml('analysis/Tools/data/nano_mapping.yaml')
 
@@ -565,6 +590,8 @@ if __name__ == '__main__':
             # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
             outputs[year] = util.load(f'./outputs/{year}_fixed_merged.coffea')
             signal_outputs[year] = util.load(f'./outputs/{year}_signal_merged.coffea')
+            outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
+            signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
             #if args.regions in ['inclusive', 'all']:
             #    outputs[year] = get_merged_output(
             #        'SS_analysis',
@@ -579,7 +606,7 @@ if __name__ == '__main__':
             #    year,
             #    './outputs/',
             #    samples, mapping,
-            #    lumi=lumi,
+            #    lumi=lumis[year],
             #    select_histograms = ['dilepton_mass_ttZ', 'signal_region_topW'],
             #)#, date='20220624')
 
@@ -604,6 +631,15 @@ if __name__ == '__main__':
                 ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
                 ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
             ]
+        elif args.regions == 'SR':
+            regions = [
+                ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
+                ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
+                ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+            ]
         elif args.regions == 'ttZ':
             regions = [
                 ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
@@ -611,20 +647,25 @@ if __name__ == '__main__':
         elif args.regions == 'trilep':
             regions = [
                 ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+                ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
+                ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
                 ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice(-0.5,0.5))),
                 ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice( 0.5,2.5))),
                 ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice( 0.5,2.5))),
             ]
         elif args.regions == 'all':
+            # FIXME this also needs the XG and WZ regions
             regions = [
                 ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
                 ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
                 ("trilep_ttZ",  mass_axis, lambda x: x['dilepton_mass_ttZ']),
-                #("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-                #("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-                #("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-                #("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+                ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
+                ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
+                ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
             ]
 
 
@@ -650,8 +691,10 @@ if __name__ == '__main__':
                 if args.overwrite:
                     if region in trilep_regions:
                         output = outputs_tri[year]
+                        signal_output = signal_outputs_tri[year]
                     else:
                         output = outputs[year]
+                        signal_output = signal_outputs[year]
 
                 if args.overwrite:
                     #histogram = output[region]
@@ -659,7 +702,7 @@ if __name__ == '__main__':
                         histogram_incl = output['bit_score_incl']  # NOTE not nice, but need this for now
                     else:
                         histogram_incl = None
-                    cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl, get_hist(output_signal)))
+                    cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl, get_histo(signal_output)))
                 #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
                 #                               plot_dir='./',
                 #                               systematics=True,
@@ -672,12 +715,16 @@ if __name__ == '__main__':
 
     workers = args.workers
     if args.overwrite:
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
-                print (f"Done with {card_name}")
+        if workers > 1:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+                for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
+                    print (f"Done with {card_name}")
+        else:
+            print (cards_to_write)
+            result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
 
-    X, Y = np.meshgrid(xr, yr)
-    scan = zip(X.flatten(), Y.flatten())
+    #X, Y = np.meshgrid(xr, yr)
+    #scan = zip(X.flatten(), Y.flatten())
 
     for x,y in scan:
 
@@ -694,8 +741,8 @@ if __name__ == '__main__':
         all_cards.append(sm_card_combined)
         all_cards.append(bsm_card_combined)
 
-    X, Y = np.meshgrid(xr, yr)
-    scan = zip(X.flatten(), Y.flatten())
+    #X, Y = np.meshgrid(xr, yr)
+    #scan = zip(X.flatten(), Y.flatten())
 
     if fit:
 
@@ -865,7 +912,8 @@ if __name__ == '__main__':
 
     # NOTE re-init dataCard here just so that we always clean up the right dir...
     #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     card.cleanUp()
 
     if False:

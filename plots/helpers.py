@@ -160,6 +160,7 @@ def make_plot_from_dict(
         data_label='Observation',
         systematics=True,
         lumi = 1,
+        signal = None,
 ):
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -178,6 +179,10 @@ def make_plot_from_dict(
     if data:
         data_h = data.project(axis.name).rebin(axis.name, axis).copy()
         data_val = data_h.values(overflow=overflow)[()]
+
+    if signal:
+        #signal_h = signal['topW_lep'].project(axis.name, 'systematic', 'EFT').rebin(axis.name, axis).copy()
+        signal_h = signal['topW_lep'].project(axis.name, 'systematic').rebin(axis.name, axis).copy()
 
     #total = np.zeros_like(hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()])
     total = hist_d[list(processes)[0]].copy()
@@ -219,12 +224,26 @@ def make_plot_from_dict(
         hep.histplot(
             data_h.values(overflow=overflow)[()]/central,
             edges,
-            yerr=(np.sqrt(data_h.values(overflow=overflow, sumw2=True)[()][1])/central),
+            yerr=(np.sqrt(np.abs(data_h.values(overflow=overflow, sumw2=True)[()][1]))/np.abs(central)),
             histtype="errorbar",
             stack=False,
             label=data_label,
             color='black',
             ax=rax
+        )
+
+    if signal:
+        #print(signal_h)
+        #print(signal_h['topW_lep'].values())
+        hep.histplot(
+            signal_h.integrate('systematic', 'central').values(overflow=overflow)[()],
+            edges,
+            w2=signal_h.integrate('systematic', 'central').values(overflow=overflow, sumw2=True)[()][1],
+            #histtype="",
+            stack=False,
+            label=[r'$C_{\varphi t}=C_{\varphi Q}^{-}=7$'],
+            color='red',
+            ax=ax
         )
 
 

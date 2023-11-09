@@ -135,6 +135,7 @@ def get_merged_output(
         postfix=None,
         quiet=False,
         select_datasets=['data', 'MCall'],
+        veto_dataset=[],
         date=None,
         max_time='999999',
         select_histograms=False,

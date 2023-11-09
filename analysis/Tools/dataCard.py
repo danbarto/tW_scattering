@@ -257,9 +257,12 @@ class dataCard:
         combineCommand  = "cd "+uniqueDirname+"; eval `scramv1 runtime -sh`; combineCards.py %s > combinedCard.txt; text2workspace.py combinedCard.txt --X-allow-no-signal -m 125"%(cmd)
         print ("Executing %s"%combineCommand)
         os.system(combineCommand)
-        resFile = os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
+        resFile = '/' + os.path.join(*cards[years[0]].split('/')[:-1]) + '/' + name
+        print(f"resFile {resFile}")
         f = resFile.split('/')[-1]
+        print(f)
         resPath = resFile.replace(f, '')
+        print(f"resPath {resPath}")
         if not os.path.isdir(resPath):
             os.makedirs(resPath)
         print("Putting combined card into dir %s"%resPath)

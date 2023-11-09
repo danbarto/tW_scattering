@@ -22,14 +22,15 @@ from analysis.Tools.HyperPoly import HyperPoly
 from analysis.Tools.reweighting import get_coordinates_and_ref, get_coordinates
 #from plots.helpers import colors
 
-from BIT.BoostedInformationTreeP3 import BoostedInformationTree
+#from BIT.BoostedInformationTreeP3 import BoostedInformationTree
+from analysis.BIT.BoostedInformationTreeP3 import BoostedInformationTree
 
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.utils import resample, shuffle
 
 from analysis.Tools.multiclassifier_tools import store_transformer, load_transformer
 
-from yahist import Hist1D
+#from yahist import Hist1D
 from plots.helpers import colors
 
 import matplotlib.pyplot as plt

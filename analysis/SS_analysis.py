@@ -45,7 +45,7 @@ from analysis.Tools.pileup import pileup
 import warnings
 warnings.filterwarnings("ignore")
 
-from analysis.Tools.multiclassifier_tools import load_onnx_model, predict_onnx, load_transformer
+from analysis.Tools.multiclassifier_tools import load_transformer
 from analysis.BIT.BoostedInformationTreeP3 import BoostedInformationTree
 from analysis.boosted_information_tree import get_bit_score
 
@@ -67,8 +67,9 @@ class SS_analysis(processor.ProcessorABC):
                  weights=[],
                  reweight=1,
                  minimal=False,
-                 fixed_template=False,
-                 toys=0,
+                 fixed_template=True,
+                 toys=0,  # old?
+                 invMET=False,
                  ):
         self.variations = variations
 
@@ -99,6 +100,7 @@ class SS_analysis(processor.ProcessorABC):
         self.weights = weights
 
         self.reweight = reweight
+        self.invMET = invMET
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -109,17 +111,30 @@ class SS_analysis(processor.ProcessorABC):
     # we will receive a NanoEvents instead of a coffea DataFrame
     def process(self, events):
 
+        if self.invMET:
+            print("!!! Running with inverted MET cut !!!")
+
         presel = ak.num(events.Jet)>2
 
+        skip_eval_selection = False  # split train / eval datasets by setting to False
         ev = events[presel]
         dataset = ev.metadata['dataset']
-        
+        if not (dataset.count('EFT') or re.search(data_pattern, dataset) or skip_eval_selection):
+            # for all MC that's not signal, only use events with even event number for evaluation
+            # because odd events have been already used in training
+            ev = events[(ev.event%2)==0]
+            eval_weight = 2
+        else:
+            eval_weight = 1
+
+        #print(f"Eval weight: {eval_weight}")
+
         # don't distinguish between data and MC anymore
         variations = self.variations
 
-        return processor.accumulate(self.process_shift(ev, var) for var in variations)
+        return processor.accumulate(self.process_shift(ev, eval_weight, var) for var in variations)
 
-    def process_shift(self, ev, var=None):
+    def process_shift(self, ev, eval_weight, var=None):
         # use a very loose preselection to filter the events
         output = self.accumulator.identity()
 
@@ -262,6 +277,7 @@ class SS_analysis(processor.ProcessorABC):
         if not re.search(data_pattern, dataset):
             # lumi weight
             weight.add("weight", ev.genWeight)
+            weight.add("evaluation", np.ones_like(ev.genWeight)*eval_weight)
 
             if isinstance(self.reweight[dataset], int) or isinstance(self.reweight[dataset], float):
                 pass  # NOTE: this can be implemented later
@@ -344,10 +360,19 @@ class SS_analysis(processor.ProcessorABC):
         if var['name'] == 'central':
             # Only fill the cutflow onece :)
             cutflow     = Cutflow(output, ev, weight=weight)
-            baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
+            if self.invMET:
+                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0', 'MET>30'], add=['invMET'])
+            else:
+                baseline = sel.dilep_baseline(cutflow=cutflow, SS=True, omit=['N_fwd>0'])
         else:
-            baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
-        baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
+            if self.invMET:
+                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0', 'MET>30'], add=['invMET'])
+            else:
+                baseline = sel.dilep_baseline(cutflow=None, SS=True, omit=['N_fwd>0'])
+        if self.invMET:
+            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0', 'MET>30'], add=['invMET'])  # this is for charge flip estimation
+        else:
+            baseline_OS = sel.dilep_baseline(cutflow=None, SS=False, omit=['N_fwd>0'])  # this is for charge flip estimation
 
         # this defines all the dedicated selections for charge flip, nonprompt, conversions
         if not re.search(data_pattern, dataset):
@@ -458,7 +483,10 @@ class SS_analysis(processor.ProcessorABC):
             BIT_inputs_df = pd.DataFrame(BIT_inputs_d)
             BIT_inputs = BIT_inputs_df[variables].values
 
-            bit_file = 'analysis/Tools/data/networks/bits_v40.pkl'  # was v31
+            # we've started with v31
+            # v40 was used for presentations up to April 2023
+            # v50 is retraining with train/eval overlap removal
+            bit_file = 'analysis/Tools/data/networks/bits_v50.pkl'
             with open(bit_file, 'rb') as f:
                 bits = pickle.load(f)
 
@@ -583,10 +611,10 @@ class SS_analysis(processor.ProcessorABC):
                 x,y = p['point']
                 point = p['point']
                 if self.fixed_template:
-                    qt = load_transformer(f'v40_cpt_5_cpqm_5')  # was v31
-                    score_trans = get_bit_score(bit_pred, cpt=5, cpqm=5, trans=qt)
+                    qt = load_transformer(f'v50_cpt_5_cpqm_-5')  # 5, -5 shown to yield similar performance to parametrized version
+                    score_trans = get_bit_score(bit_pred, cpt=5, cpqm=-5, trans=qt)
                 else:
-                    qt = load_transformer(f'v40_cpt_{x}_cpqm_{y}')  # was v31
+                    qt = load_transformer(f'v50_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
 
                 # Get the weights
@@ -1188,12 +1216,14 @@ if __name__ == '__main__':
     argParser.add_argument('--buaf', action='store', default="false", help="Run on BU AF")
     argParser.add_argument('--skim', action='store', default="topW_v0.7.1_SS", help="Define the skim to run on")
     argParser.add_argument('--scan', action='store_true', default=None, help="Run the entire cpt/cpqm scan")
+    argParser.add_argument('--skip_eval_selection', action='store_true', default=None, help="Run on all events")
     args = argParser.parse_args()
 
     profile     = args.profile
     iterative   = args.iterative
     overwrite   = args.rerun
     small       = args.small
+    skip_eval_selection = args.skip_eval_selection
 
     year        = int(args.year[0:4])
     ul          = "UL%s"%(args.year[2:])
