@@ -21,6 +21,7 @@ colors = {
     'prompt': '#8AC926',
     'TTX': '#FFCA3A',
     'TTZ': '#FFCA3A',
+    'TZQ': '#f49d6e',
     'lost lepton': '#FFCA3A',
     'TTH': '#34623F',
     'TTTT': '#0F7173',
@@ -46,7 +47,7 @@ colors = {
     'cf_est_data': '#0F7173',
 }
 '''
-other colors (sets from coolers.com):
+other colors (sets from coolers.co):
 #525B76 (gray)
 #34623F (hunter green)
 #0F7173 (Skobeloff)
@@ -69,6 +70,7 @@ my_labels = {
     'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
     'TTH': r'$t\bar{t}$H',
     'TTZ': r'$t\bar{t}$Z',
+    'TZQ': r'$tZq$',
     'TTTT': r'$t\bar{t}t\bar{t}$',
     'ttbar': r'$t\bar{t}$+jets',
     'top': r'$t\bar{t}$',

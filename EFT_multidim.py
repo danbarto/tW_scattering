@@ -105,6 +105,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         'TTW':       histogram[('TTW', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'TTH':       histogram[('TTH', sm_point,'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'TTZ':       histogram[('TTZ', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
+        'TZQ':       histogram[('TZQ', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'rare':      histogram[('rare', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'diboson':   histogram[('diboson', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'conv':      histogram[(wildcard, sm_point, 'conv_mc', 'central')].sum('EFT', 'systematic', 'prediction').copy(),
@@ -148,6 +149,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         ('signal_norm', 1.1, 'signal'),
         ('TTW_norm', 1.15, 'TTW'),
         ('TTZ_norm', 1.10, 'TTZ'),
+        ('TZQ_norm', 1.10, 'TZQ'),
         ('TTH_norm', 1.15, 'TTH'),
         ('conv_norm', 1.20, 'conv'),
         ('diboson_norm', 1.20, 'diboson'),
@@ -241,6 +243,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         'TTW':       histogram[('TTW', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
         'TTH':       histogram[('TTH', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
         'TTZ':       histogram[('TTZ', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'TZQ':       histogram[('TZQ', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
         'rare':      histogram[('rare', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
         'diboson':   histogram[('diboson', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
         'conv':      histogram[(wildcard, sm_point, 'conv_mc', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
@@ -324,6 +327,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         backgrounds['nonprompt'],
         backgrounds['chargeflip'],
         backgrounds['TTZ'],
+        backgrounds['TZQ'],
         backgrounds['TTH'],
         backgrounds['TTW'],
         ]
@@ -337,6 +341,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         'nonprompt',
         'charge mis-ID',
         r'$t\bar{t}Z$',
+        r'$tZq$',
         r'$t\bar{t}H$',
         r'$t\bar{t}W$',
         ]
@@ -349,6 +354,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         colors['non prompt'],
         colors['chargeflip'],
         colors['TTZ'],
+        colors['TZQ'],
         colors['TTH'],
         colors['TTW'],
         ]
@@ -568,10 +574,21 @@ if __name__ == '__main__':
 
     # Define Scaling Polynomial
     def scalePolyNLO(xt, xQM):
+        # ttZ SMEFT@NLO scale poly
         return 1 + 0.072813*xt - 0.098492*xQM + 0.005049*xt**2 - 0.002042*xt*xQM + 0.003988*xQM**2
 
     def scalePolyLO(xt, xQM):
         return 1 + 0.068485*xt - 0.104991*xQM + 0.003982*xt**2 - 0.002534*xt*xQM + 0.004144*xQM**2
+
+    def ttH_scalePolyLO(xt, xQM):
+        # ttH SMEFT@LO poly
+        return 1 - 0.000363*xt + 0.000218*xQM + 0.00054*xt**2 - 0.000409*xt*xQM + 0.00061*xQM**2
+
+    def tZq_scalePolyLO(xt, xQM):
+        # tZq scaling
+        # FIXME this needs a different sample splitting
+        return 1 + 0.005554*xt + 0.021142*xQM + 0.000452*xt**2 - 0.000913*xt*xQM + 0.00114*xQM**2
+
     
     years = args.year.split(',')
 
@@ -673,11 +690,11 @@ if __name__ == '__main__':
         bsm_cards[(x,y)] = {}
         
         if args.scaling == 'LO':
-            bsm_scales = {'TTZ': scalePolyLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y)}
         elif args.scaling == 'NLO':
-            bsm_scales = {'TTZ': scalePolyNLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y)}
         else:
-            bsm_scales = {'TTZ': 1}
+            bsm_scales = {'TTZ': 1, 'TTH': 1}
 
         for year in years:
             suffix = "_scaled" if args.scaling else ""

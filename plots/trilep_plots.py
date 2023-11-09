@@ -146,9 +146,9 @@ def get_standard_plot(
         signal = None,
 ):
     if dd:
-        mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TTH', 'np_est_data'])
+        mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'conv_mc', 'TTZ', 'TZQ', 'TTH', 'np_est_data'])
     else:
-        mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'top', 'TTZ', 'TTH', 'XG'])
+        mc = get_histograms(output[hist], ['topW_lep', 'rare', 'diboson', 'TTW', 'top', 'TTZ', 'TZQ', 'TTH', 'XG'])
     data_options = ['DoubleMuon', 'SingleMuon', 'MuonEG', 'EGamma', 'DoubleEG', 'SingleElectron']
     identifiers = [x.name for x in output[hist].axes()[0].identifiers()]
     datasets = []
