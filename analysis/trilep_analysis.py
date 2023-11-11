@@ -197,10 +197,10 @@ class trilep_analysis(processor.ProcessorABC):
 
         # this is where the real JEC dependent stuff happens
 
-        if re.search(data_pattern, dataset):
-            variations = self.variations[:1]
-        else:
-            variations = self.variations
+        #if re.search(data_pattern, dataset):
+        #    variations = self.variations[:1]
+        #else:
+        variations = self.variations
 
         for var in variations:
 
@@ -591,7 +591,7 @@ class trilep_analysis(processor.ProcessorABC):
                 )
 
 
-                if not re.search(data_pattern, dataset) and var['name'] == 'central' and len(variations) > 1:
+                if not re.search(data_pattern, dataset) and var['name'] == 'central':  # NOTE this should fix missing PDF/scale/PS weights in trilep regions
                     add_sel = sig_sel
                     for i in range(1,101):
                         pdf_ext = "pdf_%s"%i
@@ -667,7 +667,78 @@ class trilep_analysis(processor.ProcessorABC):
                                 mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
                                 weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
                             )
-            
+
+                    add_sel = WZ_sel
+                    for i in range(1,101):
+                        pdf_ext = "pdf_%s"%i
+                        output['LT_WZ'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = 'central',
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                        pdf_ext = "scale_%s"%i
+                        output['LT_WZ'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = "central",
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "PS_%s"%i
+                            output['LT_WZ'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = "central",
+                                mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                                weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
+                            )
+
+                    add_sel = XG_sel
+                    for i in range(1,101):
+                        pdf_ext = "pdf_%s"%i
+                        output['LT_XG'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = 'central',
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    for i in ([0,1,3,5,7,8] if not (dataset.count('EFT') or dataset.count('ZZTo2Q2L_mllmin4p0')) else [0,1,3,4,6,7]):
+                        pdf_ext = "scale_%s"%i
+                        output['LT_XG'].fill(
+                            dataset     = dataset,
+                            systematic  = pdf_ext,
+                            prediction  = 'central',
+                            EFT         = "central",
+                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
+                        )
+
+                    if len(ev.PSWeight[0]) > 1:
+                        for i in range(4):
+                            pdf_ext = "PS_%s"%i
+                            output['LT_XG'].fill(
+                                dataset     = dataset,
+                                systematic  = pdf_ext,
+                                prediction  = 'central',
+                                EFT         = "central",
+                                mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                                weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
+                            )
+
+
                 #output['j1'].fill(
                 #    dataset = dataset,
                 #    pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
@@ -698,46 +769,86 @@ class trilep_analysis(processor.ProcessorABC):
                     },
                 )
             else:
-                if not re.search(data_pattern, dataset):
+                # NOTE this used to be skipping data, but it should actually run in order to get
+                # uncertainties for the nonprompt estimate
+                #if not re.search(data_pattern, dataset):
                     # similar to SS_analysis
                     # Don't fill for data
-                    output['signal_region_topW'].fill(
-                        dataset     = dataset,
-                        systematic  = var['name'],
-                        prediction  = 'central',
-                        EFT         = 'central',
-                        lt          = lt[(BL & sig_sel)],
-                        N           = N_SFOS[(BL & sig_sel)],
-                        charge      = trilep_q[(BL & sig_sel)],
-                        weight      = weight.weight(modifier=shift)[(BL & sig_sel)],
-                    )
+                    #
+                fill_multiple_np(
+                    output['LT_XG'],
+                    {'lt': lt},
+                    add_sel = XG_sel,
+                    other = {'EFT': "central"},
+                    #weight_multiplier = eft_weight,
+                )
 
-                    output['dilepton_mass_ttZ'].fill(
-                        dataset     = dataset,
-                        systematic  = var['name'],
-                        prediction  = 'central',
-                        EFT         = 'central',
-                        mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & ttZ_sel)],
-                        weight      = weight.weight(modifier=shift)[(BL & ttZ_sel)],
-                    )
+                fill_multiple_np(
+                    output['signal_region_topW'],
+                    {
+                        'lt': lt,
+                        'N': N_SFOS,
+                        'charge': trilep_q,
+                        },
+                    add_sel = sig_sel,
+                    other = {'EFT': "central"},
+                    #weight_multiplier = eft_weight,
+                )
 
-                    output['LT_WZ'].fill(
-                        dataset     = dataset,
-                        systematic  = var['name'],
-                        prediction  = 'central',
-                        EFT         = 'central',
-                        lt          = lt[(BL & WZ_sel)],
-                        weight      = weight.weight(modifier=shift)[(BL & WZ_sel)],
-                    )
+                fill_multiple_np(
+                    output['LT_WZ'],
+                    {'lt': lt},
+                    add_sel = WZ_sel,
+                    other = {'EFT': "central"},
+                    #weight_multiplier = eft_weight,
+                )
 
-                    output['LT_XG'].fill(
-                        dataset     = dataset,
-                        systematic  = var['name'],
-                        prediction  = 'central',
-                        EFT         = 'central',
-                        lt          = lt[(BL & XG_sel)],
-                        weight      = weight.weight(modifier=shift)[(BL & XG_sel)],
-                    )
+                fill_multiple_np(
+                    output['dilepton_mass_ttZ'],
+                    {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
+                    add_sel = ttZ_sel,
+                    other = {'EFT': "central"},
+                )
+                    #
+                    #
+                    #
+                #output['signal_region_topW'].fill(
+                #    dataset     = dataset,
+                #    systematic  = var['name'],
+                #    prediction  = 'central',
+                #    EFT         = 'central',
+                #    lt          = lt[(BL & sig_sel)],
+                #    N           = N_SFOS[(BL & sig_sel)],
+                #    charge      = trilep_q[(BL & sig_sel)],
+                #    weight      = weight.weight(modifier=shift)[(BL & sig_sel)],
+                #)
+
+                #output['dilepton_mass_ttZ'].fill(
+                #    dataset     = dataset,
+                #    systematic  = var['name'],
+                #    prediction  = 'central',
+                #    EFT         = 'central',
+                #    mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & ttZ_sel)],
+                #    weight      = weight.weight(modifier=shift)[(BL & ttZ_sel)],
+                #)
+
+                #output['LT_WZ'].fill(
+                #    dataset     = dataset,
+                #    systematic  = var['name'],
+                #    prediction  = 'central',
+                #    EFT         = 'central',
+                #    lt          = lt[(BL & WZ_sel)],
+                #    weight      = weight.weight(modifier=shift)[(BL & WZ_sel)],
+                #)
+
+                #output['LT_XG'].fill(
+                #    dataset     = dataset,
+                #    systematic  = var['name'],
+                #    prediction  = 'central',
+                #    EFT         = 'central',
+                #    lt          = lt[(BL & XG_sel)],
+                #    weight      = weight.weight(modifier=shift)[(BL & XG_sel)],
+                #)
 
                 
 
