@@ -284,15 +284,17 @@ def get_systematics(histogram, year, eft_point,
                     samples=None,
                     mapping=None,
                     rebin=None,
+                    trilep=False,
                     ):
     if correlated:
         year = "cor"
     systematics = []
 
-    all_processes = ['TTW', 'TTZ', 'TTH', 'rare', 'diboson']
+    all_processes = ['TTW', 'TTZ', 'TZQ', 'TTH', 'rare', 'diboson']
     if signal: all_processes += ['signal']
 
     for proc in all_processes:
+        print(proc)
         systematics += [
             #('jes_%s'%year,     get_unc(histogram, proc, 'jesTotal',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             #('jer_%s'%year,     get_unc(histogram, proc, 'jer',  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
@@ -308,21 +310,23 @@ def get_systematics(histogram, year, eft_point,
                 (f'{var}_{year}',     get_unc(histogram, proc, var,  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ]
 
-    for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
-        systematics += [
-            #('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
-            ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
-            ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
-            ('scale_%s'%proc, get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
-        ]
-        for i in range(1,101):
-            systematics.append(
-                (f'pdf_{i}', get_pdf_unc(histogram, proc, eft_point,
-                                         rebin=rebin, overflow=overflow,
-                                         select_indices = i,
-                                         norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
-            )
+    if not trilep:
+        for proc in ['TTW', 'TTZ', 'TZQ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
+            systematics += [
+                #('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
+                ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+                ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
+                ('scale_%s'%proc, get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ]
+            for i in range(1,101):
+                systematics.append(
+                    (f'pdf_{i}', get_pdf_unc(histogram, proc, eft_point,
+                                            rebin=rebin, overflow=overflow,
+                                            select_indices = i,
+                                            norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
+                )
 
+    print(eft_point)
     systematics += [
         ('fake_el_closure', get_unc(histogram, wildcard, 'fake_el_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
         ('fake_mu_closure', get_unc(histogram, wildcard, 'fake_mu_closure', eft_point, prediction='np_est_data', rebin=rebin, overflow=overflow, quiet=True), 'nonprompt'),
@@ -550,7 +554,7 @@ def makeCardFromHist(
 
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'shape')
-                    print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
 
                 if len(mag)>1:
                     central = h_tmp_bsm[proc].values()[()]  # get BSM scaled prediction
@@ -559,9 +563,9 @@ def makeCardFromHist(
                     val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     incl_rel = sum(val_h.values())/sum(central)
-                    print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
-                    print (" - central prediction: %.2f"%sum(central))
-                    print (" - relative uncertainty: %.2f"%incl_rel)
+                    #print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
+                    #print (" - central prediction: %.2f"%sum(central))
+                    #print (" - relative uncertainty: %.2f"%incl_rel)
 
                     fout[proc+'_'+systematic+'Up']   = val_h
                     val = np.nan_to_num(mag[1].values(), nan=1.0) * central
@@ -580,12 +584,12 @@ def makeCardFromHist(
                 # FIXME this is not implemented yet. can't have asymmetric lnNs in my card file writer
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'lnN')
-                    print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
                 card.specifyUncertainty(systematic, 'Bin0', proc, (mag[0], mag[1]))
             else:
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'lnN')
-                    print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
                 card.specifyUncertainty(systematic, 'Bin0', proc, mag)
             
     fout.close()
