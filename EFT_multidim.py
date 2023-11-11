@@ -88,6 +88,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     histo_name = region
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
+    SM_plot_name = f'{region}_{year}'
 
     sm_point = 'central'
     if region == 'trilep_ttZ':
@@ -155,29 +156,138 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         ('diboson_norm', 1.20, 'diboson'),
         ('nonprompt_norm', 1.30, 'nonprompt'),
     ]
-    #if systematics:
-    #    # NOTE this loads background systematics.
-    #    # Not fully complete, but most important systematics are here
-    #    print ("Getting Background systematics")
-    #    systematics = get_systematics(histogram, year, sm_point,
-    #                                    correlated=False,
-    #                                    signal=False,
-    #                                    overflow='none',
-    #                                    samples=samples,
-    #                                    mapping=mapping[f'UL{ul}'],
-    #                                    rebin=axis,
-    #                                    )
-    #    if year.count('2016'):
-    #        print ("lumi uncertainties for 2016")
-    #        systematics += lumi_systematics_2016
-    #    elif year.count('2017'):
-    #        print ("lumi uncertainties for 2017")
-    #        systematics += lumi_systematics_2017
-    #    elif year.count('2018'):
-    #        print ("lumi uncertainties for 2018")
-    #        systematics += lumi_systematics_2018
-    #    else:
-    #        print ("No lumi systematic assigned.")
+
+    print ("Making first plots")
+    print ("...prepping the plots")
+    hist_list = [
+        backgrounds['signal'],
+        backgrounds['rare'],
+        backgrounds['diboson'],
+        backgrounds['conv'],
+        backgrounds['nonprompt'],
+        backgrounds['TTZ'],
+        backgrounds['TZQ'],
+        backgrounds['TTH'],
+        backgrounds['TTW'],
+        ]
+    edges = backgrounds['signal'].sum('dataset').axes()[0].edges()
+
+    labels = [
+        'SM scat.',
+        'Rare',
+        r'$VV/VVV$',
+        r'$X\gamma$',
+        'nonprompt',
+        r'$t\bar{t}Z$',
+        r'$tZq$',
+        r'$t\bar{t}H$',
+        r'$t\bar{t}W$',
+        ]
+
+    hist_colors = [
+        colors['signal'],
+        colors['rare'],
+        colors['diboson'],
+        colors['XG'],
+        colors['non prompt'],
+        colors['TTZ'],
+        colors['TZQ'],
+        colors['TTH'],
+        colors['TTW'],
+        ]
+
+    fig, (ax, rax) = plt.subplots(2,1,figsize=(12,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+    hep.cms.label(
+        "Work in Progress",
+        data=True,
+        lumi=lumi,
+        com=13,
+        loc=0,
+        ax=ax,
+        )
+
+    print ("...building histogram")
+
+    hep.histplot(
+        [ x.sum('dataset').values()[()] for x in hist_list],
+        edges,
+        histtype="fill",
+        stack=True,
+        label=labels,
+        color=hist_colors,
+        ax=ax)
+
+    hep.histplot(
+        [ signal.sum('dataset').values()[()]],
+        edges,
+        histtype="step",
+        label=[r'$C_{\varphi t}=%s, C_{\varphi Q}^{-}=%s$'%(x,y)],
+        color=['black'],
+        ax=ax)
+
+    hep.histplot(
+        [ observation.values()[()]],
+        edges,
+        histtype="errorbar",
+        label=[r'Observation'],
+        color=['black'],
+        ax=ax)
+
+
+    hist.plotratio(
+        num=observation,
+        denom=total.sum("dataset"),
+        ax=rax,
+        error_opts=data_err_opts,
+        denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
+        guide_opts={},
+        unc='num',
+        #unc=None,
+        #overflow='over'
+    )
+
+    ax.legend(ncol=3)
+    # labels
+    rax.set_xlabel(backgrounds['signal'].sum('dataset').axes()[0].label)
+    ax.set_xlim(edges[0],edges[-1])
+    rax.set_ylabel(r'rel. unc.')
+    ax.set_ylabel(r'Events')
+
+    print ("...storing plots")
+
+    fig.savefig(f'{plot_dir}/{plot_name}.png')
+    fig.savefig(f'{plot_dir}/{plot_name}.pdf')
+
+    plt.close(fig)
+    del fig, ax, rax
+
+
+
+    if systematics:
+        # NOTE this loads background systematics.
+        # Not fully complete, but most important systematics are here
+        print ("Getting Background systematics")
+        systematics = get_systematics(histogram, year, sm_point,
+                                        correlated=False,
+                                        signal=False,
+                                        overflow='none',
+                                        samples=samples,
+                                        mapping=mapping[f'UL{ul}'],
+                                        rebin=axis,
+                                        trilep=True,
+                                        )
+        if year.count('2016'):
+            print ("lumi uncertainties for 2016")
+            systematics += lumi_systematics_2016
+        elif year.count('2017'):
+            print ("lumi uncertainties for 2017")
+            systematics += lumi_systematics_2017
+        elif year.count('2018'):
+            print ("lumi uncertainties for 2018")
+            systematics += lumi_systematics_2018
+        else:
+            print ("No lumi systematic assigned.")
 
     #    print ("Getting signal systematics")
     #    systematics = add_signal_systematics(histogram, year, sm_point,
@@ -190,13 +300,16 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     #                                            rebin=axis,
     #                                            )
 
-    sm_card = makeCardFromHist(
-        backgrounds,
-        ext=f'SM_{plot_name}',
-        systematics = systematics,
-        data = observation,
-        blind = True,
-        )
+    if cpt==0 and cpqm==0:
+        sm_card = makeCardFromHist(
+            backgrounds,
+            ext=f'SM_{SM_plot_name}',
+            systematics = systematics,
+            data = observation,
+            blind = True,
+            )
+    else:
+        sm_card = None
 
     bsm_card = makeCardFromHist(
         backgrounds,
@@ -221,9 +334,10 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
                signal_histogram = None,
                ):
 
-    print(f"Making dilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
     if region.count('trilep'):  # == 'dilepton_mass_ttZ' or region == 'signal_region_topW':
         return write_trilep_card(histogram, year, region, axis, cpt, cpqm, plot_dir, systematics, bsm_scales, histogram_incl, signal_histogram)
+
+    print(f"Making dilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
 
     x = cpt
     y = cpqm
@@ -234,6 +348,7 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     histo_name = region
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
+    SM_plot_name = f'{region}_{year}'
 
     ul = str(year)[2:]
 
@@ -425,15 +540,20 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     plt.close(fig)
     del fig, ax, rax
 
-    sm_card = makeCardFromHist(
-        backgrounds,
-        ext=f'SM_{plot_name}',
-        #scales = scales,
-        #bsm_scales = bsm_scales,
-        systematics = systematics,
-        data = observation,
-        blind = True,
-        )
+    # FIXME this needs to be parametrized again IF we decide to run significances!!
+    if cpt == 0 and cpqm == 0:
+        sm_card = makeCardFromHist(
+            backgrounds,
+            ext=f'SM_{SM_plot_name}',
+            #scales = scales,
+            #bsm_scales = bsm_scales,
+            systematics = systematics,
+            data = observation,
+            blind = True,
+            )
+    else:
+        sm_card = None  # background distributions are not parametrized anymore, so no need for a different card everytime
+
 
     bsm_card = makeCardFromHist(
         backgrounds,
@@ -509,7 +629,7 @@ if __name__ == '__main__':
     finalizePlotDir(dump_dir)
 
     # NOTE placeholder systematics if run without --systematics
-    mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
+    mc_process_names = ['signal', 'TTW', 'TZQ', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
     systematics= [
         ('signal_norm',     1.10, 'signal'),
         ('TTW_norm',        1.15, 'TTW'),
@@ -607,8 +727,9 @@ if __name__ == '__main__':
             # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
             outputs[year] = util.load(f'./outputs/{year}_fixed_merged.coffea')
             signal_outputs[year] = util.load(f'./outputs/{year}_signal_merged.coffea')
-            outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
-            signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
+            if args.regions in ['all', 'trilep']:
+                outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
+                signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
             #if args.regions in ['inclusive', 'all']:
             #    outputs[year] = get_merged_output(
             #        'SS_analysis',
@@ -690,11 +811,11 @@ if __name__ == '__main__':
         bsm_cards[(x,y)] = {}
         
         if args.scaling == 'LO':
-            bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
         elif args.scaling == 'NLO':
-            bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
         else:
-            bsm_scales = {'TTZ': 1, 'TTH': 1}
+            bsm_scales = {'TTZ': 1, 'TTH': 1, 'TZQ': 1}  # NOTE: 1 is default, just make it explicit
 
         for year in years:
             suffix = "_scaled" if args.scaling else ""
@@ -727,8 +848,9 @@ if __name__ == '__main__':
 
                 plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
                 plot_name = plot_name_short + f'_{region}_{year}'
+                SM_plot_name = f'{region}_{year}'
                 bsm_cards[(x,y)][f'BSM_{plot_name}'] = f'/{card_dir}/BSM_{plot_name}_card.txt'
-                sm_cards[(x,y)][f'SM_{plot_name}']   = f'/{card_dir}/SM_{plot_name}_card.txt'
+                sm_cards[(x,y)][f'SM_{SM_plot_name}']   = f'/{card_dir}/SM_{SM_plot_name}_card.txt'
 
     workers = args.workers
     if args.overwrite:
@@ -737,7 +859,7 @@ if __name__ == '__main__':
                 for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
                     print (f"Done with {card_name}")
         else:
-            print (cards_to_write)
+            #print (cards_to_write)
             result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
 
     #X, Y = np.meshgrid(xr, yr)
@@ -747,15 +869,19 @@ if __name__ == '__main__':
 
         plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
         plot_name = plot_name_short + f'_{region}_{year}'
+        SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
         # NOTE running years individually and then just combining
         # this avoids having to load all the histograms at once
         print ("Combining cards:")
         print (sm_cards[(x,y)])
         # FIXME: run this step in parallel too!
-        sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')
+        if x==0 and y==0:
+            sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
+            all_cards.append(sm_card_combined)
+        #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
         bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
 
-        all_cards.append(sm_card_combined)
+        #all_cards.append(sm_card_combined)
         all_cards.append(bsm_card_combined)
 
     #X, Y = np.meshgrid(xr, yr)
@@ -776,7 +902,8 @@ if __name__ == '__main__':
         for x,y in scan:
             plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
             print (plot_name_short)
-            results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+            #results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+            results[(x,y)] = -2*(all_nll[f'SM_combined'] - all_nll[f'BSM_{plot_name_short}'])
 
     if fit and len(xr)>4:
 
