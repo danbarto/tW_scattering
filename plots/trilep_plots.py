@@ -233,7 +233,16 @@ if __name__ == '__main__':
         signal_output = accumulate(signal_outputs)
         del outputs
     else:
-        output = get_merged_output("trilep_analysis", year,'../outputs/', samples, mapping, lumi=lumi, postfix='_cpt_0_cpqm_0')
+        output = get_merged_output(
+            "trilep_analysis",
+            year,
+            '../outputs/',
+            samples,
+            mapping,
+            lumi=lumi,
+            postfix='_cpt_0_cpqm_0',
+            variations = ['central', 'base', 'jes']
+        )
         signal_output = get_merged_output("trilep_analysis", year,'../outputs/', samples, mapping, lumi=lumi, postfix='', select_datasets=['topW_lep'])
 
     #plot_dir    = os.path.join(os.path.expandvars(cfg['meta']['plots']), str(year), 'OS', args.version)
@@ -290,6 +299,7 @@ if __name__ == '__main__':
 
 
     # actual signal region plots; and different projections
+    print('\n\n\n\n @@@@@@@@@@@@@@@@@@@@@@@@@@@ SIGNAL REGION PLOTS @@@@@@@@@@@@@@@@@@@@@@@@@@@')
     axis = hist.Bin('N', r"$N_{SF\ OS}$", 3, -0.5, 2.5)
     get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW_NSFOS', log=False, lumi=lumi, blind=True, normalize=TFnormalize)
     axis = hist.Bin('charge', r"$\Sigma q$", 3, -1.5, 1.5)
@@ -297,14 +307,20 @@ if __name__ == '__main__':
     axis = hist.Bin('lt', r"$L_{T}\ (GeV)$", [0,400,1000])
     get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW_lt', log=False, lumi=lumi, blind=True, normalize=TFnormalize, signal=signal_output)
 
+    print('\n\n\n\n')
 
-    axis = N_bins
+    axis = hist.Bin('multiplicity', r'$N_{jet}$', 8, 1.5, 9.5)
     get_standard_plot(output, 'N_jet_ttZ', axis, name='N_jet_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'N_jet_WZ', axis, name='N_jet_WZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'N_jet', axis, name='N_jet', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    axis = hist.Bin('multiplicity', r'$N_{b-tag}$', 7, -0.5, 6.5)
     get_standard_plot(output, 'N_b', axis, name='N_b', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_standard_plot(output, 'N_b', axis, name='N_b_stat', log=False, lumi=lumi, blind=blind, normalize=TFnormalize, systematics=False)
+    axis = hist.Bin('multiplicity', r'$N_{central\ jet}$', 8, 1.5, 9.5)
     get_standard_plot(output, 'N_central', axis, name='N_central', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    axis = hist.Bin('multiplicity', r'$N_{electron}$', 4, -0.5, 3.5)
     get_standard_plot(output, 'N_ele', axis, name='N_ele', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    axis = hist.Bin('multiplicity', r'$N_{forward\ jet}$', 6, -0.5, 5.5)
     get_standard_plot(output, 'N_fwd', axis, name='N_fwd', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
 
     axis = ht_bins
