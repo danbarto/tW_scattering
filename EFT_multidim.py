@@ -88,6 +88,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     histo_name = region
     plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
     plot_name = plot_name_short + f'_{region}_{year}'
+    SM_plot_name = f'{region}_{year}'
 
     sm_point = 'central'
     if region == 'trilep_ttZ':
@@ -105,6 +106,7 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         'TTW':       histogram[('TTW', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'TTH':       histogram[('TTH', sm_point,'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'TTZ':       histogram[('TTZ', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
+        'TZQ':       histogram[('TZQ', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'rare':      histogram[('rare', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'diboson':   histogram[('diboson', sm_point, 'central', 'central')].sum('EFT', 'systematic','prediction').copy(),
         'conv':      histogram[(wildcard, sm_point, 'conv_mc', 'central')].sum('EFT', 'systematic', 'prediction').copy(),
@@ -117,6 +119,9 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     total = backgrounds['signal'].copy()
     total.clear()
     for k in backgrounds.keys():
+        nan_check = np.any(np.isnan(backgrounds[k].sum('dataset').values()[()]))
+        print(f"NaN check for {p=}: {nan_check=}")
+        if nan_check: print ("\n\n    !!!!!!!!\n\n\n\n")
         if not k == 'signal':
             total.add(backgrounds[k])
 
@@ -148,171 +153,12 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
         ('signal_norm', 1.1, 'signal'),
         ('TTW_norm', 1.15, 'TTW'),
         ('TTZ_norm', 1.10, 'TTZ'),
+        ('TZQ_norm', 1.10, 'TZQ'),
         ('TTH_norm', 1.15, 'TTH'),
         ('conv_norm', 1.20, 'conv'),
         ('diboson_norm', 1.20, 'diboson'),
         ('nonprompt_norm', 1.30, 'nonprompt'),
     ]
-    #if systematics:
-    #    # NOTE this loads background systematics.
-    #    # Not fully complete, but most important systematics are here
-    #    print ("Getting Background systematics")
-    #    systematics = get_systematics(histogram, year, sm_point,
-    #                                    correlated=False,
-    #                                    signal=False,
-    #                                    overflow='none',
-    #                                    samples=samples,
-    #                                    mapping=mapping[f'UL{ul}'],
-    #                                    rebin=axis,
-    #                                    )
-    #    if year.count('2016'):
-    #        print ("lumi uncertainties for 2016")
-    #        systematics += lumi_systematics_2016
-    #    elif year.count('2017'):
-    #        print ("lumi uncertainties for 2017")
-    #        systematics += lumi_systematics_2017
-    #    elif year.count('2018'):
-    #        print ("lumi uncertainties for 2018")
-    #        systematics += lumi_systematics_2018
-    #    else:
-    #        print ("No lumi systematic assigned.")
-
-    #    print ("Getting signal systematics")
-    #    systematics = add_signal_systematics(histogram, year, sm_point,
-    #                                            systematics=systematics,
-    #                                            correlated=False,
-    #                                            proc='topW_lep',
-    #                                            overflow='none',
-    #                                            samples=samples,
-    #                                            mapping=mapping[f'UL{ul}'],
-    #                                            rebin=axis,
-    #                                            )
-
-    sm_card = makeCardFromHist(
-        backgrounds,
-        ext=f'SM_{plot_name}',
-        systematics = systematics,
-        data = observation,
-        blind = True,
-        )
-
-    bsm_card = makeCardFromHist(
-        backgrounds,
-        ext=f'BSM_{plot_name}',
-        bsm_hist = signal,
-        bsm_scales = bsm_scales,
-        systematics = systematics,
-        data = observation,
-        blind = True,
-        )
-
-    bsm_cards[f'BSM_{plot_name}'] = bsm_card
-    sm_cards[f'SM_{plot_name}'] = sm_card
-
-    return plot_name, bsm_card, sm_card
-
-def write_card(histogram, year, region, axis, cpt, cpqm,
-               plot_dir='./',
-               systematics=True,
-               bsm_scales={},
-               histogram_incl = None,
-               signal_histogram = None,
-               ):
-
-    print(f"Making dilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
-    if region.count('trilep'):  # == 'dilepton_mass_ttZ' or region == 'signal_region_topW':
-        return write_trilep_card(histogram, year, region, axis, cpt, cpqm, plot_dir, systematics, bsm_scales, histogram_incl, signal_histogram)
-
-    x = cpt
-    y = cpqm
-    #sm_point  = f"cpt_{x}_cpqm_{y}"
-    sm_point  = f"cpt_0_cpqm_0"
-    bsm_point = f"bsm_cpt_{x}_cpqm_{y}"
-
-    histo_name = region
-    plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
-    plot_name = plot_name_short + f'_{region}_{year}'
-
-    ul = str(year)[2:]
-
-    print ("Filling background histogram")
-    backgrounds = {
-        'signal':    histogram[('topW_lep', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'TTW':       histogram[('TTW', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'TTH':       histogram[('TTH', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'TTZ':       histogram[('TTZ', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'rare':      histogram[('rare', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'diboson':   histogram[('diboson', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
-        'conv':      histogram[(wildcard, sm_point, 'conv_mc', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
-        'nonprompt': histogram[(wildcard, sm_point, 'np_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
-        }
-
-    # NOTE some complication for charge flip.
-    if region.count('_pp') or region.count('_mm'):
-        backgrounds['chargeflip'] = histogram_incl[(wildcard, sm_point, 'cf_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy()
-        backgrounds['chargeflip'].scale(0.5)
-    else:
-        backgrounds['chargeflip'] = histogram[(wildcard, sm_point, 'cf_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy()
-
-    for p in backgrounds.keys():
-        backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
-
-    total = backgrounds['signal'].copy()
-    total.clear()
-    for k in backgrounds.keys():
-        if not k == 'signal':
-            total.add(backgrounds[k])
-
-    print ("Filling data histogram. I can still stay blind!")
-    observation = histogram[(data_pattern, sm_point, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
-    observation = observation.rebin(axis.name, axis)
-    print(sm_point)
-    print(observation.values())
-    # unblind the first 8 bins. this is hacky.
-    unblind = observation._sumw[()][:0]
-    blind   = np.zeros_like(observation._sumw[()][0:])
-    observation._sumw[()] = np.concatenate([unblind, blind])
-
-    print ("Filling signal histogram")
-    if signal_histogram:
-        pass
-    else:
-        signal_histogram = histogram
-    signal = signal_histogram[('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
-    signal = signal.rebin(axis.name, axis)
-
-    if systematics:
-        # NOTE this loads background systematics.
-        # Not fully complete, but most important systematics are here
-        print ("Getting Background systematics")
-        systematics = get_systematics(histogram, year, sm_point,
-                                        correlated=False,
-                                        signal=False,
-                                        overflow='none',
-                                        samples=samples,
-                                        mapping=mapping[f'UL{ul}'],
-                                        )
-        if year.count('2016'):
-            print ("lumi uncertainties for 2016")
-            systematics += lumi_systematics_2016
-        elif year.count('2017'):
-            print ("lumi uncertainties for 2017")
-            systematics += lumi_systematics_2017
-        elif year.count('2018'):
-            print ("lumi uncertainties for 2018")
-            systematics += lumi_systematics_2018
-        else:
-            print ("No lumi systematic assigned.")
-
-        print ("Getting signal systematics")
-        systematics = add_signal_systematics(signal_histogram, year, sm_point,
-                                                systematics=systematics,
-                                                correlated=False,
-                                                proc='topW_lep',
-                                                overflow='none',
-                                                samples=samples,
-                                                mapping=mapping[f'UL{ul}'],
-                                                )
 
     print ("Making first plots")
     print ("...prepping the plots")
@@ -322,8 +168,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         backgrounds['diboson'],
         backgrounds['conv'],
         backgrounds['nonprompt'],
-        backgrounds['chargeflip'],
         backgrounds['TTZ'],
+        backgrounds['TZQ'],
         backgrounds['TTH'],
         backgrounds['TTW'],
         ]
@@ -335,8 +181,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         r'$VV/VVV$',
         r'$X\gamma$',
         'nonprompt',
-        'charge mis-ID',
         r'$t\bar{t}Z$',
+        r'$tZq$',
         r'$t\bar{t}H$',
         r'$t\bar{t}W$',
         ]
@@ -347,8 +193,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         colors['diboson'],
         colors['XG'],
         colors['non prompt'],
-        colors['chargeflip'],
         colors['TTZ'],
+        colors['TZQ'],
         colors['TTH'],
         colors['TTW'],
         ]
@@ -419,15 +265,301 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     plt.close(fig)
     del fig, ax, rax
 
-    sm_card = makeCardFromHist(
+
+
+    if systematics:
+        # NOTE this loads background systematics.
+        # Not fully complete, but most important systematics are here
+        print ("Getting Background systematics")
+        systematics = get_systematics(histogram, year, sm_point,
+                                        correlated=False,
+                                        signal=False,
+                                        overflow='none',
+                                        samples=samples,
+                                        mapping=mapping[f'UL{ul}'],
+                                        rebin=axis,
+                                        trilep=True,
+                                        )
+        if year.count('2016'):
+            print ("lumi uncertainties for 2016")
+            systematics += lumi_systematics_2016
+        elif year.count('2017'):
+            print ("lumi uncertainties for 2017")
+            systematics += lumi_systematics_2017
+        elif year.count('2018'):
+            print ("lumi uncertainties for 2018")
+            systematics += lumi_systematics_2018
+        else:
+            print ("No lumi systematic assigned.")
+
+    #    print ("Getting signal systematics")
+    #    systematics = add_signal_systematics(histogram, year, sm_point,
+    #                                            systematics=systematics,
+    #                                            correlated=False,
+    #                                            proc='topW_lep',
+    #                                            overflow='none',
+    #                                            samples=samples,
+    #                                            mapping=mapping[f'UL{ul}'],
+    #                                            rebin=axis,
+    #                                            )
+
+    if cpt==0 and cpqm==0:
+        sm_card = makeCardFromHist(
+            backgrounds,
+            ext=f'SM_{SM_plot_name}',
+            systematics = systematics,
+            data = observation,
+            blind = True,
+            )
+    else:
+        sm_card = None
+
+    bsm_card = makeCardFromHist(
         backgrounds,
-        ext=f'SM_{plot_name}',
-        #scales = scales,
-        #bsm_scales = bsm_scales,
+        ext=f'BSM_{plot_name}',
+        bsm_hist = signal,
+        bsm_scales = bsm_scales,
         systematics = systematics,
         data = observation,
         blind = True,
         )
+
+    bsm_cards[f'BSM_{plot_name}'] = bsm_card
+    sm_cards[f'SM_{plot_name}'] = sm_card
+
+    return plot_name, bsm_card, sm_card
+
+def write_card(histogram, year, region, axis, cpt, cpqm,
+               plot_dir='./',
+               systematics=True,
+               bsm_scales={},
+               histogram_incl = None,
+               signal_histogram = None,
+               ):
+
+    if region.count('trilep'):  # == 'dilepton_mass_ttZ' or region == 'signal_region_topW':
+        return write_trilep_card(histogram, year, region, axis, cpt, cpqm, plot_dir, systematics, bsm_scales, histogram_incl, signal_histogram)
+
+    print(f"Making dilep card for {year=}, {region=}, {cpt=}, {cpqm=}")
+
+    x = cpt
+    y = cpqm
+    #sm_point  = f"cpt_{x}_cpqm_{y}"
+    sm_point  = f"cpt_0_cpqm_0"
+    bsm_point = f"bsm_cpt_{x}_cpqm_{y}"
+
+    histo_name = region
+    plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
+    plot_name = plot_name_short + f'_{region}_{year}'
+    SM_plot_name = f'{region}_{year}'
+
+    ul = str(year)[2:]
+
+    print ("Filling background histogram")
+    backgrounds = {
+        'signal':    histogram[('topW_lep', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'TTW':       histogram[('TTW', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'TTH':       histogram[('TTH', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'TTZ':       histogram[('TTZ', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'TZQ':       histogram[('TZQ', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'rare':      histogram[('rare', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'diboson':   histogram[('diboson', sm_point, 'central', 'central')].sum('EFT','systematic','prediction').copy(),
+        'conv':      histogram[(wildcard, sm_point, 'conv_mc', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
+        'nonprompt': histogram[(wildcard, sm_point, 'np_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy(),
+        }
+
+    # NOTE some complication for charge flip.
+    if region.count('_pp') or region.count('_mm'):
+        backgrounds['chargeflip'] = histogram_incl[(wildcard, sm_point, 'cf_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy()
+        backgrounds['chargeflip'].scale(0.5)
+    else:
+        backgrounds['chargeflip'] = histogram[(wildcard, sm_point, 'cf_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy()
+
+    for p in backgrounds.keys():
+        nan_check = np.any(np.isnan(backgrounds[p].sum('dataset').values()[()]))
+        print(f"NaN check for {p=}: {nan_check=}")
+        backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
+
+    total = backgrounds['signal'].copy()
+    total.clear()
+    for k in backgrounds.keys():
+        if not k == 'signal':
+            total.add(backgrounds[k])
+
+    print ("Filling data histogram. I can still stay blind!")
+    observation = histogram[(data_pattern, sm_point, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
+    observation = observation.rebin(axis.name, axis)
+    #print(sm_point)
+    #print(observation.values())
+    # unblind the first 8 bins. this is hacky.
+    unblind = observation._sumw[()][:0]
+    blind   = np.zeros_like(observation._sumw[()][0:])
+    observation._sumw[()] = np.concatenate([unblind, blind])
+
+    print ("Filling signal histogram")
+    if signal_histogram:
+        pass
+    else:
+        signal_histogram = histogram
+    signal = signal_histogram[('topW_lep', bsm_point, 'central', 'central')].sum('systematic', 'EFT', 'prediction').copy()
+    signal = signal.rebin(axis.name, axis)
+
+    if systematics:
+        # NOTE this loads background systematics.
+        # Not fully complete, but most important systematics are here
+        #print ("Getting Background systematics")
+        systematics = []
+        systematics += get_systematics(histogram, year, sm_point,
+                                        correlated=False,
+                                        signal=False,
+                                        overflow='none',
+                                        samples=samples,
+                                        mapping=mapping[f'UL{ul}'],
+                                        )
+        if year.count('2016'):
+            print ("lumi uncertainties for 2016")
+            systematics += lumi_systematics_2016
+        elif year.count('2017'):
+            print ("lumi uncertainties for 2017")
+            systematics += lumi_systematics_2017
+        elif year.count('2018'):
+            print ("lumi uncertainties for 2018")
+            systematics += lumi_systematics_2018
+        else:
+            print ("No lumi systematic assigned.")
+
+        print ("Getting signal systematics")
+        systematics = add_signal_systematics(signal_histogram, year, sm_point,
+                                                systematics=systematics,
+                                                correlated=False,
+                                                proc='topW_lep',
+                                                overflow='none',
+                                                samples=samples,
+                                                mapping=mapping[f'UL{ul}'],
+                                                )
+
+    print ("Making first plots")
+    print ("...prepping the plots")
+    hist_list = [
+        backgrounds['signal'],
+        backgrounds['rare'],
+        backgrounds['diboson'],
+        backgrounds['conv'],
+        backgrounds['nonprompt'],
+        backgrounds['chargeflip'],
+        backgrounds['TTZ'],
+        backgrounds['TZQ'],
+        backgrounds['TTH'],
+        backgrounds['TTW'],
+        ]
+    edges = backgrounds['signal'].sum('dataset').axes()[0].edges()
+
+    labels = [
+        'SM scat.',
+        'Rare',
+        r'$VV/VVV$',
+        r'$X\gamma$',
+        'nonprompt',
+        'charge mis-ID',
+        r'$t\bar{t}Z$',
+        r'$tZq$',
+        r'$t\bar{t}H$',
+        r'$t\bar{t}W$',
+        ]
+
+    hist_colors = [
+        colors['signal'],
+        colors['rare'],
+        colors['diboson'],
+        colors['XG'],
+        colors['non prompt'],
+        colors['chargeflip'],
+        colors['TTZ'],
+        colors['TZQ'],
+        colors['TTH'],
+        colors['TTW'],
+        ]
+
+    fig, (ax, rax) = plt.subplots(2,1,figsize=(12,10), gridspec_kw={"height_ratios": (3, 1), "hspace": 0.05}, sharex=True)
+
+    hep.cms.label(
+        "Work in Progress",
+        data=True,
+        lumi=lumi,
+        com=13,
+        loc=0,
+        ax=ax,
+        )
+
+    print ("...building histogram")
+
+    hep.histplot(
+        [ x.sum('dataset').values()[()] for x in hist_list],
+        edges,
+        histtype="fill",
+        stack=True,
+        label=labels,
+        color=hist_colors,
+        ax=ax)
+
+    hep.histplot(
+        [ signal.sum('dataset').values()[()]],
+        edges,
+        histtype="step",
+        label=[r'$C_{\varphi t}=%s, C_{\varphi Q}^{-}=%s$'%(x,y)],
+        color=['black'],
+        ax=ax)
+
+    hep.histplot(
+        [ observation.values()[()]],
+        edges,
+        histtype="errorbar",
+        label=[r'Observation'],
+        color=['black'],
+        ax=ax)
+
+
+    hist.plotratio(
+        num=observation,
+        denom=total.sum("dataset"),
+        ax=rax,
+        error_opts=data_err_opts,
+        denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
+        guide_opts={},
+        unc='num',
+        #unc=None,
+        #overflow='over'
+    )
+
+    ax.legend(ncol=3)
+    # labels
+    rax.set_xlabel(backgrounds['signal'].sum('dataset').axes()[0].label)
+    ax.set_xlim(edges[0],edges[-1])
+    rax.set_ylabel(r'rel. unc.')
+    ax.set_ylabel(r'Events')
+
+    print ("...storing plots")
+
+    fig.savefig(f'{plot_dir}/{plot_name}.png')
+    fig.savefig(f'{plot_dir}/{plot_name}.pdf')
+
+    plt.close(fig)
+    del fig, ax, rax
+
+    # FIXME this needs to be parametrized again IF we decide to run significances!!
+    if cpt == 0 and cpqm == 0:
+        sm_card = makeCardFromHist(
+            backgrounds,
+            ext=f'SM_{SM_plot_name}',
+            #scales = scales,
+            #bsm_scales = bsm_scales,
+            systematics = systematics,
+            data = observation,
+            blind = True,
+            )
+    else:
+        sm_card = None  # background distributions are not parametrized anymore, so no need for a different card everytime
+
 
     bsm_card = makeCardFromHist(
         backgrounds,
@@ -503,7 +635,7 @@ if __name__ == '__main__':
     finalizePlotDir(dump_dir)
 
     # NOTE placeholder systematics if run without --systematics
-    mc_process_names = ['signal', 'TTW', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
+    mc_process_names = ['signal', 'TTW', 'TZQ', 'TTZ', 'TTH', 'conv', 'diboson', 'rare']
     systematics= [
         ('signal_norm',     1.10, 'signal'),
         ('TTW_norm',        1.15, 'TTW'),
@@ -568,10 +700,21 @@ if __name__ == '__main__':
 
     # Define Scaling Polynomial
     def scalePolyNLO(xt, xQM):
+        # ttZ SMEFT@NLO scale poly
         return 1 + 0.072813*xt - 0.098492*xQM + 0.005049*xt**2 - 0.002042*xt*xQM + 0.003988*xQM**2
 
     def scalePolyLO(xt, xQM):
         return 1 + 0.068485*xt - 0.104991*xQM + 0.003982*xt**2 - 0.002534*xt*xQM + 0.004144*xQM**2
+
+    def ttH_scalePolyLO(xt, xQM):
+        # ttH SMEFT@LO poly
+        return 1 - 0.000363*xt + 0.000218*xQM + 0.00054*xt**2 - 0.000409*xt*xQM + 0.00061*xQM**2
+
+    def tZq_scalePolyLO(xt, xQM):
+        # tZq scaling
+        # FIXME this needs a different sample splitting
+        return 1 + 0.005554*xt + 0.021142*xQM + 0.000452*xt**2 - 0.000913*xt*xQM + 0.00114*xQM**2
+
     
     years = args.year.split(',')
 
@@ -590,8 +733,9 @@ if __name__ == '__main__':
             # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
             outputs[year] = util.load(f'./outputs/{year}_fixed_merged.coffea')
             signal_outputs[year] = util.load(f'./outputs/{year}_signal_merged.coffea')
-            outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
-            signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
+            if args.regions in ['all', 'trilep']:
+                outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
+                signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
             #if args.regions in ['inclusive', 'all']:
             #    outputs[year] = get_merged_output(
             #        'SS_analysis',
@@ -673,11 +817,11 @@ if __name__ == '__main__':
         bsm_cards[(x,y)] = {}
         
         if args.scaling == 'LO':
-            bsm_scales = {'TTZ': scalePolyLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
         elif args.scaling == 'NLO':
-            bsm_scales = {'TTZ': scalePolyNLO(x,y)}
+            bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
         else:
-            bsm_scales = {'TTZ': 1}
+            bsm_scales = {'TTZ': 1, 'TTH': 1, 'TZQ': 1}  # NOTE: 1 is default, just make it explicit
 
         for year in years:
             suffix = "_scaled" if args.scaling else ""
@@ -710,8 +854,9 @@ if __name__ == '__main__':
 
                 plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
                 plot_name = plot_name_short + f'_{region}_{year}'
+                SM_plot_name = f'{region}_{year}'
                 bsm_cards[(x,y)][f'BSM_{plot_name}'] = f'/{card_dir}/BSM_{plot_name}_card.txt'
-                sm_cards[(x,y)][f'SM_{plot_name}']   = f'/{card_dir}/SM_{plot_name}_card.txt'
+                sm_cards[(x,y)][f'SM_{SM_plot_name}']   = f'/{card_dir}/SM_{SM_plot_name}_card.txt'
 
     workers = args.workers
     if args.overwrite:
@@ -720,31 +865,29 @@ if __name__ == '__main__':
                 for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
                     print (f"Done with {card_name}")
         else:
-            print (cards_to_write)
+            #print (cards_to_write)
             result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
 
-    #X, Y = np.meshgrid(xr, yr)
-    #scan = zip(X.flatten(), Y.flatten())
-
-    for x,y in scan:
-
-        plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
-        plot_name = plot_name_short + f'_{region}_{year}'
-        # NOTE running years individually and then just combining
-        # this avoids having to load all the histograms at once
-        print ("Combining cards:")
-        print (sm_cards[(x,y)])
-        # FIXME: run this step in parallel too!
-        sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')
-        bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
-
-        all_cards.append(sm_card_combined)
-        all_cards.append(bsm_card_combined)
-
-    #X, Y = np.meshgrid(xr, yr)
-    #scan = zip(X.flatten(), Y.flatten())
-
     if fit:
+        print ("Starting with combining cards")
+        for x,y in scan:
+
+            plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
+            plot_name = plot_name_short + f'_{region}_{year}'
+            SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
+            # NOTE running years individually and then just combining
+            # this avoids having to load all the histograms at once
+            print ("Combining cards:")
+            print (sm_cards[(x,y)])
+            # FIXME: run this step in parallel too!
+            if x==0 and y==0:
+                sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
+                all_cards.append(sm_card_combined)
+            #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
+            bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
+
+            #all_cards.append(sm_card_combined)
+            all_cards.append(bsm_card_combined)
 
         print ("Done with the pre-processing and data card making, running fits now.")
         print (f"Using {workers} workers")
@@ -759,7 +902,8 @@ if __name__ == '__main__':
         for x,y in scan:
             plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
             print (plot_name_short)
-            results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+            #results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+            results[(x,y)] = -2*(all_nll[f'SM_combined'] - all_nll[f'BSM_{plot_name_short}'])
 
     if fit and len(xr)>4:
 

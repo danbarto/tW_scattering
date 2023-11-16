@@ -21,6 +21,7 @@ colors = {
     'prompt': '#8AC926',
     'TTX': '#FFCA3A',
     'TTZ': '#FFCA3A',
+    'TZQ': '#f49d6e',
     'lost lepton': '#FFCA3A',
     'TTH': '#34623F',
     'TTTT': '#0F7173',
@@ -46,7 +47,7 @@ colors = {
     'cf_est_data': '#0F7173',
 }
 '''
-other colors (sets from coolers.com):
+other colors (sets from coolers.co):
 #525B76 (gray)
 #34623F (hunter green)
 #0F7173 (Skobeloff)
@@ -69,6 +70,7 @@ my_labels = {
     'TTXnoW': r'$t\bar{t}X\ (no\ W)$',
     'TTH': r'$t\bar{t}$H',
     'TTZ': r'$t\bar{t}$Z',
+    'TZQ': r'$tZq$',
     'TTTT': r'$t\bar{t}t\bar{t}$',
     'ttbar': r'$t\bar{t}$+jets',
     'top': r'$t\bar{t}$',
@@ -261,18 +263,26 @@ def make_plot_from_dict(
                     'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0, 'zorder':100.}
 
     # could in principle do sth like this [x.name for x in ax.identifiers()]
-    all_syst = ['mu', 'ele', 'b', 'l', 'PU', 'jes']
 
     #systematics =
 
-    sys_up = np.zeros_like(hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()])
-    sys_down = np.zeros_like(hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()])
+    cent_tmp = hist_d[list(processes)[0]].integrate('systematic', 'central').values(overflow=overflow)[()]
+    sys_up = np.zeros_like(cent_tmp)
+    sys_down = np.zeros_like(cent_tmp)
     if systematics:
         for proc in processes:
+            try:
+                sys_axis_index = [x.name for x in hist_d[proc].axes()].index('systematic')
+                all_syst = [x.name for x in hist_d[proc].axes()[sys_axis_index].identifiers()]
+                print(f"Got all systematics for {proc=}:", all_syst)
+            except:
+                print("Failed automatically extracting systematics")
+                all_syst = ['mu', 'ele', 'b', 'l', 'PU', 'jes']
+            cent_tmp = hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()]
             for syst in all_syst:
                 try:
-                    sys_up += (hist_d[proc].integrate('systematic', syst+'_up').values(overflow=overflow)[()] - hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
-                    sys_down += (hist_d[proc].integrate('systematic', syst+'_down').values(overflow=overflow)[()] - hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
+                    sys_up += (hist_d[proc].integrate('systematic', syst+'_up').values(overflow=overflow)[()] - cent_tmp)**2
+                    sys_down += (hist_d[proc].integrate('systematic', syst+'_down').values(overflow=overflow)[()] - cent_tmp)**2
                 except KeyError:
                     pass
                     #print (f"Systematic {syst} not present for processes {proc}")
@@ -292,10 +302,11 @@ def make_plot_from_dict(
 
 
     up = central + np.sqrt(sys_up**2 + stat**2)
-    rup = 1 + np.sqrt(sys_up**2 + stat**2)/central
+    rup = np.nan_to_num(1 + np.sqrt(sys_up**2 + stat**2)/central, 2)
 
     down = central - np.sqrt(sys_down**2 + stat**2)
-    rdown = 1 - np.sqrt(sys_down**2 + stat**2)/central
+    rdown = np.nan_to_num(1 - np.sqrt(sys_down**2 + stat**2)/central, 0)
+
     ax.fill_between(x=edges, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
     if data:

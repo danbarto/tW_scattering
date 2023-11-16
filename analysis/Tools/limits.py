@@ -20,6 +20,19 @@ def get_norms(dataset, samples, mapping, name='pdf', weight='LHEPdfWeight'):
     norms   = {f'{name}_{i}': x for i,x in enumerate(total/central)}
     return norms
 
+def fix_nan(to_fix, to=0.):
+    '''
+    this fixes nan values **in place**
+    '''
+    for fix in to_fix:
+        #print(fix)
+        is_nan = np.any(np.isnan(fix))
+        if is_nan:
+            print("\n\n\n\nFound an actual NaN!!!", fix)
+            print("\n\n\n")
+        fix = np.nan_to_num(fix, to)
+
+
 def get_pdf_unc(
         histogram,
         process,
@@ -66,6 +79,8 @@ def get_pdf_unc(
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
     pdf_unc = np.sqrt(pdf_unc)
+
+    fix_nan([central, pdf_unc])
 
     up_hist = make_bh((central+pdf_unc)/central, (central+pdf_unc)/central, edges)
     down_hist = make_bh((central-pdf_unc)/central, (central-pdf_unc)/central, edges)
@@ -133,6 +148,8 @@ def get_scale_unc(histogram, process, eft_point,
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
+    fix_nan([central, scale_unc])
+
     up_hist = make_bh((central+scale_unc)/central, (central+scale_unc)/central, edges)
     down_hist = make_bh((central-scale_unc)/central, (central-scale_unc)/central, edges)
 
@@ -142,6 +159,196 @@ def get_scale_unc(histogram, process, eft_point,
             print (i, round(val/central[i],2))
     
     return  up_hist, down_hist
+
+def get_ren_unc(histogram, process, eft_point,
+                  rebin=None,
+                  quiet=True,
+                  overflow='all',
+                  norms=None,
+                  ):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+
+    From auto documentation of NanoAODv8
+
+    OBJ: TBranch LHEScaleWeight LHE scale variation weights (w_var / w_nominal);
+    [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5";
+    [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0";
+    [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+
+    --> take 0, 1, 3 for down variations
+    --> take 5, 7, 8 for up variations
+    --> 4 is central, if needed
+    '''
+    # now get the actual values
+    tmp_central = histogram[(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+
+    scale_unc = np.zeros_like(central)
+    for i in [1,7]:
+        '''
+        Using the full envelope.
+        Don't know how to make a sensible envelope of up/down separately,
+        without getting vulnerable to weird one-sided uncertainties.
+        '''
+
+        norm = norms[f'scale_{i}'] if (norms is not None) else 1
+        #if norms:
+        #    proc_norm = norms[f'scale_{i}']
+
+        tmp_variation = histogram[(process, eft_point, 'central', f'scale_{i}')].sum('EFT', 'systematic', 'prediction').copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+
+        if i == 7:
+            up_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+        if i == 1:
+            down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
+
+    fix_nan([up_unc, down_unc, central])
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
+
+    if not quiet:
+        print (process)
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
+    return  up_hist, down_hist
+
+def get_fac_unc(histogram, process, eft_point,
+                  rebin=None,
+                  quiet=True,
+                  overflow='all',
+                  norms=None,
+                  ):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+
+    From auto documentation of NanoAODv8
+
+    OBJ: TBranch LHEScaleWeight LHE scale variation weights (w_var / w_nominal);
+    [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5";
+    [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0";
+    [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+
+    --> take 0, 1, 3 for down variations
+    --> take 5, 7, 8 for up variations
+    --> 4 is central, if needed
+    '''
+    # now get the actual values
+    tmp_central = histogram[(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+
+    scale_unc = np.zeros_like(central)
+    for i in [3,5]:
+        '''
+        Using the full envelope.
+        Don't know how to make a sensible envelope of up/down separately,
+        without getting vulnerable to weird one-sided uncertainties.
+        '''
+
+        norm = norms[f'scale_{i}'] if (norms is not None) else 1
+        #if norms:
+        #    proc_norm = norms[f'scale_{i}']
+
+        tmp_variation = histogram[(process, eft_point, 'central', f'scale_{i}')].sum('EFT', 'systematic', 'prediction').copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+
+        if i == 5:
+            up_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+        if i == 3:
+            down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
+
+    fix_nan([central, up_unc, down_unc])
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
+
+    if not quiet:
+        print (process)
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
+    return  up_hist, down_hist
+
+def get_ren_fac_unc(histogram, process, eft_point,
+                  rebin=None,
+                  quiet=True,
+                  overflow='all',
+                  norms=None,
+                  ):
+    '''
+    takes a coffea output, histogram name, process name and bins if histogram should be rebinned.
+    returns a histogram that can be used for systematic uncertainties
+
+    From auto documentation of NanoAODv8
+
+    OBJ: TBranch LHEScaleWeight LHE scale variation weights (w_var / w_nominal);
+    [0] is MUF="0.5" MUR="0.5"; [1] is MUF="1.0" MUR="0.5"; [2] is MUF="2.0" MUR="0.5";
+    [3] is MUF="0.5" MUR="1.0"; [4] is MUF="1.0" MUR="1.0"; [5] is MUF="2.0" MUR="1.0";
+    [6] is MUF="0.5" MUR="2.0"; [7] is MUF="1.0" MUR="2.0"; [8] is MUF="2.0" MUR="2.0"
+
+    --> take 0, 1, 3 for down variations
+    --> take 5, 7, 8 for up variations
+    --> 4 is central, if needed
+    '''
+    # now get the actual values
+    tmp_central = histogram[(process, eft_point, 'central', 'central')].sum('EFT', 'systematic', 'prediction').copy()
+    if rebin:
+        tmp_central = tmp_central.rebin(rebin.name, rebin)
+    central = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
+
+    scale_unc = np.zeros_like(central)
+    for i in [0,8]:
+        '''
+        Using the full envelope.
+        Don't know how to make a sensible envelope of up/down separately,
+        without getting vulnerable to weird one-sided uncertainties.
+        '''
+
+        norm = norms[f'scale_{i}'] if (norms is not None) else 1
+        #if norms:
+        #    proc_norm = norms[f'scale_{i}']
+
+        tmp_variation = histogram[(process, eft_point, 'central', f'scale_{i}')].sum('EFT', 'systematic', 'prediction').copy()
+        if rebin:
+            tmp_variation = tmp_variation.rebin(rebin.name, rebin)
+
+        if i == 8:
+            up_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+        if i == 0:
+            down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
+
+    edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
+
+    fix_nan([central, up_unc, down_unc])
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    down_hist = make_bh(down_unc/central, down_unc/central, edges)
+
+    if not quiet:
+        print (process)
+        print ("Rel. uncertainties:")
+        for i, val in enumerate(up_unc):
+            print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
+    return  up_hist, down_hist
+
 
 
 def get_ISR_unc(histogram, process, eft_point, rebin=None, quiet=True, overflow='all', norm=None):
@@ -170,6 +377,8 @@ def get_ISR_unc(histogram, process, eft_point, rebin=None, quiet=True, overflow=
             down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
+
+    fix_nan([central, up_unc, down_unc])
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
     down_hist = make_bh(down_unc/central, down_unc/central, edges)
@@ -209,6 +418,8 @@ def get_FSR_unc(histogram, process, eft_point, rebin=None, quiet=True, overflow=
             down_unc = tmp_variation[process].sum('dataset').values(overflow=overflow)[()]
 
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
+
+    fix_nan([central, up_unc, down_unc])
 
     up_hist = make_bh(up_unc/central, up_unc/central, edges)
     down_hist = make_bh(down_unc/central, down_unc/central, edges)
@@ -250,24 +461,41 @@ def get_unc(
         tmp_up      = tmp_up.rebin(rebin.name, rebin)
         if not symmetric:
             tmp_down    = tmp_down.rebin(rebin.name, rebin)
-        
-    central  = tmp_central[process].sum('dataset').values(overflow=overflow)[()]
-    up_unc   = tmp_up[process].sum('dataset').values(overflow=overflow)[()]
+
+    central  = np.nan_to_num(tmp_central[process].sum('dataset').values(overflow=overflow)[()], 0)
+    up_unc   = np.nan_to_num(tmp_up[process].sum('dataset').values(overflow=overflow)[()], 0)
     if not symmetric:
-        down_unc = tmp_down[process].sum('dataset').values(overflow=overflow)[()]
+        down_unc = np.nan_to_num(tmp_down[process].sum('dataset').values(overflow=overflow)[()], 0)
     edges    = tmp_central[process].sum('dataset').axes()[0].edges(overflow=overflow)
 
-    up_hist = make_bh(up_unc/central, up_unc/central, edges)
+    fix_nan([central, up_unc])
     if not symmetric:
-        down_hist = make_bh(down_unc/central, down_unc/central, edges)
+        fix_nan([down_unc])
+
+    up_hist = make_bh(up_unc/central, up_unc/central, edges, nan_to_num=2.0)
+    if not symmetric:
+        down_hist = make_bh(down_unc/central, down_unc/central, edges, nan_to_num=0.5, minimum=0.005)
     else:
-        down_hist = make_bh(central/up_unc, central/up_unc, edges)
+        down_hist = make_bh(central/up_unc, central/up_unc, edges, nan_to_num=0.5, minimum=0.005)
 
     if not quiet:
         print (process)
         print ("Rel. uncertainties:")
         for i, val in enumerate(up_unc):
             print (i, round(abs(up_unc[i]-down_unc[i])/(2*central[i]),2))
+
+    is_nan = False
+    if np.any(np.isnan(up_hist.values())): is_nan = True
+    if np.any(np.isnan(down_hist.values())): is_nan = True
+    if is_nan:
+        print(f"\n\n Found NaN value in {process=}, {unc=}, {symmetric=}")
+        print(f"{central=}")
+        print(f"{up_unc}")
+        print(f"up_hist:", up_hist.values())
+        if not symmetric:
+            print(f"{down_unc}")
+            print("down_hist:", down_hist.values())
+
 
     return  up_hist, down_hist
 
@@ -284,12 +512,13 @@ def get_systematics(histogram, year, eft_point,
                     samples=None,
                     mapping=None,
                     rebin=None,
+                    trilep=False,
                     ):
     if correlated:
         year = "cor"
     systematics = []
 
-    all_processes = ['TTW', 'TTZ', 'TTH', 'rare', 'diboson']
+    all_processes = ['TTW', 'TTZ', 'TZQ', 'TTH', 'rare', 'diboson']
     if signal: all_processes += ['signal']
 
     for proc in all_processes:
@@ -308,19 +537,27 @@ def get_systematics(histogram, year, eft_point,
                 (f'{var}_{year}',     get_unc(histogram, proc, var,  eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
             ]
 
-    for proc in ['TTW', 'TTZ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
+    #if not trilep:
+
+    for proc in ['TTW', 'TTZ', 'TZQ', 'TTH', 'rare']:  # FIXME extend to all MC driven estimates. diboson is broken because of weight length mismatch of ZZ sample...
         systematics += [
             #('pdf', get_pdf_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc),
-            ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
-            ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow), proc),
-            ('scale_%s'%proc, get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('FSR', get_FSR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+            ('ISR', get_ISR_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, quiet=True), proc),
+
+            ## Envelope scale variations
+            #('scale_%s'%proc, get_scale_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ## Individual renorm/fac/correlated uncertainties
+            ('ren_%s'%proc, get_ren_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('fac_%s'%proc, get_fac_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            ('ren_fac_%s'%proc, get_ren_fac_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
         for i in range(1,101):
             systematics.append(
                 (f'pdf_{i}', get_pdf_unc(histogram, proc, eft_point,
-                                         rebin=rebin, overflow=overflow,
-                                         select_indices = i,
-                                         norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
+                                        rebin=rebin, overflow=overflow,
+                                        select_indices = i,
+                                        norms=get_norms(proc, samples, mapping, name='pdf', weight='LHEPdfWeight')), proc)
             )
 
     systematics += [
@@ -358,9 +595,12 @@ def get_systematics(histogram, year, eft_point,
         ('diboson_norm', 1.20, 'diboson'),
         #
         #('nonprompt_norm', 1.30, 'nonprompt'),
-        ('chargeflip_norm', 1.20, 'chargeflip'),
         ('conv_norm', 1.20, 'conv')
     ]
+    if not trilep:
+        systematics += [
+            ('chargeflip_norm', 1.20, 'chargeflip'),
+        ]
     return systematics
 
 def add_signal_systematics(histogram, year, eft_point,
@@ -550,7 +790,7 @@ def makeCardFromHist(
 
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'shape')
-                    print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding shape uncertainty %s for process %s."%(systematic, proc))
 
                 if len(mag)>1:
                     central = h_tmp_bsm[proc].values()[()]  # get BSM scaled prediction
@@ -559,9 +799,9 @@ def makeCardFromHist(
                     val = np.maximum(val, 0.02*np.ones_like(val))
                     val_h = make_bh(val, val, mag[0].axes[0].edges)
                     incl_rel = sum(val_h.values())/sum(central)
-                    print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
-                    print (" - central prediction: %.2f"%sum(central))
-                    print (" - relative uncertainty: %.2f"%incl_rel)
+                    #print ("Integrated systematic uncertainty %s for %s:"%(systematic, proc))
+                    #print (" - central prediction: %.2f"%sum(central))
+                    #print (" - relative uncertainty: %.2f"%incl_rel)
 
                     fout[proc+'_'+systematic+'Up']   = val_h
                     val = np.nan_to_num(mag[1].values(), nan=1.0) * central
@@ -580,12 +820,12 @@ def makeCardFromHist(
                 # FIXME this is not implemented yet. can't have asymmetric lnNs in my card file writer
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'lnN')
-                    print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
                 card.specifyUncertainty(systematic, 'Bin0', proc, (mag[0], mag[1]))
             else:
                 if not card.checkUncertaintyExists(systematic):
                     card.addUncertainty(systematic, 'lnN')
-                    print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
+                    #print ("Adding lnN uncertainty %s for process %s."%(systematic, proc))
                 card.specifyUncertainty(systematic, 'Bin0', proc, mag)
             
     fout.close()
