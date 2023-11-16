@@ -227,8 +227,17 @@ if __name__ == '__main__':
         outputs = []
         signal_outputs = []
         for y in years:
-            outputs.append(get_merged_output("trilep_analysis", y, '../outputs/', samples, mapping, lumi=lumis[y], postfix='_cpt_0_cpqm_0'))
-            outputs.append(get_merged_output("trilep_analysis", y, '../outputs/', samples, mapping, lumi=lumis[y], postfix=''))
+            outputs.append(get_merged_output(
+                "trilep_analysis",
+                y,
+                '../outputs/',
+                samples,
+                mapping,
+                lumi=lumis[y],
+                postfix='_cpt_0_cpqm_0',
+                variations = ['central', 'base', 'jes', 'fake'],
+            ))
+            signal_outputs.append(get_merged_output("trilep_analysis", y, '../outputs/', samples, mapping, lumi=lumis[y], postfix=''))
         output = accumulate(outputs)
         signal_output = accumulate(signal_outputs)
         del outputs
@@ -241,7 +250,7 @@ if __name__ == '__main__':
             mapping,
             lumi=lumi,
             postfix='_cpt_0_cpqm_0',
-            variations = ['central', 'base', 'jes']
+            variations = ['central', 'base', 'jes', 'fake']
         )
         signal_output = get_merged_output("trilep_analysis", year,'../outputs/', samples, mapping, lumi=lumi, postfix='', select_datasets=['topW_lep'])
 
