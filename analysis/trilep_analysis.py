@@ -676,7 +676,7 @@ class trilep_analysis(processor.ProcessorABC):
                             systematic  = pdf_ext,
                             prediction  = 'central',
                             EFT         = 'central',
-                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            lt          = lt[(BL & add_sel)],
                             weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
                         )
 
@@ -687,7 +687,7 @@ class trilep_analysis(processor.ProcessorABC):
                             systematic  = pdf_ext,
                             prediction  = 'central',
                             EFT         = "central",
-                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            lt          = lt[(BL & add_sel)],
                             weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
                         )
 
@@ -699,7 +699,7 @@ class trilep_analysis(processor.ProcessorABC):
                                 systematic  = pdf_ext,
                                 prediction  = 'central',
                                 EFT         = "central",
-                                mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                                lt          = lt[(BL & add_sel)],
                                 weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
                             )
 
@@ -711,7 +711,7 @@ class trilep_analysis(processor.ProcessorABC):
                             systematic  = pdf_ext,
                             prediction  = 'central',
                             EFT         = 'central',
-                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            lt          = lt[(BL & add_sel)],
                             weight      = weight.weight()[(BL & add_sel)] * ev.LHEPdfWeight[:,i][(BL & add_sel)] if len(ev.LHEPdfWeight[0])>0 else weight.weight()[(BL & add_sel)],
                         )
 
@@ -722,7 +722,7 @@ class trilep_analysis(processor.ProcessorABC):
                             systematic  = pdf_ext,
                             prediction  = 'central',
                             EFT         = "central",
-                            mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                            lt          = lt[(BL & add_sel)],
                             weight      = weight.weight()[(BL & add_sel)] * ev.LHEScaleWeight[:,i][(BL & add_sel)] if len(ev.LHEScaleWeight[0])>0 else weight.weight()[(BL & add_sel)],
                         )
 
@@ -734,7 +734,7 @@ class trilep_analysis(processor.ProcessorABC):
                                 systematic  = pdf_ext,
                                 prediction  = 'central',
                                 EFT         = "central",
-                                mass        = ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)[(BL & add_sel)],
+                                lt          = lt[(BL & add_sel)],
                                 weight      = weight.weight()[(BL & add_sel)] * ev.PSWeight[:,i][(BL & add_sel)],
                             )
 
