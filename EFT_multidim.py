@@ -119,6 +119,9 @@ def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
     total = backgrounds['signal'].copy()
     total.clear()
     for k in backgrounds.keys():
+        nan_check = np.any(np.isnan(backgrounds[k].sum('dataset').values()[()]))
+        print(f"NaN check for {p=}: {nan_check=}")
+        if nan_check: print ("\n\n    !!!!!!!!\n\n\n\n")
         if not k == 'signal':
             total.add(backgrounds[k])
 
@@ -373,6 +376,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
         backgrounds['chargeflip'] = histogram[(wildcard, sm_point, 'cf_est_data', 'central')].sum('systematic', 'EFT', 'prediction').copy()
 
     for p in backgrounds.keys():
+        nan_check = np.any(np.isnan(backgrounds[p].sum('dataset').values()[()]))
+        print(f"NaN check for {p=}: {nan_check=}")
         backgrounds[p] = backgrounds[p].rebin(axis.name, axis)
 
     total = backgrounds['signal'].copy()
@@ -384,8 +389,8 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     print ("Filling data histogram. I can still stay blind!")
     observation = histogram[(data_pattern, sm_point, 'central', 'central')].sum('dataset', 'EFT', 'systematic', 'prediction').copy()
     observation = observation.rebin(axis.name, axis)
-    print(sm_point)
-    print(observation.values())
+    #print(sm_point)
+    #print(observation.values())
     # unblind the first 8 bins. this is hacky.
     unblind = observation._sumw[()][:0]
     blind   = np.zeros_like(observation._sumw[()][0:])
@@ -402,8 +407,9 @@ def write_card(histogram, year, region, axis, cpt, cpqm,
     if systematics:
         # NOTE this loads background systematics.
         # Not fully complete, but most important systematics are here
-        print ("Getting Background systematics")
-        systematics = get_systematics(histogram, year, sm_point,
+        #print ("Getting Background systematics")
+        systematics = []
+        systematics += get_systematics(histogram, year, sm_point,
                                         correlated=False,
                                         signal=False,
                                         overflow='none',
@@ -862,32 +868,26 @@ if __name__ == '__main__':
             #print (cards_to_write)
             result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
 
-    #X, Y = np.meshgrid(xr, yr)
-    #scan = zip(X.flatten(), Y.flatten())
-
-    for x,y in scan:
-
-        plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
-        plot_name = plot_name_short + f'_{region}_{year}'
-        SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
-        # NOTE running years individually and then just combining
-        # this avoids having to load all the histograms at once
-        print ("Combining cards:")
-        print (sm_cards[(x,y)])
-        # FIXME: run this step in parallel too!
-        if x==0 and y==0:
-            sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
-            all_cards.append(sm_card_combined)
-        #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
-        bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
-
-        #all_cards.append(sm_card_combined)
-        all_cards.append(bsm_card_combined)
-
-    #X, Y = np.meshgrid(xr, yr)
-    #scan = zip(X.flatten(), Y.flatten())
-
     if fit:
+        print ("Starting with combining cards")
+        for x,y in scan:
+
+            plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
+            plot_name = plot_name_short + f'_{region}_{year}'
+            SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
+            # NOTE running years individually and then just combining
+            # this avoids having to load all the histograms at once
+            print ("Combining cards:")
+            print (sm_cards[(x,y)])
+            # FIXME: run this step in parallel too!
+            if x==0 and y==0:
+                sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
+                all_cards.append(sm_card_combined)
+            #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
+            bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
+
+            #all_cards.append(sm_card_combined)
+            all_cards.append(bsm_card_combined)
 
         print ("Done with the pre-processing and data card making, running fits now.")
         print (f"Using {workers} workers")
