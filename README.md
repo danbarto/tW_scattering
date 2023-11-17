@@ -197,7 +197,7 @@ Similarly, you can stop the process by running `kill 27709`.
 ## Get combine
 Latest recommendations at https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#setting-up-the-environment-and-installation
 ```
-cmsRel CMSSW_10_2_13
+cmsrel CMSSW_10_2_13
 cd CMSSW_10_2_13/src
 cmsenv
 git cms-init
