@@ -285,7 +285,7 @@ if __name__ == '__main__':
     #get_chargeflip_plot(output, 'N_fwd', axis, name='cf_N_fwd', log=False)
     get_standard_plot(output, 'dilepton_mass_topW', axis, name='dilepton_mass_topW', log=False, lumi=lumi, blind=blind)
 
-    axis = hist.Bin('mass', r'$m_{\ell\ell\ell} (GeV)$', 50, 0, 200)
+    axis = hist.Bin('mass', r'$m_{\ell\ell\ell} (GeV)$', 25, 70, 170)
     get_standard_plot(output, 'trilep_mass_XG', axis, name='trilep_mass_XG', log=False, lumi=lumi, blind=blind)
 
     axis = hist.Bin('mass', r'$m_{\ell\ell} (GeV)$', 20, 81, 101)
@@ -303,6 +303,7 @@ if __name__ == '__main__':
     axis = sr_axis
     get_standard_plot(output, 'LT_ttZ', axis, name='LT_ttZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'LT_XG', axis, name='LT_XG', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_standard_plot(output, 'LT_XG', axis, name='LT_XG_log', log=True, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'LT_WZ', axis, name='LT_WZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW', log=False, lumi=lumi, blind=True, normalize=TFnormalize, signal=signal_output)
 

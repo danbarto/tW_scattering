@@ -163,6 +163,7 @@ def make_plot_from_dict(
         systematics=True,
         lumi = 1,
         signal = None,
+        ncol=2,
 ):
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -253,7 +254,7 @@ def make_plot_from_dict(
         loc='upper left',
         bbox_to_anchor=(0.3, 0.8, 0.45, .2),
         #mode="expand",
-        ncol=2,
+        ncol=ncol,
         #borderaxespad=0.0,
         #labels=updated_labels,
         #handles=handles,
@@ -287,9 +288,9 @@ def make_plot_from_dict(
                     pass
                     #print (f"Systematic {syst} not present for processes {proc}")
 
-            if proc.count("np_est"):
-                sys_up += (0.3*hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
-                sys_down += (0.3*hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
+            #if proc.count("np_est"):
+            #    sys_up += (0.3*hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
+            #    sys_down += (0.3*hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()])**2
 
         sys_up = np.sqrt(sys_up)
         sys_down = np.sqrt(sys_down)
@@ -374,6 +375,7 @@ def makePlot(output,
              rescale={},
              obs_label='Observation',
              channel='all',
+             ncol=3,
              ):
     
     if save:
@@ -552,7 +554,7 @@ def makePlot(output,
         loc='upper right',
         bbox_to_anchor=(0.03, 0.88, 0.90, .11),
         mode="expand",
-        ncol=3,
+        ncol=ncol,
         borderaxespad=0.0,
         labels=updated_labels,
         handles=handles,

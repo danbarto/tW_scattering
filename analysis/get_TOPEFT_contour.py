@@ -108,7 +108,8 @@ if __name__ == '__main__':
 
 
     # load results from this analysis
-    with open("../results/results_bit_all_NLO_all_20231026_222110.json", "r") as f:
+    #with open("../results/results_bit_all_NLO_all_20231026_222110.json", "r") as f:
+    with open("../results/results_bit_all_NLO_all_20231120_173343.json", "r") as f:
         results = json.load(f)["data"]
 
     rx = np.arange(-7,8,1)

@@ -74,6 +74,15 @@ wildcard = re.compile('.')
 def write_card_wrapper(arguments):
     write_card(*arguments)
 
+def combine_cards_wrapper(arguments):
+    return combine_cards(*arguments)
+
+def combine_cards(c, cards, out):
+    print("\n\nCOMBINING CARDS\n\n")
+    print(cards, out)
+    print('\n\n')
+    return card.combineCards(cards, name=out)
+
 def write_trilep_card(histogram, year, region, axis, cpt, cpqm,
                       plot_dir='./',
                       systematics=False,
@@ -869,6 +878,7 @@ if __name__ == '__main__':
             result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
 
     if fit:
+        all_combined = []
         print ("Starting with combining cards")
         for x,y in scan:
 
@@ -881,16 +891,26 @@ if __name__ == '__main__':
             print (sm_cards[(x,y)])
             # FIXME: run this step in parallel too!
             if x==0 and y==0:
-                sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
-                all_cards.append(sm_card_combined)
+                all_combined.append((card, sm_cards[(x,y)], f'SM_combined.txt'))
+                #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
+                #all_cards.append(sm_card_combined)
             #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
-            bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
+            all_combined.append((card, bsm_cards[(x,y)], f'BSM_{plot_name_short}.txt'))
+            #bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
 
             #all_cards.append(sm_card_combined)
-            all_cards.append(bsm_card_combined)
+            #all_cards.append(bsm_card_combined)
 
         print ("Done with the pre-processing and data card making, running fits now.")
         print (f"Using {workers} workers")
+
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+            for result in executor.map(combine_cards_wrapper, all_combined):
+                print ("Combined card:", result)
+                all_cards.append(result)
+                #print (val, result)
+                #all_nll[card_name.split('/')[-1].strip('.txt')] = result
 
         all_nll = {}
         with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
