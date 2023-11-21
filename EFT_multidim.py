@@ -15,6 +15,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import socket
 
 from coffea import hist, util
 from coffea.processor import accumulate
@@ -676,7 +677,12 @@ if __name__ == '__main__':
 
     all_cards = []
     #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    card = dataCard(releaseLocation=os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    if socket.gethostname().count("uaf"):
+        #release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/')
+        release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+    else:
+        card = os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+    card = dataCard(releaseLocation=release_location)
     card_dir = os.path.abspath(os.path.expandvars('./data/cards/')) + '/'
     #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     #card_dir = os.path.expandvars('$TWHOME/data/cards/')
@@ -1077,7 +1083,7 @@ if __name__ == '__main__':
     # NOTE re-init dataCard here just so that we always clean up the right dir...
     #card = dataCard(releaseLocation=os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
     #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
-    card = dataCard(releaseLocation=os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
+    card = dataCard(releaseLocation=release_location)
     card.cleanUp()
 
     if False:
