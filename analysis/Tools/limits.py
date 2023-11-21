@@ -550,7 +550,7 @@ def get_systematics(histogram, year, eft_point,
             ## Individual renorm/fac/correlated uncertainties
             ('ren_%s'%proc, get_ren_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
             ('fac_%s'%proc, get_fac_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
-            ('ren_fac_%s'%proc, get_ren_fac_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
+            #('ren_fac_%s'%proc, get_ren_fac_unc(histogram, proc, eft_point, rebin=rebin, overflow=overflow, norms=get_norms(proc, samples, mapping, name='scale', weight='LHEScaleWeight')), proc),
         ]
         for i in range(1,101):
             systematics.append(
