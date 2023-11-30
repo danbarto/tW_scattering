@@ -748,7 +748,7 @@ if __name__ == '__main__':
             # SS_analysis_MCall_central_2018_cpt_-5_cpqm_-5_20230327_223314.coffea
             outputs[year] = util.load(f'./outputs/{year}_fixed_merged.coffea')
             signal_outputs[year] = util.load(f'./outputs/{year}_signal_merged.coffea')
-            if args.regions in ['all', 'trilep']:
+            if args.regions in ['all', 'trilep', 'ttZ']:
                 outputs_tri[year] = util.load(f'./outputs/{year}_trilep_merged.coffea')
                 signal_outputs_tri[year] = util.load(f'./outputs/{year}_signal_trilep_merged.coffea')
             #if args.regions in ['inclusive', 'all']:
