@@ -183,6 +183,8 @@ def get_nonprompt_plot(output, hist, axis, name, log=False, overflow='over'):
         overflow = overflow,
         log = log,
         data_label = 'Nonprompt observed',
+        normalize = False,
+        ncol = 1,
 #        systematics = False,
     )
 
@@ -270,7 +272,7 @@ if __name__ == '__main__':
     ht_bins_red = hist.Bin('ht', r'$p_{T}\ (GeV)$', 7,100,800)
     eta_bins = hist.Bin('eta', r'$\eta $', 25, -5.0, 5.0)
     score_bins = hist.Bin("score",          r"N", 8, 0, 1)  # FIXME update to 8
-    sr_axis     = hist.Bin("lt",  r"LT", 10, 0, 1000)
+    sr_axis     = hist.Bin("lt",  r"$L_{T}\ (GeV)$", 10, 0, 1000)
     ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.5, 99.5) # e.g. for PV
 
 
@@ -296,6 +298,10 @@ if __name__ == '__main__':
 
     axis = hist.Bin('pt', r'$p_{T} (GeV)$', 25, 0, 500)
     get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
+    get_nonprompt_plot(output, 'fwd_jet', axis, name='np_fwd_jet_pt', log=False)
+    get_nonprompt_plot(output, 'fwd_jet', axis, name='np_fwd_jet_pt_log', log=True)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt_log', log=True, systematics=True)
+    get_standard_plot(output, 'fwd_jet', axis, name='fwd_jet_pt_log_stat', log=True, systematics=False)
 
     axis = hist.Bin('pt', r'$p_{T}^{miss} (GeV)$', 25, 0, 500)
     get_standard_plot(output, 'MET', axis, name='MET_pt', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
@@ -306,6 +312,8 @@ if __name__ == '__main__':
     get_standard_plot(output, 'LT_XG', axis, name='LT_XG_log', log=True, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'LT_WZ', axis, name='LT_WZ', log=False, lumi=lumi, blind=blind, normalize=TFnormalize)
     get_standard_plot(output, 'signal_region_topW', axis, name='signal_region_topW', log=False, lumi=lumi, blind=True, normalize=TFnormalize, signal=signal_output)
+    get_nonprompt_plot(output, 'signal_region_topW', axis, name='np_signal_region_topW', log=False)
+    get_nonprompt_plot(output, 'signal_region_topW', axis, name='np_signal_region_topW_log', log=True)
 
 
     # actual signal region plots; and different projections
