@@ -279,6 +279,7 @@ class Selection:
                 'N_btag>0',
                 'N_fwd>0',
                 'offZ',
+                'MET>50',
             ]
         }
 
