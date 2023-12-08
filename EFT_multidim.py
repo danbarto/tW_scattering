@@ -10,6 +10,7 @@ import os
 import re
 import time
 import pickle
+import gzip
 import json
 from datetime import datetime
 
@@ -31,6 +32,7 @@ from analysis.Tools.config_helpers import lumi as lumis
 from analysis.Tools.limits import get_unc, get_pdf_unc, get_scale_unc, makeCardFromHist
 from analysis.Tools.dataCard import dataCard
 from analysis.Tools.samples import Samples
+from analysis.Tools.HyperPoly import *
 
 from analysis.Tools.limits import get_systematics, add_signal_systematics
 
@@ -613,6 +615,7 @@ if __name__ == '__main__':
     argParser.add_argument('--cpqm', action='store', default=0, type=int, help="If run_scan is used, this is the cpqm value that's being evaluated")
     argParser.add_argument('--uaf', action='store_true', help="Store in different directory if on uaf.")
     argParser.add_argument('--scaling', action='store', choices=['LO','NLO'], help="run with scaling : LO or NLO?")
+    argParser.add_argument('--physicsmodel', action='store_true', help="Use the higgs combine physics model")
 
     args = argParser.parse_args()
 
@@ -681,7 +684,7 @@ if __name__ == '__main__':
         #release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/')
         release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
     else:
-        card = os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+        release_location = os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
     card = dataCard(releaseLocation=release_location)
     card_dir = os.path.abspath(os.path.expandvars('./data/cards/')) + '/'
     #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
@@ -776,68 +779,57 @@ if __name__ == '__main__':
 
     cards_to_write = []
 
-    for x,y in scan:
+    if args.regions == 'inclusive':
+        regions = [
+            ("bit_score_incl", bit_axis, lambda x: x["bit_score_incl"]),
+        ]
 
-        print (f"Working on point {x}, {y}")
-
-        if args.regions == 'inclusive':
-            regions = [
-                ("bit_score_incl", bit_axis, lambda x: x["bit_score_incl"]),
-            ]
-
-        elif args.regions == 'SS':
-            regions = [
-                ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
-                ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
-            ]
-        elif args.regions == 'SR':
-            regions = [
-                ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
-                ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
-                ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
-            ]
-        elif args.regions == 'ttZ':
-            regions = [
-                ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
-            ]
-        elif args.regions == 'trilep':
-            regions = [
-                ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
-                ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
-                ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
-                ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice( 0.5,2.5))),
-                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice( 0.5,2.5))),
-            ]
-        elif args.regions == 'all':
-            # FIXME this also needs the XG and WZ regions
-            regions = [
-                ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
-                ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
-                ("trilep_ttZ",  mass_axis, lambda x: x['dilepton_mass_ttZ']),
-                ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
-                ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
-                ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
-                ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
-                ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
-            ]
+    elif args.regions == 'SS':
+        regions = [
+            ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
+            ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
+        ]
+    elif args.regions == 'SR':
+        regions = [
+            ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
+            ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
+            ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+        ]
+    elif args.regions == 'ttZ':
+        regions = [
+            ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+        ]
+    elif args.regions == 'trilep':
+        regions = [
+            ("trilep_ttZ", mass_axis, lambda x: x['dilepton_mass_ttZ']),
+            ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
+            ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
+            ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice( 0.5,2.5))),
+            ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice( 0.5,  1.5)).integrate('N', slice( 0.5,2.5))),
+        ]
+    elif args.regions == 'all':
+        regions = [
+            ("bit_score_pp", bit_axis, lambda x: x["bit_score_pp"]),
+            ("bit_score_mm", bit_axis, lambda x: x["bit_score_mm"]),
+            ("trilep_ttZ",  mass_axis, lambda x: x['dilepton_mass_ttZ']),
+            ("trilep_WZ", lt_red_axis, lambda x: x["LT_WZ"]),
+            ("trilep_XG", lt_red_axis, lambda x: x["LT_XG"]),
+            ("trilep_topW_qm_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qp_0Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(-0.5,0.5))),
+            ("trilep_topW_qm_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(-1.5, -0.5)).integrate('N', slice(0.5,2.5))),
+            ("trilep_topW_qp_1Z", lt_red_axis, lambda x: x["signal_region_topW"].integrate('charge', slice(0.5, 1.5)).integrate('N', slice(0.5,2.5))),
+        ]
 
 
-        sm_cards[(x,y)] = {}
-        bsm_cards[(x,y)] = {}
-        
-        if args.scaling == 'LO':
-            bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
-        elif args.scaling == 'NLO':
-            bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
-        else:
-            bsm_scales = {'TTZ': 1, 'TTH': 1, 'TZQ': 1}  # NOTE: 1 is default, just make it explicit
+    if args.physicsmodel:
 
+        scaling_pkl = []
+        cards = {}
         for year in years:
             suffix = "_scaled" if args.scaling else ""
             plot_dir = base_dir + year + suffix + '/'
@@ -846,7 +838,11 @@ if __name__ == '__main__':
             ul = str(year)[2:]
             lumi = lumis[year]
 
+            # channels in combine will be named after the `region` here
             for region, axis, get_histo in regions:
+
+                channel = f'{region}_{year}'
+
                 if args.overwrite:
                     if region in trilep_regions:
                         output = outputs_tri[year]
@@ -855,81 +851,189 @@ if __name__ == '__main__':
                         output = outputs[year]
                         signal_output = signal_outputs[year]
 
-                if args.overwrite:
-                    #histogram = output[region]
-                    if region.count('pp') or region.count('mm'):
-                        histogram_incl = output['bit_score_incl']  # NOTE not nice, but need this for now
-                    else:
-                        histogram_incl = None
-                    cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl, get_histo(signal_output)))
-                #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
-                #                               plot_dir='./',
-                #                               systematics=True,
-                #                               )
+                # NOTE so here we need to extract the scaling dictionary
+                '''
+                {'channel': 'SR', 'process': 'ttbar', 'parameters': ['cSM[1]', 'cpt[0,-20,20]', 'cpQM[0,-20,20]',
+                '''
+
+                coordinates = [(0, 0), (3, 0), (0, 3), (6, 0), (3, 3), (0, 6)]
+                ref_coordinates = [0,0]
+
+                sm = get_histo(signal_output)[('topW_lep', f'bsm_cpt_0_cpqm_0', 'central', 'central')].values()[('topW_lep', f'bsm_cpt_0_cpqm_0', 'central', 'central')]
+                predictions = []
+                for cpt, cpqm in coordinates:
+                    #predictions[(cpt, cpqm)] = get_histo(signal_output).sum('dataset').integrate('prediction', 'central').integrate('systematic', 'central').integrate('EFT', f'bsm_cpt_{cpt}_cpqm_{cpqm}').values()[()]
+                    #predictions[(cpt, cpqm)] = get_histo(signal_output)[('topW_lep', f'bsm_cpt_{cpt}_cpqm_{cpqm}', 'central', 'central')].values()[('topW_lep', f'bsm_cpt_{cpt}_cpqm_{cpqm}', 'central', 'central')]
+                    predictions.append(get_histo(signal_output)[('topW_lep', f'bsm_cpt_{cpt}_cpqm_{cpqm}', 'central', 'central')].values()[('topW_lep', f'bsm_cpt_{cpt}_cpqm_{cpqm}', 'central', 'central')]/sm)
+
+                hp = HyperPoly(2)
+                hp.initialize(coordinates, ref_coordinates)
+                coeffs = hp.get_parametrization(np.array(predictions))
+                # from 'sm + x0 + x1 + x0**2 + x0*x1 + x1**2'
+                # to sm + x0 + x0**2 + x1 + x1*x0 + x1**2
+                # so columns 0, 1, 3, 2, 4, 5
+                scaling = coeffs[[0,1,3,2,4,5]].T
+
+                scaling_pkl.append(
+                    {
+                        'channel': f'dc_{channel}',
+                        'process': 'signal',  # FIXME check that signal name is correct
+                        'parameters': ['cSM[1]', 'cpt[0,-20,20]', 'cpQM[0,-20,20]'],
+                        'scaling': scaling  # FIXME this needs to be a 2D array
+                    }
+                )
+
+
+                # Now write the SM data card like before and be done??
+                if region.count('pp') or region.count('mm'):
+                    histogram_incl = output['bit_score_incl']  # NOTE not nice, but need this for now
+                else:
+                    histogram_incl = None
+
+                # FIXME these scales need to go into the scaling file as well
+                bsm_scales = {'TTZ': 1, 'TTH': 1, 'TZQ': 1}  # NOTE: 1 is default, just make it explicit
+
+                sm_card = write_card(
+                    get_histo(output),
+                    year,
+                    region,
+                    axis,
+                    0,
+                    0,
+                    plot_dir,
+                    args.systematics,
+                    bsm_scales,
+                    histogram_incl,
+                    get_histo(signal_output),
+                )
+
+                cards[channel] = sm_card[2]
+
+                print(sm_card)
+
+                #raise NotImplementedError
+
+        print(scaling_pkl)
+
+        combined_card = combine_cards(card, cards, 'combined_card_physics_model.txt')
+
+        with gzip.open(f"{card_dir}/scaling.pkl.gz", "wb") as fout:
+            pickle.dump(scaling_pkl, fout)
+
+        card.interference_scan(combined_card, f"{card_dir}/scaling.pkl.gz")
+
+        raise NotImplementedError
+
+
+
+    else:
+
+        for x,y in scan:
+            if args.scaling == 'LO':
+                bsm_scales = {'TTZ': scalePolyLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
+            elif args.scaling == 'NLO':
+                bsm_scales = {'TTZ': scalePolyNLO(x,y), 'TTH': ttH_scalePolyLO(x,y), 'TZQ': tZq_scalePolyLO(x,y)}
+            else:
+                bsm_scales = {'TTZ': 1, 'TTH': 1, 'TZQ': 1}  # NOTE: 1 is default, just make it explicit
+
+            print (f"Working on point {x}, {y}")
+
+            sm_cards[(x,y)] = {}
+            bsm_cards[(x,y)] = {}
+
+
+            for year in years:
+                suffix = "_scaled" if args.scaling else ""
+                plot_dir = base_dir + year + suffix + '/'
+                finalizePlotDir(plot_dir)
+
+                ul = str(year)[2:]
+                lumi = lumis[year]
+
+                for region, axis, get_histo in regions:
+                    if args.overwrite:
+                        if region in trilep_regions:
+                            output = outputs_tri[year]
+                            signal_output = signal_outputs_tri[year]
+                        else:
+                            output = outputs[year]
+                            signal_output = signal_outputs[year]
+
+                    if args.overwrite:
+                        #histogram = output[region]
+                        if region.count('pp') or region.count('mm'):
+                            histogram_incl = output['bit_score_incl']  # NOTE not nice, but need this for now
+                        else:
+                            histogram_incl = None
+                        cards_to_write.append((get_histo(output), year, region, axis, x, y, plot_dir, args.systematics, bsm_scales, histogram_incl, get_histo(signal_output)))
+                    #bsm_card, sm_card = write_card(output, year, region, axis, x, y,
+                    #                               plot_dir='./',
+                    #                               systematics=True,
+                    #                               )
+
+                    plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
+                    plot_name = plot_name_short + f'_{region}_{year}'
+                    SM_plot_name = f'{region}_{year}'
+                    bsm_cards[(x,y)][f'BSM_{plot_name}'] = f'/{card_dir}/BSM_{plot_name}_card.txt'
+                    sm_cards[(x,y)][f'SM_{SM_plot_name}']   = f'/{card_dir}/SM_{SM_plot_name}_card.txt'
+
+        workers = args.workers
+        if args.overwrite:
+            if workers > 1:
+                with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+                    for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
+                        print (f"Done with {card_name}")
+            else:
+                #print (cards_to_write)
+                result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
+
+        if fit:
+            all_combined = []
+            print ("Starting with combining cards")
+            for x,y in scan:
 
                 plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
                 plot_name = plot_name_short + f'_{region}_{year}'
-                SM_plot_name = f'{region}_{year}'
-                bsm_cards[(x,y)][f'BSM_{plot_name}'] = f'/{card_dir}/BSM_{plot_name}_card.txt'
-                sm_cards[(x,y)][f'SM_{SM_plot_name}']   = f'/{card_dir}/SM_{SM_plot_name}_card.txt'
+                SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
+                # NOTE running years individually and then just combining
+                # this avoids having to load all the histograms at once
+                print ("Combining cards:")
+                print (sm_cards[(x,y)])
+                # FIXME: run this step in parallel too!
+                if x==0 and y==0:
+                    all_combined.append((card, sm_cards[(x,y)], f'SM_combined.txt'))
+                    #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
+                    #all_cards.append(sm_card_combined)
+                #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
+                all_combined.append((card, bsm_cards[(x,y)], f'BSM_{plot_name_short}.txt'))
+                #bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
 
-    workers = args.workers
-    if args.overwrite:
-        if workers > 1:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-                for card_name, result in zip(cards_to_write, executor.map(write_card_wrapper, cards_to_write)):
-                    print (f"Done with {card_name}")
-        else:
-            #print (cards_to_write)
-            result = [write_card_wrapper(c) for c in cards_to_write]  # fuck map
-
-    if fit:
-        all_combined = []
-        print ("Starting with combining cards")
-        for x,y in scan:
-
-            plot_name_short = f"BIT_cpt_{x}_cpqm_{y}"# if bit else f"LT_cpt_{x}_cpqm_{y}"
-            plot_name = plot_name_short + f'_{region}_{year}'
-            SM_plot_name = f'_{region}_{year}'  # FIXME we should really carry these names through
-            # NOTE running years individually and then just combining
-            # this avoids having to load all the histograms at once
-            print ("Combining cards:")
-            print (sm_cards[(x,y)])
-            # FIXME: run this step in parallel too!
-            if x==0 and y==0:
-                all_combined.append((card, sm_cards[(x,y)], f'SM_combined.txt'))
-                #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_combined.txt')
                 #all_cards.append(sm_card_combined)
-            #sm_card_combined = card.combineCards(sm_cards[(x,y)], name=f'SM_{plot_name_short}.txt')  # NOTE old parametrized version
-            all_combined.append((card, bsm_cards[(x,y)], f'BSM_{plot_name_short}.txt'))
-            #bsm_card_combined = card.combineCards(bsm_cards[(x,y)], name=f'BSM_{plot_name_short}.txt')
+                #all_cards.append(bsm_card_combined)
 
-            #all_cards.append(sm_card_combined)
-            #all_cards.append(bsm_card_combined)
-
-        print ("Done with the pre-processing and data card making, running fits now.")
-        print (f"Using {workers} workers")
+            print ("Done with the pre-processing and data card making, running fits now.")
+            print (f"Using {workers} workers")
 
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            for result in executor.map(combine_cards_wrapper, all_combined):
-                print ("Combined card:", result)
-                all_cards.append(result)
-                #print (val, result)
-                #all_nll[card_name.split('/')[-1].strip('.txt')] = result
+            with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+                for result in executor.map(combine_cards_wrapper, all_combined):
+                    print ("Combined card:", result)
+                    all_cards.append(result)
+                    #print (val, result)
+                    #all_nll[card_name.split('/')[-1].strip('.txt')] = result
 
-        all_nll = {}
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            for card_name, result in zip(all_cards, executor.map(get_NLL, all_cards)):
+            all_nll = {}
+            with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
+                for card_name, result in zip(all_cards, executor.map(get_NLL, all_cards)):
 
-                #print (val, result)
-                all_nll[card_name.split('/')[-1].strip('.txt')] = result
+                    #print (val, result)
+                    all_nll[card_name.split('/')[-1].strip('.txt')] = result
 
-        for x,y in scan:
-            plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
-            print (plot_name_short)
-            #results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
-            results[(x,y)] = -2*(all_nll[f'SM_combined'] - all_nll[f'BSM_{plot_name_short}'])
+            for x,y in scan:
+                plot_name_short = f"BIT_cpt_{x}_cpqm_{y}" if bit else f"LT_cpt_{x}_cpqm_{y}"
+                print (plot_name_short)
+                #results[(x,y)] = -2*(all_nll[f'SM_{plot_name_short}'] - all_nll[f'BSM_{plot_name_short}'])
+                results[(x,y)] = -2*(all_nll[f'SM_combined'] - all_nll[f'BSM_{plot_name_short}'])
 
     if fit and len(xr)>4:
 

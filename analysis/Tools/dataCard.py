@@ -389,6 +389,28 @@ class dataCard:
 
         return result
 
+    def interference_scan(self, fname, scaling):
+        import uuid, os
+        import pandas
+        import uproot
+        import copy
+        ustr          = str(uuid.uuid4())
+        uniqueDirname = os.path.join(self.releaseLocation, ustr)
+        print("Creating %s"%uniqueDirname)
+        os.makedirs(uniqueDirname)
+        if fname is not None:  # Assume card is already written when fname is not none
+          filename = os.path.abspath(fname)
+        else:
+          filename = fname if fname else os.path.join(uniqueDirname, ustr+".txt")
+          self.writeToFile(filename)
+
+        textworkspace = f"text2workspace.py {fname} -P HiggsAnalysis.CombinedLimit.InterferenceModels:interferenceModel --PO verbose --PO scalingData={scaling} -o workspace.root"
+        fit1 = "combine -M MultiDimFit workspace.root --redefineSignalPOIs cpt,cpQM --setParameters cpt=0,cpQM=0 --algo singles"
+        fit2 = "combineTool.py workspace.root -M MultiDimFit --algo grid --points 100 --redefineSignalPOIs cpt,cpQM -n Scan2D.cpt.cpQM"
+        combineCommand  = f"cd {uniqueDirname};eval `scramv1 runtime -sh`; {textworkspace}; {fit1}; {fit2}"
+        os.system(combineCommand)
+
+
     def fit_diagnostics(self, fname=None, options=""):
         '''
         Does max likelihood fits, both with r=1 and a best-fit value
