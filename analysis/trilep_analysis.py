@@ -426,7 +426,7 @@ class trilep_analysis(processor.ProcessorABC):
             ttZ_sel = sel.trilep_baseline(only=['N_btag>0', 'onZ', 'MET>30'])
             WZ_sel  = sel.trilep_baseline(only=['N_btag=0', 'onZ', 'MET>30'])
             XG_sel  = sel.trilep_baseline(only=['N_btag=0', 'offZ', 'M3l_onZ'])
-            sig_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0'])
+            sig_sel = sel.trilep_baseline(only=['N_btag>0', 'N_jet>2', 'offZ', 'N_fwd>0', 'MET>50'])
 
             if var['name'] == 'central':
                 '''
@@ -759,15 +759,18 @@ class trilep_analysis(processor.ProcessorABC):
                 #    eta = ak.flatten(jet[:, 2:3][BL].eta),
                 #    weight = weight_BL
                 #)
-                
-                fill_multiple_np(
-                    output['fwd_jet'],
-                    {
-                        'pt':  pad_and_flatten(best_fwd.pt),
-                        'p':  pad_and_flatten(best_fwd.p4.p),
-                        'eta': pad_and_flatten(best_fwd.eta),
-                    },
-                )
+
+                ## NOTE added to systematics section below
+                #fill_multiple_np(
+                #    output['fwd_jet'],
+                #    {
+                #        'pt':  pad_and_flatten(best_fwd.pt),
+                #        'p':  pad_and_flatten(best_fwd.p4.p),
+                #        'eta': pad_and_flatten(best_fwd.eta),
+                #    },
+                #)
+
+            # below are all the histograms that will also get systematics
             else:
                 # NOTE this used to be skipping data, but it should actually run in order to get
                 # uncertainties for the nonprompt estimate
@@ -808,6 +811,15 @@ class trilep_analysis(processor.ProcessorABC):
                     {'mass': ak.fill_none(pad_and_flatten(SFOS_mass_best), 0)},
                     add_sel = ttZ_sel,
                     other = {'EFT': "central"},
+                )
+
+                fill_multiple_np(
+                    output['fwd_jet'],
+                    {
+                        'pt':  pad_and_flatten(best_fwd.pt),
+                        'p':  pad_and_flatten(best_fwd.p4.p),
+                        'eta': pad_and_flatten(best_fwd.eta),
+                    },
                 )
                     #
                     #
