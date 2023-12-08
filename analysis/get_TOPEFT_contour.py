@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     fig, ax, = plt.subplots(1,1,figsize=(10,10))
     hep.cms.label(
-        "WIP",
+        "Preliminary",
         data=True,
         #year=2018,
         lumi=137,
@@ -109,7 +109,8 @@ if __name__ == '__main__':
 
     # load results from this analysis
     #with open("../results/results_bit_all_NLO_all_20231026_222110.json", "r") as f:
-    with open("../results/results_bit_all_NLO_all_20231120_173343.json", "r") as f:
+    #with open("../results/results_bit_all_NLO_all_20231120_173343.json", "r") as f:
+    with open("../results/results_bit_all_NLO_all_20231122_145002.json", "r") as f:
         results = json.load(f)["data"]
 
     rx = np.arange(-7,8,1)
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     ax.set_ylabel(r'$C_{\varphi t}/\Lambda^{2} (TeV^{-2})$')
 
 
-    fig.savefig('TOPEFT_ver6.png')
+    fig.savefig('TOPEFT_ver7.png')
 
 
     plt.show()
