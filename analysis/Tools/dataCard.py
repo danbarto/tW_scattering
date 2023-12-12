@@ -410,6 +410,19 @@ class dataCard:
         combineCommand  = f"cd {uniqueDirname};eval `scramv1 runtime -sh`; {textworkspace}; {fit1}; {fit2}"
         os.system(combineCommand)
 
+        print (uniqueDirname)
+
+        with uproot.open(f"{uniqueDirname}/higgsCombineScan2D.cpt.cpQM.MultiDimFit.mH120.root") as f:
+            tree = f['limit']
+            result = copy.deepcopy( tree.arrays() )
+
+        results = []
+        for res in result:
+        # deltaNLL in the combine result still needs to be doubled!
+            results.append({'cpt': res.cpt, 'cpQM': res.cpQM, 'deltaNLL': 2*res.deltaNLL})
+
+        return results
+
 
     def fit_diagnostics(self, fname=None, options=""):
         '''

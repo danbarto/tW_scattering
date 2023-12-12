@@ -684,7 +684,8 @@ if __name__ == '__main__':
         #release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/')
         release_location = os.path.expandvars('/home/users/dspitzba/TOP/CMSSW_10_2_9/src/tW_scattering/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
     else:
-        release_location = os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+        #release_location = os.path.expandvars('./CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/')
+        release_location = os.path.expandvars('./CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/')
     card = dataCard(releaseLocation=release_location)
     card_dir = os.path.abspath(os.path.expandvars('./data/cards/')) + '/'
     #card = dataCard(releaseLocation=os.path.expandvars('$TWHOME/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/'))
@@ -869,6 +870,12 @@ if __name__ == '__main__':
                 hp = HyperPoly(2)
                 hp.initialize(coordinates, ref_coordinates)
                 coeffs = hp.get_parametrization(np.array(predictions))
+
+                print("SM values")
+                print(sm)
+                print("prediction for 6,6")
+                print(hp.eval(coeffs, [6,6]))
+
                 # from 'sm + x0 + x1 + x0**2 + x0*x1 + x1**2'
                 # to sm + x0 + x0**2 + x1 + x1*x0 + x1**2
                 # so columns 0, 1, 3, 2, 4, 5
@@ -877,9 +884,9 @@ if __name__ == '__main__':
                 scaling_pkl.append(
                     {
                         'channel': f'dc_{channel}',
-                        'process': 'signal',  # FIXME check that signal name is correct
+                        'process': 'signal',
                         'parameters': ['cSM[1]', 'cpt[0,-20,20]', 'cpQM[0,-20,20]'],
-                        'scaling': scaling  # FIXME this needs to be a 2D array
+                        'scaling': scaling
                     }
                 )
 
@@ -920,7 +927,7 @@ if __name__ == '__main__':
         with gzip.open(f"{card_dir}/scaling.pkl.gz", "wb") as fout:
             pickle.dump(scaling_pkl, fout)
 
-        card.interference_scan(combined_card, f"{card_dir}/scaling.pkl.gz")
+        res = card.interference_scan(combined_card, f"{card_dir}/scaling.pkl.gz")
 
         raise NotImplementedError
 
