@@ -19,12 +19,10 @@ class tau_scalefactor:
 
         if self.year == 2016:
             if era=='APV':
-                # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16preVFP
                 SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2016preVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
             else:
-                # https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation106XUL16postVFP
                 SF_file = os.path.join(here, 'jsonpog-integration/POG/TAU/2016postVFP_UL/')
                 self.reader = correctionlib.CorrectionSet.from_file(os.path.join(SF_file, "tau.json.gz"))
 
@@ -54,9 +52,35 @@ class tau_scalefactor:
             ak.num(pt),
         )
 
+    def lookup_e(self, eta, genmatch, var='nom', WP='Loose'):
+        return ak.unflatten(
+            self.reader["DeepTau2017v2p1VSe"].evaluate(
+                ak.to_numpy(ak.flatten(eta)),
+                ak.to_numpy(ak.flatten(genmatch)),
+                WP,
+                var,
+                #"eta",
+                ),
+            ak.num(eta),
+        )
+
+    def lookup_mu(self, eta, genmatch, var='nom', WP='Loose'):
+        return ak.unflatten(
+            self.reader["DeepTau2017v2p1VSmu"].evaluate(
+                ak.to_numpy(ak.flatten(eta)),
+                ak.to_numpy(ak.flatten(genmatch)),
+                WP,
+                var,
+                #"eta",
+                ),
+            ak.num(eta),
+        )
+
     def get(self, tau, var='nom', WP='Loose'):
         return ak.prod(
-            self.lookup(tau.pt, tau.decayMode, tau.genPartFlav, var=var, WP=WP),
+            self.lookup(tau.pt, tau.decayMode, tau.genPartFlav, var=var, WP=WP) * \
+            self.lookup_e(tau.eta, tau.genPartFlav, var=var, WP=WP) * \
+            self.lookup_mu(tau.eta, tau.genPartFlav, var=var, WP=WP),
             axis=1,
         )
 
@@ -74,11 +98,12 @@ if __name__ == '__main__':
     import hist
 
     from analysis.Tools.basic_objects import getTaus
+
     from analysis.Tools.samples import Samples
+    from analysis.Tools.config_helpers import load_yaml, data_path
 
-    samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')
-
-    fileset = samples.get_fileset(year='UL17', group='TTW')
+    samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')  # NOTE this could be era etc dependent
+    fileset = samples.get_fileset(year='UL17', groups=['TTW'])
 
     # load a subset of events
     n_max = 5000
