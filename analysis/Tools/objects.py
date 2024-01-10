@@ -58,12 +58,12 @@ def match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
         (delta_r2(combs['0'], combs['1'])<drCut2) & (combs['1'].pt > ptCut*combs['0'].pt)
         , axis=2)
 
-@nb.jit
+@nb.jit(nopython=True)
 def fast_delta_phi(first, second):
     # my version, seems to be faster (and unsigned)
     return np.arccos(np.cos(first.phi - second.phi))
 
-@nb.jit
+@nb.jit(nopython=True)
 def fast_delta_r2(first, second):
     return (first.eta - second.eta) ** 2 + fast_delta_phi(first, second) ** 2
 
@@ -85,7 +85,7 @@ def fast_match_with_pt(first, second, deltaRCut=0.4, ptCut=0.5):
     if obj1 is close to any obj2 in the same event, False, else True
     '''
 
-@nb.jit
+@nb.jit(nopython=True)
 def match_by_dr(objs1, objs2, dR_lim):
     dR_lim2 = dR_lim**2
     nEvents = len(objs1)
@@ -113,7 +113,7 @@ def match_by_dr(objs1, objs2, dR_lim):
 
     return mask_offsets, mask_contents 
 
-@nb.jit
+@nb.jit(nopython=True)
 def match_by_dr_pt(objs1, objs2, dR_lim, ptCut):
     dR_lim2 = dR_lim**2
     nEvents = len(objs1)

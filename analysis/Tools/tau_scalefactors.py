@@ -46,6 +46,7 @@ class tau_scalefactor:
                 ak.to_numpy(ak.flatten(decay_mode)),
                 ak.to_numpy(ak.flatten(genmatch)),
                 WP,
+                "VVLoose",  # FIXME either VVLoose or Tight. Not sure what this does, it is also not documented in https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/tree/master/POG/TAU?ref_type=heads
                 var,
                 "pt",
                 ),
