@@ -125,26 +125,36 @@ def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'
     #FIXME how to include single lepton triggers / PDs without introducing overlap?
     if year == 2018:
         triggers['MuonEG'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
-            "Mu27_Ele37_CaloIdL_MW",  #FIXME this is not in the TOP list
-            "Mu37_Ele27_CaloIdL_MW",  #FIXME this is not in the TOP list
+            "Mu8_DiEle12_CaloIdL_TrackIdL",
+            "Mu8_DiEle12_CaloIdL_TrackIdL_DZ",
+            "DiMu9_Ele9_CaloIdL_TrackIdL_DZ",
+            #"Mu27_Ele37_CaloIdL_MW",  #FIXME this is not in the TOP list
+            #"Mu37_Ele27_CaloIdL_MW",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleMuon'] = [\
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",
             "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
-            "Mu37_TkMu27",  #FIXME this is not in the TOP list
+            "TripleMu_12_10_5",
+            #"Mu37_TkMu27",  #FIXME this is not in the TOP list
         ]
 
         triggers['DoubleEG'] = [\
-            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",  #FIXME not in the TOP list
-            "DoubleEle25_CaloIdL_MW",
             "Ele32_WPTight_Gsf",
+            "Ele35_WPTight_Gsf",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Ele16_Ele12_Ele8_CaloIdL_TrackIdL",
+            #"DoubleEle25_CaloIdL_MW",
         ]
 
         triggers['SingleMuon'] = [\
             "IsoMu24",
+            "IsoMu27",
         ]
 
         triggers['SingleElectron'] = [\
@@ -159,24 +169,36 @@ def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'
         
     elif year == 2017:
         triggers['MuonEG'] = [\
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
             "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu8_DiEle12_CaloIdL_TrackIdL",
+            "Mu8_DiEle12_CaloIdL_TrackIdL_DZ", # Note: Listed in Andrew's thesis, but not TOP-19-001 AN
+            "DiMu9_Ele9_CaloIdL_TrackIdL_DZ",
         ]
 
         triggers['DoubleMuon'] = [\
-            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
+            "TripleMu_12_10_5",
+            #"Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8",
         ]
 
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "DoubleEle33_CaloIdL_MW",
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Ele16_Ele12_Ele8_CaloIdL_TrackIdL",
+            #"DoubleEle33_CaloIdL_MW",
         ]
 
         triggers['SingleMuon'] = [\
+            "IsoMu24",
             "IsoMu27",
         ]
 
         triggers['SingleElectron'] = [\
+            "Ele32_WPTight_Gsf",
             "Ele35_WPTight_Gsf",
         ]
 
@@ -186,6 +208,7 @@ def getTriggers(ev, leading_pdg=[], subleading_pdg=[], year=2018, dataset='None'
         ]
         
     elif year == 2016:
+        # no era dependence anymore.
         if not era=='APV':
             triggers['MuonEG'] = [\
             #    "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
