@@ -139,27 +139,25 @@ if __name__ == '__main__':
         print("%s:"%key, sf18.evaluator[key])
         
     ## Load a single file here, get leptons, eval SFs just to be sure everything works
+
     from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+    import hist
 
-    from Tools.objects import Collections
-    from Tools.config_helpers import loadConfig, make_small, load_yaml, data_path
-    from Tools.helpers import get_samples
-    from Tools.nano_mapping import make_fileset
-    
-    import awkward as ak
+    from analysis.Tools.basic_objects import getTaus
 
-    samples = get_samples("samples_UL18.yaml")
-    mapping = load_yaml(data_path+"nano_mapping.yaml")
+    from analysis.Tools.samples import Samples
+    from analysis.Tools.config_helpers import load_yaml, data_path
 
-    fileset = make_fileset(['TTW'], samples, year='UL18', skim=True, small=True, n_max=1)
-    filelist = fileset[list(fileset.keys())[0]]
+    samples = Samples.from_yaml(f'analysis/Tools/data/samples_v0_8_0_SS.yaml')  # NOTE this could be era etc dependent
+    fileset = samples.get_fileset(year='UL17', groups=['TTW'])
 
     # load a subset of events
     n_max = 5000
     events = NanoEventsFactory.from_root(
-        filelist[0],
+        fileset[list(fileset.keys())[0]][0],
         schemaclass = NanoAODSchema,
         entry_stop = n_max).events()
+
 
     el  = Collections(events, 'Electron', 'tightSSTTH', verbose=1).get()
     mu  = Collections(events, 'Muon', 'tightSSTTH', verbose=1).get()
