@@ -327,7 +327,12 @@ class SS_analysis(processor.ProcessorABC):
                 weight.add("tau", self.tauSF.get(tau, var='nom', WP='Loose'))
 
             # trigger SFs
-            weight.add("trigger", self.triggerSF.get(electron, muon))
+            if var["name"] == "trig_up":
+                weight.add("trigger", self.triggerSF.get_dilep(electron, muon, variation="up"))
+            elif var["name"] == "trig_down":
+                weight.add("trigger", self.triggerSF.get_dilep(electron, muon, variation="down"))
+            else:
+                weight.add("trigger", self.triggerSF.get_dilep(electron, muon))
 
         if dataset.count('EFT'):
             #print (self.points)
@@ -1157,6 +1162,8 @@ base_variations = [
     {'name': 'ele_down',                'ext': '_eleDown',          'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'mu_up',                   'ext': '_muUp',             'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'mu_down',                 'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
+    {'name': 'trig_up',                 'ext': '_trigUp',           'weight': None,    'pt_var': 'pt_nom'},
+    {'name': 'trig_down',               'ext': '_trigDown',         'weight': None,    'pt_var': 'pt_nom'},
     ]
 
 nonprompt_variations = [
