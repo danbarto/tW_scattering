@@ -224,9 +224,12 @@ def make_plot_from_dict(
             ax=ax
         )
 
+
         hep.histplot(
             data_h.values(overflow=overflow)[()]/central,
             edges,
+            # FIXME this is not the right barlow pearson interval, should get fixed
+            # for small data counts
             yerr=(np.sqrt(np.abs(data_h.values(overflow=overflow, sumw2=True)[()][1]))/np.abs(central)),
             histtype="errorbar",
             stack=False,
@@ -272,19 +275,41 @@ def make_plot_from_dict(
     sys_down = np.zeros_like(cent_tmp)
     if systematics:
         for proc in processes:
-            try:
-                sys_axis_index = [x.name for x in hist_d[proc].axes()].index('systematic')
-                all_syst = [x.name for x in hist_d[proc].axes()[sys_axis_index].identifiers()]
-                print(f"Got all systematics for {proc=}:", all_syst)
-            except:
-                print("Failed automatically extracting systematics")
-                all_syst = ['mu', 'ele', 'b', 'l', 'PU', 'jes']
+            print(proc)
+            if isinstance(systematics, type([])):
+                all_syst = systematics
+            else:
+                try:
+                    sys_axis_index = [x.name for x in hist_d[proc].axes()].index('systematic')
+                    all_syst = [x.name for x in hist_d[proc].axes()[sys_axis_index].identifiers()]
+                    print(f"Got all systematics for {proc=}:", all_syst)
+                except:
+                    print("Failed automatically extracting systematics")
+                    all_syst = ['mu', 'ele', 'b', 'l', 'PU', 'jes']
             cent_tmp = hist_d[proc].integrate('systematic', 'central').values(overflow=overflow)[()]
+            print(cent_tmp)
             for syst in all_syst:
                 try:
-                    sys_up += (hist_d[proc].integrate('systematic', syst+'_up').values(overflow=overflow)[()] - cent_tmp)**2
-                    sys_down += (hist_d[proc].integrate('systematic', syst+'_down').values(overflow=overflow)[()] - cent_tmp)**2
+                    tmp_val = hist_d[proc].integrate('systematic', syst).values(overflow=overflow)[()]
+                    if np.all((abs(tmp_val) < 1e-1)):
+                        # NOTE this filters out systematic histograms that are nonsensical,
+                        # or have no impact anyway
+                        pass
+                    else:
+                        sys_tmp = tmp_val - cent_tmp
+                        print(syst, sys_tmp)
+                        if syst.count('_up'):
+                            sys_up += (sys_tmp)**2
+                        elif syst.count('_down'):
+                            sys_down += (sys_tmp)**2
+                        else:
+                            # assume they are symmetric
+                            sys_up += (sys_tmp)**2
+                            sys_down += (sys_tmp)**2
+                        print("sys_up", np.sqrt(sys_up))
+                        print("sys_down", np.sqrt(sys_down))
                 except KeyError:
+                    print(f"Didn't find systematic histogram for {syst=}")
                     pass
                     #print (f"Systematic {syst} not present for processes {proc}")
 
@@ -295,11 +320,16 @@ def make_plot_from_dict(
         sys_up = np.sqrt(sys_up)
         sys_down = np.sqrt(sys_down)
 
+    print("- Total systematics up:")
+    print(sys_up)
+    print("- Total systematics down:")
+    print(sys_down)
     # NOTE unfortunately this does not work
     #sys_up   = np.sqrt(sum( [(total.integrate('systematic', syst+'_up').values(overflow=overflow)[()]-central)**2 for syst in all_syst ]) )
     #sys_down = np.sqrt(sum( [(total.integrate('systematic', syst+'_down').values(overflow=overflow)[()]-central)**2 for syst in all_syst ]) )
     stat = np.sqrt(total.integrate('systematic', 'central').values(overflow=overflow, sumw2=True)[()][1])
-    #print (sys_up)
+    print("- Total statistical uincertainties:")
+    print(stat)
 
 
     up = central + np.sqrt(sys_up**2 + stat**2)

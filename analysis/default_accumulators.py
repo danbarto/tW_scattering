@@ -34,6 +34,7 @@ ext_multiplicity_axis   = hist.Bin("multiplicity",  r"N",               100, -0.
 norm_axis               = hist.Bin("norm",          r"N",               25, 0, 1)
 score_axis              = hist.Bin("score",         r"N",               16, 0, 1)  # In the end we probably want 8 bins. it's only possible to merge neighboring bins, so 64 - 32 - 16 - 8 - 4 - 2.
 bit_axis                = hist.Bin("bit",           r"N",               20, 0, 1)
+bit2_axis               = hist.Bin("bit2",          r"N",               20, 0, 1)
 one_axis                = hist.Bin("one",           r"N",               1, -100, 100)
 
 variations = ['pt_jesTotalUp', 'pt_jesTotalDown', 'PUUp', 'PUDown', 'bUp', 'bDown', 'lUp', 'lDown']  
