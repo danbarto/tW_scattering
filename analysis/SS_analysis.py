@@ -324,6 +324,7 @@ class SS_analysis(processor.ProcessorABC):
             elif var['name'] == 'tau_down':
                 weight.add("tau", self.tauSF.get(tau, var='down', WP='Loose'))
             else:
+                #pass
                 weight.add("tau", self.tauSF.get(tau, var='nom', WP='Loose'))
 
             # trigger SFs
@@ -492,14 +493,26 @@ class SS_analysis(processor.ProcessorABC):
             # v40 was used for presentations up to April 2023
             # v50 is retraining with train/eval overlap removal
             bit_file = 'analysis/Tools/data/networks/bits_v50.pkl'
+            bit_file_v40 = 'analysis/Tools/data/networks/bits_v40.pkl'
+
             with open(bit_file, 'rb') as f:
                 bits = pickle.load(f)
+
+            with open(bit_file_v40, 'rb') as f:
+                bits_comp = pickle.load(f)
+
 
             bit_pred = {}
             for i in range(6):
                 bit_pred["pred_%s"%i] = bits[i].vectorized_predict(BIT_inputs)
 
             bit_pred = pd.DataFrame(bit_pred)
+
+            bit_pred_v40 = {}
+            for i in range(6):
+                bit_pred_v40["pred_%s"%i] = bits_comp[i].vectorized_predict(BIT_inputs)
+
+            bit_pred_v40 = pd.DataFrame(bit_pred_v40)
 
         weight_BL = weight.weight(modifier=shift)[BL]  # this is just a shortened weight list for the two prompt selection
         weight_np_data = self.nonpromptWeight.get(el_f, mu_f, meas='data', variation=(var["ext"] if var["name"].count("fake") else ''))
@@ -611,13 +624,16 @@ class SS_analysis(processor.ProcessorABC):
                 )
 
         if self.bit:
-
             for p in self.points:
                 x,y = p['point']
                 point = p['point']
                 if self.fixed_template:
                     qt = load_transformer(f'v50_cpt_5_cpqm_-5')  # 5, -5 shown to yield similar performance to parametrized version
                     score_trans = get_bit_score(bit_pred, cpt=5, cpqm=-5, trans=qt)
+
+                    # NOTE don't use them for the actual analysis
+                    score_comp_1 = get_bit_score(bit_pred_v40, cpt=4, cpqm=4, trans=load_transformer(f'v40_cpt_4_cpqm_4'))
+                    score_comp_2 = get_bit_score(bit_pred_v40, cpt=4, cpqm=-4, trans=load_transformer(f'v40_cpt_4_cpqm_-4'))
                 else:
                     qt = load_transformer(f'v50_cpt_{x}_cpqm_{y}')  # was v31
                     score_trans = get_bit_score(bit_pred, cpt=x, cpqm=y, trans=qt)
@@ -631,7 +647,19 @@ class SS_analysis(processor.ProcessorABC):
                 SR_sel_pp = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)>0))
                 SR_sel_mm = ((ak.num(fwd)>0) & (ak.sum(lepton.charge, axis=1)<0))
 
+                if var['name'] == 'central':
+                    # always gets filled, no systematics
+                    output['bit_vs_LT'].fill(
+                        dataset = dataset,
+                        bit = score_comp_1,
+                        bit2 = score_comp_2,
+                        ht = lt,
+                        weight = weight.weight(modifier=shift)*eft_weight,
+                        EFT = f"bsm_cpt_{x}_cpqm_{y}"
+                    )
+
                 if dataset.count('EFT'):
+                    # also fills NP estimate. FIXME ?
                     fill_multiple_np(
                         output['bit_score_incl'],
                         {'bit': score_trans},
@@ -774,7 +802,7 @@ class SS_analysis(processor.ProcessorABC):
 
         #print (var['name'], self.minimal)
         #if var['name'] == 'central' and not self.minimal:
-        if not self.minimal:
+        if not self.minimal or True:
             '''
             Don't fill these histograms for the variations
             '''
@@ -868,13 +896,15 @@ class SS_analysis(processor.ProcessorABC):
                 output['N_jet'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(jet)[BL], weight=weight_BL)
                 output['N_b'].fill(dataset=dataset, systematic=var['name'], prediction='central',  multiplicity=ak.num(btag)[BL], weight=weight_BL)
                 output['N_central'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(central)[BL], weight=weight_BL)
-                output['N_ele'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(electron)[BL], weight=weight_BL)
+                #output['N_ele'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(electron)[BL], weight=weight_BL)
+                fill_multiple_np(output['N_ele'],     {'multiplicity':ak.num(electron)})
                 output['N_fwd'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(fwd)[BL], weight=weight_BL)
                 output['N_tau'].fill(dataset=dataset, systematic=var['name'], prediction='central', multiplicity=ak.num(tau)[BL], weight=weight_BL)
                 output['ST'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=st[BL], weight=weight_BL)
                 output['HT'].fill(dataset=dataset, systematic=var['name'], prediction='central', ht=ht[BL], weight=weight_BL)
                 output['MET'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', pt=met.pt[BL], phi=met.phi[BL], weight=weight_BL)
-                output['LT'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', ht=lt[BL], weight=weight_BL)
+                fill_multiple_np(output['LT'],        {'ht':lt})
+                #output['LT'].fill(dataset=dataset, systematic=var['name'], prediction='central', EFT='central', ht=lt[BL], weight=weight_BL)
                 output['mjj_max'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=ak.fill_none(ak.max(mjf, axis=1),0)[BL], weight=weight_BL)
                 output['delta_eta_jj'].fill(dataset=dataset, systematic=var['name'], prediction='central', delta=pad_and_flatten(delta_eta)[BL], weight=weight_BL)
                 output['dilepton_mass'].fill(dataset=dataset, systematic=var['name'], prediction='central', mass=pad_and_flatten(dilepton_mass)[BL], weight=weight_BL)
@@ -911,15 +941,26 @@ class SS_analysis(processor.ProcessorABC):
                     eta=pad_and_flatten(trailing_lepton.eta)[BL],
                 )
 
-                output['fwd_jet'].fill(
-                    dataset=dataset,
-                    systematic=var['name'],
-                    prediction='central',
-                    weight=weight_BL,
-                    p=pad_and_flatten(best_fwd.p4.p)[BL],
-                    pt=pad_and_flatten(best_fwd.p4.pt)[BL],
-                    eta=pad_and_flatten(best_fwd.p4.eta)[BL],
+                # FIXME this is probably what's needed to also get the systematics for data driven estimates
+                fill_multiple_np(
+                    output['fwd_jet'],
+                    {
+                        'p':   pad_and_flatten(best_fwd.p4.p),
+                        'pt':  pad_and_flatten(best_fwd.p4.pt),
+                        'eta': pad_and_flatten(best_fwd.p4.eta),
+                    },
                 )
+
+                # FIXME this is the more light-weight alternative for just keeping systematics for MC based estimates
+                #output['fwd_jet'].fill(
+                #    dataset=dataset,
+                #    systematic=var['name'],
+                #    prediction='central',
+                #    weight=weight_BL,
+                #    p=pad_and_flatten(best_fwd.p4.p)[BL],
+                #    pt=pad_and_flatten(best_fwd.p4.pt)[BL],
+                #    eta=pad_and_flatten(best_fwd.p4.eta)[BL],
+                #)
 
                 output['lead_jet'].fill(
                     dataset=dataset,
@@ -1050,6 +1091,7 @@ histograms = {
     "bit_score_incl": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
     "bit_score_pp": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
     "bit_score_mm": hist.Hist("Counts", dataset_axis, eft_axis, pred_axis, systematic_axis, bit_axis),
+    "bit_vs_LT": hist.Hist("Counts", dataset_axis, eft_axis, bit_axis, ht_axis, bit2_axis),
     "ST": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
     "HT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis),
     "LT": hist.Hist("Counts", dataset_axis, pred_axis, systematic_axis, ht_axis, eft_axis),
@@ -1164,6 +1206,8 @@ base_variations = [
     {'name': 'mu_down',                 'ext': '_muDown',           'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'trig_up',                 'ext': '_trigUp',           'weight': None,    'pt_var': 'pt_nom'},
     {'name': 'trig_down',               'ext': '_trigDown',         'weight': None,    'pt_var': 'pt_nom'},
+    {'name': 'tau_up',                  'ext': '_tauUp',            'weight': None,    'pt_var': 'pt_nom'},
+    {'name': 'tau_down',                'ext': '_tauDown',          'weight': None,    'pt_var': 'pt_nom'},
     ]
 
 nonprompt_variations = [
